@@ -1,0 +1,29 @@
+{
+  "name": "prism-editor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "前端优先执行的可视化低代码图像工作流系统",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:dev-tool": "turbo run dev --filter=@prism/dev-tool",
+    "dev:user-app": "turbo run dev --filter=@prism/user-app",
+    "build": "turbo run build",
+    "build:dev-tool": "turbo run build --filter=@prism/dev-tool",
+    "build:user-app": "turbo run build --filter=@prism/user-app",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean"
+  },
+  "devDependencies": {
+    "canvas": "^3.2.2",
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  },
+  "packageManager": "pnpm@9.1.0"
+}

@@ -1,0 +1,10 @@
+// @prism/shared-types
+// 共享类型定义包
+// 所有包和应用的类型都应从这里导入
+
+export * from './workflow';
+export * from './node';
+export * from './execution';
+export * from './image';
+export * from './storage';
+export * from './published';

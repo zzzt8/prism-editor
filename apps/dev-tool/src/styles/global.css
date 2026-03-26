@@ -1,0 +1,382 @@
+/* === Global Reset & Base === */
+
+:root {
+  --color-bg: #0d0d0f;
+  --color-surface: #14141a;
+  --color-surface-2: #1e1e28;
+  --color-border: #2a2a35;
+  --color-text: #e2e2ee;
+  --color-text-muted: #7a7a8a;
+  --color-accent: #6366f1;
+  --color-accent-hover: #818cf8;
+
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: dark;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* === Layout === */
+
+.dev-tool-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.dev-tool-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+  height: 48px;
+}
+
+.dev-tool-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+}
+
+.dev-tool-subtitle {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.dev-tool-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* === Node Panel === */
+
+.node-panel {
+  width: 200px;
+  flex-shrink: 0;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  overflow-y: auto;
+  padding: 12px 0;
+}
+
+.node-panel-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  padding: 0 12px 8px;
+}
+
+.node-category {
+  margin-bottom: 16px;
+}
+
+.node-category-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  padding: 0 12px 6px;
+}
+
+.node-category-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 8px;
+}
+
+.node-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  cursor: grab;
+  transition: border-color 0.15s, background 0.15s;
+  font-size: 13px;
+  color: var(--color-text);
+  user-select: none;
+}
+
+.node-card:hover {
+  border-color: var(--color-accent);
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.node-card:active {
+  cursor: grabbing;
+}
+
+.node-card-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.node-card-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* === Canvas === */
+
+.workflow-canvas-container {
+  flex: 1;
+  position: relative;
+  background: var(--color-bg);
+}
+
+/* React Flow overrides */
+.react-flow__background {
+  background-color: var(--color-bg) !important;
+}
+
+.react-flow__controls {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important;
+}
+
+.react-flow__controls-button {
+  background: var(--color-surface) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  color: var(--color-text) !important;
+  fill: var(--color-text) !important;
+  width: 28px !important;
+  height: 28px !important;
+}
+
+.react-flow__controls-button:last-child {
+  border-bottom: none !important;
+}
+
+.react-flow__controls-button:hover {
+  background: var(--color-surface-2) !important;
+}
+
+.react-flow__minimap {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+.react-flow__edge-path {
+  stroke: var(--color-border) !important;
+  stroke-width: 2 !important;
+}
+
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge:focus .react-flow__edge-path,
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke: var(--color-accent) !important;
+}
+
+.react-flow__connection-path {
+  stroke: var(--color-accent) !important;
+  stroke-width: 2 !important;
+}
+
+.react-flow__handle {
+  width: 10px !important;
+  height: 10px !important;
+  background: var(--color-surface-2) !important;
+  border: 2px solid var(--color-border) !important;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.react-flow__handle:hover {
+  background: var(--color-accent) !important;
+  border-color: var(--color-accent) !important;
+}
+
+.react-flow__handle.connecting {
+  background: var(--color-accent) !important;
+  border-color: var(--color-accent) !important;
+}
+
+/* === Prism Nodes === */
+
+.prism-node {
+  min-width: 160px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.prism-node.selected {
+  box-shadow: 0 0 0 2px var(--color-accent), 0 4px 16px rgba(0,0,0,0.4) !important;
+}
+
+.prism-node-header {
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+}
+
+.prism-node-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.prism-node-body {
+  padding: 6px 10px;
+  background: var(--color-surface-2);
+}
+
+.prism-node-description {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prism-node-type-tag {
+  font-size: 10px;
+  font-family: 'SF Mono', 'Cascadia Code', monospace;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+
+.prism-node-error {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-bottom: 4px;
+}
+
+.prism-node-warning {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-bottom: 4px;
+}
+
+.prism-node-icon {
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.prism-node-error-text,
+.prism-node-warning-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* === Canvas Toolbar === */
+
+.canvas-toolbar {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.canvas-toolbar-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dirty-indicator {
+  color: #f59e0b;
+  font-size: 10px;
+}
+
+.canvas-toolbar-zoom {
+  font-family: 'SF Mono', 'Cascadia Code', monospace;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  min-width: 44px;
+  text-align: center;
+}
+
+/* Selection box (drag to select) */
+.react-flow__selection {
+  background: rgba(99, 102, 241, 0.08) !important;
+  border: 1.5px solid var(--color-accent) !important;
+  border-radius: 4px !important;
+}
+
+/* Pane click (deselect) */
+.react-flow__pane {
+  cursor: default;
+}
+
+.react-flow__pane.selection {
+  cursor: crosshair;
+}
+
