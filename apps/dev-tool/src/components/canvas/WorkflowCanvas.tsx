@@ -10,6 +10,7 @@ import {
   NodeMouseHandler,
   useReactFlow,
   useOnSelectionChange,
+  MarkerType,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useCanvasStore } from '../../store/canvasStore';
@@ -37,7 +38,9 @@ export const WorkflowCanvas: React.FC = () => {
   const clearSelection = useCanvasStore((s) => s.clearSelection);
   const setViewport = useCanvasStore((s) => s.setViewport);
   const removeSelectedNodes = useCanvasStore((s) => s.removeSelectedNodes);
+  const removeSelectedEdges = useCanvasStore((s) => s.removeSelectedEdges);
   const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
+  const selectedEdgeIds = useCanvasStore((s) => s.selectedEdgeIds);
 
   const reactFlowInstance = useReactFlow();
 
@@ -51,22 +54,27 @@ export const WorkflowCanvas: React.FC = () => {
 
   // Sync React Flow's selection state into our store
   useOnSelectionChange({
-    onChange: ({ nodes: selectedNodes }) => {
-      const ids = selectedNodes.map((n) => n.id);
-      useCanvasStore.setState({ selectedNodeIds: ids });
+    onChange: ({ nodes: selectedNodes, edges: selectedEdges }) => {
+      const nodeIds = selectedNodes.map((n) => n.id);
+      const edgeIds = selectedEdges.map((e) => e.id);
+      useCanvasStore.setState({ selectedNodeIds: nodeIds, selectedEdgeIds: edgeIds });
     },
   });
 
-  // Keyboard: Delete/Backspace removes selected nodes
+  // Keyboard: Delete/Backspace removes selected nodes or edges
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        (e.key === 'Delete' || e.key === 'Backspace') &&
-        selectedNodeIds.length > 0
-      ) {
+      if (e.key === 'Delete' || e.key === 'Backspace') {
         const target = e.target as HTMLElement;
         if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
-        removeSelectedNodes();
+
+        if (selectedEdgeIds.length > 0) {
+          removeSelectedEdges();
+          return;
+        }
+        if (selectedNodeIds.length > 0) {
+          removeSelectedNodes();
+        }
       }
       if (e.key === 'Escape') {
         clearSelection();
@@ -75,7 +83,7 @@ export const WorkflowCanvas: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedNodeIds, removeSelectedNodes, clearSelection]);
+  }, [selectedNodeIds, selectedEdgeIds, removeSelectedNodes, removeSelectedEdges, clearSelection]);
 
   const handleConnect = useCallback(
     (params: Connection) => {
@@ -151,7 +159,6 @@ export const WorkflowCanvas: React.FC = () => {
         fitView
         snapToGrid
         snapGrid={[16, 16]}
-        deleteKeyCode={['Backspace', 'Delete']}
         multiSelectionKeyCode="Shift"
         selectionOnDrag
         panOnScroll
@@ -159,7 +166,7 @@ export const WorkflowCanvas: React.FC = () => {
         zoomOnPinch
         panOnDrag={[1, 2]}
         connectionRadius={30}
-        defaultEdgeOptions={{ type: 'default', animated: false }}
+        defaultEdgeOptions={{ type: 'default', animated: false, markerEnd: MarkerType.ArrowClosed }}
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         connectionLineComponent={ConnectionLine as any}
       >

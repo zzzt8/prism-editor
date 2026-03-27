@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import type { Connection, Workflow, WorkflowNode, ExecutionProgress } from '@prism/shared-types';
 import type { NodeDefinition } from '@prism/shared-types';
 import { createRegistry } from '@prism/node-definitions';
+import { localStorageAdapter } from '../storage';
 
 export interface CanvasNodeData extends Record<string, unknown> {
   label: string;
@@ -36,9 +37,13 @@ interface CanvasState {
   nodes: CanvasNode[];
   edges: CanvasEdge[];
   selectedNodeIds: string[];
+  selectedEdgeIds: string[];
   workflowMeta: { id: string; name: string; version: string };
   isDirty: boolean;
   viewport: { x: number; y: number; zoom: number };
+  _executionStatus: 'idle' | 'running' | 'done' | 'error' | 'cancelled';
+  _currentNodeId: string | null;
+  _executionAbort: (() => void) | null;
 
   addNode: (type: string, position: { x: number; y: number }) => void;
   removeNode: (id: string) => void;
@@ -55,11 +60,19 @@ interface CanvasState {
   setWorkflowMeta: (meta: { id: string; name: string; version: string }) => void;
   markDirty: () => void;
   markClean: () => void;
+  newWorkflow: () => void;
   toWorkflow: () => Workflow;
   loadWorkflow: (workflow: Workflow) => void;
+  saveWorkflow: (workflowName?: string) => Promise<void>;
+  loadWorkflowFromStore: (id: string) => Promise<void>;
+  exportWorkflowAsJson: () => Promise<void>;
+  importWorkflowFromFile: (file: File) => Promise<void>;
   removeSelectedNodes: () => void;
+  removeSelectedEdges: () => void;
   updateNodeExecution: (id: string, result?: Record<string, unknown>, error?: string) => void;
   executeWorkflow: () => Promise<{ status: 'done' | 'error' | 'cancelled'; error?: string }>;
+  cancelExecution: () => void;
+  clearExecution: () => void;
 }
 
 let nodeCounter = 0;
@@ -68,9 +81,13 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   nodes: [],
   edges: [],
   selectedNodeIds: [],
+  selectedEdgeIds: [],
   workflowMeta: { id: crypto.randomUUID(), name: 'Untitled Workflow', version: '1.0.0' },
   isDirty: false,
   viewport: { x: 0, y: 0, zoom: 1 },
+  _executionStatus: 'idle',
+  _currentNodeId: null,
+  _executionAbort: null,
 
   addNode(type, position) {
     const registry = createRegistry();
@@ -145,13 +162,6 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
           updatedNodes = updatedNodes.filter((n) => n.id !== change.id);
           selectedIds = selectedIds.filter((sid) => sid !== change.id);
         }
-        if (change.type === 'select') {
-          if (change.selected) {
-            if (!selectedIds.includes(change.id)) selectedIds.push(change.id);
-          } else {
-            selectedIds = selectedIds.filter((sid) => sid !== change.id);
-          }
-        }
       }
 
       return { nodes: updatedNodes, selectedNodeIds: selectedIds, isDirty: true };
@@ -161,12 +171,14 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   onEdgesChange(changes) {
     set((state) => {
       let updatedEdges = state.edges;
+      let selectedEdgeIds = [...state.selectedEdgeIds];
       for (const change of changes) {
         if (change.type === 'remove') {
           updatedEdges = updatedEdges.filter((e) => e.id !== change.id);
+          selectedEdgeIds = selectedEdgeIds.filter((eid) => eid !== change.id);
         }
       }
-      return { edges: updatedEdges, isDirty: true };
+      return { edges: updatedEdges, selectedEdgeIds, isDirty: true };
     });
   },
 
@@ -231,7 +243,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   },
 
   clearSelection() {
-    set({ selectedNodeIds: [] });
+    set({ selectedNodeIds: [], selectedEdgeIds: [] });
   },
 
   setViewport(viewport) {
@@ -249,6 +261,18 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
           !selectedNodeIds.includes(e.source) && !selectedNodeIds.includes(e.target)
       ),
       selectedNodeIds: [],
+      selectedEdgeIds: [],
+      isDirty: true,
+    }));
+  },
+
+  removeSelectedEdges() {
+    const { selectedEdgeIds } = get();
+    if (selectedEdgeIds.length === 0) return;
+
+    set((state) => ({
+      edges: state.edges.filter((e) => !selectedEdgeIds.includes(e.id)),
+      selectedEdgeIds: [],
       isDirty: true,
     }));
   },
@@ -265,6 +289,21 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
   setWorkflowMeta(meta) {
     set({ workflowMeta: meta });
+  },
+
+  newWorkflow() {
+    nodeCounter = 0;
+    set({
+      nodes: [],
+      edges: [],
+      selectedNodeIds: [],
+      selectedEdgeIds: [],
+      workflowMeta: { id: crypto.randomUUID(), name: 'Untitled Workflow', version: '1.0.0' },
+      isDirty: false,
+      _executionStatus: 'idle',
+      _currentNodeId: null,
+      _executionAbort: null,
+    });
   },
 
   markDirty() {
@@ -343,14 +382,86 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       workflowMeta: { id: workflow.id, name: workflow.name, version: workflow.version },
       selectedNodeIds: [],
       isDirty: false,
+      _executionStatus: 'idle',
+      _currentNodeId: null,
     });
+  },
+
+  async saveWorkflow(workflowName?: string): Promise<void> {
+    const { workflowMeta } = get();
+
+    const existing = await localStorageAdapter.load(workflowMeta.id).catch(() => null);
+    const createdAt = existing?.metadata?.createdAt ?? new Date().toISOString();
+
+    const workflow: Workflow = {
+      id: workflowMeta.id,
+      name: workflowName ?? workflowMeta.name,
+      version: workflowMeta.version,
+      nodes: get().nodes.map((n): WorkflowNode => ({
+        id: n.id,
+        type: n.data.nodeType,
+        position: n.position,
+        params: n.data.params,
+      })),
+      connections: get().edges.map((e): Connection => ({
+        id: e.id,
+        from: { nodeId: e.source, port: e.sourceHandle ?? 'out' },
+        to: { nodeId: e.target, port: e.targetHandle ?? 'in' },
+      })),
+      inputs: [],
+      outputs: [],
+      metadata: {
+        createdAt,
+        updatedAt: new Date().toISOString(),
+      },
+    };
+
+    await localStorageAdapter.save(workflow);
+    set({
+      workflowMeta: { ...workflowMeta, name: workflow.name },
+      isDirty: false,
+    });
+  },
+
+  async loadWorkflowFromStore(id: string): Promise<void> {
+    const workflow = await localStorageAdapter.load(id);
+    get().loadWorkflow(workflow);
+  },
+
+  async exportWorkflowAsJson(): Promise<void> {
+    const workflow = get().toWorkflow();
+    const blob = new Blob([JSON.stringify(workflow, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${workflow.name.replace(/[^a-z0-9\u4e00-\u9fa5]/gi, '-')}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  },
+
+  async importWorkflowFromFile(file: File): Promise<void> {
+    const { jsonFileAdapter } = await import('../storage');
+    const workflow = await jsonFileAdapter.importFromFile(file);
+    get().loadWorkflow(workflow);
   },
 
   async executeWorkflow() {
     const { nodes, workflowMeta, edges } = get();
-    if (nodes.length === 0) {
-      return { status: 'done' as const };
-    }
+    if (nodes.length === 0) return { status: 'done' as const };
+
+    // Clear previous execution results and set running state
+    set((state) => ({
+      nodes: state.nodes.map((n) => ({
+        ...n,
+        data: { ...n.data, executionResult: undefined, executionError: undefined },
+      })),
+      _executionStatus: 'running' as const,
+      _currentNodeId: null,
+    }));
+
+    // Create abort controller for cancellation
+    const controller = new AbortController();
+    set({ _executionAbort: () => controller.abort() });
 
     const { nodeExecutors } = await import('@prism/image-ops');
     const { WorkflowExecutor } = await import('@prism/workflow-core');
@@ -379,21 +490,44 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const progressCallback = (progress: ExecutionProgress) => {
       set((state) => ({
         nodes: state.nodes.map((n) => {
-          const nodeResult = progress.results.find((r: { nodeId: string }) => r.nodeId === n.id);
+          const nodeResult = progress.results.find((r) => r.nodeId === n.id);
           if (!nodeResult) return n;
           return {
             ...n,
             data: {
               ...n.data,
-              executionResult: nodeResult.outputs,
+              executionResult: nodeResult.status === 'done' ? nodeResult.outputs : undefined,
               executionError: nodeResult.status === 'error' ? nodeResult.error : undefined,
             },
           };
         }),
+        _currentNodeId: progress.currentNodeId ?? null,
       }));
     };
 
-    const result = await executor.execute(workflow, { onProgress: progressCallback });
-    return { status: result.status as 'done' | 'error' | 'cancelled', error: result.error };
+    const result = await executor.execute(workflow, {
+      signal: controller.signal,
+      onProgress: progressCallback,
+    });
+
+    const finalStatus = result.status as 'done' | 'error' | 'cancelled';
+    set({ _executionStatus: finalStatus, _currentNodeId: null, _executionAbort: null });
+    return { status: finalStatus, error: result.error };
+  },
+
+  cancelExecution() {
+    const abort = get()._executionAbort;
+    if (abort) abort();
+  },
+
+  clearExecution() {
+    set((state) => ({
+      nodes: state.nodes.map((n) => ({
+        ...n,
+        data: { ...n.data, executionResult: undefined, executionError: undefined },
+      })),
+      _executionStatus: 'idle' as const,
+      _currentNodeId: null,
+    }));
   },
 }));

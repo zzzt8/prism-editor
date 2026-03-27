@@ -4,20 +4,20 @@ import React from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
 import { NodePanel } from './components/NodePanel';
 import { WorkflowCanvas } from './components/canvas/WorkflowCanvas';
+import { ParamPanel } from './components/ParamPanel';
+import { WorkflowHeader } from './components/header/WorkflowHeader';
 
 function App() {
   return (
     <div className="dev-tool-layout">
-      <header className="dev-tool-header">
-        <h1 className="dev-tool-title">Prism Editor</h1>
-        <span className="dev-tool-subtitle">开发者工具</span>
-      </header>
+      <WorkflowHeader />
 
       <div className="dev-tool-body">
+        <NodePanel />
         <ReactFlowProvider>
-          <NodePanel />
           <WorkflowCanvas />
         </ReactFlowProvider>
+        <ParamPanel />
       </div>
     </div>
   );

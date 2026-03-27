@@ -8,10 +8,24 @@ lerna-debug.log*
 
 # Cursor AI
 .cursor/
-.augment/
+.amazonq/
 
 # Turborepo
 .turbo/
+**/.turbo/
+!/.turbo/gitignored
+
+# Build outputs
+**/dist/
+**/build/
+**/.next/
+**/out/
+
+# TypeScript build artifacts
+**/*.tsbuildinfo
+
+# Turbo build logs
+**/.turbo/turbo-build.log
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
