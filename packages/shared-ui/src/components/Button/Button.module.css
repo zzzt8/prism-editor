@@ -1,0 +1,126 @@
+/* Button Component Styles */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2, 8px);
+  border-radius: var(--radius-md, 6px);
+  border: 1px solid transparent;
+  font-family: var(--font-sans);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+  white-space: nowrap;
+  user-select: none;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--accent-primary, #6366F1);
+  outline-offset: 2px;
+}
+
+/* ── Sizes ─────────────────────────────────────────────────────────────── */
+
+.sm {
+  height: 28px;
+  padding: 0 var(--space-3, 12px);
+  font-size: var(--text-xs, 11px);
+  gap: var(--space-1, 4px);
+}
+
+.md {
+  height: 32px;
+  padding: 0 var(--space-4, 16px);
+  font-size: var(--text-sm, 13px);
+}
+
+.lg {
+  height: 40px;
+  padding: 0 var(--space-5, 20px);
+  font-size: var(--text-base, 14px);
+  gap: var(--space-3, 12px);
+}
+
+/* ── Variants ───────────────────────────────────────────────────────────── */
+
+.primary {
+  background: var(--accent-primary, #6366F1);
+  border-color: var(--accent-primary, #6366F1);
+  color: #ffffff;
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--accent-hover, #818CF8);
+  border-color: var(--accent-hover, #818CF8);
+}
+
+.secondary {
+  background: var(--bg-elevated, #1A1A1D);
+  border-color: var(--border-default, #3A3A3D);
+  color: var(--text-secondary, #A0A0A5);
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--bg-hover, #222225);
+  border-color: var(--border-strong, #4A4A4D);
+  color: var(--text-primary, #FFFFFF);
+}
+
+.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-secondary, #A0A0A5);
+}
+
+.ghost:hover:not(:disabled) {
+  background: var(--bg-hover, #222225);
+  color: var(--text-primary, #FFFFFF);
+}
+
+.danger {
+  background: transparent;
+  border-color: var(--status-error, #EF4444);
+  color: var(--status-error, #EF4444);
+}
+
+.danger:hover:not(:disabled) {
+  background: var(--status-error, #EF4444);
+  border-color: var(--status-error, #EF4444);
+  color: #ffffff;
+}
+
+/* ── States ─────────────────────────────────────────────────────────────── */
+
+.button:disabled,
+.loading {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Layout ─────────────────────────────────────────────────────────────── */
+
+.fullWidth {
+  width: 100%;
+}
+
+.icon,
+.trailingIcon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.label {
+  flex: 1;
+  text-align: center;
+}
+
+.spinner {
+  display: inline-flex;
+  align-items: center;
+}

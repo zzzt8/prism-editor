@@ -6,12 +6,15 @@
 // - Execution status indicator (idle / running / done / error)
 // - Execution result thumbnail when available
 // - Category-based visual accent via CSS classes
+// - Port type color indicators
 
-import React, { memo, useMemo, useState } from 'react';
-import { Handle, Position } from '@xyflow/react';
+import React, { type FC, useMemo, useState } from 'react';
+import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { useCanvasStore } from '../../store/canvasStore';
 import type { CanvasNodeData } from '../../store/canvasStore';
 import { NodePreviewModal } from '../canvas/NodePreviewModal';
+import { getPortTypeStyle, PORT_TYPE_COLORS } from '../../utils/portTypeStyles';
+import type { PortDataType } from '@prism/shared-types';
 
 const CATEGORY_COLORS: Record<string, string> = {
   input:    '#22c55e',
@@ -29,39 +32,35 @@ const CATEGORY_ICONS: Record<string, string> = {
   output:   '↑',
 };
 
-interface PrismNodeProps {
-  id: string;
+interface PrismNodeProps extends Omit<NodeProps, 'data'> {
   data: CanvasNodeData;
-  selected?: boolean;
 }
 
-export const PrismNode = memo(({ id, data, selected }: PrismNodeProps) => {
+type PrismNodeType = Node<CanvasNodeData, 'prismNode'>;
+
+export const PrismNode: FC<NodeProps<PrismNodeType>> = ({ id, data, selected }) => {
+  const params = data.params ?? {};
   const definition = data.definition;
+  const label = data.label ?? data.nodeType ?? 'Unknown';
   const currentNodeId = useCanvasStore((s) => s._currentNodeId);
 
   const categoryColor = definition
     ? (CATEGORY_COLORS[definition.category] ?? '#6b7280')
     : '#6b7280';
 
-  const categoryIcon = definition
-    ? (CATEGORY_ICONS[definition.category] ?? '◈')
-    : '◈';
-
-  // Build a map of param id → current value for display
   const paramSummary = useMemo(() => {
-    if (!definition) return [];
+    if (!definition?.params) return [];
     return definition.params
       .filter((p) => {
-        const val = data.params[p.id];
+        const val = params[p.id];
         return val !== undefined && val !== '' && val !== null && val !== p.default;
       })
       .map((p) => ({
         label: p.name,
-        value: data.params[p.id],
+        value: params[p.id],
       }));
-  }, [definition, data.params]);
+  }, [definition, params]);
 
-  // Determine execution status (idle / running / done / error)
   const execStatus = data.executionError
     ? 'error'
     : data.executionResult
@@ -70,7 +69,6 @@ export const PrismNode = memo(({ id, data, selected }: PrismNodeProps) => {
     ? 'running'
     : 'idle';
 
-  // Build thumbnail from execution result (image output port)
   const thumbnail = useMemo(() => {
     if (!data.executionResult) return null;
     const imageKey = definition?.outputs.find(
@@ -79,7 +77,7 @@ export const PrismNode = memo(({ id, data, selected }: PrismNodeProps) => {
     if (!imageKey) return null;
     const imgData = data.executionResult[imageKey] as ImageData | undefined;
     if (!imgData || !imgData.width || !imgData.height) return null;
-    if (imgData.width * imgData.height > 512 * 512) return null;
+    if (imgData.width * imgData.height >= 512 * 512) return null;
     try {
       const canvas = document.createElement('canvas');
       const scale = Math.min(80 / imgData.width, 40 / imgData.height, 1);
@@ -101,7 +99,6 @@ export const PrismNode = memo(({ id, data, selected }: PrismNodeProps) => {
     }
   }, [data.executionResult, definition]);
 
-  // Full-size image for preview modal
   const previewImage = useMemo(() => {
     if (!data.executionResult) return null;
     const imageKey = definition?.outputs.find(
@@ -138,8 +135,10 @@ export const PrismNode = memo(({ id, data, selected }: PrismNodeProps) => {
     <div
       className={`prism-node prism-node--${execStatus} ${selected ? 'selected' : ''}`}
       style={{
-        borderColor: selected ? categoryColor : undefined,
+        borderColor: selected ? categoryColor : '#3A3A3D',
         '--node-color': categoryColor,
+        minWidth: 160,
+        minHeight: 56,
       } as React.CSSProperties}
     >
       {/* Header */}
@@ -147,8 +146,8 @@ export const PrismNode = memo(({ id, data, selected }: PrismNodeProps) => {
         className="prism-node-header"
         style={{ backgroundColor: categoryColor }}
       >
-        <span className="prism-node-icon">{categoryIcon}</span>
-        <span className="prism-node-label">{data.label}</span>
+        <span className="prism-node-icon" style={{ background: 'rgba(255,255,255,0.3)', borderRadius: '50%' }} />
+        <span className="prism-node-label">{label}</span>
         {execStatus === 'done' && (
           <span className="prism-node-status prism-node-status--done" title="执行成功">✓</span>
         )}
@@ -162,17 +161,21 @@ export const PrismNode = memo(({ id, data, selected }: PrismNodeProps) => {
 
       {/* Input handles — left side */}
       <div className="prism-node-ports prism-node-ports--input">
-        {definition?.inputs.map((input, idx) => (
-          <Handle
-            key={input.id}
-            type="target"
-            position={Position.Left}
-            id={input.id}
-            title={input.name}
-            className="prism-handle prism-handle--input"
-            style={{ top: `${14 + idx * 18}px` }}
-          />
-        ))}
+        {(definition?.inputs ?? []).map((input) => {
+          const portColor = PORT_TYPE_COLORS[input.dataType as PortDataType] ?? '#6b7280';
+          const typeInfo = getPortTypeStyle(input.dataType as PortDataType);
+          return (
+            <Handle
+              key={input.id}
+              type="target"
+              position={Position.Left}
+              id={input.id}
+              title={`${input.name} [${typeInfo.shortLabel}]`}
+              className="prism-handle prism-handle--input"
+              style={{ backgroundColor: portColor, borderColor: portColor }}
+            />
+          );
+        })}
       </div>
 
       {/* Body */}
@@ -211,8 +214,8 @@ export const PrismNode = memo(({ id, data, selected }: PrismNodeProps) => {
         {showPreview && previewImage && (
           <NodePreviewModal
             imageUrl={previewImage}
-            nodeLabel={data.label}
-            portName={definition?.outputs.find((o) => o.type === 'image' || o.type === 'mask')?.name ?? '输出'}
+            nodeLabel={label}
+            portName={(definition?.outputs ?? []).find((o) => o.type === 'image' || o.type === 'mask')?.name ?? '输出'}
             onClose={() => setShowPreview(false)}
           />
         )}
@@ -225,28 +228,31 @@ export const PrismNode = memo(({ id, data, selected }: PrismNodeProps) => {
                 : definition.description}
             </span>
           ) : (
-            <span className="prism-node-type-tag">{data.nodeType}</span>
+            <span className="prism-node-type-tag">{data.nodeType ?? '?'}</span>
           )}
         </div>
       </div>
 
       {/* Output handles — right side */}
       <div className="prism-node-ports prism-node-ports--output">
-        {definition?.outputs.map((output, idx) => (
-          <Handle
-            key={output.id}
-            type="source"
-            position={Position.Right}
-            id={output.id}
-            title={output.name}
-            className="prism-handle prism-handle--output"
-            style={{ top: `${14 + idx * 18}px` }}
-          />
-        ))}
+        {(definition?.outputs ?? []).map((output) => {
+          const portColor = PORT_TYPE_COLORS[output.dataType as PortDataType] ?? '#6b7280';
+          const typeInfo = getPortTypeStyle(output.dataType as PortDataType);
+          return (
+            <Handle
+              key={output.id}
+              type="source"
+              position={Position.Right}
+              id={output.id}
+              title={`${output.name} [${typeInfo.shortLabel}]`}
+              className="prism-handle prism-handle--output"
+              style={{ backgroundColor: portColor, borderColor: portColor }}
+            />
+          );
+        })}
       </div>
     </div>
   );
-});
+};
 
 PrismNode.displayName = 'PrismNode';
-

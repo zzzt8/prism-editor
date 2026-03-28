@@ -1,9 +1,10 @@
 // WorkflowCanvas - React Flow canvas wrapper
 
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import {
   ReactFlow,
   Background,
+  BackgroundVariant,
   Controls,
   MiniMap,
   Connection,
@@ -11,15 +12,19 @@ import {
   useReactFlow,
   useOnSelectionChange,
   MarkerType,
+  applyNodeChanges,
+  applyEdgeChanges,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { useCanvasStore } from '../../store/canvasStore';
+import { useCanvasStore, type ConnectionValidation } from '../../store/canvasStore';
 import { PrismNode } from '../nodes/PrismNode';
 import { PrismEdge } from '../edges/PrismEdge';
 import { ConnectionLine } from '../edges/ConnectionLine';
 import { CanvasToolbar } from './CanvasToolbar';
+import { NodeSearchModal } from './NodeSearchModal';
 
-const nodeTypes = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const nodeTypes: Record<string, any> = {
   prismNode: PrismNode,
 };
 
@@ -27,12 +32,36 @@ const edgeTypes = {
   default: PrismEdge,
 };
 
+class CanvasErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: string }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: '' };
+  }
+  static getDerivedStateFromError(e: Error) {
+    return { hasError: true, error: e.message + '\n' + (e.stack ?? '') };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 20, color: '#ff6b6b', backgroundColor: '#1a0000', fontFamily: 'monospace', fontSize: 12 }}>
+          <h3>Canvas Error!</h3>
+          <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{this.state.error}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export const WorkflowCanvas: React.FC = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const nodes = useCanvasStore((s) => s.nodes);
   const edges = useCanvasStore((s) => s.edges);
-  const onNodesChange = useCanvasStore((s) => s.onNodesChange);
-  const onEdgesChange = useCanvasStore((s) => s.onEdgesChange);
-  const onConnect = useCanvasStore((s) => s.onConnect);
+  const onConnectStore = useCanvasStore((s) => s.onConnect);
   const addNode = useCanvasStore((s) => s.addNode);
   const selectNode = useCanvasStore((s) => s.selectNode);
   const clearSelection = useCanvasStore((s) => s.clearSelection);
@@ -41,6 +70,31 @@ export const WorkflowCanvas: React.FC = () => {
   const removeSelectedEdges = useCanvasStore((s) => s.removeSelectedEdges);
   const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
   const selectedEdgeIds = useCanvasStore((s) => s.selectedEdgeIds);
+
+  // ✅ Per React Flow docs: use applyNodeChanges/applyEdgeChanges to merge ALL change types
+  // (position, dimensions, select, remove, etc.). This is REQUIRED for React Flow internals.
+  const onNodesChange = useCallback(
+    (changes) => {
+      useCanvasStore.setState((state) => ({
+        nodes: applyNodeChanges(changes, state.nodes),
+        isDirty: true,
+      }));
+    },
+    []
+  );
+
+  const onEdgesChange = useCallback(
+    (changes) => {
+      useCanvasStore.setState((state) => ({
+        edges: applyEdgeChanges(changes, state.edges),
+        isDirty: true,
+      }));
+    },
+    []
+  );
+
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const reactFlowInstance = useReactFlow();
 
@@ -85,20 +139,29 @@ export const WorkflowCanvas: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedNodeIds, selectedEdgeIds, removeSelectedNodes, removeSelectedEdges, clearSelection]);
 
+  // 调试日志：打印 nodes 全量数据
+  useEffect(() => {
+    console.log('[DBG WorkflowCanvas] nodes:', JSON.stringify(nodes.map(n => ({
+      id: n.id, type: n.type, position: n.position,
+      label: n.data.label, nodeType: n.data.nodeType,
+      hasDefinition: !!n.data.definition,
+    })), null, 2));
+  }, [nodes]);
+
   const handleConnect = useCallback(
     (params: Connection) => {
-      const success = onConnect({
+      const validation: ConnectionValidation = onConnectStore({
         id: '',
         from: { nodeId: params.source, port: params.sourceHandle ?? 'out' },
         to: { nodeId: params.target, port: params.targetHandle ?? 'in' },
       });
 
-      if (!success) {
-        // Connection was rejected by validation (type mismatch or duplicate)
-        // React Flow will still show the temporary line — it will disappear automatically
+      if (!validation.valid) {
+        setValidationError(validation.reason ?? 'Connection rejected');
+        setTimeout(() => setValidationError(null), 3000);
       }
     },
-    [onConnect]
+    [onConnectStore]
   );
 
   const handleDragOver = useCallback((event: React.DragEvent) => {
@@ -106,43 +169,57 @@ export const WorkflowCanvas: React.FC = () => {
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
+  // 诊断：打印 drop 时的坐标信息
   const handleDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
       const nodeType = event.dataTransfer.getData('application/prism-node-type');
-      if (!nodeType) return;
+      if (!nodeType) {
+        console.warn('[DBG Drop] No nodeType in dataTransfer!');
+        return;
+      }
 
-      const bounds = (event.currentTarget as HTMLElement).getBoundingClientRect();
-      // Convert screen coordinates to flow coordinates
-      const position = reactFlowInstance.screenToFlowPosition({
-        x: event.clientX - bounds.left,
-        y: event.clientY - bounds.top,
+      // 诊断坐标
+      const screenPos = { x: event.clientX, y: event.clientY };
+      const flowPos = reactFlowInstance.screenToFlowPosition(screenPos);
+      console.log('[DBG Drop]', {
+        screenPos,
+        flowPos,
+        'position - 80,-20': { x: flowPos.x - 80, y: flowPos.y - 20 },
+        nodeType,
       });
 
-      addNode(nodeType, { x: position.x - 80, y: position.y - 20 });
+      // 临时：固定位置测试
+      const finalPos = { x: 300, y: 200 };
+      console.log('[DBG Drop] Using FIXED position:', finalPos);
+      addNode(nodeType, finalPos);
     },
     [reactFlowInstance, addNode]
   );
 
   const handleNodeClick: NodeMouseHandler = useCallback(
     (_event, node) => {
-      // Shift+click for multi-select is handled by React Flow internally
-      // We use selectionOnDrag + multiSelectionKeyCode for box multi-select
-      // Single click: selectNode replaces selection
       selectNode(node.id);
     },
     [selectNode]
   );
 
-  // Mark selected state on nodes for PrismNode styling
-  const nodesWithSelection = nodes.map((n) => ({
-    ...n,
-    selected: selectedNodeIds.includes(n.id),
-  }));
+  const handlePaneClick = useCallback(
+    () => {
+      clearSelection();
+    },
+    [clearSelection]
+  );
+
+  // selected state is managed by React Flow via applyNodeChanges — do NOT override manually
+  const nodesWithSelection = nodes;
 
   return (
-    <div className="workflow-canvas-container">
+    <CanvasErrorBoundary>
+    <div ref={containerRef} className="workflow-canvas-container">
       <ReactFlow
+        className="dark"
+        style={{ width: '100%', height: '100%' }}
         nodes={nodesWithSelection}
         edges={edges}
         onNodesChange={onNodesChange}
@@ -151,12 +228,11 @@ export const WorkflowCanvas: React.FC = () => {
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         onNodeClick={handleNodeClick}
-        onPaneClick={() => clearSelection()}
+        onPaneClick={handlePaneClick}
+        onNodeDoubleClick={() => setSearchOpen(true)}
         onMoveEnd={onMoveEnd}
         nodeTypes={nodeTypes}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        edgeTypes={edgeTypes as any}
-        fitView
+        edgeTypes={edgeTypes}
         snapToGrid
         snapGrid={[16, 16]}
         multiSelectionKeyCode="Shift"
@@ -164,13 +240,17 @@ export const WorkflowCanvas: React.FC = () => {
         panOnScroll
         zoomOnScroll
         zoomOnPinch
-        panOnDrag={[1, 2]}
+        panOnDrag
         connectionRadius={30}
         defaultEdgeOptions={{ type: 'default', animated: false, markerEnd: MarkerType.ArrowClosed }}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        connectionLineComponent={ConnectionLine as any}
+        connectionLineComponent={ConnectionLine}
       >
-        <Background gap={16} size={1} color="#2a2a35" />
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={20}
+          size={1.5}
+          color="var(--canvas-grid-color, #2A2A2D)"
+        />
         <Controls position="bottom-right" showInteractive={false} />
         <MiniMap
           position="bottom-left"
@@ -181,6 +261,35 @@ export const WorkflowCanvas: React.FC = () => {
         />
       </ReactFlow>
       <CanvasToolbar />
+      {searchOpen && (
+        <NodeSearchModal
+          onClose={() => setSearchOpen(false)}
+        />
+      )}
+      {validationError && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 60,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: '#ef4444',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: 6,
+            fontSize: 13,
+            fontWeight: 500,
+            zIndex: 1000,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            maxWidth: 300,
+            textAlign: 'center',
+            animation: 'fadeIn 0.15s ease-out',
+          }}
+        >
+          {validationError}
+        </div>
+      )}
     </div>
+    </CanvasErrorBoundary>
   );
 };

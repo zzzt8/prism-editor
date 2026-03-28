@@ -60,11 +60,11 @@ export async function loadCrossOriginImage(
     }
 
     // Check CORS headers before touching the canvas — fail fast.
-    if (!validateCorsHeaders(response)) {
-      const origin = typeof window !== 'undefined' ? window.location.origin : '<unknown>';
+    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '<unknown>';
+    if (!validateCorsHeaders(response, currentOrigin)) {
       throw new Error(
         `CORS policy denied: server must include 'Access-Control-Allow-Origin: *' ` +
-        `or 'Access-Control-Allow-Origin: ${origin}' for ${url}`
+        `or 'Access-Control-Allow-Origin: ${currentOrigin}' for ${url}`
       );
     }
   }
@@ -114,6 +114,8 @@ export async function loadCrossOriginImage(
         width: img.width,
         height: img.height,
         mimeType: inferMimeType(url),
+        // Cancel any in-flight request and release the image element.
+        // No blob URL to revoke since this is a direct network load, not a blob/data URL.
         cleanup: () => {
           img.src = '';
         },
@@ -190,9 +192,7 @@ export async function loadImageFromBlob(blob: Blob): Promise<ImageLoadResult> {
   });
 }
 
-export function validateCorsHeaders(response: Response, origin = window.location.origin): boolean {
+export function validateCorsHeaders(response: Response, origin: string): boolean {
   const allow = response.headers.get('Access-Control-Allow-Origin');
-  // Pass: wildcard OR exact origin match
-  // Fail: null (no header), or a different specific origin
   return allow === '*' || allow === origin;
 }

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@prism/shared-types": "workspace:*",
+    "@prism/shared-ui": "workspace:*",
     "@prism/workflow-core": "workspace:*",
     "@prism/node-definitions": "workspace:*",
     "@prism/image-ops": "workspace:*",

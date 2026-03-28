@@ -10,7 +10,13 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build": "tsc",
+    "test": "vitest run",
     "clean": "rm -rf dist"
   },
-  "dependencies": {}
+  "dependencies": {
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@xyflow/react": "^12.0.0"
+  }
 }

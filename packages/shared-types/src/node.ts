@@ -1,5 +1,7 @@
 // NodeDefinition interface (ports, params, categories)
 
+import type { PortDataType } from './port-data-types';
+
 // Canonical port type union — used for both port definitions and param definitions.
 // Only includes types that CAN be wired between nodes.
 export type PortType = 'image' | 'mask' | 'number' | 'string' | 'boolean';
@@ -10,6 +12,8 @@ export interface PortDefinition {
   id: string;
   name: string;
   type: PortDefinitionType;
+  /** The data type of the port, used for connection validation and type conversion. */
+  dataType: PortDataType;
   required: boolean;
   description?: string;
 }

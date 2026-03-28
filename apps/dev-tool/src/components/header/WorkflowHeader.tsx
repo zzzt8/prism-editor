@@ -7,7 +7,19 @@ import { SaveDialog } from './SaveDialog';
 import { OpenDialog } from './OpenDialog';
 import { PublishDialog } from './PublishDialog';
 
-export const WorkflowHeader: React.FC = () => {
+interface WorkflowHeaderProps {
+  leftVisible?: boolean;
+  onToggleLeft?: () => void;
+  rightVisible?: boolean;
+  onToggleRight?: () => void;
+}
+
+export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
+  leftVisible = true,
+  onToggleLeft,
+  rightVisible = true,
+  onToggleRight,
+}) => {
   const workflowMeta = useCanvasStore((s) => s.workflowMeta);
   const isDirty = useCanvasStore((s) => s.isDirty);
   const nodes = useCanvasStore((s) => s.nodes);
@@ -105,6 +117,35 @@ export const WorkflowHeader: React.FC = () => {
         </div>
 
         <div className="dev-tool-header-actions">
+          {onToggleLeft && (
+            <button
+              className={`header-panel-toggle ${leftVisible ? 'header-panel-toggle--active' : ''}`}
+              onClick={onToggleLeft}
+              title={leftVisible ? '隐藏节点面板' : '显示节点面板'}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <path d="M9 3v18"/>
+              </svg>
+              <span>节点</span>
+            </button>
+          )}
+
+          {onToggleRight && (
+            <button
+              className={`header-panel-toggle ${rightVisible ? 'header-panel-toggle--active' : ''}`}
+              onClick={onToggleRight}
+              title={rightVisible ? '隐藏属性面板' : '显示属性面板'}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <path d="M15 3v18"/>
+              </svg>
+              <span>属性</span>
+            </button>
+          )}
+
+          <div className="header-divider" />
           <button className="header-btn" onClick={handleNew} title="新建工作流">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>

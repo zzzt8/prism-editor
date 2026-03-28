@@ -1,0 +1,21 @@
+/**
+ * Design Tokens — CSS Variable Imports
+ *
+ * @package @prism/shared-ui
+ *
+ * Import this file in your app's root to register all design tokens
+ * as CSS custom properties on `:root`.
+ *
+ * @example
+ * ```tsx
+ * import '@prism/shared-ui/styles/tokens.css';
+ * ```
+ *
+ * Token values are defined in:
+ *   src/tokens/colors.css
+ *   src/tokens/spacing.css
+ *   src/tokens/typography.css
+ */
+@import '../tokens/colors.css';
+@import '../tokens/spacing.css';
+@import '../tokens/typography.css';

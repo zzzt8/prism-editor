@@ -1,0 +1,98 @@
+/* Badge Component Styles */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full, 9999px);
+  border: 1px solid transparent;
+  font-family: var(--font-sans);
+  font-weight: var(--weight-medium, 500);
+  white-space: nowrap;
+  user-select: none;
+  letter-spacing: var(--tracking-wide, 0.05em);
+}
+
+/* ── Sizes ─────────────────────────────────────────────────────────────── */
+
+.sm {
+  height: 18px;
+  padding: 0 var(--space-2, 8px);
+  font-size: 10px;
+}
+
+.md {
+  height: 22px;
+  padding: 0 var(--space-3, 12px);
+  font-size: var(--text-xs, 11px);
+}
+
+/* ── Outline Variants ──────────────────────────────────────────────── */
+
+.outline.default {
+  color: var(--text-secondary, #A0A0A5);
+  border-color: var(--border-default, #3A3A3D);
+  background: transparent;
+}
+
+.outline.success {
+  color: var(--status-success, #22C55E);
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.outline.warning {
+  color: var(--status-warning, #F59E0B);
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.outline.error {
+  color: var(--status-error, #EF4444);
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.outline.info {
+  color: var(--status-info, #3B82F6);
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.outline.accent {
+  color: var(--accent-primary, #6366F1);
+  border-color: rgba(99, 102, 241, 0.4);
+  background: var(--accent-muted, rgba(99, 102, 241, 0.15));
+}
+
+/* ── Filled Variants ───────────────────────────────────────────────── */
+
+.filled.success {
+  color: #ffffff;
+  background: var(--status-success, #22C55E);
+  border-color: transparent;
+}
+
+.filled.warning {
+  color: #ffffff;
+  background: var(--status-warning, #F59E0B);
+  border-color: transparent;
+}
+
+.filled.error {
+  color: #ffffff;
+  background: var(--status-error, #EF4444);
+  border-color: transparent;
+}
+
+.filled.info {
+  color: #ffffff;
+  background: var(--status-info, #3B82F6);
+  border-color: transparent;
+}
+
+.filled.accent {
+  color: #ffffff;
+  background: var(--accent-primary, #6366F1);
+  border-color: transparent;
+}

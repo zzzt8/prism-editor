@@ -1,0 +1,68 @@
+/**
+ * Design Tokens — Spacing Variables
+ *
+ * @package @prism/shared-ui
+ *
+ * Spacing scale based on 4px grid.
+ *
+ * ## Spacing Scale
+ *
+ * | Token    | Value | Usage                     |
+ * |----------|-------|---------------------------|
+ * | --space-1 | 4px   | Tight internal spacing     |
+ * | --space-2 | 8px   | Default internal spacing   |
+ * | --space-3 | 12px  | Comfortable spacing        |
+ * | --space-4 | 16px  | Section padding            |
+ * | --space-5 | 20px  | Card padding               |
+ * | --space-6 | 24px  | Large gaps                 |
+ * | --space-8 | 32px  | Panel padding              |
+ * | --space-10| 40px  | Section separators         |
+ * | --space-12| 48px  | Page margins               |
+ *
+ * ## Border Radius
+ *
+ * | Token        | Value | Usage                     |
+ * |--------------|-------|---------------------------|
+ * | --radius-sm  | 4px   | Badges, chips             |
+ * | --radius-md  | 6px   | Buttons, inputs           |
+ * | --radius-lg  | 8px   | Cards, panels             |
+ * | --radius-xl  | 12px  | Modals, dialogs           |
+ * | --radius-full| 9999px| Pills, toggle tracks      |
+ *
+ * ## Component Dimensions
+ *
+ * | Token           | Value  | Usage                     |
+ * |-----------------|--------|---------------------------|
+ * | --panel-width-sm| 200px  | Node panel (collapsed)   |
+ * | --panel-width-md| 240px  | Node panel (default)     |
+ * | --panel-width-lg| 320px  | Param panel (default)   |
+ * | --header-height | 48px   | Top bar height           |
+ * | --input-height  | 32px   | Standard input height    |
+ */
+
+:root {
+  /* Spacing */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Border Radius */
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;
+  --radius-xl:   12px;
+  --radius-full:  9999px;
+
+  /* Component Dimensions */
+  --panel-width-sm: 200px;
+  --panel-width-md: 240px;
+  --panel-width-lg: 320px;
+  --header-height:   48px;
+  --input-height:    32px;
+}

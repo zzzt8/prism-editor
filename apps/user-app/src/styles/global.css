@@ -1,6 +1,6 @@
 /* === Base (inherit from app-level vars) === */
 :root {
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
   line-height: 1.5;
   font-weight: 400;
   color-scheme: dark;
@@ -544,6 +544,18 @@ body { min-height: 100vh; background: var(--ua-bg); }
   cursor: pointer;
 }
 
+.ua-param-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ua-param-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
 .ua-param-slider-value {
   font-size: 11px;
   font-family: 'SF Mono', monospace;
@@ -1049,6 +1061,33 @@ body { min-height: 100vh; background: var(--ua-bg); }
   position: fixed;
   inset: 0;
   z-index: 99;
+}
+
+/* ── Image Lightbox ─────────────────────────────────────────────────────── */
+.ua-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: ua-fade-in 0.15s ease;
+  cursor: zoom-out;
+}
+
+.ua-lightbox-img {
+  max-width: 95vw;
+  max-height: 95vh;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+  animation: ua-lightbox-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes ua-lightbox-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
 /* Result summary error variant */

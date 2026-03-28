@@ -1,0 +1,529 @@
+/**
+ * OutputSection — Results and outputs display for the user workflow run page.
+ *
+ * @package @prism/user-app
+ *
+ * Renders:
+ * - Empty state ("填写参数后点击执行")
+ * - Running progress bar
+ * - Done/error summary badge
+ * - Grid of OutputPreview cards
+ * - ZIP pack bar (when ≥ 2 outputs)
+ *
+ * ## Output card structure
+ *
+ * ```
+ * ┌─────────────────────────────┐
+ * │ 输出名称        说明          │
+ * ├─────────────────────────────┤
+ * │     [预览大图]               │
+ * ├─────────────────────────────┤
+ * │ [下载原图]                  │
+ * │ 多尺寸下载：512/1024/2048   │
+ * └─────────────────────────────┘
+ * ```
+ */
+
+import React, { useState, useEffect } from 'react';
+import type { PublishedOutput, ExecutionProgress } from '@prism/shared-types';
+import {
+  downloadSingleImage,
+  downloadMultiSize,
+  downloadZipPack,
+  extractImageData,
+} from '../../utils/download';
+
+// ── MIME → file extension map ────────────────────────────────────────────────
+
+function mimeToExt(mime: string): string {
+  const MIME_EXT: Record<string, string> = {
+    'image/png': 'png',
+    'image/jpeg': 'jpg',
+    'image/webp': 'webp',
+    'image/gif': 'gif',
+  };
+  return MIME_EXT[mime] ?? 'png';
+}
+
+// ── Progress display ─────────────────────────────────────────────────────────
+
+function ProgressDisplay({ progress }: { progress?: ExecutionProgress }) {
+  if (progress?.status === 'error') {
+    return (
+      <div className="ua-result-error">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+        <span>执行出错</span>
+      </div>
+    );
+  }
+
+  if (!progress) {
+    return (
+      <div className="ua-result-running">
+        <div className="ua-spinner" />
+        <span>正在执行…</span>
+      </div>
+    );
+  }
+
+  const { totalNodes, completedNodes } = progress;
+  const pct = totalNodes > 0 ? Math.round((completedNodes / totalNodes) * 100) : 0;
+
+  return (
+    <div className="ua-progress">
+      <div className="ua-progress-header">
+        <div className="ua-spinner ua-spinner--accent" />
+        <span className="ua-progress-label">正在执行</span>
+        <span className="ua-progress-count">{completedNodes}/{totalNodes} 节点</span>
+      </div>
+      <div className="ua-progress-bar">
+        <div className="ua-progress-fill" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="ua-progress-pct">{pct}%</span>
+    </div>
+  );
+}
+
+// ── Result summary ────────────────────────────────────────────────────────────
+
+function ResultSummary({ progress }: { progress?: ExecutionProgress }) {
+  const totalMs = (() => {
+    if (!progress?.results?.length) return null;
+    const first = progress.results[0];
+    const last = progress.results[progress.results.length - 1];
+    if (first?.startTime && last?.endTime) {
+      return last.endTime - first.startTime;
+    }
+    return null;
+  })();
+
+  const nodeCount = progress?.results?.length ?? 0;
+  const hasNodeErrors = progress?.results?.some((r) => r.status === 'error') ?? false;
+  const isSuccess = progress?.status === 'done' && !hasNodeErrors;
+
+  if (isSuccess) {
+    return (
+      <div className="ua-result-summary">
+        <div className="ua-result-summary-check">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+        <div className="ua-result-summary-text">
+          <span className="ua-result-summary-title">执行完成</span>
+          {totalMs !== null && (
+            <span className="ua-result-summary-meta">耗时 {totalMs}ms · {nodeCount} 个节点</span>
+          )}
+          {totalMs === null && nodeCount > 0 && (
+            <span className="ua-result-summary-meta">{nodeCount} 个节点</span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="ua-result-summary ua-result-summary--error">
+      <div className="ua-result-summary-check">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </div>
+      <div className="ua-result-summary-text">
+        <span className="ua-result-summary-title">执行出错</span>
+        {hasNodeErrors && (
+          <span className="ua-result-summary-meta">
+            {progress!.results.filter((r) => r.status === 'error').length} 个节点执行失败
+          </span>
+        )}
+        {progress?.error && (
+          <span className="ua-result-summary-meta">{progress.error}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── ZIP pack bar ──────────────────────────────────────────────────────────────
+
+interface ZipPackBarProps {
+  outputs: PublishedOutput[];
+  results: Record<string, unknown>;
+  workflowName: string;
+}
+
+function ZipPackBar({ outputs, results, workflowName }: ZipPackBarProps) {
+  const [downloading, setDownloading] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [zipMsg, setZipMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  useEffect(() => {
+    if (!zipMsg) return;
+    const t = setTimeout(() => setZipMsg(null), 3000);
+    return () => clearTimeout(t);
+  }, [zipMsg]);
+
+  const validItems = outputs
+    .map((out) => ({
+      resultValue: results[out.id],
+      filename: `${workflowName}_${out.name.replace(/[^a-z0-9\u4e00-\u9fa5]/gi, '_')}`,
+    }))
+    .filter((item) => extractImageData(item.resultValue) !== null);
+
+  const handlePackAll = async () => {
+    setDownloading(true);
+    setZipMsg(null);
+    try {
+      await downloadZipPack(validItems, `${workflowName}_outputs`);
+      setZipMsg({ type: 'success', text: 'ZIP 下载成功' });
+    } catch (err) {
+      setZipMsg({ type: 'error', text: `打包失败：${err instanceof Error ? err.message : String(err)}` });
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  if (validItems.length === 0) return null;
+
+  return (
+    <div className="ua-zip-bar">
+      <div className="ua-zip-bar-info">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+        <span>{validItems.length} 个输出文件</span>
+      </div>
+
+      <div className="ua-zip-bar-actions">
+        <div className="ua-zip-menu-wrap">
+          <button
+            className="ua-zip-action-btn"
+            onClick={() => setShowMenu((v) => !v)}
+            disabled={downloading}
+          >
+            {downloading ? (
+              <><span className="ua-spinner ua-spinner--sm" /> 打包中…</>
+            ) : (
+              <>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="2" y="7" width="20" height="14" rx="2" />
+                  <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+                </svg>
+                打包下载 ▾
+              </>
+            )}
+          </button>
+
+          {showMenu && (
+            <div className="ua-zip-dropdown">
+              <button
+                className="ua-zip-dropdown-item"
+                onClick={handlePackAll}
+                disabled={downloading}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="2" y="7" width="20" height="14" rx="2" />
+                  <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+                </svg>
+                下载所有原图（打包 ZIP）
+              </button>
+              <div className="ua-zip-dropdown-sep" />
+              <button
+                className="ua-zip-dropdown-item ua-zip-dropdown-item--muted"
+                disabled
+              >
+                多尺寸打包（512/1024/2048w）
+              </button>
+            </div>
+          )}
+        </div>
+
+        {showMenu && (
+          <div className="ua-zip-backdrop" onClick={() => setShowMenu(false)} />
+        )}
+      </div>
+
+      {zipMsg && (
+        <div className={`ua-download-msg ua-download-msg--${zipMsg.type}`}>
+          {zipMsg.type === 'success' ? (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          ) : (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          )}
+          {zipMsg.text}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Output preview card ───────────────────────────────────────────────────────
+
+interface OutputPreviewProps {
+  out: PublishedOutput;
+  resultValue: unknown;
+  workflowName: string;
+}
+
+function OutputPreview({ out, resultValue, workflowName }: OutputPreviewProps) {
+  const [imgError, setImgError] = useState(false);
+  const [multiDownloading, setMultiDownloading] = useState(false);
+  const [singleDownloading, setSingleDownloading] = useState(false);
+  const [downloadMsg, setDownloadMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!downloadMsg) return;
+    const t = setTimeout(() => setDownloadMsg(null), 3000);
+    return () => clearTimeout(t);
+  }, [downloadMsg]);
+
+  if (resultValue == null) return null;
+
+  const rv = resultValue as Record<string, unknown>;
+  const effectiveRv: Record<string, unknown> =
+    rv && typeof rv === 'object' && 'result' in rv && typeof rv.result === 'object'
+      ? (rv.result as Record<string, unknown>)
+      : rv;
+
+  const imageUrl: string | null =
+    (typeof effectiveRv.previewUrl === 'string' &&
+      (effectiveRv.previewUrl.startsWith('data:') || effectiveRv.previewUrl.startsWith('blob:')))
+      ? effectiveRv.previewUrl
+      : (typeof effectiveRv.dataUrl === 'string' && effectiveRv.dataUrl.startsWith('data:'))
+      ? effectiveRv.dataUrl
+      : null;
+
+  const mimeType = typeof effectiveRv.mimeType === 'string' ? effectiveRv.mimeType : 'image/png';
+  const ext = mimeToExt(mimeType);
+
+  const nodeError = typeof resultValue === 'object' && resultValue !== null && 'error' in resultValue
+    ? String((resultValue as Record<string, unknown>).error)
+    : undefined;
+
+  const baseFilename = `${workflowName}_${out.name.replace(/[^a-z0-9\u4e00-\u9fa5]/gi, '_')}`;
+
+  const handleSingleDownload = async () => {
+    setSingleDownloading(true);
+    try {
+      await downloadSingleImage(resultValue, baseFilename);
+      setDownloadMsg({ type: 'success', text: '下载完成' });
+    } catch (err) {
+      setDownloadMsg({ type: 'error', text: `下载失败：${err instanceof Error ? err.message : String(err)}` });
+    } finally {
+      setSingleDownloading(false);
+    }
+  };
+
+  const handleMultiSizeDownload = async () => {
+    setMultiDownloading(true);
+    try {
+      await downloadMultiSize(resultValue, baseFilename, [512, 1024, 2048]);
+      setDownloadMsg({ type: 'success', text: `已触发 ${3} 个尺寸下载` });
+    } catch (err) {
+      setDownloadMsg({ type: 'error', text: `下载失败：${err instanceof Error ? err.message : String(err)}` });
+    } finally {
+      setMultiDownloading(false);
+    }
+  };
+
+  if (imageUrl && !imgError) {
+    return (
+      <>
+        {/* Lightbox */}
+        {lightboxSrc && (
+          <div
+            className="ua-lightbox"
+            onClick={() => setLightboxSrc(null)}
+          >
+            <img
+              src={lightboxSrc}
+              alt={out.name}
+              className="ua-lightbox-img"
+            />
+          </div>
+        )}
+
+        <div className="ua-output-group">
+          <div className="ua-output-header">
+            <span className="ua-output-name">{out.name}</span>
+            {out.description && <span className="ua-output-desc">{out.description}</span>}
+          </div>
+          <div className="ua-output-image-wrap">
+            <img
+              src={imageUrl}
+              alt={out.name}
+              className="ua-output-image"
+              onClick={() => setLightboxSrc(imageUrl)}
+              style={{ cursor: 'zoom-in' }}
+              onError={() => setImgError(true)}
+            />
+          </div>
+          {nodeError && (
+          <div className="ua-output-error">{nodeError}</div>
+        )}
+
+        <div className="ua-download-panel">
+          <button
+            className="ua-download-btn"
+            onClick={handleSingleDownload}
+            disabled={singleDownloading}
+            title={`下载 ${ext.toUpperCase()} 原图`}
+          >
+            {singleDownloading ? (
+              <><span className="ua-spinner ua-spinner--sm" /> 生成中…</>
+            ) : (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                下载原图
+              </>
+            )}
+          </button>
+
+          <div className="ua-download-sizes">
+            <span className="ua-download-sizes-label">多尺寸下载：</span>
+            <div className="ua-download-size-btns">
+              {multiDownloading ? (
+                <span className="ua-download-sizes-loading">
+                  <span className="ua-spinner ua-spinner--sm" />
+                  生成中…
+                </span>
+              ) : (
+                <button
+                  className="ua-download-size-btn"
+                  onClick={handleMultiSizeDownload}
+                  title="下载 512w / 1024w / 2048w 三种尺寸"
+                >
+                  512 / 1024 / 2048
+                </button>
+              )}
+            </div>
+          </div>
+
+          {downloadMsg && (
+            <div className={`ua-download-msg ua-download-msg--${downloadMsg.type}`}>
+              {downloadMsg.type === 'success' ? (
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              ) : (
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+              )}
+              {downloadMsg.text}
+            </div>
+          )}
+        </div>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <div className="ua-output-group">
+      <div className="ua-output-header">
+        <span className="ua-output-name">{out.name}</span>
+        {out.description && <span className="ua-output-desc">{out.description}</span>}
+      </div>
+      {nodeError && (
+        <div className="ua-output-error">{nodeError}</div>
+      )}
+      <pre className="ua-output-raw">{JSON.stringify(resultValue, null, 2)}</pre>
+    </div>
+  );
+}
+
+// ── OutputSection ─────────────────────────────────────────────────────────────
+
+export interface OutputSectionProps {
+  outputs: PublishedOutput[];
+  workflowName: string;
+  runState: {
+    status: 'idle' | 'running' | 'done' | 'error';
+    progress?: ExecutionProgress;
+    result?: Record<string, unknown>;
+  };
+}
+
+export const OutputSection: React.FC<OutputSectionProps> = ({
+  outputs,
+  workflowName,
+  runState,
+}) => {
+  return (
+    <>
+      <h2 className="ua-section-title">执行结果</h2>
+
+      {runState.status === 'idle' && (
+        <div className="ua-result-empty">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <rect x="3" y="3" width="18" height="18" rx="3" />
+            <path d="M8 12h8M8 8h8M8 16h5" />
+          </svg>
+          <span>填写参数后点击执行</span>
+        </div>
+      )}
+
+      {runState.status === 'running' && (
+        <ProgressDisplay progress={runState.progress} />
+      )}
+
+      {runState.status === 'done' && (
+        <ResultSummary progress={runState.progress} />
+      )}
+
+      {runState.status === 'done' && runState.result && (
+        <div className="ua-result-grid">
+          {outputs.length >= 2 && (
+            <ZipPackBar
+              outputs={outputs}
+              results={runState.result}
+              workflowName={workflowName}
+            />
+          )}
+
+          {outputs.map((out) => (
+            <OutputPreview
+              key={out.id}
+              out={out}
+              resultValue={runState.result?.[out.id]}
+              workflowName={workflowName}
+            />
+          ))}
+
+          {outputs.length === 0 && (
+            <div className="ua-result-empty">
+              <span>执行完成，无输出结果</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {runState.status === 'done' && !runState.result && (
+        <div className="ua-result-empty">
+          <span>执行完成，无输出结果</span>
+        </div>
+      )}
+    </>
+  );
+};

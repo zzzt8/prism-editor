@@ -5,12 +5,14 @@ import type {
   NodeExecutor,
   ExecutorOptions,
   NodeResult,
+  NodeDefinition,
 } from '@prism/shared-types';
 import { topologicalSort } from './topo-sort';
 import { createExecutionContext, recordNodeResult, checkAborted } from './context';
 import type { ExecutionContext } from './context';
 import { createCache } from './cache';
 import type { ExecutionCache } from './cache';
+import { TypeValidator, TypeMismatchError, type TypeCheckingOptions } from './type-validator';
 
 export interface ExecutorResult {
   workflowId: string;
@@ -18,11 +20,24 @@ export interface ExecutorResult {
   results: Record<string, Record<string, unknown>>;
   error?: string;
   cancelledNodes?: string[];
+  /** Nodes that failed due to type mismatch (populated when type checking is enabled) */
+  typeErrors?: string[];
 }
 
 export interface WorkflowExecutorOptions extends ExecutorOptions {
   cache?: ExecutionCache;
   enableCache?: boolean;
+  /**
+   * Node definitions for type validation and auto-conversion.
+   * When provided, the executor will validate PipelineData types before
+   * passing inputs to each node executor.
+   */
+  nodeDefinitions?: NodeDefinition[];
+  /**
+   * Feature flag options for port type checking.
+   * @default { enabled: true, autoConvert: true }
+   */
+  typeChecking?: TypeCheckingOptions;
 }
 
 function hashInputs(inputs: Record<string, unknown>): string {
@@ -31,6 +46,7 @@ function hashInputs(inputs: Record<string, unknown>): string {
 
 export class WorkflowExecutor {
   private executors: Map<string, NodeExecutor>;
+  private typeValidator: TypeValidator | null = null;
 
   constructor(executors: Record<string, NodeExecutor> = {}) {
     this.executors = new Map(Object.entries(executors));
@@ -48,6 +64,12 @@ export class WorkflowExecutor {
     workflow: Workflow,
     options: WorkflowExecutorOptions = {}
   ): Promise<ExecutorResult> {
+    // Initialize type validator if node definitions are provided
+    const typeErrors: string[] = [];
+    if (options.nodeDefinitions) {
+      this.typeValidator = new TypeValidator(options.nodeDefinitions, options.typeChecking);
+    }
+
     // Topological sort
     const sortResult = topologicalSort(workflow.nodes, workflow.connections);
     if (sortResult.hasCycle) {
@@ -132,6 +154,34 @@ export class WorkflowExecutor {
         }
       }
 
+      // Type validation and auto-conversion
+      if (this.typeValidator) {
+        try {
+          const validated = this.typeValidator.validateInputs(nodeId, node.type, nodeInputs);
+          // Replace with validated (potentially converted) inputs
+          Object.assign(nodeInputs, validated);
+        } catch (err) {
+          if (err instanceof TypeMismatchError) {
+            typeErrors.push(err.nodeId);
+            const result: NodeResult = {
+              nodeId,
+              status: 'error',
+              outputs: {},
+              error: err.message,
+              startTime: Date.now(),
+              endTime: Date.now(),
+            };
+            recordNodeResult(ctx, result);
+            resultsMap.set(nodeId, result);
+            nodeResults.set(nodeId, {});
+            if (options.onProgress) options.onProgress(ctx.progress);
+            continue;
+          }
+          // Re-throw unexpected errors
+          throw err;
+        }
+      }
+
       // Cache lookup
       const inputsHash = hashInputs(nodeInputs);
       if (cache) {
@@ -208,6 +258,7 @@ export class WorkflowExecutor {
       workflowId: workflow.id,
       status: hasError ? 'error' : 'done',
       results: Object.fromEntries(nodeResults),
+      ...(typeErrors.length > 0 && { typeErrors }),
     };
   }
 }

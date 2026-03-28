@@ -1,0 +1,10 @@
+/* Spinner Component Styles */
+
+.spinner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* The .icon-spin class from components.css drives the rotation animation */

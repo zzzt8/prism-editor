@@ -1,0 +1,56 @@
+/* Tooltip Component Styles */
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Tooltip Bubble ──────────────────────────────────────────────── */
+
+.tooltip {
+  position: fixed;
+  z-index: 2000;
+  max-width: 240px;
+  padding: var(--space-2, 8px) var(--space-3, 12px);
+  background: var(--bg-elevated, #1A1A1D);
+  border: 1px solid var(--border-default, #3A3A3D);
+  border-radius: var(--radius-md, 6px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  font-size: var(--text-xs, 11px);
+  color: var(--text-primary, #FFFFFF);
+  line-height: 1.4;
+  pointer-events: none;
+  animation: tooltipIn 0.12s ease;
+  white-space: normal;
+  word-break: break-word;
+}
+
+@keyframes tooltipIn {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Position: Top ──────────────────────────────────────────────── */
+
+.top {
+  transform: translate(-50%, -100%);
+}
+
+/* ── Position: Bottom ──────────────────────────────────────────── */
+
+.bottom {
+  transform: translate(-50%, 0);
+}
+
+/* ── Position: Left ────────────────────────────────────────────── */
+
+.left {
+  transform: translate(-100%, -50%);
+}
+
+/* ── Position: Right ───────────────────────────────────────────── */
+
+.right {
+  transform: translate(0, -50%);
+}

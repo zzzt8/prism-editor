@@ -10,6 +10,7 @@ import type {
   TransformExecutorOutput,
   ExportExecutorOutput,
   BlendMode,
+  ExecutionContext,
 } from '@prism/shared-types';
 import { loadCrossOriginImage } from './load-image';
 import { applyMask } from './apply-mask';
@@ -17,19 +18,6 @@ import { compositeImages } from './composite';
 import { transformImage } from './transform';
 import { exportImage } from './export-image';
 import { getImageMemoryManager } from './memory-manager';
-
-/** Assert a required input is present, or throw with a clear message */
-function requireInput<T>(
-  inputs: Record<string, unknown>,
-  key: string,
-  nodeName: string
-): T {
-  const value = inputs[key] as T | undefined;
-  if (value === undefined || value === null) {
-    throw new Error(`${key} input is required for ${nodeName} node`);
-  }
-  return value;
-}
 
 /** Assert a required param is present and non-empty */
 function requireParam<T>(
@@ -65,7 +53,8 @@ export const loadImageExecutor: NodeExecutor = async (
 
   // Create blob URL for preview
   const canvas = new OffscreenCanvas(result.imageData.width, result.imageData.height);
-  const cctx = canvas.getContext('2d')!;
+  const cctx = canvas.getContext('2d');
+  if (!cctx) throw new Error('Failed to get 2D context for preview canvas');
   cctx.putImageData(result.imageData, 0, 0);
   const blob = await canvas.convertToBlob({ type: 'image/png' });
   const previewRef = getImageMemoryManager().createObjectURL(
@@ -88,10 +77,10 @@ export const loadImageExecutor: NodeExecutor = async (
 export const applyMaskExecutor: NodeExecutor = async (
   inputs,
   params,
-  ctx
+  ctx: ExecutionContext
 ) => {
-  const image = requireInput<ImageData>(inputs, 'image', 'ApplyMask');
-  const mask = requireInput<ImageData>(inputs, 'mask', 'ApplyMask');
+  const image = ctx.requireInput<ImageData>('image', 'ApplyMask');
+  const mask = ctx.requireInput<ImageData>('mask', 'ApplyMask');
 
   const maskType = (params['maskType'] as 'alpha' | 'brightness' | 'luminance') ?? 'alpha';
   const threshold = (params['threshold'] as number) ?? 128;
@@ -101,7 +90,8 @@ export const applyMaskExecutor: NodeExecutor = async (
 
   // Create preview
   const canvas = new OffscreenCanvas(result.width, result.height);
-  const cctx = canvas.getContext('2d')!;
+  const cctx = canvas.getContext('2d');
+  if (!cctx) throw new Error('Failed to get 2D context for preview canvas');
   cctx.putImageData(result, 0, 0);
   const blob = await canvas.convertToBlob({ type: 'image/png' });
   const previewRef = getImageMemoryManager().createObjectURL(blob, result.width, result.height);
@@ -119,10 +109,10 @@ export const applyMaskExecutor: NodeExecutor = async (
 export const compositeExecutor: NodeExecutor = async (
   inputs,
   params,
-  ctx
+  ctx: ExecutionContext
 ) => {
-  const base = requireInput<ImageData>(inputs, 'base', 'Composite');
-  const overlay = requireInput<ImageData>(inputs, 'overlay', 'Composite');
+  const base = ctx.requireInput<ImageData>('base', 'Composite');
+  const overlay = ctx.requireInput<ImageData>('overlay', 'Composite');
 
   const blendMode = (params['blendMode'] as BlendMode) ?? 'normal';
   const opacity = (params['opacity'] as number) ?? 1;
@@ -131,7 +121,8 @@ export const compositeExecutor: NodeExecutor = async (
 
   // Create preview
   const canvas = new OffscreenCanvas(result.width, result.height);
-  const cctx = canvas.getContext('2d')!;
+  const cctx = canvas.getContext('2d');
+  if (!cctx) throw new Error('Failed to get 2D context for preview canvas');
   cctx.putImageData(result, 0, 0);
   const blob = await canvas.convertToBlob({ type: 'image/png' });
   const previewRef = getImageMemoryManager().createObjectURL(blob, result.width, result.height);
@@ -149,9 +140,9 @@ export const compositeExecutor: NodeExecutor = async (
 export const transformExecutor: NodeExecutor = async (
   inputs,
   params,
-  ctx
+  ctx: ExecutionContext
 ) => {
-  const image = requireInput<ImageData>(inputs, 'image', 'Transform');
+  const image = ctx.requireInput<ImageData>('image', 'Transform');
 
   const result = transformImage(image, {
     translateX: (params['translateX'] as number) ?? 0,
@@ -167,7 +158,8 @@ export const transformExecutor: NodeExecutor = async (
 
   // Create preview
   const canvas = new OffscreenCanvas(result.width, result.height);
-  const cctx = canvas.getContext('2d')!;
+  const cctx = canvas.getContext('2d');
+  if (!cctx) throw new Error('Failed to get 2D context for preview canvas');
   cctx.putImageData(result, 0, 0);
   const blob = await canvas.convertToBlob({ type: 'image/png' });
   const previewRef = getImageMemoryManager().createObjectURL(blob, result.width, result.height);
@@ -185,9 +177,9 @@ export const transformExecutor: NodeExecutor = async (
 export const exportExecutor: NodeExecutor = async (
   inputs,
   params,
-  ctx
+  ctx: ExecutionContext
 ) => {
-  const image = requireInput<ImageData>(inputs, 'image', 'Export');
+  const image = ctx.requireInput<ImageData>('image', 'Export');
 
   const format = (params['format'] as 'png' | 'jpeg' | 'webp') ?? 'png';
   const quality = (params['quality'] as number) ?? 0.92;

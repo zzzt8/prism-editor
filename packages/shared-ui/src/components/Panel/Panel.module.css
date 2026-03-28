@@ -1,0 +1,76 @@
+/* Panel Component Styles */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface, #141416);
+  border: 1px solid var(--border-subtle, #2A2A2D);
+  border-radius: var(--radius-lg, 8px);
+  overflow: hidden;
+  height: 100%;
+}
+
+/* ── Sizes ─────────────────────────────────────────────────────────────── */
+
+.sm {
+  width: var(--panel-width-sm, 200px);
+}
+
+.md {
+  width: var(--panel-width-md, 240px);
+}
+
+.lg {
+  width: var(--panel-width-lg, 320px);
+}
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2, 8px);
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+  border-bottom: 1px solid var(--border-subtle, #2A2A2D);
+  flex-shrink: 0;
+  min-height: 40px;
+}
+
+.title {
+  flex: 1;
+  font-size: var(--text-sm, 13px);
+  font-weight: var(--weight-semibold, 600);
+  color: var(--text-primary, #FFFFFF);
+  line-height: var(--leading-tight, 1.25);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.action {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ── Body ─────────────────────────────────────────────────────────────── */
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--space-4, 16px);
+  min-height: 0;
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────── */
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+  border-top: 1px solid var(--border-subtle, #2A2A2D);
+  flex-shrink: 0;
+}

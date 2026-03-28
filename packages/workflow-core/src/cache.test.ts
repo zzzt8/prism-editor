@@ -19,7 +19,7 @@ describe('ExecutionCache', () => {
       cache.set('wf1', 'node1', 'hash1', result);
 
       const entry = cache.get('wf1', 'node1', 'hash1');
-      expect(entry).not.toBeNull();
+      expect(entry).not.toBeUndefined();
       expect(entry!.result).toEqual(result);
     });
 
@@ -65,7 +65,7 @@ describe('ExecutionCache', () => {
 
       expect(cache.get('wf1', 'node1', 'hash1')).toBeUndefined();
       expect(cache.get('wf1', 'node2', 'hash2')).toBeUndefined();
-      expect(cache.get('wf2', 'node3', 'hash3')).not.toBeNull();
+      expect(cache.get('wf2', 'node3', 'hash3')).not.toBeUndefined();
     });
   });
 
@@ -85,7 +85,7 @@ describe('ExecutionCache', () => {
 
       await new Promise((r) => setTimeout(r, 50));
 
-      expect(fastCache.get('wf1', 'node1', 'hash1')).not.toBeNull();
+      expect(fastCache.get('wf1', 'node1', 'hash1')).not.toBeUndefined();
     });
   });
 
@@ -100,9 +100,9 @@ describe('ExecutionCache', () => {
       // Insert 11th — triggers eviction of the LRU entry (node0, accessCount=1, never accessed after insertion)
       cache.set('wf1', 'node10', 'hash1', { value: 10 });
 
-      expect(cache.get('wf1', 'node10', 'hash1')).not.toBeNull(); // newest, highest accessCount
+      expect(cache.get('wf1', 'node10', 'hash1')).not.toBeUndefined(); // newest, highest accessCount
       expect(cache.get('wf1', 'node0', 'hash1')).toBeUndefined(); // LRU: inserted first, never accessed
-      expect(cache.get('wf1', 'node1', 'hash1')).not.toBeNull();  // still present
+      expect(cache.get('wf1', 'node1', 'hash1')).not.toBeUndefined();  // still present
     });
 
     it('LRU eviction targets least-recently accessed entries by accessCount', () => {
@@ -119,10 +119,10 @@ describe('ExecutionCache', () => {
       // Insert 11th entry — should evict node1 (LRU: inserted second, never accessed after)
       cache.set('wf1', 'node10', 'hash1', { value: 10 });
 
-      expect(cache.get('wf1', 'node0', 'hash1')).not.toBeNull(); // accessed after insertion
-      expect(cache.get('wf1', 'node2', 'hash1')).not.toBeNull(); // accessed after insertion
+      expect(cache.get('wf1', 'node0', 'hash1')).not.toBeUndefined(); // accessed after insertion
+      expect(cache.get('wf1', 'node2', 'hash1')).not.toBeUndefined(); // accessed after insertion
       expect(cache.get('wf1', 'node1', 'hash1')).toBeUndefined(); // LRU: never accessed
-      expect(cache.get('wf1', 'node10', 'hash1')).not.toBeNull(); // newest
+      expect(cache.get('wf1', 'node10', 'hash1')).not.toBeUndefined(); // newest
     });
 
     it('LRU eviction targets least-recently accessed entries, not oldest by insertion time', () => {
@@ -139,10 +139,10 @@ describe('ExecutionCache', () => {
       // Insert 11th entry — should evict node1 (LRU), not node0
       cache.set('wf1', 'node10', 'hash1', { value: 10 });
 
-      expect(cache.get('wf1', 'node0', 'hash1')).not.toBeNull(); // was accessed
-      expect(cache.get('wf1', 'node2', 'hash1')).not.toBeNull(); // was accessed
+      expect(cache.get('wf1', 'node0', 'hash1')).not.toBeUndefined(); // was accessed
+      expect(cache.get('wf1', 'node2', 'hash1')).not.toBeUndefined(); // was accessed
       expect(cache.get('wf1', 'node1', 'hash1')).toBeUndefined(); // was never accessed, LRU
-      expect(cache.get('wf1', 'node10', 'hash1')).not.toBeNull(); // newest
+      expect(cache.get('wf1', 'node10', 'hash1')).not.toBeUndefined(); // newest
     });
   });
 });

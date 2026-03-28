@@ -1,0 +1,113 @@
+/**
+ * Shared Component Base Styles
+ *
+ * @package @prism/shared-ui
+ *
+ * Base reset and shared component styles that apply globally.
+ * Import this in your app's root after tokens.css.
+ *
+ * @example
+ * ```tsx
+ * import '@prism/shared-ui/styles/tokens.css';
+ * import '@prism/shared-ui/styles/components.css';
+ * ```
+ */
+
+/* ── CSS Reset ───────────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Global Scrollbar ────────────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle, #2A2A2D);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-default, #3A3A3D);
+}
+
+/* ── Icon Animations ─────────────────────────────────────────────────────── */
+
+.icon-spin {
+  animation: icon-spin 0.7s linear infinite;
+  display: inline-flex;
+}
+
+@keyframes icon-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Focus Ring ─────────────────────────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--accent-primary, #6366F1);
+  outline-offset: 2px;
+}
+
+/* ── Text Utilities ─────────────────────────────────────────────────────── */
+
+.text-muted {
+  color: var(--text-secondary, #A0A0A5);
+}
+
+.text-disabled {
+  color: var(--text-disabled, #404045);
+}
+
+.text-accent {
+  color: var(--accent-primary, #6366F1);
+}
+
+.text-success {
+  color: var(--status-success, #22C55E);
+}
+
+.text-warning {
+  color: var(--status-warning, #F59E0B);
+}
+
+.text-error {
+  color: var(--status-error, #EF4444);
+}
+
+/* ── Fade In Animation ──────────────────────────────────────────────────── */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.15s ease;
+}
+
+/* ── Overlay / Modal Backdrop ───────────────────────────────────────────── */
+
+.overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 1000;
+  animation: fadeIn 0.15s ease;
+}

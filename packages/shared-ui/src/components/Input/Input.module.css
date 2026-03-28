@@ -1,0 +1,122 @@
+/* Input Component Styles */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.label {
+  font-size: var(--text-xs, 11px);
+  font-weight: var(--weight-medium, 500);
+  color: var(--text-secondary, #A0A0A5);
+  letter-spacing: var(--tracking-wide, 0.05em);
+  text-transform: uppercase;
+  user-select: none;
+}
+
+/* Input wrapper — handles prefix/suffix layout */
+.inputWrapper {
+  display: flex;
+  align-items: center;
+  background: var(--bg-elevated, #1A1A1D);
+  border: 1px solid var(--border-default, #3A3A3D);
+  border-radius: var(--radius-md, 6px);
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.inputWrapper:focus-within {
+  border-color: var(--accent-primary, #6366F1);
+  box-shadow: 0 0 0 3px var(--accent-muted, rgba(99, 102, 241, 0.15));
+}
+
+.inputWrapper.hasError {
+  border-color: var(--status-error, #EF4444);
+}
+
+.inputWrapper.hasError:focus-within {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.inputWrapper.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Sizes ─────────────────────────────────────────────────────────────── */
+
+.inputWrapper.sm .input {
+  height: 28px;
+  padding: 0 var(--space-2, 8px);
+  font-size: var(--text-xs, 11px);
+}
+
+.inputWrapper.md .input {
+  height: 32px;
+  padding: 0 var(--space-3, 12px);
+  font-size: var(--text-sm, 13px);
+}
+
+.inputWrapper.lg .input {
+  height: 40px;
+  padding: 0 var(--space-4, 16px);
+  font-size: var(--text-base, 14px);
+}
+
+/* ── Input Element ─────────────────────────────────────────────────────── */
+
+.input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary, #FFFFFF);
+  font-family: var(--font-sans);
+  line-height: 1;
+}
+
+.input::placeholder {
+  color: var(--text-tertiary, #606065);
+}
+
+.input:disabled {
+  cursor: not-allowed;
+}
+
+/* ── Prefix / Suffix ──────────────────────────────────────────────────── */
+
+.prefix,
+.suffix {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-tertiary, #606065);
+  flex-shrink: 0;
+}
+
+.prefix {
+  padding-left: var(--space-2, 8px);
+}
+
+.suffix {
+  padding-right: var(--space-2, 8px);
+}
+
+/* ── Helper / Error Text ──────────────────────────────────────────────── */
+
+.helperText {
+  font-size: var(--text-xs, 11px);
+  color: var(--text-tertiary, #606065);
+  line-height: 1.4;
+}
+
+.errorText {
+  font-size: var(--text-xs, 11px);
+  color: var(--status-error, #EF4444);
+  line-height: 1.4;
+}

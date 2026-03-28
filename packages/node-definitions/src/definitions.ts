@@ -1,7 +1,7 @@
 // Built-in node definitions
 
 import type { NodeDefinition } from '@prism/shared-types';
-import { NODE_CATEGORIES } from '@prism/shared-types';
+import { NODE_CATEGORIES, PortDataType } from '@prism/shared-types';
 
 export const loadImageDefinition: NodeDefinition = {
   type: 'load-image',
@@ -15,6 +15,7 @@ export const loadImageDefinition: NodeDefinition = {
       id: 'image',
       name: 'Image',
       type: 'image',
+      dataType: PortDataType.IMAGE,
       required: true,
       description: 'Loaded image data',
     },
@@ -53,6 +54,7 @@ export const applyMaskDefinition: NodeDefinition = {
       id: 'image',
       name: 'Image',
       type: 'image',
+      dataType: PortDataType.IMAGE,
       required: true,
       description: 'Base image to mask',
     },
@@ -60,6 +62,7 @@ export const applyMaskDefinition: NodeDefinition = {
       id: 'mask',
       name: 'Mask',
       type: 'mask',
+      dataType: PortDataType.MASK,
       required: true,
       description: 'Mask source (image or generated)',
     },
@@ -69,6 +72,7 @@ export const applyMaskDefinition: NodeDefinition = {
       id: 'result',
       name: 'Masked Image',
       type: 'image',
+      dataType: PortDataType.IMAGE,
       required: true,
       description: 'Image with mask applied',
     },
@@ -116,6 +120,7 @@ export const compositeDefinition: NodeDefinition = {
       id: 'base',
       name: 'Base',
       type: 'image',
+      dataType: PortDataType.IMAGE,
       required: true,
       description: 'Base layer',
     },
@@ -123,6 +128,7 @@ export const compositeDefinition: NodeDefinition = {
       id: 'overlay',
       name: 'Overlay',
       type: 'image',
+      dataType: PortDataType.IMAGE,
       required: true,
       description: 'Layer to composite on top',
     },
@@ -132,6 +138,7 @@ export const compositeDefinition: NodeDefinition = {
       id: 'result',
       name: 'Composite',
       type: 'image',
+      dataType: PortDataType.IMAGE,
       required: true,
       description: 'Composited result',
     },
@@ -181,6 +188,7 @@ export const transformDefinition: NodeDefinition = {
       id: 'image',
       name: 'Image',
       type: 'image',
+      dataType: PortDataType.IMAGE,
       required: true,
       description: 'Image to transform',
     },
@@ -190,6 +198,7 @@ export const transformDefinition: NodeDefinition = {
       id: 'result',
       name: 'Transformed',
       type: 'image',
+      dataType: PortDataType.IMAGE,
       required: true,
       description: 'Transformed image',
     },
@@ -281,6 +290,7 @@ export const exportDefinition: NodeDefinition = {
       id: 'image',
       name: 'Image',
       type: 'image',
+      dataType: PortDataType.IMAGE,
       required: true,
       description: 'Image to export',
     },
@@ -290,6 +300,7 @@ export const exportDefinition: NodeDefinition = {
       id: 'result',
       name: 'Exported',
       type: 'image',
+      dataType: PortDataType.IMAGE,
       required: true,
       description: 'Exported image result',
     },

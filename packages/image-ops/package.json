@@ -12,14 +12,16 @@
     "build": "tsc",
     "clean": "rm -rf dist",
     "test": "vitest run",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "test:browser": "vitest run --config vitest.browser.config.ts"
   },
   "dependencies": {
-    "@prism/shared-types": "workspace:*"
+    "@prism/shared-types": "workspace:*",
+    "comlink": "^4.4.2"
   },
   "devDependencies": {
-    "vitest": "^1.6.0",
     "@vitest/browser": "^1.6.0",
-    "playwright": "^1.44.0"
+    "playwright": "^1.44.0",
+    "vitest": "^1.6.0"
   }
 }

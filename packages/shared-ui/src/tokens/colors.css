@@ -1,0 +1,94 @@
+/**
+ * Design Tokens — Color Variables
+ *
+ * @package @prism/shared-ui
+ *
+ * Color palette following the Prism Editor design system.
+ * These are CSS custom properties registered on :root.
+ *
+ * ## Background Layers
+ *
+ * | Token               | Value     | Usage                      |
+ * |---------------------|-----------|----------------------------|
+ * | --bg-canvas         | #0D0D0F   | Canvas / page background   |
+ * | --bg-surface        | #141416   | Panel / sidebar background |
+ * | --bg-elevated       | #1A1A1D   | Dropdowns, popovers, modals|
+ * | --bg-hover          | #222225   | Hover states               |
+ *
+ * ## Border Layers
+ *
+ * | Token               | Value     | Usage                      |
+ * |---------------------|-----------|----------------------------|
+ * | --border-subtle     | #2A2A2D   | Faint dividers             |
+ * | --border-default    | #3A3A3D   | Component borders           |
+ * | --border-strong     | #4A4A4D   | Emphasis borders           |
+ *
+ * ## Text Colors
+ *
+ * | Token               | Value     | Usage                      |
+ * |---------------------|-----------|----------------------------|
+ * | --text-primary      | #FFFFFF   | Main body text             |
+ * | --text-secondary    | #A0A0A5   | Labels, secondary info     |
+ * | --text-tertiary     | #606065   | Placeholder, hints         |
+ * | --text-disabled     | #404045   | Disabled state text        |
+ *
+ * ## Accent Colors
+ *
+ * | Token               | Value     | Usage                      |
+ * |---------------------|-----------|----------------------------|
+ * | --accent-primary    | #6366F1   | Primary action, brand      |
+ * | --accent-hover      | #818CF8   | Hover state                |
+ * | --accent-muted      | rgba(...)  | Backgrounds, badges        |
+ *
+ * ## Status Colors
+ *
+ * | Token               | Value     | Usage                      |
+ * |---------------------|-----------|----------------------------|
+ * | --status-success    | #22C55E   | Success states             |
+ * | --status-warning    | #F59E0B   | Warning states             |
+ * | --status-error      | #EF4444   | Error states               |
+ * | --status-info       | #3B82F6   | Info / neutral states      |
+ *
+ * ## Port Type Colors
+ *
+ * | Token               | Value     | Usage                      |
+ * |---------------------|-----------|----------------------------|
+ * | --port-image        | #8B5CF6   | Image port type            |
+ * | --port-mask         | #06B6D4   | Mask port type             |
+ * | --port-number       | #F59E0B   | Number port type           |
+ */
+
+:root {
+  /* Background */
+  --bg-canvas:   #0D0D0F;
+  --bg-surface:  #141416;
+  --bg-elevated: #1A1A1D;
+  --bg-hover:    #222225;
+
+  /* Border */
+  --border-subtle:  #2A2A2D;
+  --border-default: #3A3A3D;
+  --border-strong:  #4A4A4D;
+
+  /* Text */
+  --text-primary:   #FFFFFF;
+  --text-secondary: #A0A0A5;
+  --text-tertiary:  #606065;
+  --text-disabled:  #404045;
+
+  /* Accent */
+  --accent-primary: #6366F1;
+  --accent-hover:   #818CF8;
+  --accent-muted:   rgba(99, 102, 241, 0.15);
+
+  /* Status */
+  --status-success: #22C55E;
+  --status-warning: #F59E0B;
+  --status-error:   #EF4444;
+  --status-info:    #3B82F6;
+
+  /* Port types */
+  --port-image:  #8B5CF6;
+  --port-mask:   #06B6D4;
+  --port-number: #F59E0B;
+}

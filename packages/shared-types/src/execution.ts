@@ -8,6 +8,36 @@ type ImageData = globalThis.ImageData;
 
 export type NodeStatus = 'pending' | 'running' | 'done' | 'error';
 
+/** Task execution mode — controls how the executor schedules this task */
+export enum TaskType {
+  /** Task executes synchronously within the same tick (default for most image ops) */
+  SYNC = 'sync',
+  /** Task is dispatched to a Web Worker for off-thread execution */
+  ASYNC = 'async',
+  /** Task requires polling until it signals completion */
+  POLL = 'poll',
+}
+
+/** An async task that requires a Web Worker */
+export interface AsyncTask {
+  type: TaskType.ASYNC;
+  /** Task identifier used for cancellation */
+  taskId: string;
+  /** Short description for progress reporting */
+  label: string;
+}
+
+/** A polling task that checks external state until done */
+export interface PollTask {
+  type: TaskType.POLL;
+  taskId: string;
+  label: string;
+  /** Initial poll interval in ms */
+  interval?: number;
+  /** Maximum poll attempts before timeout */
+  maxAttempts?: number;
+}
+
 export interface NodeResult {
   nodeId: string;
   status: NodeStatus;
@@ -38,6 +68,16 @@ export interface ExecutionContext {
   results: Map<string, NodeResult>;
   progress: ExecutionProgress;
   signal?: AbortSignal;
+  /** Register an async task and return a cancel function */
+  registerAsyncTask?: (task: AsyncTask) => () => void;
+  /** Check if an async task is still pending */
+  isTaskPending?: (taskId: string) => boolean;
+  /**
+   * Assert a required input is present. Throws if the input is missing.
+   * @param key      The input port name
+   * @param nodeName Human-readable node name for error messages
+   */
+  requireInput: <T>(key: string, nodeName: string) => T;
 }
 
 export type ProgressCallback = (progress: ExecutionProgress) => void;

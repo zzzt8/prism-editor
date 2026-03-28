@@ -1,0 +1,15 @@
+/**
+ * Design Tokens — Entry Point
+ *
+ * @package @prism/shared-ui
+ *
+ * Re-exports all token CSS files. Import this single file to get all tokens.
+ *
+ * @example
+ * ```tsx
+ * import '@prism/shared-ui/tokens/index.css';
+ * ```
+ */
+@import './colors.css';
+@import './spacing.css';
+@import './typography.css';

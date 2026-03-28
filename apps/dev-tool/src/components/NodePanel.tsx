@@ -1,24 +1,35 @@
-// Node panel - sidebar listing all available node types
+// NodePanel — sidebar listing all available node types with search
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { createRegistry, listAll } from '@prism/node-definitions';
 import type { NodeDefinition } from '@prism/shared-types';
 
 const registry = createRegistry();
 
-interface NodePanelProps {
-  onDragStart?: (event: React.DragEvent, nodeType: string) => void;
-}
-
-const categoryLabels: Record<string, string> = {
-  input: '输入',
+const CATEGORY_LABELS: Record<string, string> = {
+  input:     '输入',
   transform: '变换',
-  mask: '遮罩',
+  mask:      '遮罩',
   composite: '合成',
-  output: '输出',
+  output:    '输出',
 };
 
-function NodeCard({ definition }: { definition: NodeDefinition }) {
+function getCategoryIcon(category: string): string {
+  switch (category) {
+    case 'input':     return '📥';
+    case 'transform': return '🔄';
+    case 'mask':      return '🎭';
+    case 'composite': return '🖼';
+    case 'output':    return '📤';
+    default:          return '⬡';
+  }
+}
+
+interface NodeCardProps {
+  definition: NodeDefinition;
+}
+
+function NodeCard({ definition }: NodeCardProps) {
   return (
     <div
       className="node-card"
@@ -29,7 +40,7 @@ function NodeCard({ definition }: { definition: NodeDefinition }) {
       }}
       title={definition.description}
     >
-      <span className="node-card-icon">
+      <span className="node-card-icon" aria-hidden="true">
         {getCategoryIcon(definition.category)}
       </span>
       <span className="node-card-label">{definition.label}</span>
@@ -37,45 +48,98 @@ function NodeCard({ definition }: { definition: NodeDefinition }) {
   );
 }
 
-function getCategoryIcon(category: string): string {
-  switch (category) {
-    case 'input': return '📥';
-    case 'transform': return '🔄';
-    case 'mask': return '🎭';
-    case 'composite': return '🖼';
-    case 'output': return '📤';
-    default: return '⬡';
-  }
+interface CategoryGroupProps {
+  category: string;
+  definitions: NodeDefinition[];
 }
 
-export const NodePanel: React.FC<NodePanelProps> = ({ onDragStart }) => {
-  const definitions = listAll(registry);
+function CategoryGroup({ category, definitions }: CategoryGroupProps) {
+  if (definitions.length === 0) return null;
 
-  const byCategory = definitions.reduce<Record<string, NodeDefinition[]>>(
-    (acc, def) => {
-      const cat = def.category;
-      if (!acc[cat]) acc[cat] = [];
-      acc[cat].push(def);
-      return acc;
-    },
-    {}
+  return (
+    <div className="node-category">
+      <h3 className="node-category-title">
+        {CATEGORY_LABELS[category] ?? category}
+        <span className="node-category-count">{definitions.length}</span>
+      </h3>
+      <div className="node-category-items">
+        {definitions.map((def) => (
+          <NodeCard key={def.type} definition={def} />
+        ))}
+      </div>
+    </div>
   );
+}
+
+export const NodePanel: React.FC = () => {
+  const [query, setQuery] = useState('');
+
+  const allDefinitions = useMemo(() => listAll(registry), []);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return allDefinitions;
+    return allDefinitions.filter(
+      (def) =>
+        def.label.toLowerCase().includes(q) ||
+        def.type.toLowerCase().includes(q) ||
+        def.description?.toLowerCase().includes(q) ||
+        (CATEGORY_LABELS[def.category] ?? def.category).toLowerCase().includes(q)
+    );
+  }, [query, allDefinitions]);
+
+  const byCategory = useMemo(
+    () =>
+      filtered.reduce<Record<string, NodeDefinition[]>>((acc, def) => {
+        const cat = def.category;
+        if (!acc[cat]) acc[cat] = [];
+        acc[cat].push(def);
+        return acc;
+      }, {}),
+    [filtered]
+  );
+
+  const hasResults = filtered.length > 0;
+  const hasQuery = query.trim().length > 0;
 
   return (
     <aside className="node-panel">
-      <h2 className="node-panel-title">节点</h2>
-      {Object.entries(byCategory).map(([category, defs]) => (
-        <div key={category} className="node-category">
-          <h3 className="node-category-title">
-            {categoryLabels[category] ?? category}
-          </h3>
-          <div className="node-category-items">
-            {defs.map((def) => (
-              <NodeCard key={def.type} definition={def} />
-            ))}
-          </div>
+      {/* Search */}
+      <div className="node-search">
+        <span className="node-search-icon" aria-hidden="true">🔍</span>
+        <input
+          className="node-search-input"
+          type="search"
+          placeholder="搜索节点..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          aria-label="搜索节点"
+        />
+        {query && (
+          <button
+            className="node-search-clear"
+            onClick={() => setQuery('')}
+            aria-label="清除搜索"
+            type="button"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
+      {/* Results */}
+      {hasResults ? (
+        Object.entries(byCategory).map(([category, defs]) => (
+          <CategoryGroup key={category} category={category} definitions={defs} />
+        ))
+      ) : (
+        <div className="node-search-empty">
+          <span className="node-search-empty-icon" aria-hidden="true">◈</span>
+          <span className="node-search-empty-text">
+            {hasQuery ? `未找到与"${query}"相关的节点` : '暂无可用节点'}
+          </span>
         </div>
-      ))}
+      )}
     </aside>
   );
 };

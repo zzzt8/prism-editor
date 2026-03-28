@@ -1,0 +1,79 @@
+/* Card Component Styles */
+
+.card {
+  background: var(--bg-surface, #141416);
+  border: 1px solid var(--border-subtle, #2A2A2D);
+  border-radius: var(--radius-lg, 8px);
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+/* ── Hoverable ─────────────────────────────────────────────────────────── */
+
+.hoverable:hover,
+.hoverable:focus-visible {
+  border-color: var(--border-default, #3A3A3D);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* ── Clickable ─────────────────────────────────────────────────────────── */
+
+.clickable {
+  cursor: pointer;
+}
+
+.clickable:focus-visible {
+  outline: 2px solid var(--accent-primary, #6366F1);
+  outline-offset: 2px;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3, 12px);
+  padding: var(--space-4, 16px) var(--space-4, 16px) 0;
+}
+
+.headerText {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--text-base, 14px);
+  font-weight: var(--weight-semibold, 600);
+  color: var(--text-primary, #FFFFFF);
+  line-height: var(--leading-tight, 1.25);
+}
+
+.subtitle {
+  font-size: var(--text-xs, 11px);
+  color: var(--text-secondary, #A0A0A5);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.action {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ── Body ──────────────────────────────────────────────────────────────── */
+
+.body {
+  /* padding applied via pad-* classes */
+}
+
+.pad-none  { padding: 0; }
+.pad-sm    { padding: var(--space-2, 8px); }
+.pad-md    { padding: var(--space-4, 16px); }
+.pad-lg    { padding: var(--space-6, 24px); }
+
+/* Remove top padding when body follows header */
+.header + .body {
+  padding-top: var(--space-3, 12px);
+}

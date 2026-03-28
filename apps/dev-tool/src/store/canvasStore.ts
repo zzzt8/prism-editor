@@ -2,9 +2,18 @@
 
 import { create } from 'zustand';
 import type { Connection, Workflow, WorkflowNode, ExecutionProgress } from '@prism/shared-types';
-import type { NodeDefinition } from '@prism/shared-types';
+import type { NodeDefinition, PortDataType } from '@prism/shared-types';
+import { canConnectByDataType } from '@prism/shared-types';
 import { createRegistry } from '@prism/node-definitions';
 import { localStorageAdapter } from '../storage';
+
+/** Result of a connection validation check (enhanced with PortDataType) */
+export interface ConnectionValidation {
+  valid: boolean;
+  reason?: string;
+  sourceType?: PortDataType;
+  targetType?: PortDataType;
+}
 
 export interface CanvasNodeData extends Record<string, unknown> {
   label: string;
@@ -53,7 +62,7 @@ interface CanvasState {
   setEdges: (edges: CanvasEdge[]) => void;
   onNodesChange: (changes: any[]) => void;
   onEdgesChange: (changes: any[]) => void;
-  onConnect: (connection: Connection) => boolean;
+  onConnect: (connection: Connection) => ConnectionValidation;
   selectNode: (id: string, multi?: boolean) => void;
   clearSelection: () => void;
   setViewport: (viewport: { x: number; y: number; zoom: number }) => void;
@@ -182,18 +191,22 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     });
   },
 
-  onConnect(connection): boolean {
+  onConnect(connection): ConnectionValidation {
     const { edges, nodes } = get();
 
     const sourceNode = nodes.find((n) => n.id === connection.from.nodeId);
     const targetNode = nodes.find((n) => n.id === connection.to.nodeId);
 
-    if (!sourceNode || !targetNode) return false;
+    if (!sourceNode || !targetNode) {
+      return { valid: false, reason: 'Source or target node not found' };
+    }
 
     const sourceDef = sourceNode.data.definition;
     const targetDef = targetNode.data.definition;
 
-    if (!sourceDef || !targetDef) return false;
+    if (!sourceDef || !targetDef) {
+      return { valid: false, reason: 'Node definition not found' };
+    }
 
     const sourcePort = sourceDef.outputs.find(
       (p) => p.id === connection.from.port || p.name === connection.from.port
@@ -202,9 +215,35 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       (p) => p.id === connection.to.port || p.name === connection.to.port
     );
 
-    if (!sourcePort || !targetPort) return false;
+    if (!sourcePort) {
+      return {
+        valid: false,
+        reason: `Port '${connection.from.port}' not found on source node '${sourceDef.label}'`,
+      };
+    }
+    if (!targetPort) {
+      return {
+        valid: false,
+        reason: `Port '${connection.to.port}' not found on target node '${targetDef.label}'`,
+      };
+    }
 
-    if (sourcePort.type !== targetPort.type) return false;
+    const sourceType = sourcePort.dataType;
+    const targetType = targetPort.dataType;
+
+    const compatibilityResult = canConnectByDataType(
+      { dataType: sourceType },
+      { dataType: targetType }
+    );
+
+    if (!compatibilityResult.valid) {
+      return {
+        valid: false,
+        reason: `[类型不兼容] ${sourceType} → ${targetType}: ${compatibilityResult.reason ?? '无法连接'}`,
+        sourceType,
+        targetType,
+      };
+    }
 
     const exists = edges.some(
       (e) =>
@@ -213,7 +252,9 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         e.sourceHandle === connection.from.port &&
         e.targetHandle === connection.to.port
     );
-    if (exists) return false;
+    if (exists) {
+      return { valid: false, reason: 'Connection already exists' };
+    }
 
     const newEdge: CanvasEdge = {
       id: `edge-${crypto.randomUUID()}`,
@@ -225,7 +266,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     };
 
     set((state) => ({ edges: [...state.edges, newEdge], isDirty: true }));
-    return true;
+    return { valid: true };
   },
 
   selectNode(id, multi = false) {
@@ -292,6 +333,11 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   },
 
   newWorkflow() {
+    // Cancel any in-flight execution before resetting state
+    const { _executionAbort } = get();
+    if (_executionAbort) {
+      _executionAbort();
+    }
     nodeCounter = 0;
     set({
       nodes: [],
