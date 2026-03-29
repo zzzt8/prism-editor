@@ -120,20 +120,20 @@ export class TypeValidator {
     const result: Record<string, unknown> = {};
 
     for (const port of nodeDef.inputs as PortDefinition[]) {
-      const value = inputs[port.name];
+      const value = inputs[port.id];
 
       if (value === undefined || value === null) {
         if (port.required) {
           throw new TypeMismatchError(
             nodeId,
-            port.name,
+            port.id,
             port.dataType,
             PortDataType.VOID,
-            `Required input '${port.name}' is missing`
+            `Required input '${port.id}' is missing`
           );
         }
         // Optional port with no value — skip
-        result[port.name] = value;
+        result[port.id] = value;
         continue;
       }
 
@@ -141,7 +141,7 @@ export class TypeValidator {
       if (!this.isPipelineData(value)) {
         // Non-PipelineData values — skip type validation
         // (this supports legacy nodes that don't use PipelineData yet)
-        result[port.name] = value;
+        result[port.id] = value;
         continue;
       }
 
@@ -149,7 +149,7 @@ export class TypeValidator {
 
       // Exact match — pass through
       if (pipelineValue.type === port.dataType) {
-        result[port.name] = value;
+        result[port.id] = value;
         continue;
       }
 
@@ -157,7 +157,7 @@ export class TypeValidator {
       if (!this.canAccept(pipelineValue.type, port.dataType)) {
         throw new TypeMismatchError(
           nodeId,
-          port.name,
+          port.id,
           port.dataType,
           pipelineValue.type,
           `Type '${pipelineValue.type}' cannot connect to '${port.dataType}'`
@@ -175,23 +175,23 @@ export class TypeValidator {
             // For now, warn and pass through (full async support in executor layer)
             this.options.onDiagnostic(
               `Auto-conversion for '${pipelineValue.type}'→'${port.dataType}' on ` +
-              `node '${nodeId}' port '${port.name}' is async — deferring`
+              `node '${nodeId}' port '${port.id}' is async — deferring`
             );
-            result[port.name] = value;
+            result[port.id] = value;
           } else {
-            result[port.name] = converted;
+            result[port.id] = converted;
           }
         } else {
           this.options.onDiagnostic(
             `Cannot auto-convert '${pipelineValue.type}'→'${port.dataType}' ` +
-            `for node '${nodeId}' port '${port.name}' — no converter registered`
+            `for node '${nodeId}' port '${port.id}' — no converter registered`
           );
-          result[port.name] = value;
+          result[port.id] = value;
         }
       } else {
         throw new TypeMismatchError(
           nodeId,
-          port.name,
+          port.id,
           port.dataType,
           pipelineValue.type,
           `Type mismatch with auto-conversion disabled`

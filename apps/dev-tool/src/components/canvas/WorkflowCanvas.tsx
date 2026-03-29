@@ -1,6 +1,6 @@
 // WorkflowCanvas - React Flow canvas wrapper
 
-import React, { useCallback, useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useRef, useMemo } from 'react';
 import {
   ReactFlow,
   Background,
@@ -18,14 +18,19 @@ import {
 import '@xyflow/react/dist/style.css';
 import { useCanvasStore, type ConnectionValidation } from '../../store/canvasStore';
 import { PrismNode } from '../nodes/PrismNode';
+import { PreviewImageNode } from '../nodes/PreviewImageNode';
+import { GroupNode } from '../nodes/GroupNode';
 import { PrismEdge } from '../edges/PrismEdge';
 import { ConnectionLine } from '../edges/ConnectionLine';
 import { CanvasToolbar } from './CanvasToolbar';
 import { NodeSearchModal } from './NodeSearchModal';
+import { NodeContextMenu } from './NodeContextMenu';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nodeTypes: Record<string, any> = {
   prismNode: PrismNode,
+  previewImageNode: PreviewImageNode,
+  groupNode: GroupNode,
 };
 
 const edgeTypes = {
@@ -70,6 +75,10 @@ export const WorkflowCanvas: React.FC = () => {
   const removeSelectedEdges = useCanvasStore((s) => s.removeSelectedEdges);
   const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
   const selectedEdgeIds = useCanvasStore((s) => s.selectedEdgeIds);
+  const groups = useCanvasStore((s) => s.groups);
+  const addGroup = useCanvasStore((s) => s.addGroup);
+  const contextMenu = useCanvasStore((s) => s.contextMenu);
+  const setContextMenu = useCanvasStore((s) => s.setContextMenu);
 
   // ✅ Per React Flow docs: use applyNodeChanges/applyEdgeChanges to merge ALL change types
   // (position, dimensions, select, remove, etc.). This is REQUIRED for React Flow internals.
@@ -133,11 +142,42 @@ export const WorkflowCanvas: React.FC = () => {
       if (e.key === 'Escape') {
         clearSelection();
       }
+      // Ctrl+G / G → create group from selected nodes
+      if (e.key === 'g' || e.key === 'G') {
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+        if (selectedNodeIds.length >= 2) {
+          addGroup(`Group ${Date.now() % 1000}`, selectedNodeIds);
+        }
+      }
+      // Ctrl+C → copy selected nodes
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+        if (selectedNodeIds.length > 0) {
+          useCanvasStore.getState().copyNodes(selectedNodeIds);
+        }
+      }
+      // Ctrl+X → cut selected nodes
+      if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+        if (selectedNodeIds.length > 0) {
+          useCanvasStore.getState().cutNodes(selectedNodeIds);
+        }
+      }
+      // Ctrl+V → paste nodes
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+        // Paste near the viewport center
+        useCanvasStore.getState().pasteNodes({ x: 400, y: 300 });
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedNodeIds, selectedEdgeIds, removeSelectedNodes, removeSelectedEdges, clearSelection]);
+  }, [selectedNodeIds, selectedEdgeIds, removeSelectedNodes, removeSelectedEdges, clearSelection, addGroup]);
 
   // 调试日志：打印 nodes 全量数据
   useEffect(() => {
@@ -197,22 +237,49 @@ export const WorkflowCanvas: React.FC = () => {
     [reactFlowInstance, addNode]
   );
 
+  // selected state is managed by React Flow via applyNodeChanges — do NOT override manually
+  // Ctrl+click on a node toggles its selection (multi-select)
   const handleNodeClick: NodeMouseHandler = useCallback(
     (_event, node) => {
-      selectNode(node.id);
+      const isCtrlPressed = _event.ctrlKey || _event.metaKey;
+      selectNode(node.id, isCtrlPressed);
     },
     [selectNode]
   );
 
+  // Merge group nodes into the React Flow nodes array
+  // GroupNodes are positioned at group.bounds and have pointer-events: none
+  // so clicks pass through to actual child nodes
+  const reactFlowNodes = useMemo(() => {
+    const groupNodes: import('@xyflow/react').Node[] = groups.map((g) => ({
+      id: g.id,
+      type: 'groupNode',
+      position: { x: g.bounds.x, y: g.bounds.y },
+      data: { group: g },
+      // Group nodes are not selectable/draggable by React Flow directly;
+      // dragging is handled by GroupNode's internal mouse events
+      draggable: false,
+      selectable: false,
+    }));
+    return [...nodes, ...groupNodes];
+  }, [nodes, groups]);
+
   const handlePaneClick = useCallback(
     () => {
       clearSelection();
+      setContextMenu(null);
     },
-    [clearSelection]
+    [clearSelection, setContextMenu]
   );
 
-  // selected state is managed by React Flow via applyNodeChanges — do NOT override manually
-  const nodesWithSelection = nodes;
+  const handleNodeContextMenu = useCallback(
+    (event: React.MouseEvent, _node: import('@xyflow/react').Node) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setContextMenu({ x: event.clientX, y: event.clientY, nodeId: _node.id });
+    },
+    [setContextMenu]
+  );
 
   return (
     <CanvasErrorBoundary>
@@ -220,7 +287,7 @@ export const WorkflowCanvas: React.FC = () => {
       <ReactFlow
         className="dark"
         style={{ width: '100%', height: '100%' }}
-        nodes={nodesWithSelection}
+        nodes={reactFlowNodes}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
@@ -228,6 +295,7 @@ export const WorkflowCanvas: React.FC = () => {
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         onNodeClick={handleNodeClick}
+        onNodeContextMenu={handleNodeContextMenu}
         onPaneClick={handlePaneClick}
         onNodeDoubleClick={() => setSearchOpen(true)}
         onMoveEnd={onMoveEnd}
@@ -235,14 +303,19 @@ export const WorkflowCanvas: React.FC = () => {
         edgeTypes={edgeTypes}
         snapToGrid
         snapGrid={[16, 16]}
-        multiSelectionKeyCode="Shift"
+        multiSelectionKeyCode="Ctrl"
         selectionOnDrag
         panOnScroll
         zoomOnScroll
         zoomOnPinch
         panOnDrag
         connectionRadius={30}
-        defaultEdgeOptions={{ type: 'default', animated: false, markerEnd: MarkerType.ArrowClosed }}
+        defaultEdgeOptions={{
+          type: 'default',
+          animated: false,
+          markerEnd: MarkerType.ArrowClosed,
+          style: { strokeWidth: 3 },
+        }}
         connectionLineComponent={ConnectionLine}
       >
         <Background
@@ -288,6 +361,14 @@ export const WorkflowCanvas: React.FC = () => {
         >
           {validationError}
         </div>
+      )}
+      {contextMenu && (
+        <NodeContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          nodeId={contextMenu.nodeId}
+          onClose={() => setContextMenu(null)}
+        />
       )}
     </div>
     </CanvasErrorBoundary>

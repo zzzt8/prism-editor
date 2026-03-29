@@ -18,8 +18,8 @@ export interface PortDefinition {
   description?: string;
 }
 
-// Param types extend port types with 'select' (UI-only, not wireable)
-export type ParamDefinitionType = PortType | 'select';
+// Param types extend port types with UI-only types (select, image-file)
+export type ParamDefinitionType = PortType | 'select' | 'image-file';
 
 export interface ParamDefinition {
   id: string;

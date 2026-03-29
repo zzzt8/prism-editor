@@ -154,6 +154,10 @@ export class WorkflowExecutor {
         }
       }
 
+      // Populate ctx.inputs so ctx.requireInput() can read the populated data.
+      // Reset first to avoid stale data from the previous node.
+      ctx.inputs = nodeInputs;
+
       // Type validation and auto-conversion
       if (this.typeValidator) {
         try {

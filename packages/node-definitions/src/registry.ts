@@ -7,6 +7,7 @@ import {
   compositeDefinition,
   transformDefinition,
   exportDefinition,
+  previewImageDefinition,
 } from './definitions';
 
 export type NodeDefinitionRegistry = Map<string, NodeDefinition>;
@@ -26,6 +27,7 @@ export function registerBuiltIn(registry: NodeDefinitionRegistry): void {
     compositeDefinition,
     transformDefinition,
     exportDefinition,
+    previewImageDefinition,
   ];
 
   for (const def of builtIns) {

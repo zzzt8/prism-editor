@@ -81,15 +81,15 @@ describe('imageDataToBlob', () => {
 });
 
 describe('imageDataToDataUrl', () => {
-  it('returns a string starting with data: URL', () => {
+  it('returns a string starting with data: URL', async () => {
     const img = makeImage(0, 255, 0);
-    const url = imageDataToDataUrl(img, {});
+    const url = await imageDataToDataUrl(img, {});
     expect(url.startsWith('data:image/png;base64,')).toBe(true);
   });
 
-  it('returns a JPEG data URL when format is jpeg', () => {
+  it('returns a JPEG data URL when format is jpeg', async () => {
     const img = makeImage(0, 0, 255);
-    const url = imageDataToDataUrl(img, { format: 'jpeg' });
+    const url = await imageDataToDataUrl(img, { format: 'jpeg' });
     expect(url.startsWith('data:image/jpeg;base64,')).toBe(true);
   });
 });

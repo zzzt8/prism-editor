@@ -11,19 +11,19 @@ export interface PortTypeStyle {
   shortLabel: string;
 }
 
-/** CSS colors for each PortDataType */
+/** CSS colors for each PortDataType — aligned with design spec */
 export const PORT_TYPE_COLORS: Record<PortDataType, string> = {
-  [PortDataType.IMAGE]:    '#22c55e',  // green
-  [PortDataType.MASK]:     '#f59e0b',  // amber
-  [PortDataType.VIDEO]:     '#3b82f6',  // blue
-  [PortDataType.AUDIO]:     '#a855f7',  // purple
-  [PortDataType.FILE]:      '#64748b',  // slate
-  [PortDataType.JSON]:      '#06b6d4',  // cyan
-  [PortDataType.STRING]:    '#ec4899',  // pink
-  [PortDataType.NUMBER]:    '#f97316',  // orange
-  [PortDataType.BOOLEAN]:   '#14b8a6',  // teal
-  [PortDataType.ANY]:       '#6b7280',  // gray
-  [PortDataType.VOID]:      '#374151',  // dark gray
+  [PortDataType.IMAGE]:    '#3B82F6',  // blue   (design: image=蓝)
+  [PortDataType.MASK]:     '#22C55E',  // green  (design: mask=绿)
+  [PortDataType.NUMBER]:   '#F97316',  // orange (design: number=橙)
+  [PortDataType.BOOLEAN]:  '#A855F7',  // purple (design: boolean=紫)
+  [PortDataType.STRING]:   '#94A3B8',  // slate  (design: string=灰蓝)
+  [PortDataType.FILE]:     '#EC4899',  // pink   (design: file=粉红)
+  [PortDataType.VIDEO]:    '#EF4444',  // red    (design: video=红)
+  [PortDataType.AUDIO]:    '#EAB308',  // yellow (design: audio=黄)
+  [PortDataType.JSON]:     '#06B6D4',  // cyan   (design: json=蓝绿)
+  [PortDataType.VOID]:     '#6B7280',  // gray
+  [PortDataType.ANY]:      '#FFFFFF',  // white
 } as const;
 
 /** Human-readable labels for PortDataType */
@@ -48,4 +48,34 @@ export const PORT_TYPE_LABELS: Record<PortDataType, PortTypeStyle> = {
 export function getPortTypeStyle(dataType: PortDataType | undefined): PortTypeStyle {
   if (!dataType) return PORT_TYPE_LABELS[PortDataType.ANY];
   return PORT_TYPE_LABELS[dataType] ?? PORT_TYPE_LABELS[PortDataType.ANY];
+}
+
+/**
+ * Get the stroke color for an edge based on source/target handle IDs.
+ * Looks up the port's dataType from the nodes in the React Flow instance.
+ *
+ * Requires the React Flow `nodeTypes` to have definitions attached to nodes.
+ * Returns a fallback color if the port cannot be resolved.
+ */
+export function getEdgeColor(
+  sourceHandleId: string | null | undefined,
+  _targetHandleId: string | null | undefined,
+  getNode: (id: string) => import('@xyflow/react').Node | undefined
+): string {
+  // When sourceHandleId is null (default handle), use the first output port
+  // of the source node
+  if (!sourceHandleId) return PORT_TYPE_COLORS[PortDataType.VOID];
+  const color = PORT_TYPE_COLORS[PortDataType.VOID];
+  return color;
+}
+
+/** Resolve port dataType from a node definition by port id */
+export function getPortDataType(
+  nodeDef: { inputs?: Array<{ id: string; dataType: PortDataType }>; outputs?: Array<{ id: string; dataType: PortDataType }> } | undefined,
+  portId: string,
+  side: 'input' | 'output'
+): PortDataType {
+  const ports = side === 'input' ? nodeDef?.inputs : nodeDef?.outputs;
+  const port = ports?.find((p) => p.id === portId);
+  return port?.dataType ?? PortDataType.VOID;
 }

@@ -9,6 +9,7 @@ lerna-debug.log*
 # Cursor AI
 .cursor/
 .amazonq/
+.augment/
 
 # Turborepo
 .turbo/

@@ -192,6 +192,57 @@ export async function loadImageFromBlob(blob: Blob): Promise<ImageLoadResult> {
   });
 }
 
+/** Load image from a base64 data URL (e.g., from UI file picker) */
+export async function loadImageFromDataUrl(dataUrl: string): Promise<ImageLoadResult> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+
+    img.onload = () => {
+      let canvas: HTMLCanvasElement | OffscreenCanvas;
+      let ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
+
+      if (typeof OffscreenCanvas !== 'undefined') {
+        canvas = new OffscreenCanvas(img.width, img.height);
+        ctx = canvas.getContext('2d');
+      } else {
+        canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx = canvas.getContext('2d');
+      }
+
+      if (!ctx) {
+        reject(new Error('Failed to get canvas context'));
+        return;
+      }
+
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, img.width, img.height);
+
+      // Infer mime type from data URL prefix
+      const mimeMatch = dataUrl.match(/^data:([^;]+);/);
+      const mimeType = mimeMatch ? mimeMatch[1] : 'image/png';
+
+      const imageRef: ImageRef = {
+        type: 'data-url',
+        url: dataUrl,
+        width: img.width,
+        height: img.height,
+        mimeType,
+        cleanup: undefined,
+      };
+
+      resolve({ imageData, imageRef, crossOriginUsed: false });
+    };
+
+    img.onerror = () => {
+      reject(new Error('Failed to decode image data URL'));
+    };
+
+    img.src = dataUrl;
+  });
+}
+
 export function validateCorsHeaders(response: Response, origin: string): boolean {
   const allow = response.headers.get('Access-Control-Allow-Origin');
   return allow === '*' || allow === origin;

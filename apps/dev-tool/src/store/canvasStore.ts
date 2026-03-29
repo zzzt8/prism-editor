@@ -6,6 +6,7 @@ import type { NodeDefinition, PortDataType } from '@prism/shared-types';
 import { canConnectByDataType } from '@prism/shared-types';
 import { createRegistry } from '@prism/node-definitions';
 import { localStorageAdapter } from '../storage';
+import { PORT_TYPE_COLORS } from '../utils/portTypeStyles';
 
 /** Result of a connection validation check (enhanced with PortDataType) */
 export interface ConnectionValidation {
@@ -24,6 +25,23 @@ export interface CanvasNodeData extends Record<string, unknown> {
   executionResult?: Record<string, unknown>;
   /** Node execution error (populated when execution fails) */
   executionError?: string;
+  /**
+   * Dynamically added input ports (beyond static NodeDefinition.inputs).
+   * Used for Composite and similar nodes to support dynamic port counts.
+   * Stored at instance level only — does not modify the global NodeDefinition.
+   */
+  extraInputs?: Array<{ id: string; name: string; type: 'image'; dataType: PortDataType }>;
+  /**
+   * Dynamically added output ports (beyond static NodeDefinition.outputs).
+   * Stored at instance level only — does not modify the global NodeDefinition.
+   */
+  extraOutputs?: Array<{ id: string; name: string; type: 'image'; dataType: PortDataType }>;
+  /** Bypassed flag — when true, executor skips processing and passes inputs through */
+  bypassed?: boolean;
+  /** Minimized flag — when true, node renders as header-only (collapsible) */
+  minimized?: boolean;
+  /** Pinned flag — when true, node is locked and cannot be moved */
+  pinned?: boolean;
 }
 
 export interface CanvasNode {
@@ -40,6 +58,24 @@ export interface CanvasEdge {
   target: string;
   targetHandle?: string | null;
   type?: string;
+  /** V6: edge color driven by source port dataType, stored at creation time */
+  data?: { color?: string };
+}
+
+export interface NodeGroup {
+  id: string;
+  label: string;
+  color: string;
+  /** IDs of nodes that belong to this group */
+  nodeIds: string[];
+  /** Bounding box of the group in canvas coordinates */
+  bounds: { x: number; y: number; width: number; height: number };
+}
+
+export interface ContextMenuState {
+  x: number;
+  y: number;
+  nodeId: string;
 }
 
 interface CanvasState {
@@ -47,6 +83,13 @@ interface CanvasState {
   edges: CanvasEdge[];
   selectedNodeIds: string[];
   selectedEdgeIds: string[];
+  groups: NodeGroup[];
+  /** Clipboard for copy/cut/paste */
+  clipboard: CanvasNode[] | null;
+  /** Active context menu */
+  contextMenu: ContextMenuState | null;
+  /** Inspector tab to open ('parameters' | 'settings' | 'info') */
+  inspectorTab: 'parameters' | 'settings' | 'info';
   workflowMeta: { id: string; name: string; version: string };
   isDirty: boolean;
   viewport: { x: number; y: number; zoom: number };
@@ -58,6 +101,7 @@ interface CanvasState {
   removeNode: (id: string) => void;
   updateNodePosition: (id: string, position: { x: number; y: number }) => void;
   updateNodeParams: (id: string, params: Record<string, unknown>) => void;
+  updateNodeData: (id: string, data: Partial<CanvasNodeData>) => void;
   setNodes: (nodes: CanvasNode[]) => void;
   setEdges: (edges: CanvasEdge[]) => void;
   onNodesChange: (changes: any[]) => void;
@@ -82,6 +126,24 @@ interface CanvasState {
   executeWorkflow: () => Promise<{ status: 'done' | 'error' | 'cancelled'; error?: string }>;
   cancelExecution: () => void;
   clearExecution: () => void;
+
+  /** Group operations */
+  addGroup: (label: string, nodeIds: string[]) => string;
+  removeGroup: (groupId: string) => void;
+  updateGroup: (groupId: string, updates: Partial<Omit<NodeGroup, 'id'>>) => void;
+  moveGroup: (groupId: string, deltaX: number, deltaY: number) => void;
+
+  /** Context menu operations */
+  setContextMenu: (menu: ContextMenuState | null) => void;
+  /** Clipboard operations */
+  copyNodes: (nodeIds: string[]) => void;
+  cutNodes: (nodeIds: string[]) => void;
+  pasteNodes: (position: { x: number; y: number }) => void;
+  /** Inspector */
+  openInspector: (tab: 'parameters' | 'settings' | 'info', nodeId?: string) => void;
+  /** Dynamic extra inputs */
+  addExtraInput: (nodeId: string, port: { id: string; name: string; type: 'image'; dataType: PortDataType }) => void;
+  removeExtraInput: (nodeId: string, portId: string) => void;
 }
 
 let nodeCounter = 0;
@@ -91,6 +153,10 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   edges: [],
   selectedNodeIds: [],
   selectedEdgeIds: [],
+  groups: [],
+  clipboard: null,
+  contextMenu: null,
+  inspectorTab: 'parameters',
   workflowMeta: { id: crypto.randomUUID(), name: 'Untitled Workflow', version: '1.0.0' },
   isDirty: false,
   viewport: { x: 0, y: 0, zoom: 1 },
@@ -103,10 +169,16 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const definition = registry.get(type);
     if (!definition) return;
 
+    // Map node type strings to React Flow component names
+    const nodeTypeMap: Record<string, string> = {
+      'preview-image': 'previewImageNode',
+    };
+    const reactFlowType = nodeTypeMap[type] ?? 'prismNode';
+
     const id = `node-${++nodeCounter}`;
     const newNode: CanvasNode = {
       id,
-      type: 'prismNode',
+      type: reactFlowType,
       position,
       data: {
         label: definition.label,
@@ -256,6 +328,9 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       return { valid: false, reason: 'Connection already exists' };
     }
 
+    // V6: compute edge color from source port dataType for ComfyUI-style colored cables
+    const edgeColor = PORT_TYPE_COLORS[sourceType] ?? '#6b7280';
+
     const newEdge: CanvasEdge = {
       id: `edge-${crypto.randomUUID()}`,
       source: connection.from.nodeId,
@@ -263,6 +338,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       target: connection.to.nodeId,
       targetHandle: connection.to.port,
       type: 'default',
+      data: { color: edgeColor },
     };
 
     set((state) => ({ edges: [...state.edges, newEdge], isDirty: true }));
@@ -375,8 +451,14 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       })),
       connections: edges.map((e): Connection => ({
         id: e.id,
-        from: { nodeId: e.source, port: e.sourceHandle ?? 'out' },
-        to: { nodeId: e.target, port: e.targetHandle ?? 'in' },
+        from: {
+          nodeId: e.source,
+          port: e.sourceHandle ?? (() => { throw new Error('sourceHandle is required'); })(),
+        },
+        to: {
+          nodeId: e.target,
+          port: e.targetHandle ?? (() => { throw new Error('targetHandle is required'); })(),
+        },
       })),
       inputs: [],
       outputs: [],
@@ -451,8 +533,14 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       })),
       connections: get().edges.map((e): Connection => ({
         id: e.id,
-        from: { nodeId: e.source, port: e.sourceHandle ?? 'out' },
-        to: { nodeId: e.target, port: e.targetHandle ?? 'in' },
+        from: {
+          nodeId: e.source,
+          port: e.sourceHandle ?? (() => { throw new Error('sourceHandle is required'); })(),
+        },
+        to: {
+          nodeId: e.target,
+          port: e.targetHandle ?? (() => { throw new Error('targetHandle is required'); })(),
+        },
       })),
       inputs: [],
       outputs: [],
@@ -525,8 +613,14 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       })),
       connections: edges.map((e) => ({
         id: e.id,
-        from: { nodeId: e.source, port: e.sourceHandle ?? 'out' },
-        to: { nodeId: e.target, port: e.targetHandle ?? 'in' },
+        from: {
+          nodeId: e.source,
+          port: e.sourceHandle ?? (() => { throw new Error('sourceHandle is required'); })(),
+        },
+        to: {
+          nodeId: e.target,
+          port: e.targetHandle ?? (() => { throw new Error('targetHandle is required'); })(),
+        },
       })),
       inputs: [],
       outputs: [],
@@ -574,6 +668,194 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       })),
       _executionStatus: 'idle' as const,
       _currentNodeId: null,
+    }));
+  },
+
+  // ── Group operations ──────────────────────────────────────────────────────
+
+  addGroup(label, nodeIds) {
+    const id = `group-${Date.now()}`;
+    const state = get();
+    if (nodeIds.length === 0) return id;
+
+    // Compute bounding box from child nodes
+    const groupNodes = state.nodes.filter((n) => nodeIds.includes(n.id));
+    if (groupNodes.length === 0) return id;
+
+    const xs = groupNodes.map((n) => n.position.x);
+    const ys = groupNodes.map((n) => n.position.y);
+    const maxXs = groupNodes.map((n) => n.position.x + 200); // approximate node width
+    const maxYs = groupNodes.map((n) => n.position.y + 100); // approximate node height
+
+    const minX = Math.min(...xs) - 24;
+    const minY = Math.min(...ys) - 24;
+    const width = Math.max(...maxXs) - minX + 24;
+    const height = Math.max(...maxYs) - minY + 24;
+
+    const group: NodeGroup = {
+      id,
+      label,
+      color: '#6366f1',
+      nodeIds,
+      bounds: { x: minX, y: minY, width, height },
+    };
+
+    set((s) => ({ groups: [...s.groups, group], isDirty: true }));
+    return id;
+  },
+
+  removeGroup(groupId) {
+    set((state) => ({
+      groups: state.groups.filter((g) => g.id !== groupId),
+      isDirty: true,
+    }));
+  },
+
+  updateGroup(groupId, updates) {
+    set((state) => ({
+      groups: state.groups.map((g) =>
+        g.id === groupId ? { ...g, ...updates } : g
+      ),
+      isDirty: true,
+    }));
+  },
+
+  /**
+   * Move all nodes in a group by a delta.
+   * Also updates the group's bounds accordingly.
+   */
+  moveGroup(groupId, deltaX, deltaY) {
+    const state = get();
+    const group = state.groups.find((g) => g.id === groupId);
+    if (!group) return;
+
+    set((s) => ({
+      // Move all child nodes
+      nodes: s.nodes.map((n) =>
+        group.nodeIds.includes(n.id)
+          ? { ...n, position: { x: n.position.x + deltaX, y: n.position.y + deltaY } }
+          : n
+      ),
+      // Move the group's own bounds
+      groups: s.groups.map((g) =>
+        g.id === groupId
+          ? {
+              ...g,
+              bounds: {
+                x: g.bounds.x + deltaX,
+                y: g.bounds.y + deltaY,
+                width: g.bounds.width,
+                height: g.bounds.height,
+              },
+            }
+          : g
+      ),
+      isDirty: true,
+    }));
+  },
+
+  // ── Context menu & clipboard ─────────────────────────────────────────────
+
+  setContextMenu(menu) {
+    set({ contextMenu: menu });
+  },
+
+  copyNodes(nodeIds) {
+    const state = get();
+    const nodesToCopy = state.nodes.filter((n) => nodeIds.includes(n.id));
+    set({ clipboard: nodesToCopy });
+  },
+
+  cutNodes(nodeIds) {
+    const state = get();
+    const nodesToCut = state.nodes.filter((n) => nodeIds.includes(n.id));
+    set((s) => ({
+      clipboard: nodesToCut,
+      nodes: s.nodes.filter((n) => !nodeIds.includes(n.id)),
+      edges: s.edges.filter((e) => !nodeIds.includes(e.source) && !nodeIds.includes(e.target)),
+      selectedNodeIds: s.selectedNodeIds.filter((id) => !nodeIds.includes(id)),
+      isDirty: true,
+    }));
+  },
+
+  pasteNodes(position) {
+    const state = get();
+    if (!state.clipboard || state.clipboard.length === 0) return;
+
+    const pasteOffset = 40;
+    const newNodes = state.clipboard.map((origNode) => {
+      const newId = `node-${++nodeCounter}`;
+      return {
+        ...origNode,
+        id: newId,
+        position: {
+          x: origNode.position.x + pasteOffset,
+          y: origNode.position.y + pasteOffset,
+        },
+        data: {
+          ...origNode.data,
+          // Clear execution state on paste
+          executionResult: undefined,
+          executionError: undefined,
+          bypassed: false,
+          minimized: false,
+        },
+      };
+    });
+
+    set((s) => ({
+      nodes: [...s.nodes, ...newNodes],
+      clipboard: newNodes,
+      isDirty: true,
+    }));
+  },
+
+  openInspector(tab, nodeId) {
+    set({ inspectorTab: tab });
+    if (nodeId) {
+      set((s) => ({ selectedNodeIds: [nodeId] }));
+    }
+  },
+
+  updateNodeData(id, data) {
+    set((state) => ({
+      nodes: state.nodes.map((n) =>
+        n.id === id ? { ...n, data: { ...n.data, ...data } } : n
+      ),
+      isDirty: true,
+    }));
+  },
+
+  addExtraInput(nodeId, port) {
+    set((state) => ({
+      nodes: state.nodes.map((n) => {
+        if (n.id !== nodeId) return n;
+        const existing = n.data.extraInputs ?? [];
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            extraInputs: [...existing, port],
+          },
+        };
+      }),
+      isDirty: true,
+    }));
+  },
+
+  removeExtraInput(nodeId, portId) {
+    set((state) => ({
+      nodes: state.nodes.map((n) => {
+        if (n.id !== nodeId) return n;
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            extraInputs: (n.data.extraInputs ?? []).filter((p) => p.id !== portId),
+          },
+        };
+      }),
+      isDirty: true,
     }));
   },
 }));

@@ -373,76 +373,121 @@ body {
   overflow: hidden;
 }
 
+/* ----------------------------------------------------------------
+   17. Edge Styles — ComfyUI bezier cables with drop-shadow
+   ---------------------------------------------------------------- */
+
+/* V6: ComfyUI-style thick bezier edges.
+   The .react-flow__edge-path is the SVG path rendered by React Flow's BaseEdge.
+   These styles apply to ALL edge types (including prismEdge) as a global baseline. */
 .react-flow__edge-path {
-  stroke: var(--color-border) !important;
-  stroke-width: 2 !important;
+  /* Thick stroke + dual drop-shadow = ComfyUI "floating cable" on dark grids */
+  filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.92)) drop-shadow(0px -1px 1px rgba(0, 0, 0, 0.6));
+  transition:
+    stroke-width 0.15s ease,
+    filter 0.15s ease;
+  /* Ensure clean anti-aliased rendering */
+  shape-rendering: geometricPrecision;
 }
 
-.react-flow__edge.selected .react-flow__edge-path,
-.react-flow__edge:focus .react-flow__edge-path,
-.react-flow__edge:hover .react-flow__edge-path {
-  stroke: var(--color-accent) !important;
+/* V6: hover / selected state — thicken + glow */
+.react-flow__edge:hover .react-flow__edge-path,
+.react-flow__edge.selected .react-flow__edge-path {
+  /* z-index lift prevents edges from being obscured by other elements */
+  z-index: 10;
+  filter:
+    drop-shadow(0px 0px 4px currentColor)
+    drop-shadow(0px 0px 8px currentColor);
 }
 
+/* Edge selection ring — ComfyUI uses a subtle glow rather than a visible ring */
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke-width: 4;
+}
+
+/* Edge animation (running state — not used by default but available) */
+.react-flow__edge.animated .react-flow__edge-path {
+  stroke-dasharray: 6 4;
+  animation: prism-edge-flow 0.8s linear infinite;
+}
+
+@keyframes prism-edge-flow {
+  from { stroke-dashoffset: 10; }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* ----------------------------------------------------------------
+   18. Handle Styles — base + connecting
+   ---------------------------------------------------------------- */
+
+/* V6: base handle — inherits riveted positioning from .react-flow__handle-comfy
+   (set in dense-control-node.css). Here we add z-index + overflow so
+   the riveted circle renders above the node's outer border. */
+.react-flow__handle {
+  width: 14px !important;
+  height: 14px !important;
+  border: 2px solid #222222 !important;
+  z-index: 10 !important;
+  overflow: visible !important;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    opacity 0.15s,
+    box-shadow 0.15s,
+    transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+/* V6 riveted positioning for the base handle class too (fallback for non-comfy nodes) */
+.react-flow__handle.react-flow__handle-target,
+.react-flow__handle.react-flow__handle-left {
+  left: -23px !important;
+}
+.react-flow__handle.react-flow__handle-source,
+.react-flow__handle.react-flow__handle-right {
+  right: -23px !important;
+}
+
+/* Hover: border goes white for visibility + scale + color-driven glow */
+.react-flow__handle:hover {
+  opacity: 1;
+  border-color: #ffffff !important;
+  transform: translateY(-50%) scale(1.4) !important;
+  z-index: 20 !important;
+  box-shadow: 0 0 8px currentColor !important;
+}
+
+.react-flow__handle-comfy:hover {
+  opacity: 1;
+  border-color: #ffffff !important;
+  transform: translateY(-50%) scale(1.4) !important;
+  z-index: 20 !important;
+  box-shadow: 0 0 8px currentColor !important;
+}
+
+.react-flow__handle.connecting {
+  background: #55AAFF !important;
+  border-color: #55AAFF !important;
+  opacity: 1 !important;
+}
+
+/* Connection line preview while dragging */
 .react-flow__connection-path {
   stroke: var(--color-accent) !important;
   stroke-width: 2 !important;
 }
 
-.react-flow__handle {
-  width: 10px !important;
-  height: 10px !important;
-  background: var(--color-surface-2) !important;
-  border: 2px solid var(--color-border) !important;
-  transition: border-color 0.15s, background 0.15s;
+/* Edge tooltip / label (future extension) */
+.prism-edge-label {
+  font-size: 9px;
+  font-family: 'SF Mono', 'Cascadia Code', monospace;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  border-radius: 3px;
+  padding: 1px 5px;
+  pointer-events: none;
 }
 
-.react-flow__handle:hover {
-  background: var(--color-accent) !important;
-  border-color: var(--color-accent) !important;
-}
-
-.react-flow__handle.connecting {
-  background: var(--color-accent) !important;
-  border-color: var(--color-accent) !important;
-}
-
-/* === Prism Nodes === */
-
-.prism-node {
-  min-width: 160px;
-  border: 1.5px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-surface);
-  overflow: visible;
-  transition: border-color 0.15s, box-shadow 0.15s;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  position: relative;
-}
-
-.prism-node.selected {
-  box-shadow: 0 0 0 2px var(--node-color, var(--color-accent)), 0 4px 16px rgba(0,0,0,0.4) !important;
-}
-
-.prism-node.prism-node--running {
-  border-color: #60a5fa;
-  animation: node-running-pulse 1.2s ease-in-out infinite;
-}
-@keyframes node-running-pulse {
-  0%, 100% { box-shadow: 0 0 0 2px rgba(96,165,250,0.4), 0 4px 16px rgba(0,0,0,0.3); }
-  50%       { box-shadow: 0 0 0 4px rgba(96,165,250,0.2), 0 4px 20px rgba(0,0,0,0.4); }
-}
-
-.prism-node.prism-node--error {
-  border-color: #f87171;
-  box-shadow: 0 0 0 2px rgba(248,113,113,0.3), 0 4px 16px rgba(0,0,0,0.3);
-}
-
-.prism-node:hover .prism-node-ports {
-  opacity: 1;
-}
-
-/* Header */
+/* === Canvas Toolbar === */
 .prism-node-header {
   padding: 6px 10px;
   display: flex;
@@ -492,6 +537,8 @@ body {
 }
 
 /* Ports container — invisible by default, visible on parent hover */
+/* [DCN] Port columns moved to styles/nodes/dense-control-node.css */
+/*
 .prism-node-ports {
   position: absolute;
   top: 0;
@@ -505,7 +552,36 @@ body {
   transition: opacity 0.15s;
 }
 .prism-node-ports--input  { left: -10px; }
-.prism-node-ports--output { right: -10px; }
+.prism-node-ports--output {
+  right: -10px;
+  justify-content: flex-start;
+  gap: 6px;
+}
+.prism-node-output-port-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.prism-node-output-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.15);
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+  flex-shrink: 0;
+}
+.prism-node-output-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 6px rgba(255,255,255,0.3);
+}
+.prism-node-output-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #1a1a1d;
+}
 
 /* Handles */
 .prism-handle {
@@ -594,6 +670,7 @@ body {
   border-radius: 3px;
   overflow: hidden;
   max-height: 44px;
+  position: relative;
 }
 .prism-node-thumbnail-img {
   max-width: 80px;
@@ -610,6 +687,39 @@ body {
 
 .prism-node-thumbnail--clickable:hover {
   border-color: rgba(255,255,255,0.3);
+}
+
+/* OUTPUT section: labeled row showing execution result image */
+.prism-node-output-section {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+}
+
+.prism-node-output-label {
+  font-size: 9px;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Cascadia Code', monospace;
+  color: var(--node-color, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.prism-node-thumbnail-badge {
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  font-size: 9px;
+  font-family: 'SF Mono', 'Cascadia Code', monospace;
+  color: rgba(255,255,255,0.85);
+  background: rgba(0,0,0,0.55);
+  border-radius: 3px;
+  padding: 1px 4px;
+  pointer-events: none;
+  line-height: 1.3;
 }
 
 /* Preview Modal */
@@ -733,17 +843,6 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.prism-node-type-tag {
-  font-size: 9px;
-  font-family: 'SF Mono', 'Cascadia Code', monospace;
-  color: var(--color-text-muted);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 3px;
-  padding: 1px 4px;
-}
-
-
 /* === Canvas Toolbar === */
 
 .canvas-toolbar {
@@ -1117,6 +1216,87 @@ body {
 }
 .param-toggle input:checked + .param-toggle-track::after {
   transform: translateX(16px);
+}
+
+/* === Image File Upload (Load Image node) === */
+.image-file-upload-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--color-surface-2);
+  border: 1.5px dashed var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  justify-content: center;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.image-file-upload-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: rgba(99, 102, 241, 0.06);
+}
+
+.image-file-preview {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--color-surface-2);
+}
+.image-file-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+.image-file-name {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+.image-file-resolution {
+  font-size: 11px;
+  font-family: 'SF Mono', 'Cascadia Code', monospace;
+  color: var(--color-accent);
+  white-space: nowrap;
+  flex-shrink: 0;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+.image-file-img {
+  display: block;
+  width: 100%;
+  max-height: 180px;
+  object-fit: contain;
+  background: repeating-conic-gradient(#1a1a1a 0% 25%, #222 0% 50%) 0 0 / 16px 16px;
+}
+.image-file-change-btn {
+  display: block;
+  width: 100%;
+  padding: 6px;
+  background: var(--bg-surface);
+  border: none;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.image-file-change-btn:hover {
+  background: var(--color-surface-2);
+  color: var(--color-accent);
 }
 
 /* Node info section */

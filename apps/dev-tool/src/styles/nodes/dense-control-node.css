@@ -1,0 +1,710 @@
+/* ================================================================
+   Dense Control Node (DCN) — Modern SaaS / ComfyUI-Inspired Style
+   ================================================================
+   Design spec: Custom Node Design System (ComfyUI / Modern SaaS Style)
+   Structure: Header | Body (Input rows | Content | Output rows)
+   ================================================================ */
+
+/* ----------------------------------------------------------------
+   1. Design Tokens — CSS Variables
+   ---------------------------------------------------------------- */
+
+:root {
+  /* Port type colors — per design spec */
+  --port-image:    #55AAFF;
+  --port-method:   #B191FF;
+  --port-number:   #FF9844;
+  --port-boolean:  #FF6B6B;
+  --port-string:   #9CA3AF;
+  --port-file:     #EC4899;
+  --port-video:    #EF4444;
+  --port-audio:    #EAB308;
+  --port-json:     #06B6D4;
+  --port-void:     #6B7280;
+  --port-any:      #FFFFFF;
+
+  /* Node state colors */
+  --node-status-idle:    #6B7280;
+  --node-status-running: #55AAFF;
+  --node-status-done:    #4ADE80;
+  --node-status-error:   #FF6B6B;
+
+  /* Category accent colors */
+  --node-cat-input:     #22c55e;
+  --node-cat-transform: #55AAFF;
+  --node-cat-mask:     #FF9844;
+  --node-cat-composite: #B191FF;
+  --node-cat-output:    #FF6B6B;
+
+  /* Node layout tokens */
+  --dcn-radius:      10px;
+  --dcn-radius-sm:   6px;
+  --dcn-radius-xs:   4px;
+  --dcn-header-h:    32px;
+}
+
+/* ----------------------------------------------------------------
+   2. Node Container — fixed-width, 10px radius, breathing shadow
+   ---------------------------------------------------------------- */
+
+.dcn-node {
+  font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+  width: 240px;
+  min-width: 240px;
+  max-width: 560px;
+  border-radius: var(--dcn-radius);
+  border: 1px solid #333333;
+  background: #222222;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  /* V6 fix: ensure minimum height to prevent content collapse */
+  min-height: var(--dcn-header-h);
+}
+
+/* Selected — blue glow */
+.dcn-node--selected {
+  border-color: #55AAFF;
+  box-shadow: 0 0 0 2px rgba(85, 170, 255, 0.25), 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Running pulse */
+.dcn-node--running {
+  border-color: var(--node-status-running);
+  animation: dcn-running-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes dcn-running-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(85, 170, 255, 0.2), 0 4px 16px rgba(0, 0, 0, 0.4); }
+  50%       { box-shadow: 0 0 0 5px rgba(85, 170, 255, 0.1),  0 4px 24px rgba(0, 0, 0, 0.5); }
+}
+
+/* Error */
+.dcn-node--error {
+  border-color: var(--node-status-error);
+  box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.2), 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* ----------------------------------------------------------------
+   3. Header — #2A2A2A, status dot, Space Grotesk title
+   ---------------------------------------------------------------- */
+
+.dcn-header {
+  background-color: #2A2A2A;
+  padding: 0 14px;
+  height: var(--dcn-header-h);
+  border-bottom: 1px solid #333333;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  border-radius: var(--dcn-radius) var(--dcn-radius) 0 0;
+}
+
+/* Category accent bar */
+.dcn-header--cat-input     { border-left: 3px solid var(--node-cat-input); }
+.dcn-header--cat-transform { border-left: 3px solid var(--node-cat-transform); }
+.dcn-header--cat-mask       { border-left: 3px solid var(--node-cat-mask); }
+.dcn-header--cat-composite  { border-left: 3px solid var(--node-cat-composite); }
+.dcn-header--cat-output     { border-left: 3px solid var(--node-cat-output); }
+.dcn-header--cat-default    { border-left: 3px solid #555555; }
+
+/* Status dot */
+.dcn-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dcn-status-dot--idle    { background-color: #555; }
+.dcn-status-dot--running { background-color: var(--node-status-running); animation: dcn-dot-pulse 1s ease-in-out infinite; }
+.dcn-status-dot--done    { background-color: var(--node-status-done); }
+.dcn-status-dot--error   { background-color: var(--node-status-error); }
+
+@keyframes dcn-dot-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* Title — Space Grotesk, white, 13px bold */
+.dcn-title {
+  flex: 1;
+  font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: default;
+  min-width: 0;
+}
+
+/* Header actions */
+.dcn-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.dcn-header-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  border-radius: var(--dcn-radius-xs);
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  padding: 0;
+  line-height: 1;
+}
+.dcn-header-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ----------------------------------------------------------------
+   4. Body — padding 12px 14px, gap 8px, flex column
+   ---------------------------------------------------------------- */
+
+.dcn-body {
+  padding: 12px var(--dcn-body-pad-x, 16px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* V6 fix: 10px gap gives rows breathing room */
+  flex: 1;
+  background: #222222;
+  /* V6: expose padding as CSS variable so handle positioning can negate it */
+  --dcn-body-pad-x: 16px;
+}
+
+/* Error banner */
+.dcn-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--node-status-error);
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  border-radius: var(--dcn-radius-xs);
+  padding: 6px;
+}
+.dcn-error-icon { font-size: 11px; flex-shrink: 0; line-height: 1.4; }
+.dcn-error-msg {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+/* ----------------------------------------------------------------
+   5. Port Rows — space-between, embedded handles
+   ---------------------------------------------------------------- */
+
+.dcn-port-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  width: 100%;
+  padding: 0;
+  min-height: 32px; /* V6 fix: 32px minimum row height — ports/sliders breathe */
+  gap: 8px;
+  /* Prevent adjacent rows from obscuring the scaled handle on hover */
+  z-index: 1;
+  transition: z-index 0s;
+}
+.dcn-port-row:hover {
+  z-index: 2;
+}
+
+.dcn-port-row--input {
+  flex-direction: row;
+}
+
+.dcn-port-row--output {
+  flex-direction: row-reverse;
+}
+
+/* Port label — text-label color per spec */
+.dcn-port-label {
+  color: #9CA3AF;
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+  line-height: 1.3;
+}
+
+.dcn-port-row--input .dcn-port-label  { text-align: left; }
+.dcn-port-row--output .dcn-port-label { text-align: right; }
+
+/* ----------------------------------------------------------------
+   6. Embedded Handles — 14px circle, "rivet on the border" positioning
+   ---------------------------------------------------------------- */
+
+/*
+   V6 "Riveted" Positioning Formula
+   ─────────────────────────────────
+   .dcn-body has --dcn-body-pad-x = 16px horizontal padding.
+
+   To make the handle HALF sit inside the node and HALF outside on the grid,
+   we must negate BOTH the body padding AND the handle's own half-width:
+
+     offset = -(padding_x + radius)
+            = -(16px + 7px)
+            = -23px  ← fixed value; calc() with CSS vars skipped due to
+                        cascade issues through React Flow internals
+
+   CSS custom properties don't reliably cascade through React Flow's
+   DOM structure, so we use fixed -23px values here.
+
+   React Flow v12 generates BOTH sets of position classes:
+     - react-flow__handle-{position}   ← from position={Position.Left/Right}
+     - react-flow__handle-{type}       ← from type="target"/"source"
+   Both selectors are covered below to guarantee the riveted effect.
+*/
+
+.react-flow__handle-comfy {
+  width: 14px !important;
+  height: 14px !important;
+  border: 2px solid #222222 !important;
+  opacity: 0.9;
+  cursor: crosshair;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 10 !important; /* V6: handle floats above the node's border line */
+  overflow: visible !important;
+  transition:
+    opacity 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s,
+    transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+/* Hover: border goes white for visibility + scale + color-driven glow */
+.react-flow__handle-comfy:hover {
+  opacity: 1;
+  border-color: #ffffff !important;
+  transform: translateY(-50%) scale(1.4) !important;
+  z-index: 20 !important; /* lift above siblings during hover */
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* Left — target (input) port: riveted to the left outer border line */
+.react-flow__handle-comfy.react-flow__handle-target,
+.react-flow__handle-comfy.react-flow__handle-left {
+  left: -23px !important; /* -(16px body pad + 7px handle radius) */
+}
+
+/* Right — source (output) port: riveted to the right outer border line */
+.react-flow__handle-comfy.react-flow__handle-source,
+.react-flow__handle-comfy.react-flow__handle-right {
+  right: -23px !important;
+}
+
+/* Port thumbnail (output) */
+.dcn-port-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--dcn-radius-xs);
+  overflow: hidden;
+  border: 1px solid #333333;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+  flex-shrink: 0;
+  background: repeating-conic-gradient(#1a1a1a 0% 25%, #222 0% 50%) 0 0 / 8px 8px;
+}
+.dcn-port-thumb:hover {
+  border-color: #55AAFF;
+  box-shadow: 0 0 6px rgba(85, 170, 255, 0.3);
+  transform: scale(1.05);
+}
+.dcn-port-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* ----------------------------------------------------------------
+   7. Section Divider — subtle 1px line
+   ---------------------------------------------------------------- */
+
+.dcn-section-divider {
+  height: 1px;
+  background: #333333;
+  margin: 0;
+}
+
+/* ----------------------------------------------------------------
+   8. Widget Rows — selects, sliders
+   ---------------------------------------------------------------- */
+
+.dcn-widget-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px; /* V6 fix: slightly more breathing between widget rows */
+}
+
+.dcn-widget-label {
+  color: #9CA3AF;
+  font-size: 11px;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Deep capsule select — per design spec */
+.dcn-select {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: #E5E7EB;
+  background: #1A1A1A;
+  border: 1px solid #333333;
+  border-radius: var(--dcn-radius-xs);
+  padding: 4px 28px 4px 10px;
+  height: 28px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239CA3AF' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  width: 100%;
+}
+.dcn-select:hover  { border-color: #55AAFF; color: #FFFFFF; }
+.dcn-select:focus  { border-color: #55AAFF; box-shadow: 0 0 0 2px rgba(85, 170, 255, 0.15); }
+
+/* Number input — deep capsule style */
+.dcn-number-input {
+  font-family: 'Inter', monospace;
+  font-size: 12px;
+  color: #E5E7EB;
+  background: #1A1A1A;
+  border: 1px solid #333333;
+  border-radius: var(--dcn-radius-xs);
+  padding: 4px 8px;
+  height: 28px;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 80px;
+}
+.dcn-number-input:hover { border-color: #55AAFF; color: #FFFFFF; }
+.dcn-number-input:focus { border-color: #55AAFF; box-shadow: 0 0 0 2px rgba(85, 170, 255, 0.15); }
+
+/* Slider — flat dark track */
+.dcn-input-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: #1A1A1A;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  border: 1px solid #333333;
+}
+.dcn-input-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #55AAFF;
+  border: 2px solid #222222;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.dcn-input-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 6px rgba(85, 170, 255, 0.5);
+}
+.dcn-input-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #55AAFF;
+  border: 2px solid #222222;
+  cursor: pointer;
+}
+
+/* ----------------------------------------------------------------
+   9. Image Preview Area
+   ---------------------------------------------------------------- */
+
+/* Core preview container — fills available width, min 100px tall,
+   max 250px so images don't blow the node out of proportion. */
+.dcn-preview {
+  width: 100%;
+  min-height: 100px;
+  max-height: 250px;
+  border-radius: var(--dcn-radius-sm);
+  overflow: hidden;
+  background: repeating-conic-gradient(#1a1a1a 0% 25%, #222 0% 50%) 0 0 / 12px 12px;
+  border: 1px solid #333333;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-in;
+}
+
+/* The preview image — object-fit: contain is the only reliable way to
+   keep the image ratio correct without distortion or blowout. */
+.dcn-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+}
+.dcn-preview-img:hover { opacity: 0.88; }
+
+.dcn-preview-badge {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  font-size: 10px;
+  font-family: 'Space Grotesk', monospace;
+  color: #E5E7EB;
+  background: rgba(0, 0, 0, 0.65);
+  border-radius: var(--dcn-radius-xs);
+  padding: 2px 6px;
+  pointer-events: none;
+  line-height: 1.3;
+  border: 1px solid #333333;
+}
+
+/* File info row */
+.dcn-file-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+.dcn-file-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #9CA3AF;
+}
+.dcn-file-resolution {
+  color: var(--port-image);
+  background: rgba(85, 170, 255, 0.1);
+  border: 1px solid rgba(85, 170, 255, 0.2);
+  border-radius: var(--dcn-radius-xs);
+  padding: 1px 6px;
+  font-family: 'Space Grotesk', monospace;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+/* ----------------------------------------------------------------
+   10. Param Chips
+   ---------------------------------------------------------------- */
+
+.dcn-params {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.dcn-param-chip {
+  font-size: 11px;
+  font-family: 'Inter', monospace;
+  color: #E5E7EB;
+  background: #1A1A1A;
+  border: 1px solid #333333;
+  border-radius: var(--dcn-radius-xs);
+  padding: 3px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+/* ----------------------------------------------------------------
+   11. Minimized Node
+   ---------------------------------------------------------------- */
+
+.dcn-node--minimized .dcn-body { display: none; }
+.dcn-node--minimized { height: var(--dcn-header-h); }
+
+/* ----------------------------------------------------------------
+   12. Bypassed Node
+   ---------------------------------------------------------------- */
+
+.dcn-node--bypassed { opacity: 0.5; }
+.dcn-node--bypassed::after {
+  content: 'BYPASSED';
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #FF9844;
+  background: rgba(255, 152, 68, 0.1);
+  border: 1px solid rgba(255, 152, 68, 0.3);
+  border-radius: var(--dcn-radius-xs);
+  padding: 2px 6px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ----------------------------------------------------------------
+   13. Group Styles
+   ---------------------------------------------------------------- */
+
+.dcn-group {
+  border: 1px dashed #333333;
+  border-radius: var(--dcn-radius);
+  background: rgba(85, 170, 255, 0.03);
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dcn-group-header {
+  position: absolute;
+  top: -10px;
+  left: 10px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(85, 170, 255, 0.6);
+  background: #222222;
+  padding: 0 6px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  pointer-events: none;
+  border: 1px solid #333333;
+  border-radius: var(--dcn-radius-xs);
+}
+
+/* ----------------------------------------------------------------
+   14. Context Menu
+   ---------------------------------------------------------------- */
+
+.dcn-context-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 180px;
+  background: #222222;
+  border: 1px solid #333333;
+  border-radius: var(--dcn-radius-sm);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  animation: dcn-menu-in 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes dcn-menu-in {
+  from { opacity: 0; transform: scale(0.92) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.dcn-context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #2a2a2a;
+  color: #E5E7EB;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+.dcn-context-menu-item:last-child { border-bottom: none; }
+.dcn-context-menu-item:hover { background: #2A2A2A; }
+.dcn-context-menu-item:active { background: #333333; }
+.dcn-context-menu-item--danger { color: #FF6B6B; }
+.dcn-context-menu-item--danger:hover { background: rgba(255, 107, 107, 0.1); }
+
+.dcn-context-menu-shortcut {
+  margin-left: auto;
+  font-size: 10px;
+  color: #555555;
+  font-family: 'Space Grotesk', monospace;
+}
+
+/* ----------------------------------------------------------------
+   15. PreviewImageNode — port containers & placeholder
+   ---------------------------------------------------------------- */
+
+/* Port container strips (used by PreviewImageNode for edge ports) */
+.dcn-ports-left,
+.dcn-ports-right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+.dcn-ports-left  { left: 0; }
+.dcn-ports-right { right: 0; }
+
+.dcn-port {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+.dcn-port--left  { padding-left: 4px; }
+.dcn-port--right { padding-right: 4px; }
+
+/* Output thumbnail inside the port strip */
+.dcn-output-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--dcn-radius-xs);
+  overflow: hidden;
+  border: 1px solid #333333;
+  background: repeating-conic-gradient(#1a1a1a 0% 25%, #222 0% 50%) 0 0 / 8px 8px;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+.dcn-output-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Placeholder shown when no image is connected */
+.dcn-preview-placeholder {
+  width: 100%;
+  min-height: 100px;
+  max-height: 250px;
+  border-radius: var(--dcn-radius-sm);
+  border: 1px solid #333333;
+  background: repeating-conic-gradient(#1a1a1a 0% 25%, #222 0% 50%) 0 0 / 12px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px;
+}

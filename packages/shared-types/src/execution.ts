@@ -125,6 +125,29 @@ export interface ExecutionCache {
 // All outputs include previewUrl / width / height for canvas rendering.
 // The `type` discriminator enables discriminated union narrowing at runtime.
 
+/**
+ * Unified image runtime contract (R2 — Mandatory Rule).
+ *
+ * All image node outputs must conform to this shape. The `data` field holds
+ * the canonical pixel data (ImageData for processing nodes, Blob for Export).
+ *
+ * Design: openspec/changes/node-editor-comfyui-refactor/design.md §10
+ */
+export interface ImageRuntimeObject {
+  /** Pixel data for inter-node transmission.
+   * - Image processing nodes (LoadImage, Transform, etc.): ImageData
+   * - Export node: Blob (the exported file) */
+  data: ImageData | Blob;
+  /** Image width in pixels */
+  width: number;
+  /** Image height in pixels */
+  height: number;
+  /** Blob URL for UI preview (managed by ImageMemoryManager lifecycle) */
+  previewUrl: string;
+  /** Optional: source file name (populated by LoadImage) */
+  sourceFileName?: string;
+}
+
 /** Base fields present on every executor output */
 export interface BaseExecutorOutput {
   previewUrl: string;
@@ -132,32 +155,111 @@ export interface BaseExecutorOutput {
   height: number;
 }
 
+// ─── IRO format helpers ───────────────────────────────────────────────────
+// These helpers allow UI code to read executor output regardless of whether
+// the executor uses the new ImageRuntimeObject format or the old raw ImageData format.
+// Backward compatibility: both old and new formats are supported.
+
+/** Type guard: true when value has a `data` property (ImageRuntimeObject shape) */
+function hasDataProp(v: unknown): v is { data: unknown } {
+  return typeof v === 'object' && v !== null && 'data' in v;
+}
+
+/** Type guard: true when value has a `width` property */
+function hasWidthProp(v: unknown): v is { width: number } {
+  return typeof v === 'object' && v !== null && 'width' in v;
+}
+
+/** Type guard: true when value has a `height` property */
+function hasHeightProp(v: unknown): v is { height: number } {
+  return typeof v === 'object' && v !== null && 'height' in v;
+}
+
+/**
+ * Read image pixel data from executor output.
+ * - New format: `image: ImageRuntimeObject` ({ data: ImageData, width, height, previewUrl })
+ * - Old format: `image: ImageData` (raw ImageData)
+ * Returns undefined for Export nodes (where `data` is a Blob).
+ */
+export function unwrapImageData(
+  value: ImageData | ImageRuntimeObject | undefined
+): ImageData | undefined {
+  if (!value) return undefined;
+  if (hasDataProp(value)) {
+    // value is ImageRuntimeObject — extract data field, check it's ImageData (not Blob)
+    const d = value.data;
+    if (hasWidthProp(d) && hasHeightProp(d)) return d as ImageData;
+    return undefined; // Blob (Export node)
+  }
+  // value is raw ImageData (old format)
+  return value as ImageData;
+}
+
+/**
+ * Read previewUrl from executor output.
+ * - New format: uses ImageRuntimeObject.previewUrl
+ * - Old format: returns fallback (no previewUrl field)
+ */
+export function unwrapPreviewUrl(
+  value: ImageData | ImageRuntimeObject | undefined,
+  fallback: string | undefined
+): string | undefined {
+  if (!value) return fallback;
+  if (hasDataProp(value)) return (value as ImageRuntimeObject).previewUrl;
+  return fallback;
+}
+
+/** Read width — supports both old (ImageData) and new (IRO) formats */
+export function unwrapWidth(
+  value: ImageData | ImageRuntimeObject | undefined,
+  fallback: number | undefined
+): number | undefined {
+  if (!value) return fallback;
+  if (hasWidthProp(value)) return value.width;
+  return fallback;
+}
+
+/** Read height — supports both old (ImageData) and new (IRO) formats */
+export function unwrapHeight(
+  value: ImageData | ImageRuntimeObject | undefined,
+  fallback: number | undefined
+): number | undefined {
+  if (!value) return fallback;
+  if (hasHeightProp(value)) return value.height;
+  return fallback;
+}
+
 export interface LoadImageExecutorOutput extends BaseExecutorOutput {
   type: 'load-image';
-  image: ImageData;
+  image: ImageRuntimeObject;
   crossOriginWarning?: string;
 }
 
 export interface ApplyMaskExecutorOutput extends BaseExecutorOutput {
   type: 'apply-mask';
-  result: ImageData;
+  image: ImageRuntimeObject;
 }
 
 export interface CompositeExecutorOutput extends BaseExecutorOutput {
   type: 'composite';
-  result: ImageData;
+  image: ImageRuntimeObject;
 }
 
 export interface TransformExecutorOutput extends BaseExecutorOutput {
   type: 'transform';
-  result: ImageData;
+  image: ImageRuntimeObject;
 }
 
 export interface ExportExecutorOutput extends BaseExecutorOutput {
   type: 'export';
-  result: Blob;
-  dataUrl: string;
+  exported: ImageRuntimeObject;
   mimeType: string;
+  dataUrl: string;
+}
+
+export interface PreviewImageExecutorOutput extends BaseExecutorOutput {
+  type: 'preview-image';
+  image: ImageRuntimeObject;
 }
 
 /** Discriminated union of all executor outputs */
@@ -166,4 +268,5 @@ export type ExecutorOutput =
   | ApplyMaskExecutorOutput
   | CompositeExecutorOutput
   | TransformExecutorOutput
-  | ExportExecutorOutput;
+  | ExportExecutorOutput
+  | PreviewImageExecutorOutput;

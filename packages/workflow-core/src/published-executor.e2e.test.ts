@@ -19,6 +19,7 @@ import type {
   CompositeExecutorOutput,
   ExportExecutorOutput,
 } from '@prism/shared-types';
+import { unwrapImageData } from '@prism/shared-types';
 import { WorkflowExecutor } from '../src/executor';
 import { PublishedWorkflowExecutor } from '../src/published-executor';
 import { applyMask, compositeImages, exportImage } from '@prism/image-ops';
@@ -63,7 +64,7 @@ const mockLoadImage = (color = 'blue'): NodeExecutor =>
       :                    mkImage(4, 4, 255, 255, 0);
     return {
       type: 'load-image',
-      image: src,
+      image: { data: src, previewUrl: `blob:${color}`, width: src.width, height: src.height },
       previewUrl: `blob:${color}`,
       width: src.width,
       height: src.height,
@@ -72,13 +73,17 @@ const mockLoadImage = (color = 'blue'): NodeExecutor =>
 
 const mockApplyMask = (opts = {}): NodeExecutor =>
   async (inputs) => {
-    // This path exercises requireInput — if 'mask' is missing, executor throws
-    const image = inputs.image as ImageData;
-    const mask  = inputs.mask  as ImageData;
+    // inputs.image is now ImageRuntimeObject (new format) — extract data field
+    const rawImage = inputs.image as Parameters<typeof unwrapImageData>[0];
+    const rawMask  = inputs.mask  as Parameters<typeof unwrapImageData>[0];
+    const image = unwrapImageData(rawImage);
+    const mask  = unwrapImageData(rawMask);
+    if (!image) throw new Error('image input must be ImageData for ApplyMask');
+    if (!mask)  throw new Error('mask input must be ImageData for ApplyMask');
     const result = applyMask(image, mask, { type: 'alpha', threshold: 128, ...opts });
     return {
       type: 'apply-mask',
-      result,
+      image: { data: result, previewUrl: 'blob:masked', width: result.width, height: result.height },
       previewUrl: 'blob:masked',
       width: result.width,
       height: result.height,
@@ -87,12 +92,16 @@ const mockApplyMask = (opts = {}): NodeExecutor =>
 
 const mockComposite = (blend = 'normal', opacity = 1): NodeExecutor =>
   async (inputs) => {
-    const base    = inputs.base    as ImageData;
-    const overlay = inputs.overlay as ImageData;
+    const rawBase    = inputs.base    as Parameters<typeof unwrapImageData>[0];
+    const rawOverlay = inputs.overlay as Parameters<typeof unwrapImageData>[0];
+    const base    = unwrapImageData(rawBase);
+    const overlay = unwrapImageData(rawOverlay);
+    if (!base)    throw new Error('base input must be ImageData for Composite');
+    if (!overlay) throw new Error('overlay input must be ImageData for Composite');
     const result  = compositeImages(base, overlay, { blendMode: blend as 'normal', opacity });
     return {
       type: 'composite',
-      result,
+      image: { data: result, previewUrl: 'blob:composited', width: result.width, height: result.height },
       previewUrl: 'blob:composited',
       width: result.width,
       height: result.height,
@@ -104,11 +113,14 @@ const mockExport = (
   w = 0, h = 0
 ): NodeExecutor =>
   async (inputs) => {
-    const image = inputs.image as ImageData;
-    const result = await exportImage(image, { format, width: w, height: h });
+    // inputs.image is now ImageRuntimeObject (new format) — extract data field
+    const rawImage = inputs.image as Parameters<typeof unwrapImageData>[0];
+    const imageData = unwrapImageData(rawImage);
+    if (!imageData) throw new Error('image input must be ImageData');
+    const result = await exportImage(imageData, { format, width: w, height: h });
     return {
       type: 'export',
-      result: result.blob,
+      exported: { data: result.blob, previewUrl: result.dataUrl, width: result.width, height: result.height },
       previewUrl: result.dataUrl,
       dataUrl: result.dataUrl,
       width: result.width,
@@ -534,7 +546,7 @@ describe('14.3 PublishedWorkflowExecutor publish-run end-to-end', () => {
       const src = mkImage(4, 4, 0, 255, 0);
       return {
         type: 'load-image',
-        image: src,
+        image: { data: src, previewUrl: 'blob:custom', width: src.width, height: src.height },
         previewUrl: 'blob:custom',
         width: src.width,
         height: src.height,
@@ -570,10 +582,11 @@ describe('14.3 PublishedWorkflowExecutor publish-run end-to-end', () => {
       usedFormat = (params['format'] as string) ?? 'png';
       const src = mkImage(4, 4, 255, 255, 0);
       const fmt = (usedFormat ?? 'png') as 'png' | 'jpeg' | 'webp';
+      // Return new IRO format — the mock creates its own ImageData (not from inputs)
       const result = await exportImage(src, { format: fmt });
       return {
         type: 'export',
-        result: result.blob,
+        exported: { data: result.blob, previewUrl: result.dataUrl, width: result.width, height: result.height },
         previewUrl: result.dataUrl,
         dataUrl: result.dataUrl,
         width: result.width,
@@ -739,7 +752,7 @@ describe('14.3 PublishedWorkflowExecutor publish-run end-to-end', () => {
       const result = await exportImage(src, { format: 'png' });
       return {
         type: 'export',
-        result: result.blob,
+        exported: { data: result.blob, previewUrl: result.dataUrl, width: result.width, height: result.height },
         previewUrl: result.dataUrl,
         dataUrl: result.dataUrl,
         width: result.width,

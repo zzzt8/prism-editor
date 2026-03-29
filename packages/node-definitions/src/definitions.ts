@@ -1,4 +1,36 @@
-// Built-in node definitions
+/**
+ * @fileoverview Built-in node definitions
+ *
+ * PORT NAMING CONVENTION (see: openspec/changes/node-editor-comfyui-refactor/design.md)
+ * ──────────────────────────────────────────────────────────────────────────────
+ * This project follows a four-layer naming rule for port identifiers:
+ *
+ * Layer 1 - Port ID (programmatic identifier):
+ *   - kebab-case (e.g., 'base', 'overlay', 'mask')
+ *   - Used in code: ctx.requireInput('mask'), inputs['mask']
+ *   - Must match exactly between NodeDefinition and Executor
+ *
+ * Layer 2 - Port Name (display label):
+ *   - Title Case (e.g., 'Base', 'Overlay', 'Mask')
+ *   - Shown in the UI on node headers and tooltips
+ *
+ * Layer 3 - Handle ID (React Flow connection point):
+ *   - Must match port.id exactly (Layer 1)
+ *   - Used for sourceHandle/targetHandle on edges
+ *
+ * Layer 4 - Parameter ID (user-configurable settings):
+ *   - kebab-case (e.g., 'blend-mode', 'opacity')
+ *   - Referenced via params['blend-mode']
+ *
+ * The critical rule is: Port ID (Layer 1) is the single source of truth.
+ * All code must use port.id, never port.name, when accessing inputs/outputs.
+ *
+ * R1 Compliance: Any code that uses port.name to access input/output data
+ * must be fixed to use port.id instead. This ensures compatibility with
+ * future nodes where id !== name.
+ *
+ * ──────────────────────────────────────────────────────────────────────────────
+ */
 
 import type { NodeDefinition } from '@prism/shared-types';
 import { NODE_CATEGORIES, PortDataType } from '@prism/shared-types';
@@ -7,7 +39,7 @@ export const loadImageDefinition: NodeDefinition = {
   type: 'load-image',
   category: NODE_CATEGORIES.INPUT,
   label: 'Load Image',
-  description: 'Load an image from URL or file input',
+  description: 'Load an image from a local file (like ComfyUI Load Image)',
   version: '1.0.0',
   inputs: [],
   outputs: [
@@ -22,23 +54,10 @@ export const loadImageDefinition: NodeDefinition = {
   ],
   params: [
     {
-      id: 'url',
-      name: 'Image URL',
-      type: 'string',
-      required: true,
-      description: 'URL of the image to load',
-    },
-    {
-      id: 'crossOrigin',
-      name: 'Cross Origin',
-      type: 'select',
-      default: 'anonymous',
-      description: 'Cross-origin policy',
-      options: [
-        { label: 'Anonymous', value: 'anonymous' },
-        { label: 'Use Credentials', value: 'use-credentials' },
-        { label: 'None (may taint canvas)', value: 'none' },
-      ],
+      id: 'imageFile',
+      name: 'Image File',
+      type: 'image-file',
+      description: 'Choose an image file from your computer',
     },
   ],
 };
@@ -69,12 +88,12 @@ export const applyMaskDefinition: NodeDefinition = {
   ],
   outputs: [
     {
-      id: 'result',
-      name: 'Masked Image',
+      id: 'image',
+      name: 'Image',
       type: 'image',
       dataType: PortDataType.IMAGE,
       required: true,
-      description: 'Image with mask applied',
+      description: 'Masked image',
     },
   ],
   params: [
@@ -135,12 +154,12 @@ export const compositeDefinition: NodeDefinition = {
   ],
   outputs: [
     {
-      id: 'result',
-      name: 'Composite',
+      id: 'image',
+      name: 'Image',
       type: 'image',
       dataType: PortDataType.IMAGE,
       required: true,
-      description: 'Composited result',
+      description: 'Composited image',
     },
   ],
   params: [
@@ -195,8 +214,8 @@ export const transformDefinition: NodeDefinition = {
   ],
   outputs: [
     {
-      id: 'result',
-      name: 'Transformed',
+      id: 'image',
+      name: 'Image',
       type: 'image',
       dataType: PortDataType.IMAGE,
       required: true,
@@ -297,12 +316,12 @@ export const exportDefinition: NodeDefinition = {
   ],
   outputs: [
     {
-      id: 'result',
+      id: 'exported',
       name: 'Exported',
       type: 'image',
       dataType: PortDataType.IMAGE,
       required: true,
-      description: 'Exported image result',
+      description: 'Exported image file',
     },
   ],
   params: [
@@ -340,4 +359,33 @@ export const exportDefinition: NodeDefinition = {
       description: 'Resize to this height (0 = keep original)',
     },
   ],
+};
+
+export const previewImageDefinition: NodeDefinition = {
+  type: 'preview-image',
+  category: NODE_CATEGORIES.OUTPUT,
+  label: 'Preview Image',
+  description: 'Display an image preview with resolution label and resize handle',
+  version: '1.0.0',
+  inputs: [
+    {
+      id: 'image',
+      name: 'Image',
+      type: 'image',
+      dataType: PortDataType.IMAGE,
+      required: true,
+      description: 'Image to preview',
+    },
+  ],
+  outputs: [
+    {
+      id: 'image',
+      name: 'Image',
+      type: 'image',
+      dataType: PortDataType.IMAGE,
+      required: false,
+      description: 'Passthrough image output',
+    },
+  ],
+  params: [],
 };
