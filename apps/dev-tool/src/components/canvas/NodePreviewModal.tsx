@@ -1,6 +1,7 @@
 // NodePreviewModal - full-size preview of a node's execution output image
 
 import React, { useEffect, useRef } from 'react';
+import { X } from 'lucide-react';
 
 interface NodePreviewModalProps {
   imageUrl: string;
@@ -38,7 +39,7 @@ export const NodePreviewModal: React.FC<NodePreviewModalProps> = ({
           </span>
           <span className="preview-modal-subtitle">{portName}</span>
           <button className="preview-modal-close" onClick={onClose} aria-label="关闭">
-            ✕
+            <X size={16} />
           </button>
         </div>
         <div className="preview-modal-body">

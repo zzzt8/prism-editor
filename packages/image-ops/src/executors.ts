@@ -5,15 +5,15 @@ type ImageData = globalThis.ImageData;
 import type {
   NodeExecutor,
   LoadImageExecutorOutput,
+  LoadMaskExecutorOutput,
   ApplyMaskExecutorOutput,
   CompositeExecutorOutput,
   TransformExecutorOutput,
   ExportExecutorOutput,
-  PreviewImageExecutorOutput,
   BlendMode,
   ExecutionContext,
 } from '@prism/shared-types';
-import { unwrapImageData } from '@prism/shared-types';
+import { unwrapImageData, type ImageRuntimeObject } from '@prism/shared-types';
 import { loadCrossOriginImage, loadImageFromDataUrl, loadImageFromBlob } from './load-image';
 import { applyMask } from './apply-mask';
 import { compositeImages } from './composite';
@@ -114,6 +114,62 @@ export const loadImageExecutor: NodeExecutor = async (
     width: imageData.width,
     height: imageData.height,
   } satisfies LoadImageExecutorOutput;
+};
+
+// Load Mask executor — identical to Load Image but outputs MASK type
+interface MaskFileValue {
+  dataUrl: string;
+  width: number;
+  height: number;
+  fileName: string;
+}
+
+export const loadMaskExecutor: NodeExecutor = async (
+  inputs,
+  params,
+  ctx
+) => {
+  // Support both plain URL strings (v2 user-app) and structured maskFile objects (dev-tool picker)
+  const urlValue = params['url'] as string | undefined;
+  const maskFile = params['maskFile'] as MaskFileValue | undefined;
+  const sourceUrl = urlValue ?? maskFile?.dataUrl;
+
+  if (!sourceUrl) {
+    throw new Error('maskFile param is required for LoadMask node');
+  }
+
+  // Route to the correct loader based on URL type
+  const isDataUrl = sourceUrl.startsWith('data:');
+  const result = isDataUrl
+    ? await loadImageFromDataUrl(sourceUrl)
+    : await loadCrossOriginImage(sourceUrl);
+  const imageData = result.imageData;
+
+  // Create preview
+  const canvas = new OffscreenCanvas(imageData.width, imageData.height);
+  const cctx = canvas.getContext('2d');
+  if (!cctx) throw new Error('Failed to get 2D context for preview canvas');
+  cctx.putImageData(imageData, 0, 0);
+  const blob = await canvas.convertToBlob({ type: 'image/png' });
+  const previewRef = getImageMemoryManager().createObjectURL(
+    blob,
+    imageData.width,
+    imageData.height
+  );
+
+  return {
+    type: 'load-mask',
+    mask: {
+      data: imageData,
+      previewUrl: previewRef.url,
+      width: imageData.width,
+      height: imageData.height,
+      sourceFileName: maskFile?.fileName,
+    },
+    previewUrl: previewRef.url,
+    width: imageData.width,
+    height: imageData.height,
+  } satisfies LoadMaskExecutorOutput;
 };
 
 // Apply Mask executor
@@ -244,23 +300,19 @@ export const transformExecutor: NodeExecutor = async (
 // Export executor
 export const exportExecutor: NodeExecutor = async (
   inputs,
-  params,
+  _params,
   ctx: ExecutionContext
 ) => {
   const rawImage = ctx.requireInput<Parameters<typeof unwrapImageData>[0]>('image', 'Export');
   const image = unwrapImageData(rawImage);
   if (!image) throw new Error('image input must be ImageData for Export');
 
-  const format = (params['format'] as 'png' | 'jpeg' | 'webp') ?? 'png';
-  const quality = (params['quality'] as number) ?? 0.92;
-  const width = params['width'] as number | undefined;
-  const height = params['height'] as number | undefined;
-
+  // Export as PNG by default
   const exportResult = await exportImage(image, {
-    format,
-    quality,
-    width: width || 0,
-    height: height || 0,
+    format: 'png',
+    quality: 0.92,
+    width: 0,
+    height: 0,
   });
 
   // Create preview ref
@@ -272,12 +324,6 @@ export const exportExecutor: NodeExecutor = async (
 
   return {
     type: 'export',
-    exported: {
-      data: exportResult.blob,
-      previewUrl: previewRef.url,
-      width: exportResult.width,
-      height: exportResult.height,
-    },
     previewUrl: previewRef.url,
     width: exportResult.width,
     height: exportResult.height,
@@ -286,44 +332,12 @@ export const exportExecutor: NodeExecutor = async (
   } satisfies ExportExecutorOutput;
 };
 
-// Preview Image executor — generates previewUrl and passes through image output
-export const previewImageExecutor: NodeExecutor = async (
-  inputs,
-  _params,
-  ctx: ExecutionContext
-) => {
-  const rawImage = ctx.requireInput<Parameters<typeof unwrapImageData>[0]>('image', 'PreviewImage');
-  const image = unwrapImageData(rawImage);
-  if (!image) throw new Error('image input must be ImageData for PreviewImage');
-
-  // Create preview blob URL
-  const canvas = new OffscreenCanvas(image.width, image.height);
-  const cctx = canvas.getContext('2d');
-  if (!cctx) throw new Error('Failed to get 2D context for preview canvas');
-  cctx.putImageData(image, 0, 0);
-  const blob = await canvas.convertToBlob({ type: 'image/png' });
-  const previewRef = getImageMemoryManager().createObjectURL(blob, image.width, image.height);
-
-  return {
-    type: 'preview-image',
-    image: {
-      data: image,
-      previewUrl: previewRef.url,
-      width: image.width,
-      height: image.height,
-    }, // passthrough — does not modify data
-    previewUrl: previewRef.url,
-    width: image.width,
-    height: image.height,
-  } satisfies PreviewImageExecutorOutput;
-};
-
 // Registry of all built-in executors
 export const nodeExecutors: Record<string, NodeExecutor> = {
   'load-image': loadImageExecutor,
+  'load-mask': loadMaskExecutor,
   'apply-mask': applyMaskExecutor,
   'composite': compositeExecutor,
   'transform': transformExecutor,
   'export': exportExecutor,
-  'preview-image': previewImageExecutor,
 };

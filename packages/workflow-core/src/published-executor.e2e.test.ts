@@ -120,7 +120,6 @@ const mockExport = (
     const result = await exportImage(imageData, { format, width: w, height: h });
     return {
       type: 'export',
-      exported: { data: result.blob, previewUrl: result.dataUrl, width: result.width, height: result.height },
       previewUrl: result.dataUrl,
       dataUrl: result.dataUrl,
       width: result.width,
@@ -186,6 +185,10 @@ function makePW(
         to:   { nodeId: c.toCanvasId,   port: c.toPort },
       })),
       internalParams: {},
+      // New v2 publish config fields
+      inputs: [],
+      exposedParams: [],
+      outputs: [],
     },
   };
 }
@@ -586,7 +589,6 @@ describe('14.3 PublishedWorkflowExecutor publish-run end-to-end', () => {
       const result = await exportImage(src, { format: fmt });
       return {
         type: 'export',
-        exported: { data: result.blob, previewUrl: result.dataUrl, width: result.width, height: result.height },
         previewUrl: result.dataUrl,
         dataUrl: result.dataUrl,
         width: result.width,
@@ -635,6 +637,10 @@ describe('14.3 PublishedWorkflowExecutor publish-run end-to-end', () => {
         // nodeTypes is missing — simulates pre-BugFix published data
         nodeConfigs: {},
         connections: [],
+        // New v2 publish config fields (required by type)
+        inputs: [],
+        exposedParams: [],
+        outputs: [],
       },
     } as unknown as PublishedWorkflow;
 
@@ -752,7 +758,6 @@ describe('14.3 PublishedWorkflowExecutor publish-run end-to-end', () => {
       const result = await exportImage(src, { format: 'png' });
       return {
         type: 'export',
-        exported: { data: result.blob, previewUrl: result.dataUrl, width: result.width, height: result.height },
         previewUrl: result.dataUrl,
         dataUrl: result.dataUrl,
         width: result.width,
@@ -822,6 +827,10 @@ describe('14.3 PublishedWorkflowExecutor publish-run end-to-end', () => {
         connections: [
           { id: 'c0', from: { nodeId: 'canvas-0', port: 'image' }, to: { nodeId: 'canvas-1', port: 'image' } },
         ],
+        // New v2 publish config fields (required by type)
+        inputs: [],
+        exposedParams: [],
+        outputs: [],
       },
     } as unknown as PublishedWorkflow;
 

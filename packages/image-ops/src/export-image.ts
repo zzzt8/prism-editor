@@ -75,10 +75,10 @@ export function imageDataToBlob(
   }
 }
 
-export function imageDataToDataUrl(
+export async function imageDataToDataUrl(
   imageData: ImageData,
   options: ExportOptions
-): string {
+): Promise<string> {
   const { format = 'png', quality = 0.92, width = 0, height = 0 } = options;
 
   let data = imageData;
@@ -92,12 +92,20 @@ export function imageDataToDataUrl(
 
   const { canvas } = imageDataToCanvas(data, format);
 
+  let blob: Blob;
   if (typeof OffscreenCanvas !== 'undefined' && canvas instanceof OffscreenCanvas) {
-    const blob = canvas.convertToBlob({ type: mimeType, quality });
-    return URL.createObjectURL(blob as unknown as Blob);
+    blob = await canvas.convertToBlob({ type: mimeType, quality });
   } else {
-    return (canvas as HTMLCanvasElement).toDataURL(mimeType, quality);
+    blob = await new Promise<Blob>((resolve, reject) => {
+      (canvas as HTMLCanvasElement).toBlob(
+        (b) => (b ? resolve(b) : reject(new Error('Failed to create blob'))),
+        mimeType,
+        quality
+      );
+    });
   }
+
+  return blobToDataUrl(blob);
 }
 
 export interface ExportResult {
@@ -126,8 +134,11 @@ export async function exportImage(
   const { canvas } = imageDataToCanvas(data, format);
 
   let blob: Blob;
+  let dataUrl: string;
+
   if (typeof OffscreenCanvas !== 'undefined' && canvas instanceof OffscreenCanvas) {
     blob = await canvas.convertToBlob({ type: mimeType, quality });
+    dataUrl = await blobToDataUrl(blob);
   } else {
     blob = await new Promise<Blob>((resolve, reject) => {
       (canvas as HTMLCanvasElement).toBlob(
@@ -136,9 +147,8 @@ export async function exportImage(
         quality
       );
     });
+    dataUrl = (canvas as HTMLCanvasElement).toDataURL(mimeType, quality);
   }
-
-  const dataUrl = (canvas as HTMLCanvasElement).toDataURL(mimeType, quality);
 
   return {
     blob,
@@ -147,4 +157,14 @@ export async function exportImage(
     height: data.height,
     mimeType,
   };
+}
+
+/** Convert a Blob to a data URL */
+async function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }

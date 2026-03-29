@@ -3,13 +3,49 @@
 import type { PortType } from './node';
 import type { Connection } from './workflow';
 
-export type PublishedParamVisibility = 'visible' | 'hidden' | 'locked';
+/** Export format options for published output nodes */
+export type ExportFormat = 'png' | 'jpeg' | 'webp';
 
-export interface PublishedParamConfig {
-  id: string;
-  visibility: PublishedParamVisibility;
-  lockedValue?: unknown;
+/**
+ * Configuration for a single user-facing input entry in the published workflow.
+ * Represents a source node (e.g. load-image) that the end user must provide.
+ */
+export interface PublishedInputConfig {
+  /** Canvas node ID (UUID, stable across re-publishes) */
+  nodeId: string;
+  /** Developer-assigned user-facing label shown in the user app (e.g. "产品白底图") */
+  label: string;
+  /** Type of the input content */
+  type: 'image' | 'mask' | 'string';
 }
+
+/**
+ * Configuration for a single exposed parameter in the published workflow.
+ * Represents a parameter that the developer has explicitly opted to expose to end users.
+ */
+export interface PublishedParamConfig {
+  /** Canvas node ID (UUID) */
+  nodeId: string;
+  /** Parameter ID from the node definition (e.g. "opacity", "mode") */
+  paramId: string;
+  /** Developer-assigned user-facing label (e.g. "透明度") */
+  label: string;
+}
+
+/**
+ * Configuration for a single output entry in the published workflow.
+ * Represents an export/leaf node that produces the final result shown to the user.
+ */
+export interface PublishedOutputConfig {
+  /** Canvas node ID (UUID, stable across re-publishes) */
+  nodeId: string;
+  /** Developer-assigned user-facing label shown in the user app (e.g. "生成结果图") */
+  label: string;
+  /** Export format; defaults to 'png' */
+  format: ExportFormat;
+}
+
+export type PublishedParamVisibility = 'visible' | 'hidden' | 'locked';
 
 export interface PublishedInput {
   id: string;
@@ -32,9 +68,8 @@ export interface PublishedConfig {
   /** Connections between nodes (needed to reconstruct Workflow at runtime) */
   connections?: Connection[];
   /**
-   * Ordered list of node type entries.
-   * key: topological index (0, 1, 2…) ensures stable publish across re-renders.
-   * value: node type string (e.g. "load-image", "transform")
+   * Node type registry: canvas nodeId (UUID) → node type string.
+   * Keyed by UUID for stability across re-publishes.
    */
   nodeTypes?: Record<string, string>;
   /**
@@ -50,6 +85,15 @@ export interface PublishedConfig {
   }>;
   /** Per-node, per-param visibility for the user-facing app */
   paramVisibility?: Record<string, Record<string, PublishedParamVisibility>>;
+
+  // ── New fields (v2 publish dialog) ──────────────────────────────────────
+
+  /** Auto-detected source nodes that the end user must provide */
+  inputs: PublishedInputConfig[];
+  /** Explicitly white-listed parameters exposed to the end user */
+  exposedParams: PublishedParamConfig[];
+  /** Auto-detected output nodes that produce the final result */
+  outputs: PublishedOutputConfig[];
 }
 
 export interface PublishedWorkflow {

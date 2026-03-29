@@ -11,12 +11,13 @@
 // - Minimize / Expand
 // - Node Info (open Inspector Info tab)
 
-import React, { type FC, useEffect, useRef } from 'react';
+import React, { type FC, useEffect, useRef, type ReactNode } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
+import { Copy, Scissors, Clipboard, Pin, PinOff, FastForward, Minimize2, Maximize2, Trash2, Info } from 'lucide-react';
 
 interface MenuItem {
   label: string;
-  icon: string;
+  icon: ReactNode;
   shortcut?: string;
   danger?: boolean;
   disabled?: boolean;
@@ -78,27 +79,27 @@ export const NodeContextMenu: FC<NodeContextMenuProps> = ({
   const menuItems: MenuItem[] = [
     {
       label: '复制',
-      icon: '⎘',
+      icon: <Copy size={14} />,
       shortcut: 'Ctrl+C',
       action: () => { copyNodes([nodeId]); onClose(); },
     },
     {
       label: '剪切',
-      icon: '✂',
+      icon: <Scissors size={14} />,
       shortcut: 'Ctrl+X',
       action: () => { cutNodes([nodeId]); onClose(); },
     },
     {
       label: '粘贴',
-      icon: '⎙',
+      icon: <Clipboard size={14} />,
       shortcut: 'Ctrl+V',
       disabled: !clipboard || clipboard.length === 0,
       action: () => { pasteNodes({ x, y }); onClose(); },
     },
-    { label: '', icon: '', action: () => {}, disabled: true }, // separator
+    { label: '', icon: null, action: () => {}, disabled: true }, // separator
     {
       label: isPinned ? '解除固定' : '固定节点',
-      icon: isPinned ? '⬡' : '⊞',
+      icon: isPinned ? <PinOff size={14} /> : <Pin size={14} />,
       action: () => {
         updateNodeData(nodeId, { pinned: !isPinned });
         onClose();
@@ -106,7 +107,7 @@ export const NodeContextMenu: FC<NodeContextMenuProps> = ({
     },
     {
       label: isBypassed ? '取消 Bypass' : 'Bypass',
-      icon: '⏭',
+      icon: <FastForward size={14} />,
       action: () => {
         updateNodeData(nodeId, { bypassed: !isBypassed });
         onClose();
@@ -114,23 +115,23 @@ export const NodeContextMenu: FC<NodeContextMenuProps> = ({
     },
     {
       label: isMinimized ? '展开节点' : '最小化',
-      icon: isMinimized ? '⬜' : '▬',
+      icon: isMinimized ? <Maximize2 size={14} /> : <Minimize2 size={14} />,
       action: () => {
         updateNodeData(nodeId, { minimized: !isMinimized });
         onClose();
       },
     },
-    { label: '', icon: '', action: () => {}, disabled: true }, // separator
+    { label: '', icon: null, action: () => {}, disabled: true }, // separator
     {
       label: '删除',
-      icon: '🗑',
+      icon: <Trash2 size={14} />,
       shortcut: 'Del',
       danger: true,
       action: () => { removeNode(nodeId); onClose(); },
     },
     {
       label: '节点信息',
-      icon: 'ℹ',
+      icon: <Info size={14} />,
       action: () => { openInspector('info', nodeId); onClose(); },
     },
   ];
@@ -162,7 +163,7 @@ export const NodeContextMenu: FC<NodeContextMenuProps> = ({
             disabled={item.disabled}
             title={item.shortcut}
           >
-            <span style={{ fontSize: '13px', flexShrink: 0, width: 16, textAlign: 'center' as const }}>
+            <span style={{ flexShrink: 0, width: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {item.icon}
             </span>
             <span style={{ flex: 1 }}>{item.label}</span>

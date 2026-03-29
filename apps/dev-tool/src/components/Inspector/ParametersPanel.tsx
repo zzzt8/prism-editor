@@ -4,6 +4,7 @@
 import React, { useCallback, useState, useRef } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
 import type { ParamDefinition, ParamOption } from '@prism/shared-types';
+import { CircleDot } from 'lucide-react';
 
 // ── ParamField ──────────────────────────────────────────────────────────────
 
@@ -305,7 +306,7 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({ nodeId }) => {
   if (!definition) {
     return (
       <div className="inspector-panel-body inspector-panel-empty">
-        <span className="param-panel-empty-icon">◈</span>
+        <CircleDot size={16} className="param-panel-empty-icon" />
         <span>此节点无定义信息</span>
       </div>
     );
@@ -367,7 +368,7 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({ nodeId }) => {
       {/* Parameters list */}
       {!hasParams ? (
         <div className="inspector-panel-empty">
-          <span className="param-panel-empty-icon">◈</span>
+          <CircleDot size={16} className="param-panel-empty-icon" />
           <span>此节点无参数</span>
         </div>
       ) : (

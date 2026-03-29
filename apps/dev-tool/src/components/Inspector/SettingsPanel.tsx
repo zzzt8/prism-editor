@@ -4,18 +4,19 @@
 import React, { useCallback, useState } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
 import type { PortDataType } from '@prism/shared-types';
+import { Image, CircleDot, Hash, Type, ToggleLeft, FileText } from 'lucide-react';
 
 interface SettingsPanelProps {
   nodeId: string;
 }
 
-const PORT_TYPE_ICONS: Record<string, string> = {
-  image: '🖼',
-  mask: '◐',
-  number: '#',
-  string: 'A',
-  boolean: '◻',
-  file: '📄',
+const PORT_TYPE_ICONS: Record<string, React.ReactNode> = {
+  image: <Image size={12} />,
+  mask: <CircleDot size={12} />,
+  number: <Hash size={12} />,
+  string: <Type size={12} />,
+  boolean: <ToggleLeft size={12} />,
+  file: <FileText size={12} />,
 };
 
 export const SettingsPanel: React.FC<SettingsPanelProps> = ({ nodeId }) => {
@@ -327,8 +328,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ nodeId }) => {
         }
 
         .settings-extra-input-icon {
-          font-size: 12px;
           flex-shrink: 0;
+          display: flex;
+          align-items: center;
           color: var(--color-accent);
         }
 

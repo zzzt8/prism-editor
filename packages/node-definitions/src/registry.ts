@@ -3,11 +3,11 @@
 import type { NodeDefinition } from '@prism/shared-types';
 import {
   loadImageDefinition,
+  loadMaskDefinition,
   applyMaskDefinition,
   compositeDefinition,
   transformDefinition,
   exportDefinition,
-  previewImageDefinition,
 } from './definitions';
 
 export type NodeDefinitionRegistry = Map<string, NodeDefinition>;
@@ -23,11 +23,11 @@ export function createRegistry(): NodeDefinitionRegistry {
 export function registerBuiltIn(registry: NodeDefinitionRegistry): void {
   const builtIns: NodeDefinition[] = [
     loadImageDefinition,
+    loadMaskDefinition,
     applyMaskDefinition,
     compositeDefinition,
     transformDefinition,
     exportDefinition,
-    previewImageDefinition,
   ];
 
   for (const def of builtIns) {

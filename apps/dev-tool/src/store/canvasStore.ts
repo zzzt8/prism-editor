@@ -169,11 +169,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const definition = registry.get(type);
     if (!definition) return;
 
-    // Map node type strings to React Flow component names
-    const nodeTypeMap: Record<string, string> = {
-      'preview-image': 'previewImageNode',
-    };
-    const reactFlowType = nodeTypeMap[type] ?? 'prismNode';
+    const reactFlowType = 'prismNode';
 
     const id = `node-${++nodeCounter}`;
     const newNode: CanvasNode = {

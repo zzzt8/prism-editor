@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { createRegistry, listAll } from '@prism/node-definitions';
 import type { NodeDefinition } from '@prism/shared-types';
+import { Download, RefreshCw, VenetianMask, Image, Upload, Search, X, Hexagon, CircleDot } from 'lucide-react';
 
 const registry = createRegistry();
 
@@ -14,14 +15,14 @@ const CATEGORY_LABELS: Record<string, string> = {
   output:    '输出',
 };
 
-function getCategoryIcon(category: string): string {
+function getCategoryIcon(category: string) {
   switch (category) {
-    case 'input':     return '📥';
-    case 'transform': return '🔄';
-    case 'mask':      return '🎭';
-    case 'composite': return '🖼';
-    case 'output':    return '📤';
-    default:          return '⬡';
+    case 'input':     return <Download size={14} />;
+    case 'transform': return <RefreshCw size={14} />;
+    case 'mask':      return <VenetianMask size={14} />;
+    case 'composite': return <Image size={14} />;
+    case 'output':    return <Upload size={14} />;
+    default:          return <Hexagon size={14} />;
   }
 }
 
@@ -106,7 +107,7 @@ export const NodePanel: React.FC = () => {
     <aside className="node-panel">
       {/* Search */}
       <div className="node-search">
-        <span className="node-search-icon" aria-hidden="true">🔍</span>
+        <Search size={14} className="node-search-icon" aria-hidden="true" />
         <input
           className="node-search-input"
           type="search"
@@ -122,7 +123,7 @@ export const NodePanel: React.FC = () => {
             aria-label="清除搜索"
             type="button"
           >
-            ✕
+            <X size={14} />
           </button>
         )}
       </div>
@@ -132,10 +133,10 @@ export const NodePanel: React.FC = () => {
         Object.entries(byCategory).map(([category, defs]) => (
           <CategoryGroup key={category} category={category} definitions={defs} />
         ))
-      ) : (
-        <div className="node-search-empty">
-          <span className="node-search-empty-icon" aria-hidden="true">◈</span>
-          <span className="node-search-empty-text">
+        ) : (
+          <div className="node-search-empty">
+            <CircleDot size={14} className="node-search-empty-icon" aria-hidden="true" />
+            <span className="node-search-empty-text">
             {hasQuery ? `未找到与"${query}"相关的节点` : '暂无可用节点'}
           </span>
         </div>

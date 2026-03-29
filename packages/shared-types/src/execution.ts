@@ -160,9 +160,9 @@ export interface BaseExecutorOutput {
 // the executor uses the new ImageRuntimeObject format or the old raw ImageData format.
 // Backward compatibility: both old and new formats are supported.
 
-/** Type guard: true when value has a `data` property (ImageRuntimeObject shape) */
-function hasDataProp(v: unknown): v is { data: unknown } {
-  return typeof v === 'object' && v !== null && 'data' in v;
+/** Type guard: true when value is ImageRuntimeObject (has data + previewUrl) */
+function isImageRuntimeObject(v: unknown): v is ImageRuntimeObject {
+  return typeof v === 'object' && v !== null && 'previewUrl' in v && 'data' in v;
 }
 
 /** Type guard: true when value has a `width` property */
@@ -185,7 +185,7 @@ export function unwrapImageData(
   value: ImageData | ImageRuntimeObject | undefined
 ): ImageData | undefined {
   if (!value) return undefined;
-  if (hasDataProp(value)) {
+  if (isImageRuntimeObject(value)) {
     // value is ImageRuntimeObject — extract data field, check it's ImageData (not Blob)
     const d = value.data;
     if (hasWidthProp(d) && hasHeightProp(d)) return d as ImageData;
@@ -197,7 +197,8 @@ export function unwrapImageData(
 
 /**
  * Read previewUrl from executor output.
- * - New format: uses ImageRuntimeObject.previewUrl
+ * - Export format: top-level `previewUrl` field (Blob URL)
+ * - New format: ImageRuntimeObject.previewUrl
  * - Old format: returns fallback (no previewUrl field)
  */
 export function unwrapPreviewUrl(
@@ -205,7 +206,14 @@ export function unwrapPreviewUrl(
   fallback: string | undefined
 ): string | undefined {
   if (!value) return fallback;
-  if (hasDataProp(value)) return (value as ImageRuntimeObject).previewUrl;
+
+  // Export format: direct previewUrl field on the result object
+  if (typeof value === 'object' && 'previewUrl' in value) {
+    const v = value as { previewUrl?: string };
+    return v.previewUrl ?? fallback;
+  }
+
+  if (isImageRuntimeObject(value)) return (value as ImageRuntimeObject).previewUrl;
   return fallback;
 }
 
@@ -235,6 +243,14 @@ export interface LoadImageExecutorOutput extends BaseExecutorOutput {
   crossOriginWarning?: string;
 }
 
+export interface LoadMaskExecutorOutput extends BaseExecutorOutput {
+  type: 'load-mask';
+  mask: ImageRuntimeObject;
+  previewUrl: string;
+  width: number;
+  height: number;
+}
+
 export interface ApplyMaskExecutorOutput extends BaseExecutorOutput {
   type: 'apply-mask';
   image: ImageRuntimeObject;
@@ -252,21 +268,18 @@ export interface TransformExecutorOutput extends BaseExecutorOutput {
 
 export interface ExportExecutorOutput extends BaseExecutorOutput {
   type: 'export';
-  exported: ImageRuntimeObject;
+  previewUrl: string;
+  width: number;
+  height: number;
   mimeType: string;
   dataUrl: string;
-}
-
-export interface PreviewImageExecutorOutput extends BaseExecutorOutput {
-  type: 'preview-image';
-  image: ImageRuntimeObject;
 }
 
 /** Discriminated union of all executor outputs */
 export type ExecutorOutput =
   | LoadImageExecutorOutput
+  | LoadMaskExecutorOutput
   | ApplyMaskExecutorOutput
   | CompositeExecutorOutput
   | TransformExecutorOutput
-  | ExportExecutorOutput
-  | PreviewImageExecutorOutput;
+  | ExportExecutorOutput;

@@ -18,13 +18,9 @@ export function parseRoute(): Route {
 }
 
 export function navigateToList(): void {
-  // Idempotent: skip if already on list page to avoid unnecessary hashchange cycles.
-  if (window.location.hash === '#/' || window.location.hash === '#') {
-    return;
-  }
-  window.location.hash = '/';
+  window.location.replace(window.location.pathname + window.location.search + '#/');
 }
 
 export function navigateToWorkflow(sourceId: string): void {
-  window.location.hash = `/workflow/${encodeURIComponent(sourceId)}`;
+  window.location.hash = `#/workflow/${encodeURIComponent(sourceId)}`;
 }

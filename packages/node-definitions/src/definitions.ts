@@ -62,6 +62,33 @@ export const loadImageDefinition: NodeDefinition = {
   ],
 };
 
+export const loadMaskDefinition: NodeDefinition = {
+  type: 'load-mask',
+  category: NODE_CATEGORIES.INPUT,
+  label: 'Load Mask',
+  description: 'Load a mask image from a local file',
+  version: '1.0.0',
+  inputs: [],
+  outputs: [
+    {
+      id: 'mask',
+      name: 'Mask',
+      type: 'mask',
+      dataType: PortDataType.MASK,
+      required: true,
+      description: 'Loaded mask data',
+    },
+  ],
+  params: [
+    {
+      id: 'maskFile',
+      name: 'Mask File',
+      type: 'image-file',
+      description: 'Choose a mask file from your computer',
+    },
+  ],
+};
+
 export const applyMaskDefinition: NodeDefinition = {
   type: 'apply-mask',
   category: NODE_CATEGORIES.MASK,
@@ -302,7 +329,7 @@ export const exportDefinition: NodeDefinition = {
   type: 'export',
   category: NODE_CATEGORIES.OUTPUT,
   label: 'Export',
-  description: 'Export image to PNG, JPEG, or WebP format',
+  description: 'Export and preview image output',
   version: '1.0.0',
   inputs: [
     {
@@ -314,78 +341,6 @@ export const exportDefinition: NodeDefinition = {
       description: 'Image to export',
     },
   ],
-  outputs: [
-    {
-      id: 'exported',
-      name: 'Exported',
-      type: 'image',
-      dataType: PortDataType.IMAGE,
-      required: true,
-      description: 'Exported image file',
-    },
-  ],
-  params: [
-    {
-      id: 'format',
-      name: 'Format',
-      type: 'select',
-      default: 'png',
-      options: [
-        { label: 'PNG', value: 'png' },
-        { label: 'JPEG', value: 'jpeg' },
-        { label: 'WebP', value: 'webp' },
-      ],
-    },
-    {
-      id: 'quality',
-      name: 'Quality',
-      type: 'number',
-      default: 0.92,
-      min: 0.1,
-      max: 1,
-      step: 0.01,
-      description: 'Output quality (0.1-1.0)',
-    },
-    {
-      id: 'width',
-      name: 'Output Width',
-      type: 'number',
-      description: 'Resize to this width (0 = keep original)',
-    },
-    {
-      id: 'height',
-      name: 'Output Height',
-      type: 'number',
-      description: 'Resize to this height (0 = keep original)',
-    },
-  ],
-};
-
-export const previewImageDefinition: NodeDefinition = {
-  type: 'preview-image',
-  category: NODE_CATEGORIES.OUTPUT,
-  label: 'Preview Image',
-  description: 'Display an image preview with resolution label and resize handle',
-  version: '1.0.0',
-  inputs: [
-    {
-      id: 'image',
-      name: 'Image',
-      type: 'image',
-      dataType: PortDataType.IMAGE,
-      required: true,
-      description: 'Image to preview',
-    },
-  ],
-  outputs: [
-    {
-      id: 'image',
-      name: 'Image',
-      type: 'image',
-      dataType: PortDataType.IMAGE,
-      required: false,
-      description: 'Passthrough image output',
-    },
-  ],
+  outputs: [],
   params: [],
 };

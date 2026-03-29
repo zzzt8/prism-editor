@@ -88,7 +88,7 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
     try {
       const result = await executeWorkflow();
       if (result.status === 'done') {
-        showMsg('执行完成 ✓');
+        showMsg('执行完成');
       } else if (result.status === 'cancelled') {
         showMsg('已取消');
       } else {

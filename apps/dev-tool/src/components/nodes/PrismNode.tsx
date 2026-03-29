@@ -30,6 +30,7 @@ import {
   unwrapImageData,
   unwrapPreviewUrl,
 } from '@prism/shared-types';
+import { AlertTriangle } from 'lucide-react';
 
 const CATEGORY_COLORS: Record<string, string> = {
   input:     '#22c55e',
@@ -62,33 +63,82 @@ function useExecutionThumbnail(
 ) {
   return useMemo(() => {
     if (!result || !execImageKey) return null;
-    const imgData = result[execImageKey] as ImageData | undefined;
-    if (!imgData?.width || !imgData?.height) return null;
-    try {
-      const MAX = 400;
-      const scale = Math.min(1, MAX / Math.max(imgData.width, imgData.height));
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.round(imgData.width * scale);
-      canvas.height = Math.round(imgData.height * scale);
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return null;
-      // Enable smoothing when scaling down; disable only for near-1:1 (sharp output)
-      ctx.imageSmoothingEnabled = scale < 0.9;
-      const tmp = document.createElement('canvas');
-      tmp.width = imgData.width;
-      tmp.height = imgData.height;
-      const tmpCtx = tmp.getContext('2d');
-      if (!tmpCtx) return null;
-      tmpCtx.putImageData(imgData, 0, 0);
-      ctx.drawImage(tmp, 0, 0, canvas.width, canvas.height);
-      return {
-        dataUrl: canvas.toDataURL('image/png'),
-        width: imgData.width,
-        height: imgData.height,
-      };
-    } catch {
-      return null;
+    const imgData = result[execImageKey];
+
+    // If it's an ImageRef (blob URL), use its previewUrl directly
+    if (imgData && typeof imgData === 'object' && !('data' in imgData) && 'url' in imgData) {
+      const ref = imgData as { url?: string; previewUrl?: string; width?: number; height?: number };
+      if (ref.url || ref.previewUrl) {
+        return {
+          dataUrl: ref.url ?? ref.previewUrl ?? '',
+          width: ref.width ?? 0,
+          height: ref.height ?? 0,
+        };
+      }
     }
+
+    // If it's ImageRuntimeObject with data
+    if (imgData && typeof imgData === 'object' && 'data' in imgData && 'width' in imgData && 'height' in imgData) {
+      const imageData = imgData.data;
+      const width = imgData.width;
+      const height = imgData.height;
+      if (imageData instanceof ImageData && width && height) {
+        try {
+          const MAX = 400;
+          const scale = Math.min(1, MAX / Math.max(width, height));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(width * scale);
+          canvas.height = Math.round(height * scale);
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return null;
+          ctx.imageSmoothingEnabled = scale < 0.9;
+          const tmp = document.createElement('canvas');
+          tmp.width = width;
+          tmp.height = height;
+          const tmpCtx = tmp.getContext('2d');
+          if (!tmpCtx) return null;
+          tmpCtx.putImageData(imageData, 0, 0);
+          ctx.drawImage(tmp, 0, 0, canvas.width, canvas.height);
+          return {
+            dataUrl: canvas.toDataURL('image/png'),
+            width,
+            height,
+          };
+        } catch {
+          return null;
+        }
+      }
+    }
+
+    // If it's raw ImageData (direct from execution)
+    if (imgData instanceof ImageData && imgData.width && imgData.height) {
+      try {
+        const MAX = 400;
+        const scale = Math.min(1, MAX / Math.max(imgData.width, imgData.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(imgData.width * scale);
+        canvas.height = Math.round(imgData.height * scale);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return null;
+        ctx.imageSmoothingEnabled = scale < 0.9;
+        const tmp = document.createElement('canvas');
+        tmp.width = imgData.width;
+        tmp.height = imgData.height;
+        const tmpCtx = tmp.getContext('2d');
+        if (!tmpCtx) return null;
+        tmpCtx.putImageData(imgData, 0, 0);
+        ctx.drawImage(tmp, 0, 0, canvas.width, canvas.height);
+        return {
+          dataUrl: canvas.toDataURL('image/png'),
+          width: imgData.width,
+          height: imgData.height,
+        };
+      } catch {
+        return null;
+      }
+    }
+
+    return null;
   }, [result, execImageKey]);
 }
 
@@ -104,27 +154,64 @@ function usePreviewImage(
   return useMemo(() => {
     if (imageFileValue?.dataUrl) return imageFileValue.dataUrl;
     if (!result || !execImageKey) return null;
-    const imgData = result[execImageKey] as ImageData | undefined;
-    if (!imgData?.width || !imgData?.height) return null;
-    const MAX = 1200;
-    const scale = Math.min(1, MAX / Math.max(imgData.width, imgData.height));
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.round(imgData.width * scale);
-      canvas.height = Math.round(imgData.height * scale);
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return null;
-      ctx.imageSmoothingEnabled = false;
-      const tmp = document.createElement('canvas');
-      tmp.width = imgData.width; tmp.height = imgData.height;
-      const tmpCtx = tmp.getContext('2d');
-      if (!tmpCtx) return null;
-      tmpCtx.putImageData(imgData, 0, 0);
-      ctx.drawImage(tmp, 0, 0, canvas.width, canvas.height);
-      return canvas.toDataURL('image/png');
-    } catch {
-      return null;
+    const imgData = result[execImageKey];
+
+    // If it's a Blob URL (from Export node), use it directly
+    if (imgData && typeof imgData === 'object' && !('data' in imgData) && 'url' in imgData) {
+      const ref = imgData as { url?: string; previewUrl?: string };
+      return ref.url ?? ref.previewUrl ?? null;
     }
+
+    // If it's ImageRuntimeObject with ImageData
+    if (imgData && typeof imgData === 'object' && 'data' in imgData) {
+      const runtimeObj = imgData as { data: unknown; width?: number; height?: number };
+      if (runtimeObj.data instanceof ImageData && runtimeObj.width && runtimeObj.height) {
+        const MAX = 1200;
+        const scale = Math.min(1, MAX / Math.max(runtimeObj.width, runtimeObj.height));
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(runtimeObj.width * scale);
+          canvas.height = Math.round(runtimeObj.height * scale);
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return null;
+          ctx.imageSmoothingEnabled = false;
+          const tmp = document.createElement('canvas');
+          tmp.width = runtimeObj.width; tmp.height = runtimeObj.height;
+          const tmpCtx = tmp.getContext('2d');
+          if (!tmpCtx) return null;
+          tmpCtx.putImageData(runtimeObj.data, 0, 0);
+          ctx.drawImage(tmp, 0, 0, canvas.width, canvas.height);
+          return canvas.toDataURL('image/png');
+        } catch {
+          return null;
+        }
+      }
+    }
+
+    // If it's raw ImageData
+    if (imgData instanceof ImageData && imgData.width && imgData.height) {
+      const MAX = 1200;
+      const scale = Math.min(1, MAX / Math.max(imgData.width, imgData.height));
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(imgData.width * scale);
+        canvas.height = Math.round(imgData.height * scale);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return null;
+        ctx.imageSmoothingEnabled = false;
+        const tmp = document.createElement('canvas');
+        tmp.width = imgData.width; tmp.height = imgData.height;
+        const tmpCtx = tmp.getContext('2d');
+        if (!tmpCtx) return null;
+        tmpCtx.putImageData(imgData, 0, 0);
+        ctx.drawImage(tmp, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL('image/png');
+      } catch {
+        return null;
+      }
+    }
+
+    return null;
   }, [imageFileValue, result, execImageKey]);
 }
 
@@ -139,7 +226,42 @@ interface ImageFileValue {
   fileName: string;
 }
 
-/** LoadImage body — file name + upload button + preview + resolution */
+// Helper function to process an image file and update node params
+function processImageFile(
+  file: File,
+  updateNodeParams: (id: string, params: Record<string, unknown>) => void,
+  nodeId: string,
+  params: Record<string, unknown>,
+  paramKey: 'imageFile' | 'maskFile'
+) {
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const dataUrl = ev.target?.result as string;
+    const i = new Image();
+    i.onload = () => updateNodeParams(nodeId, { ...params, [paramKey]: { dataUrl, width: i.naturalWidth, height: i.naturalHeight, fileName: file.name } });
+    i.onerror = () => updateNodeParams(nodeId, { ...params, [paramKey]: { dataUrl, width: 0, height: 0, fileName: file.name } });
+    i.src = dataUrl;
+  };
+  reader.readAsDataURL(file);
+}
+
+// Drag state for the whole canvas (shared via window for cross-component communication)
+const DRAG_DATA_KEY = '__prism_drag_image';
+
+interface DragState {
+  paramKey: 'imageFile' | 'maskFile';
+  nodeId: string;
+}
+
+export function setDragImageState(state: DragState | null) {
+  (window as unknown as Record<string, unknown>)[DRAG_DATA_KEY] = state;
+}
+
+export function getDragImageState(): DragState | null {
+  return (window as unknown as Record<string, unknown>)[DRAG_DATA_KEY] as DragState | null;
+}
+
+/** LoadImage body — file name + upload button + preview + resolution + replace */
 const LoadImageBody: FC<{
   imageFileValue: ImageFileValue | undefined;
   params: Record<string, unknown>;
@@ -150,6 +272,7 @@ const LoadImageBody: FC<{
 }> = ({ imageFileValue, params, updateNodeParams, nodeId, executionResult, onShowPreview }) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const img = imageFileValue;
+  const [isDragOver, setIsDragOver] = React.useState(false);
 
   const execPreviewUrl = useMemo(() => {
     if (!executionResult) return null;
@@ -159,7 +282,6 @@ const LoadImageBody: FC<{
     const imageData = unwrapImageData(rawImage as Parameters<typeof unwrapImageData>[0]);
     if (!imageData?.width || !imageData?.height) return null;
     try {
-      // Cap at 400px so CSS down-scale in the 240px node stays sharp
       const MAX = 400;
       const scale = Math.min(1, MAX / Math.max(imageData.width, imageData.height));
       const c = document.createElement('canvas');
@@ -180,6 +302,38 @@ const LoadImageBody: FC<{
   const displayW = img?.width ?? execW;
   const displayH = img?.height ?? execH;
 
+  // Drag and drop handlers
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+    setDragImageState({ paramKey: 'imageFile', nodeId });
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    setDragImageState(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    setDragImageState(null);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      processImageFile(file, updateNodeParams, nodeId, params, 'imageFile');
+    }
+  };
+
   if (previewUrl) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -189,15 +343,42 @@ const LoadImageBody: FC<{
           </span>
         </div>
         <div
-          className="dcn-preview"
+          className={`dcn-preview ${isDragOver ? 'dcn-preview-drag-over' : ''}`}
           data-preview
           onClick={onShowPreview}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
         >
           <img src={previewUrl} alt="Preview" className="dcn-preview-img" />
           {displayW && displayH && (
             <span className="dcn-preview-badge">{displayW}×{displayH}</span>
           )}
+          {isDragOver && (
+            <div className="dcn-preview-drop-overlay">
+              <span>拖放替换图片</span>
+            </div>
+          )}
         </div>
+        <button
+          className="image-file-upload-btn"
+          style={{ fontSize: 10, padding: '3px 6px' }}
+          onClick={() => inputRef.current?.click()}
+        >
+          替换图片
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) processImageFile(file, updateNodeParams, nodeId, params, 'imageFile');
+              e.target.value = '';
+            }}
+          />
+        </button>
       </div>
     );
   }
@@ -216,16 +397,151 @@ const LoadImageBody: FC<{
         style={{ display: 'none' }}
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            const dataUrl = ev.target?.result as string;
-            const i = new Image();
-            i.onload = () => updateNodeParams(nodeId, { ...params, imageFile: { dataUrl, width: i.naturalWidth, height: i.naturalHeight, fileName: file.name } });
-            i.onerror = () => updateNodeParams(nodeId, { ...params, imageFile: { dataUrl, width: 0, height: 0, fileName: file.name } });
-            i.src = dataUrl;
-          };
-          reader.readAsDataURL(file);
+          if (file) processImageFile(file, updateNodeParams, nodeId, params, 'imageFile');
+          e.target.value = '';
+        }}
+      />
+    </button>
+  );
+};
+
+/** LoadMask body — identical to LoadImage but for mask files */
+const LoadMaskBody: FC<{
+  maskFileValue: ImageFileValue | undefined;
+  params: Record<string, unknown>;
+  updateNodeParams: (id: string, params: Record<string, unknown>) => void;
+  nodeId: string;
+  executionResult: CanvasNodeData['executionResult'];
+  onShowPreview: () => void;
+}> = ({ maskFileValue, params, updateNodeParams, nodeId, executionResult, onShowPreview }) => {
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const img = maskFileValue;
+  const [isDragOver, setIsDragOver] = React.useState(false);
+
+  const execPreviewUrl = useMemo(() => {
+    if (!executionResult) return null;
+    const rawMask = executionResult['mask'];
+    const previewUrl = unwrapPreviewUrl(rawMask as Parameters<typeof unwrapPreviewUrl>[0], undefined);
+    if (previewUrl) return previewUrl;
+    const imageData = unwrapImageData(rawMask as Parameters<typeof unwrapImageData>[0]);
+    if (!imageData?.width || !imageData?.height) return null;
+    try {
+      const MAX = 400;
+      const scale = Math.min(1, MAX / Math.max(imageData.width, imageData.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(imageData.width * scale);
+      c.height = Math.round(imageData.height * scale);
+      const ctx = c.getContext('2d');
+      if (!ctx) return null;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.putImageData(imageData, 0, 0);
+      return c.toDataURL('image/png');
+    } catch { return null; }
+  }, [executionResult]);
+
+  const previewUrl = img?.dataUrl ?? execPreviewUrl;
+  const execW = executionResult ? (executionResult['width'] as number | undefined) : undefined;
+  const execH = executionResult ? (executionResult['height'] as number | undefined) : undefined;
+  const displayW = img?.width ?? execW;
+  const displayH = img?.height ?? execH;
+
+  // Drag and drop handlers
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+    setDragImageState({ paramKey: 'maskFile', nodeId });
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    setDragImageState(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    setDragImageState(null);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      processImageFile(file, updateNodeParams, nodeId, params, 'maskFile');
+    }
+  };
+
+  if (previewUrl) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div className="dcn-file-info">
+          <span className="dcn-file-name" title={img?.fileName}>
+            {img?.fileName ?? 'Result'}
+          </span>
+        </div>
+        <div
+          className={`dcn-preview ${isDragOver ? 'dcn-preview-drag-over' : ''}`}
+          data-preview
+          onClick={onShowPreview}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+        >
+          <img src={previewUrl} alt="Mask Preview" className="dcn-preview-img" />
+          {displayW && displayH && (
+            <span className="dcn-preview-badge">{displayW}×{displayH}</span>
+          )}
+          {isDragOver && (
+            <div className="dcn-preview-drop-overlay">
+              <span>拖放替换遮罩</span>
+            </div>
+          )}
+        </div>
+        <button
+          className="image-file-upload-btn"
+          style={{ fontSize: 10, padding: '3px 6px' }}
+          onClick={() => inputRef.current?.click()}
+        >
+          替换遮罩
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) processImageFile(file, updateNodeParams, nodeId, params, 'maskFile');
+              e.target.value = '';
+            }}
+          />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      className="image-file-upload-btn"
+      style={{ fontSize: 11, padding: '6px 8px' }}
+      onClick={() => inputRef.current?.click()}
+    >
+      上传遮罩
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) processImageFile(file, updateNodeParams, nodeId, params, 'maskFile');
           e.target.value = '';
         }}
       />
@@ -401,56 +717,32 @@ const CompositeBody: FC<{
 
 /** Export body */
 const ExportBody: FC<{
-  params: Record<string, unknown>;
-  updateNodeParams: (id: string, params: Record<string, unknown>) => void;
-  nodeId: string;
   executionResult: CanvasNodeData['executionResult'];
-}> = ({ params, updateNodeParams, nodeId, executionResult }) => {
-  const format = (params['format'] as string) ?? 'png';
-  const quality = (params['quality'] as number) ?? 0.92;
-  const outW = (params['width'] as number) ?? 0;
-  const outH = (params['height'] as number) ?? 0;
+  onShowPreview: () => void;
+}> = ({ executionResult, onShowPreview }) => {
   const ready = !!executionResult;
 
+  // Get preview URL directly from execution result
+  const previewUrl = executionResult?.['previewUrl'] as string | undefined;
+  const execW = executionResult?.['width'] as number | undefined;
+  const execH = executionResult?.['height'] as number | undefined;
+
+  // Preview area - shows image or placeholder
+  if (previewUrl) {
+    return (
+      <div className="dcn-preview" data-preview onClick={onShowPreview}>
+        <img src={previewUrl} alt="Preview" className="dcn-preview-img" />
+        {execW && execH && (
+          <span className="dcn-preview-badge">{execW}×{execH}</span>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <select
-        style={{ fontSize: 9, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 3, color: '#ef4444', padding: '1px 3px', cursor: 'pointer', fontWeight: 600 }}
-        value={format}
-        onChange={(e) => updateNodeParams(nodeId, { ...params, format: e.target.value })}
-      >
-        <option value="png">PNG</option>
-        <option value="jpeg">JPEG</option>
-        <option value="webp">WebP</option>
-      </select>
-      {format !== 'png' && (
-        <>
-          <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-            <input
-              type="range" min={10} max={100} step={1} value={Math.round(quality * 100)}
-              className="dcn-input-slider"
-              style={{ flex: 1, height: 3, accentColor: '#ef4444' }}
-              onChange={(e) => updateNodeParams(nodeId, { ...params, quality: Number(e.target.value) / 100 })}
-            />
-            <span style={{ fontSize: 9, color: '#ef4444', minWidth: 28, textAlign: 'right', fontFamily: 'monospace' }}>{Math.round(quality * 100)}%</span>
-          </div>
-          <div style={{ display: 'flex', gap: 4, alignItems: 'center', fontSize: 9, color: 'rgba(255,255,255,0.5)' }}>
-            <span>输出</span>
-            <input
-              type="number" placeholder="W" value={outW || ''}
-              style={{ width: 44, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 3, color: '#fff', padding: '1px 3px', fontSize: 9, fontFamily: 'monospace' }}
-              onChange={(e) => updateNodeParams(nodeId, { ...params, width: e.target.value ? Number(e.target.value) : 0 })}
-            />
-            <span>×</span>
-            <input
-              type="number" placeholder="H" value={outH || ''}
-              style={{ width: 44, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 3, color: '#fff', padding: '1px 3px', fontSize: 9, fontFamily: 'monospace' }}
-              onChange={(e) => updateNodeParams(nodeId, { ...params, height: e.target.value ? Number(e.target.value) : 0 })}
-            />
-            <span style={{ marginLeft: 'auto', color: ready ? '#4ade80' : 'rgba(255,255,255,0.3)' }}>{ready ? '✓ 就绪' : '待执行'}</span>
-          </div>
-        </>
-      )}
+    <div className="dcn-preview-placeholder">
+      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>预览区域</span>
+      <span style={{ fontSize: 9, color: ready ? '#4ade80' : 'rgba(255,255,255,0.3)' }}>{ready ? '就绪' : '待执行'}</span>
     </div>
   );
 };
@@ -511,6 +803,58 @@ const OutputPortRow: FC<{ portId: string; portName: string; dataType: PortDataTy
   );
 };
 
+/** Paired port row — Input on left, Output on right, aligned by index */
+const PairedPortRow: FC<{
+  input?: { portId: string; portName: string; dataType: PortDataType };
+  output?: { portId: string; portName: string; dataType: PortDataType };
+}> = ({ input, output }) => {
+  const inputColor = input ? (PORT_TYPE_COLORS[input.dataType] ?? '#6b7280') : '#6b7280';
+  const outputColor = output ? (PORT_TYPE_COLORS[output.dataType] ?? '#6b7280') : '#6b7280';
+  const inputTypeInfo = input ? getPortTypeStyle(input.dataType) : null;
+  const outputTypeInfo = output ? getPortTypeStyle(output.dataType) : null;
+
+  return (
+    <div className="dcn-port-row dcn-port-row--paired">
+      {/* Left side: Input */}
+      <div className="dcn-port-side dcn-port-side--left">
+        {input ? (
+          <>
+            <Handle
+              type="target"
+              position={Position.Left}
+              id={input.portId}
+              title={`${input.portName} [${inputTypeInfo?.shortLabel ?? ''}]`}
+              className="react-flow__handle-comfy"
+              style={{ backgroundColor: inputColor, color: inputColor }}
+            />
+            <span className="dcn-port-label">{input.portName}</span>
+          </>
+        ) : (
+          <span className="dcn-port-placeholder" />
+        )}
+      </div>
+      {/* Right side: Output */}
+      <div className="dcn-port-side dcn-port-side--right">
+        {output ? (
+          <>
+            <span className="dcn-port-label">{output.portName}</span>
+            <Handle
+              type="source"
+              position={Position.Right}
+              id={output.portId}
+              title={`${output.portName} [${outputTypeInfo?.shortLabel ?? ''}]`}
+              className="react-flow__handle-comfy"
+              style={{ backgroundColor: outputColor, color: outputColor }}
+            />
+          </>
+        ) : (
+          <span className="dcn-port-placeholder" />
+        )}
+      </div>
+    </div>
+  );
+};
+
 // ---------------------------------------------------------------------------
 // Main PrismNode component
 // ---------------------------------------------------------------------------
@@ -538,6 +882,7 @@ export const PrismNode: FC<NodeProps<PrismNodeType>> = ({ id, data, selected }) 
 
   // Image file value from params
   const imageFileValue = params['imageFile'] as ImageFileValue | undefined;
+  const maskFileValue = params['maskFile'] as ImageFileValue | undefined;
 
   // Find the primary image output port key for thumbnail/preview
   const execImageKey = definition?.outputs.find(
@@ -600,6 +945,7 @@ export const PrismNode: FC<NodeProps<PrismNodeType>> = ({ id, data, selected }) 
   const hasOutputs = allOutputs.length > 0;
   const hasBodyContent =
     data.nodeType === 'load-image' ||
+    data.nodeType === 'load-mask' ||
     data.nodeType === 'transform' ||
     data.nodeType === 'apply-mask' ||
     data.nodeType === 'composite' ||
@@ -611,7 +957,29 @@ export const PrismNode: FC<NodeProps<PrismNodeType>> = ({ id, data, selected }) 
   // Show divider between Ports (inputs + outputs) and Widgets area
   const hasAnyPorts = allInputs.length > 0 || allOutputs.length > 0;
   const showPortDivider = hasAnyPorts && (hasBodyContent || hasOutputs);
-  // showDivider2 no longer needed (outputs moved to top)
+
+  // Build paired port rows: align inputs and outputs by index
+  // Row i: input[i] on left, output[i] on right
+  // Extra ports (when counts don't match) go below as unpaired rows
+  const maxPorts = Math.max(allInputs.length, allOutputs.length);
+  const pairedRows: Array<{
+    input?: (typeof allInputs)[0];
+    output?: (typeof allOutputs)[0];
+  }> = [];
+  const unpairedInputs: typeof allInputs = [];
+  const unpairedOutputs: typeof allOutputs = [];
+
+  for (let i = 0; i < maxPorts; i++) {
+    const inp = allInputs[i];
+    const out = allOutputs[i];
+    if (inp && out) {
+      pairedRows.push({ input: inp, output: out });
+    } else if (inp) {
+      unpairedInputs.push(inp);
+    } else if (out) {
+      unpairedOutputs.push(out);
+    }
+  }
 
   return (
     <>
@@ -626,6 +994,7 @@ export const PrismNode: FC<NodeProps<PrismNodeType>> = ({ id, data, selected }) 
         ]
           .filter(Boolean)
           .join(' ')}
+        data-node-id={id}
         style={{
           '--node-color': categoryColor,
         } as React.CSSProperties}
@@ -679,7 +1048,7 @@ export const PrismNode: FC<NodeProps<PrismNodeType>> = ({ id, data, selected }) 
         {/* Error banner */}
         {data.executionError && (
           <div className="dcn-error" title={data.executionError}>
-            <span className="dcn-error-icon">⚠</span>
+            <AlertTriangle size={11} className="dcn-error-icon" />
             <span className="dcn-error-msg">
               {data.executionError.length > 40
                 ? data.executionError.slice(0, 40) + '…'
@@ -688,8 +1057,17 @@ export const PrismNode: FC<NodeProps<PrismNodeType>> = ({ id, data, selected }) 
           </div>
         )}
 
-        {/* Input port rows — Ports section, left-aligned */}
-        {allInputs.map((input) => (
+        {/* Paired port rows — inputs and outputs aligned by index */}
+        {pairedRows.map((row, idx) => (
+          <PairedPortRow
+            key={`paired-${idx}`}
+            input={row.input ? { portId: row.input.id, portName: row.input.name, dataType: row.input.dataType as PortDataType } : undefined}
+            output={row.output ? { portId: row.output.id, portName: row.output.name, dataType: row.output.dataType as PortDataType } : undefined}
+          />
+        ))}
+
+        {/* Unpaired inputs (extra rows below when inputs > outputs) */}
+        {unpairedInputs.map((input) => (
           <InputPortRow
             key={input.id}
             portId={input.id}
@@ -698,8 +1076,8 @@ export const PrismNode: FC<NodeProps<PrismNodeType>> = ({ id, data, selected }) 
           />
         ))}
 
-        {/* Output port rows — Ports section, right-aligned */}
-        {allOutputs.map((output) => (
+        {/* Unpaired outputs (extra rows below when outputs > inputs) */}
+        {unpairedOutputs.map((output) => (
           <OutputPortRow
             key={output.id}
             portId={output.id}
@@ -715,6 +1093,17 @@ export const PrismNode: FC<NodeProps<PrismNodeType>> = ({ id, data, selected }) 
         {data.nodeType === 'load-image' && (
           <LoadImageBody
             imageFileValue={imageFileValue}
+            params={params}
+            updateNodeParams={updateNodeParams}
+            nodeId={id}
+            executionResult={data.executionResult}
+            onShowPreview={() => setShowPreview(true)}
+          />
+        )}
+
+        {data.nodeType === 'load-mask' && (
+          <LoadMaskBody
+            maskFileValue={maskFileValue}
             params={params}
             updateNodeParams={updateNodeParams}
             nodeId={id}
@@ -755,10 +1144,8 @@ export const PrismNode: FC<NodeProps<PrismNodeType>> = ({ id, data, selected }) 
 
         {data.nodeType === 'export' && (
           <ExportBody
-            params={params}
-            updateNodeParams={updateNodeParams}
-            nodeId={id}
             executionResult={data.executionResult}
+            onShowPreview={() => setShowPreview(true)}
           />
         )}
 

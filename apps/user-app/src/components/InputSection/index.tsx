@@ -20,7 +20,7 @@
  */
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import type { PublishedInput } from '@prism/shared-types';
+import type { PublishedInput, PublishedInputConfig } from '@prism/shared-types';
 
 // ── Image input field ────────────────────────────────────────────────────────
 
@@ -185,65 +185,164 @@ function TextInputField({ inp, value, onChange }: TextInputFieldProps) {
   );
 }
 
-// ── Exposed params form ───────────────────────────────────────────────────────
+// ── Mask upload field ─────────────────────────────────────────────────────────
 
-interface ExposedParamField {
-  nodeKey: string;
-  nodeName: string;
-  nodeType: string;
-  paramId: string;
-  paramName: string;
-  paramValue: unknown;
-  description?: string;
+interface MaskInputFieldProps {
+  inp: PublishedInput;
+  value: string;
+  onChange: (v: string) => void;
 }
+
+function MaskInputField({ inp, value, onChange }: MaskInputFieldProps) {
+  const [dragging, setDragging] = useState(false);
+  const [imgError, setImgError] = useState(false);
+  const [previewError, setPreviewError] = useState(false);
+  const prevValueRef = useRef<string>('');
+
+  useEffect(() => {
+    const prev = prevValueRef.current;
+    if (prev && prev !== value && prev.startsWith('blob:')) {
+      URL.revokeObjectURL(prev);
+    }
+    prevValueRef.current = value;
+    return () => {
+      if (value && value.startsWith('blob:')) URL.revokeObjectURL(value);
+    };
+  }, [value]);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragging(false);
+      setImgError(false);
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) {
+        onChange(URL.createObjectURL(file));
+      }
+    },
+    [onChange]
+  );
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImgError(false);
+    const file = e.target.files?.[0];
+    if (file) onChange(URL.createObjectURL(file));
+  };
+
+  return (
+    <div className="ua-input-group">
+      <label className="ua-input-label">
+        {inp.name}
+        {inp.required && <span className="ua-input-required">*</span>}
+        <span className="ua-input-type-badge">蒙版</span>
+      </label>
+      {inp.description && <p className="ua-input-desc">{inp.description}</p>}
+
+      {/* URL text input */}
+      <input
+        type="text"
+        className="ua-input ua-input--text"
+        value={value}
+        onChange={(e) => { setImgError(false); onChange(e.target.value); }}
+        placeholder="输入蒙版图片 URL 或拖拽上传"
+      />
+
+      {/* Drop zone */}
+      <div
+        className={`ua-dropzone ${dragging ? 'ua-dropzone--active' : ''} ${value ? 'ua-dropzone--has-value' : ''}`}
+        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={handleDrop}
+      >
+        {value ? (
+          <>
+            <img
+              src={value}
+              alt="Mask preview"
+              className="ua-dropzone-preview ua-dropzone-preview--mask"
+              onError={() => setImgError(true)}
+              onLoad={() => setPreviewError(false)}
+            />
+            {imgError && (
+              <div className="ua-dropzone-error">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                图片加载失败，请检查 URL 或更换图片
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="ua-dropzone-hint">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            <span>拖拽蒙版图片到这里</span>
+            <span className="ua-dropzone-or">或</span>
+            <label className="ua-dropzone-file-btn">
+              选择文件
+              <input
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={handleFileChange}
+              />
+            </label>
+          </div>
+        )}
+      </div>
+
+      {value && (
+        <button className="ua-input-clear" onClick={() => { onChange(''); setImgError(false); }}>
+          清除蒙版
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ── Exposed params form ───────────────────────────────────────────────────────
 
 interface ExposedParamsFormProps {
   selectedWorkflow: {
-    config: { nodeTypes?: Record<string, string>; nodeConfigs?: Record<string, { params?: Record<string, unknown> }> };
+    config: {
+      nodeTypes?: Record<string, string>;
+      nodeConfigs?: Record<string, { params?: Record<string, unknown> }>;
+      exposedParams?: Array<{ nodeId: string; paramId: string; label: string }>;
+    };
   };
   paramValues: Record<string, Record<string, unknown>>;
   onParamChange: (nodeKey: string, paramId: string, value: unknown) => void;
 }
 
 function ExposedParamsForm({ selectedWorkflow, paramValues, onParamChange }: ExposedParamsFormProps) {
-  const fields: ExposedParamField[] = [];
-
   const nodeTypes = selectedWorkflow.config.nodeTypes ?? {};
   const nodeConfigs = selectedWorkflow.config.nodeConfigs ?? {};
+  const exposedParams = selectedWorkflow.config.exposedParams ?? [];
 
-  for (const [nodeKey, nodeType] of Object.entries(nodeTypes)) {
-    const config = nodeConfigs[nodeKey];
-    const params = config?.params;
-    if (!params) continue;
-
-    for (const [paramId, paramValue] of Object.entries(params)) {
-      fields.push({
-        nodeKey,
-        nodeName: nodeType.replace(/-/g, ' '),
-        nodeType,
-        paramId,
-        paramName: paramId.replace(/_/g, ' '),
-        paramValue,
-      });
-    }
-  }
-
-  if (fields.length === 0) return null;
+  if (exposedParams.length === 0) return null;
 
   return (
     <div className="ua-exposed-params">
       <div className="ua-exposed-params-title">调整参数</div>
-      {fields.map((field) => {
-        const numValue = typeof field.paramValue === 'number'
-          ? field.paramValue
-          : parseFloat(String(field.paramValue));
+      {exposedParams.map((ep) => {
+        const nodeType = nodeTypes[ep.nodeId] ?? '';
+        const config = nodeConfigs[ep.nodeId];
+        const rawValue = paramValues[ep.nodeId]?.[ep.paramId] ?? config?.params?.[ep.paramId];
+        const numValue = typeof rawValue === 'number'
+          ? rawValue
+          : parseFloat(String(rawValue ?? 0));
         const displayValue = isNaN(numValue)
-          ? String(field.paramValue)
+          ? String(rawValue ?? '')
           : numValue.toFixed(2);
 
         return (
-          <div key={`${field.nodeKey}:${field.paramId}`} className="ua-input-group">
-            <label className="ua-input-label">{field.paramName}</label>
+          <div key={`${ep.nodeId}:${ep.paramId}`} className="ua-input-group">
+            <label className="ua-input-label">{ep.label}</label>
             <input
               type="range"
               className="ua-param-slider"
@@ -251,7 +350,7 @@ function ExposedParamsForm({ selectedWorkflow, paramValues, onParamChange }: Exp
               max={1}
               step={0.01}
               value={isNaN(numValue) ? 0.5 : numValue}
-              onChange={(e) => onParamChange(field.nodeKey, field.paramId, parseFloat(e.target.value))}
+              onChange={(e) => onParamChange(ep.nodeId, ep.paramId, parseFloat(e.target.value))}
             />
             <div className="ua-param-slider-value">{displayValue}</div>
           </div>
@@ -266,7 +365,12 @@ function ExposedParamsForm({ selectedWorkflow, paramValues, onParamChange }: Exp
 export interface InputSectionProps {
   workflow: {
     inputs: PublishedInput[];
-    config: { nodeTypes?: Record<string, string>; nodeConfigs?: Record<string, { params?: Record<string, unknown> }> };
+    config: {
+      nodeTypes?: Record<string, string>;
+      nodeConfigs?: Record<string, { params?: Record<string, unknown> }>;
+      /** New v2 field: structured input configs from auto-detected source nodes */
+      inputs?: PublishedInputConfig[];
+    };
   };
   inputValues: Record<string, string>;
   paramValues: Record<string, Record<string, unknown>>;
@@ -281,7 +385,22 @@ export const InputSection: React.FC<InputSectionProps> = ({
   onInputChange,
   onParamChange,
 }) => {
-  const visibleInputs = workflow.inputs.filter((inp) => inp.visible);
+  // Prefer new v2 config.inputs; fall back to legacy inputs[] array
+  const configInputs = workflow.config.inputs;
+  const legacyInputs = workflow.inputs;
+
+  // Build a visible-inputs list that works with both old and new publish formats.
+  // New format: config.inputs[].nodeId → inputs[id] === "{nodeId}:{port}"
+  // Legacy format: inputs[] with visible=true
+  const visibleInputs: PublishedInput[] = configInputs && configInputs.length > 0
+    ? configInputs.map((ci) => ({
+        id: `${ci.nodeId}:out`,
+        name: ci.label,
+        type: ci.type,
+        required: true,
+        visible: true,
+      }))
+    : legacyInputs.filter((inp) => inp.visible);
 
   return (
     <>
@@ -293,6 +412,16 @@ export const InputSection: React.FC<InputSectionProps> = ({
         if (inp.type === 'image') {
           return (
             <ImageInputField
+              key={inp.id}
+              inp={inp}
+              value={inputValues[inp.id] ?? ''}
+              onChange={(v) => onInputChange(inp.id, v)}
+            />
+          );
+        }
+        if (inp.type === 'mask') {
+          return (
+            <MaskInputField
               key={inp.id}
               inp={inp}
               value={inputValues[inp.id] ?? ''}

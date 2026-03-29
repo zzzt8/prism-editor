@@ -11,14 +11,15 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@prism/image-ops": "workspace:*",
+    "@prism/node-definitions": "workspace:*",
     "@prism/shared-types": "workspace:*",
     "@prism/shared-ui": "workspace:*",
     "@prism/workflow-core": "workspace:*",
-    "@prism/node-definitions": "workspace:*",
-    "@prism/image-ops": "workspace:*",
+    "@xyflow/react": "^12.0.0",
+    "lucide-react": "^0.460.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
-    "@xyflow/react": "^12.0.0",
     "zustand": "^4.5.0"
   },
   "devDependencies": {

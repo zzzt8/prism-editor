@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
+import { Check, X, AlertCircle } from 'lucide-react';
 
 export const CanvasToolbar: React.FC = () => {
   const nodes = useCanvasStore((s) => s.nodes);
@@ -34,13 +35,13 @@ export const CanvasToolbar: React.FC = () => {
 
       {(executionStatus === 'done') && (
         <span className="canvas-toolbar-exec canvas-toolbar-exec--done">
-          ✓ 完成 ({doneCount}/{nodes.length})
+          <Check size={12} /> 完成 ({doneCount}/{nodes.length})
         </span>
       )}
 
       {(executionStatus === 'error') && (
         <span className="canvas-toolbar-exec canvas-toolbar-exec--error">
-          ✕ 执行出错
+          <AlertCircle size={12} /> 执行出错
         </span>
       )}
 

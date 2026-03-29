@@ -1,8 +1,32 @@
 // WorkflowListPage - displays all published workflows available to the user
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useUserAppStore, type PublishedWorkflowMeta } from '../store/publishedStore';
+import { syncWorkflowToLocal } from '../store/publishedStore';
 import { navigateToWorkflow } from '../router';
+import { importWorkflowFromFile, importWorkflowFromClipboard } from '../utils/workflowImport';
+
+// ─── Toast ───────────────────────────────────────────────────────────────────
+
+interface ToastState {
+  message: string;
+  type: 'success' | 'error' | 'info';
+}
+
+function Toast({ toast, onDismiss }: { toast: ToastState; onDismiss: () => void }) {
+  useEffect(() => {
+    const timer = setTimeout(onDismiss, 3500);
+    return () => clearTimeout(timer);
+  }, [onDismiss]);
+
+  return (
+    <div className={`ua-toast ua-toast--${toast.type}`}>
+      {toast.message}
+    </div>
+  );
+}
+
+// ─── Date formatter ─────────────────────────────────────────────────────────
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -14,6 +38,8 @@ function formatDate(iso: string): string {
     minute: '2-digit',
   });
 }
+
+// ─── WorkflowCard ─────────────────────────────────────────────────────────────
 
 function WorkflowCard({ meta, onClick }: { meta: PublishedWorkflowMeta; onClick: () => void }) {
   return (
@@ -46,15 +72,106 @@ function WorkflowCard({ meta, onClick }: { meta: PublishedWorkflowMeta; onClick:
   );
 }
 
+// ─── File upload trigger ──────────────────────────────────────────────────────
+
+interface FileInputProps {
+  inputRef: React.RefObject<HTMLInputElement>;
+  onFile: (file: File) => void;
+}
+
+function FileInputTrigger({ inputRef, onFile }: FileInputProps) {
+  return (
+    <input
+      ref={inputRef}
+      type="file"
+      accept=".json,application/json"
+      style={{ display: 'none' }}
+      onChange={(e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+          onFile(file);
+          // Reset so the same file can be selected again
+          e.target.value = '';
+        }
+      }}
+    />
+  );
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
+
 export const WorkflowListPage: React.FC = () => {
   const { workflows, isLoading, loadError, loadWorkflows } = useUserAppStore();
 
+  const [toast, setToast] = useState<ToastState | null>(null);
+  const [pasteHint, setPasteHint] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const showToast = useCallback((message: string, type: ToastState['type'] = 'success') => {
+    setToast({ message, type });
+  }, []);
+
+  const dismissToast = useCallback(() => setToast(null), []);
+
+  // Initial load
   useEffect(() => {
     loadWorkflows();
   }, [loadWorkflows]);
 
+  // Show paste hint when list is empty after loading
+  useEffect(() => {
+    if (!isLoading && !loadError && workflows.length === 0) {
+      setPasteHint(true);
+    }
+  }, [isLoading, loadError, workflows.length]);
+
+  // ── Import from file ─────────────────────────────────────────────────────
+  const handleFileImport = useCallback(async (file: File) => {
+    const result = await importWorkflowFromFile(file);
+    if (result.success) {
+      syncWorkflowToLocal(result.workflow as any);
+      loadWorkflows();
+      showToast(`已导入「${result.workflow.name}」`, 'success');
+    } else {
+      showToast(`导入失败：${result.reason}`, 'error');
+    }
+  }, [loadWorkflows, showToast]);
+
+  // ── Ctrl+V paste detection ───────────────────────────────────────────────
+  // Only active when the list is empty (pasteHint is shown)
+  useEffect(() => {
+    if (!pasteHint) return;
+
+    const handleKeyDown = async (e: KeyboardEvent) => {
+      // Ctrl+V on Windows/Linux, Cmd+V on Mac
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+        // Don't intercept if focus is in a text input
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+          return;
+        }
+        e.preventDefault();
+
+        const result = await importWorkflowFromClipboard();
+        if (result.success) {
+          syncWorkflowToLocal(result.workflow as any);
+          loadWorkflows();
+          setPasteHint(false);
+          showToast(`已从剪贴板导入「${result.workflow.name}」`, 'success');
+        } else {
+          showToast(`剪贴板内容无效：${result.reason}`, 'error');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [pasteHint, loadWorkflows, showToast]);
+
   return (
     <div className="ua-page ua-list-page">
+      <FileInputTrigger inputRef={fileInputRef} onFile={handleFileImport} />
+
       <div className="ua-page-header">
         <div className="ua-logo">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -69,6 +186,9 @@ export const WorkflowListPage: React.FC = () => {
       </div>
 
       <div className="ua-page-body">
+        {/* Toast notifications */}
+        {toast && <Toast toast={toast} onDismiss={dismissToast} />}
+
         {isLoading && (
           <div className="ua-loading">
             <div className="ua-spinner" />
@@ -93,6 +213,19 @@ export const WorkflowListPage: React.FC = () => {
             </div>
             <div className="ua-empty-title">暂无可用工作流</div>
             <div className="ua-empty-sub">请在开发者工具中创建并发布工作流</div>
+            <div className="ua-empty-actions">
+              <button
+                className="ua-btn ua-btn--secondary"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                上传工作流文件
+              </button>
+              {pasteHint && (
+                <div className="ua-paste-hint">
+                  或切换到开发者工具发布后，按 <kbd>Ctrl+V</kbd> 从剪贴板导入
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -105,6 +238,13 @@ export const WorkflowListPage: React.FC = () => {
                 onClick={() => navigateToWorkflow(meta.sourceId)}
               />
             ))}
+            {/* Import more */}
+            <button
+              className="ua-import-more-btn"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              + 导入更多工作流
+            </button>
           </div>
         )}
       </div>

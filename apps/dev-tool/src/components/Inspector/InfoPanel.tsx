@@ -3,6 +3,7 @@
 
 import React, { useMemo } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
+import { Image, CircleDot, Hash, Type, ToggleLeft, FileText } from 'lucide-react';
 
 interface InfoPanelProps {
   nodeId: string;
@@ -16,13 +17,13 @@ const CATEGORY_LABELS: Record<string, string> = {
   output: '输出',
 };
 
-const PORT_TYPE_ICONS: Record<string, string> = {
-  image: '🖼',
-  mask: '◐',
-  number: '#',
-  string: 'A',
-  boolean: '◻',
-  file: '📄',
+const PORT_TYPE_ICONS: Record<string, React.ReactNode> = {
+  image: <Image size={12} />,
+  mask: <CircleDot size={12} />,
+  number: <Hash size={12} />,
+  string: <Type size={12} />,
+  boolean: <ToggleLeft size={12} />,
+  file: <FileText size={12} />,
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; dot: string }> = {
@@ -279,10 +280,12 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ nodeId }) => {
         }
 
         .info-port-icon {
-          font-size: 12px;
           flex-shrink: 0;
           width: 14px;
-          text-align: center;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--color-text-muted);
         }
 
         .info-port-name {

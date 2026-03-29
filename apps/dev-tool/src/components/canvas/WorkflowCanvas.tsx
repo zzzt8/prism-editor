@@ -18,18 +18,17 @@ import {
 import '@xyflow/react/dist/style.css';
 import { useCanvasStore, type ConnectionValidation } from '../../store/canvasStore';
 import { PrismNode } from '../nodes/PrismNode';
-import { PreviewImageNode } from '../nodes/PreviewImageNode';
 import { GroupNode } from '../nodes/GroupNode';
 import { PrismEdge } from '../edges/PrismEdge';
 import { ConnectionLine } from '../edges/ConnectionLine';
 import { CanvasToolbar } from './CanvasToolbar';
 import { NodeSearchModal } from './NodeSearchModal';
 import { NodeContextMenu } from './NodeContextMenu';
+import { getDragImageState, setDragImageState } from '../nodes/PrismNode';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nodeTypes: Record<string, any> = {
   prismNode: PrismNode,
-  previewImageNode: PreviewImageNode,
   groupNode: GroupNode,
 };
 
@@ -79,6 +78,96 @@ export const WorkflowCanvas: React.FC = () => {
   const addGroup = useCanvasStore((s) => s.addGroup);
   const contextMenu = useCanvasStore((s) => s.contextMenu);
   const setContextMenu = useCanvasStore((s) => s.setContextMenu);
+
+  // Global drag event listeners for file drop handling
+  useEffect(() => {
+    const handleGlobalDragEnter = (e: DragEvent) => {
+      const files = e.dataTransfer?.files;
+      if (files?.length && files[0]?.type.startsWith('image/')) {
+        // This is an image file being dragged from file explorer
+        // Don't set any drag state yet - we'll handle it on drop
+      }
+    };
+
+    const handleGlobalDragOver = (e: DragEvent) => {
+      const files = e.dataTransfer?.files;
+      if (files?.length && files[0]?.type.startsWith('image/')) {
+        e.preventDefault();
+        e.dataTransfer!.dropEffect = 'copy';
+      }
+    };
+
+    const handleGlobalDrop = (e: DragEvent) => {
+      const files = e.dataTransfer?.files;
+      if (files?.length && files[0]?.type.startsWith('image/')) {
+        e.preventDefault();
+        // Check if dropped on a specific node
+        const target = e.target as HTMLElement;
+        const nodeElement = target.closest('[data-node-id]');
+        if (nodeElement) {
+          const nodeId = nodeElement.getAttribute('data-node-id');
+          const node = useCanvasStore.getState().nodes.find(n => n.id === nodeId);
+          if (node && (node.data.nodeType === 'load-image' || node.data.nodeType === 'load-mask')) {
+            const paramKey = node.data.nodeType === 'load-image' ? 'imageFile' : 'maskFile';
+            const file = files[0];
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+              const dataUrl = ev.target?.result as string;
+              const img = new Image();
+              img.onload = () => {
+                useCanvasStore.getState().updateNodeParams(nodeId!, {
+                  ...node.data.params,
+                  [paramKey]: {
+                    dataUrl,
+                    width: img.naturalWidth,
+                    height: img.naturalHeight,
+                    fileName: file.name
+                  }
+                });
+              };
+              img.onerror = () => {
+                useCanvasStore.getState().updateNodeParams(nodeId!, {
+                  ...node.data.params,
+                  [paramKey]: {
+                    dataUrl,
+                    width: 0,
+                    height: 0,
+                    fileName: file.name
+                  }
+                });
+              };
+              img.src = dataUrl;
+            };
+            reader.readAsDataURL(file);
+            return;
+          }
+        }
+        // If not dropped on a specific node, try to find the nearest Load Image/Mask node
+        // For now, clear any drag state
+        setDragImageState(null);
+      }
+    };
+
+    const handleGlobalDragLeave = (e: DragEvent) => {
+      // Clear drag state when leaving the window
+      const relatedTarget = e.relatedTarget as HTMLElement | null;
+      if (!relatedTarget || !document.body.contains(relatedTarget)) {
+        setDragImageState(null);
+      }
+    };
+
+    document.addEventListener('dragenter', handleGlobalDragEnter);
+    document.addEventListener('dragover', handleGlobalDragOver);
+    document.addEventListener('drop', handleGlobalDrop);
+    document.addEventListener('dragleave', handleGlobalDragLeave);
+
+    return () => {
+      document.removeEventListener('dragenter', handleGlobalDragEnter);
+      document.removeEventListener('dragover', handleGlobalDragOver);
+      document.removeEventListener('drop', handleGlobalDrop);
+      document.removeEventListener('dragleave', handleGlobalDragLeave);
+    };
+  }, []);
 
   // ✅ Per React Flow docs: use applyNodeChanges/applyEdgeChanges to merge ALL change types
   // (position, dimensions, select, remove, etc.). This is REQUIRED for React Flow internals.
@@ -206,20 +295,72 @@ export const WorkflowCanvas: React.FC = () => {
 
   const handleDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
+    // Check if this is a drag from our Load Image/Mask nodes
+    const dragState = getDragImageState();
+    if (dragState) {
+      event.dataTransfer.dropEffect = 'copy';
+    } else {
+      event.dataTransfer.dropEffect = 'move';
+    }
   }, []);
 
-  // 诊断：打印 drop 时的坐标信息
+  // Handle drop on canvas - supports both creating new nodes and replacing images
   const handleDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
+
+      // Check if this is a file drop for replacing image/mask
+      const dragState = getDragImageState();
+      const files = event.dataTransfer?.files;
+      const isImageFile = files?.length && files[0]?.type.startsWith('image/');
+
+      if (dragState && isImageFile) {
+        // This is a file drop on a specific Load Image/Mask node - replace the file
+        setDragImageState(null);
+        const store = useCanvasStore.getState();
+        const node = store.nodes.find(n => n.id === dragState.nodeId);
+        if (node) {
+          const file = files![0];
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const dataUrl = ev.target?.result as string;
+            const img = new Image();
+            img.onload = () => {
+              store.updateNodeParams(dragState.nodeId, {
+                ...node.data.params,
+                [dragState.paramKey]: {
+                  dataUrl,
+                  width: img.naturalWidth,
+                  height: img.naturalHeight,
+                  fileName: file.name
+                }
+              });
+            };
+            img.onerror = () => {
+              store.updateNodeParams(dragState.nodeId, {
+                ...node.data.params,
+                [dragState.paramKey]: {
+                  dataUrl,
+                  width: 0,
+                  height: 0,
+                  fileName: file.name
+                }
+              });
+            };
+            img.src = dataUrl;
+          };
+          reader.readAsDataURL(file);
+        }
+        return;
+      }
+
+      // Otherwise, this is a node creation from the node library panel
       const nodeType = event.dataTransfer.getData('application/prism-node-type');
       if (!nodeType) {
         console.warn('[DBG Drop] No nodeType in dataTransfer!');
         return;
       }
 
-      // 诊断坐标
       const screenPos = { x: event.clientX, y: event.clientY };
       const flowPos = reactFlowInstance.screenToFlowPosition(screenPos);
       console.log('[DBG Drop]', {
@@ -229,9 +370,8 @@ export const WorkflowCanvas: React.FC = () => {
         nodeType,
       });
 
-      // 临时：固定位置测试
-      const finalPos = { x: 300, y: 200 };
-      console.log('[DBG Drop] Using FIXED position:', finalPos);
+      const finalPos = { x: flowPos.x - 80, y: flowPos.y - 20 };
+      console.log('[DBG Drop] Using drop position:', finalPos);
       addNode(nodeType, finalPos);
     },
     [reactFlowInstance, addNode]
@@ -281,6 +421,23 @@ export const WorkflowCanvas: React.FC = () => {
     [setContextMenu]
   );
 
+  // Double-click on canvas pane to open node search
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleDoubleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('.react-flow__node') || target.closest('.react-flow__edge')) {
+        return;
+      }
+      setSearchOpen(true);
+    };
+
+    container.addEventListener('dblclick', handleDoubleClick);
+    return () => container.removeEventListener('dblclick', handleDoubleClick);
+  }, []);
+
   return (
     <CanvasErrorBoundary>
     <div ref={containerRef} className="workflow-canvas-container">
@@ -298,6 +455,7 @@ export const WorkflowCanvas: React.FC = () => {
         onNodeContextMenu={handleNodeContextMenu}
         onPaneClick={handlePaneClick}
         onNodeDoubleClick={() => setSearchOpen(true)}
+        zoomOnDoubleClick={false}
         onMoveEnd={onMoveEnd}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}

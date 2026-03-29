@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
+import { X } from 'lucide-react';
 
 interface SaveDialogProps {
   onClose: () => void;
@@ -35,7 +36,7 @@ export const SaveDialog: React.FC<SaveDialogProps> = ({ onClose }) => {
       <div className="dialog" role="dialog" aria-modal="true">
         <div className="dialog-header">
           <span className="dialog-title">保存工作流</span>
-          <button className="dialog-close" onClick={onClose} aria-label="关闭">✕</button>
+          <button className="dialog-close" onClick={onClose} aria-label="关闭"><X size={16} /></button>
         </div>
 
         <div className="dialog-body">

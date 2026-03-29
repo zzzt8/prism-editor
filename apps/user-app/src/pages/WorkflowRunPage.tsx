@@ -53,17 +53,41 @@ export const WorkflowRunPage: React.FC = () => {
   useEffect(() => {
     if (selectedWorkflow) {
       const defaults: Record<string, string> = {};
-      for (const inp of selectedWorkflow.inputs) {
-        defaults[inp.id] = inp.defaultValue != null ? String(inp.defaultValue) : '';
+
+      // New v2 format: inputs are in config.inputs (PublishedInputConfig[])
+      const configInputs = selectedWorkflow.config.inputs;
+      if (configInputs && configInputs.length > 0) {
+        for (const ci of configInputs) {
+          defaults[`${ci.nodeId}:out`] = '';
+        }
+      } else {
+        // Legacy format: inputs are in workflow.inputs (PublishedInput[])
+        for (const inp of selectedWorkflow.inputs) {
+          defaults[inp.id] = inp.defaultValue != null ? String(inp.defaultValue) : '';
+        }
       }
       setInputValues(defaults);
 
-      // Initialize exposed params from nodeConfigs
+      // Initialize param values from nodeConfigs (values come from developer-set defaults)
       const pvs: Record<string, Record<string, unknown>> = {};
       const nodeConfigs = selectedWorkflow.config.nodeConfigs ?? {};
-      for (const [nodeKey, config] of Object.entries(nodeConfigs)) {
-        if (config?.params) {
-          pvs[nodeKey] = { ...config.params };
+
+      // New v2: only show whitelisted params (config.exposedParams)
+      const exposedParamList = selectedWorkflow.config.exposedParams;
+      if (exposedParamList && exposedParamList.length > 0) {
+        for (const ep of exposedParamList) {
+          const cfg = nodeConfigs[ep.nodeId];
+          if (cfg?.params && ep.paramId in cfg.params) {
+            if (!pvs[ep.nodeId]) pvs[ep.nodeId] = {};
+            pvs[ep.nodeId][ep.paramId] = cfg.params[ep.paramId];
+          }
+        }
+      } else {
+        // Legacy: show all params from nodeConfigs
+        for (const [nodeKey, config] of Object.entries(nodeConfigs)) {
+          if (config?.params) {
+            pvs[nodeKey] = { ...config.params };
+          }
         }
       }
       setParamValues(pvs);
@@ -86,12 +110,25 @@ export const WorkflowRunPage: React.FC = () => {
     if (!selectedWorkflow) return;
 
     // Validate required visible inputs
-    for (const inp of selectedWorkflow.inputs) {
-      if (inp.required && inp.visible) {
-        const effectiveValue = inputValues[inp.id] ?? (inp.defaultValue != null ? String(inp.defaultValue) : '');
+    const configInputs = selectedWorkflow.config.inputs;
+    if (configInputs && configInputs.length > 0) {
+      // v2 format: validate config.inputs
+      for (const ci of configInputs) {
+        const effectiveValue = inputValues[`${ci.nodeId}:out`] ?? '';
         if (!effectiveValue.trim()) {
-          setRunState({ status: 'error', error: `请填写必填项：${inp.name}` });
+          setRunState({ status: 'error', error: `请填写必填项：${ci.label}` });
           return;
+        }
+      }
+    } else {
+      // Legacy format: validate workflow.inputs
+      for (const inp of selectedWorkflow.inputs) {
+        if (inp.required && inp.visible) {
+          const effectiveValue = inputValues[inp.id] ?? (inp.defaultValue != null ? String(inp.defaultValue) : '');
+          if (!effectiveValue.trim()) {
+            setRunState({ status: 'error', error: `请填写必填项：${inp.name}` });
+            return;
+          }
         }
       }
     }
@@ -153,6 +190,16 @@ export const WorkflowRunPage: React.FC = () => {
     return <WorkflowErrorState />;
   }
 
+  // New v2: derive outputs from config.outputs; fall back to legacy outputs[]
+  const configOutputs = selectedWorkflow.config.outputs;
+  const effectiveOutputs = configOutputs && configOutputs.length > 0
+    ? configOutputs.map((co) => ({
+        id: co.nodeId,
+        name: co.label,
+        type: 'image' as const,
+      }))
+    : selectedWorkflow.outputs;
+
   return (
     <UserLayout
       header={
@@ -179,7 +226,7 @@ export const WorkflowRunPage: React.FC = () => {
     >
       {/* Results panel */}
       <OutputSection
-        outputs={selectedWorkflow.outputs}
+        outputs={effectiveOutputs}
         workflowName={selectedWorkflow.name}
         runState={{
           status: runState.status,

@@ -7,6 +7,7 @@
 //  2. Injects user input values into the appropriate nodes
 //  3. Delegates execution to WorkflowExecutor
 
+import { topologicalSort } from './topo-sort';
 import type {
   PublishedWorkflow,
   Workflow,
@@ -30,19 +31,17 @@ export class PublishedWorkflowExecutorVersionError extends Error {
 export interface PublishedExecutorOptions extends ExecutorOptions {
   /**
    * Mapping from PublishedInput.id → user-provided value.
-   * The key format matches what was configured in PublishDialog:
-   *   "{nodeIndex}:{portId}"
+   * The key format is "{nodeId}:{portId}" — e.g. "canvas-abc123:image".
    *
    * Example:
-   *   { "0:image": "https://example.com/photo.jpg" }
+   *   { "canvas-abc123:image": "blob:https://..." }
    */
   inputs: Record<string, unknown>;
   /**
-   * Mapping from nodeIndex → paramId → user-provided exposed param value.
-   * Only params with visibility === 'visible' are included here.
+   * Mapping from nodeId → paramId → user-provided exposed param value.
    *
    * Example:
-   *   { "1": { "opacity": 0.8, "mode": "multiply" } }
+   *   { "canvas-xyz789": { "opacity": 0.8, "mode": "multiply" } }
    */
   exposedParams?: Record<string, Record<string, unknown>>;
 }
@@ -75,63 +74,53 @@ export class PublishedWorkflowExecutor {
   /**
    * Reconstruct a runnable Workflow from a PublishedWorkflow + user inputs.
    *
-   * Strategy:
-   *  1. Read nodeTypes (index-keyed, stable across re-publishes).
-   *     If missing → throw PublishedWorkflowExecutorVersionError (old data).
-   *  2. Read nodeIndexMap (canvasId → index) and connections (canvas IDs).
-   *     Resolve connection endpoints: canvasId → index via nodeIndexMap.
-   *     If nodeIndexMap missing, fall back to canvas ID (old data compatibility).
-   *  3. Build WorkflowNode for each index: merge exposed params + _internalParams.
-   *  4. Inject user-supplied input values for load-image nodes.
+   * Strategy (all keys = canvas nodeId UUID):
+   *  1. nodeTypes, nodeConfigs: keyed by canvas nodeId — stable across re-publishes.
+   *  2. Connections from/to: already use canvas nodeIds — no remapping needed.
+   *  3. Sort nodes in topological order for execution.
+   *  4. Inject user inputs into load-image nodes via PublishedInput.id matching
+   *     "{nodeId}:{portId}" prefix.
    */
   private reconstruct(
     pw: PublishedWorkflow,
     userInputs: Record<string, unknown>,
     exposedParams: Record<string, Record<string, unknown>> = {}
   ): Workflow {
-    const nodeTypes = pw.config.nodeTypes;
-
-    // Bug 7: No nodeTypes → old data, can't reconstruct
-    if (!nodeTypes || Object.keys(nodeTypes).length === 0) {
-      throw new PublishedWorkflowExecutorVersionError();
-    }
-
-    const nodeIndexMap = pw.config.nodeIndexMap ?? {};
+    const nodeTypes = pw.config.nodeTypes ?? {};
     const nodeConfigMap = pw.config.nodeConfigs ?? {};
 
-    // Build index-keyed node records.
-    //
-    // Strategy:
-    //   - PublishedWorkflow stores nodeTypes/configs under topological index strings ("0", "1"...).
-    //     These are stable and deterministic regardless of canvas ID changes.
-    //   - Old / migrated data may have canvas IDs as keys (e.g. "canvas-0", "canvas-1").
-    //     We detect this by checking whether all keys are numeric.
-    //     In that case we use the original string keys directly — the executor will look up
-    //     the registered executors by the actual node.type string (e.g. "load-image"), not the key.
-    const rawKeys = Object.keys(nodeTypes);
-    const allNumeric = rawKeys.every((k) => !isNaN(Number(k)));
-    const sortedIndices = allNumeric
-      ? rawKeys.map(Number).sort((a, b) => a - b).map(String)
-      : rawKeys; // canvas UUIDs: preserve insertion order (same as canvas node creation order)
+    // nodeTypes keys are canvas node IDs (UUIDs) — stable identifiers.
+    const nodeIds = Object.keys(nodeTypes);
 
-    const nodes: WorkflowNode[] = sortedIndices.map((idx) => {
-      const nodeKey = idx;
-      const nodeType = nodeTypes[nodeKey];
-      const nodeConfig = nodeConfigMap[nodeKey];
+    // Build WorkflowNode array for each canvas nodeId.
+    const nodes: WorkflowNode[] = nodeIds.map((nodeId) => {
+      const nodeType = nodeTypes[nodeId];
+      const nodeConfig = nodeConfigMap[nodeId];
 
       // Merge order: _internalParams (developer-locked) → params (exposed defaults) → exposedParams (user override)
       const mergedParams = {
         ...(nodeConfig?.params ?? {}),
         ...(nodeConfig?._internalParams ?? {}),
-        ...(exposedParams[nodeKey] ?? {}),
+        ...(exposedParams[nodeId] ?? {}),
       };
 
-      // Inject user-supplied URL for load-image nodes
-      if (nodeType === 'load-image') {
+      // Inject user-supplied URL for load-image and load-mask nodes.
+      if (nodeType === 'load-image' || nodeType === 'load-mask') {
+        // Legacy format: pw.inputs[].id is "{nodeId}:{portId}"
         for (const inp of pw.inputs) {
-          if (inp.id.startsWith(`${nodeKey}:`)) {
+          if (inp.id.startsWith(`${nodeId}:`)) {
             const userValue = userInputs[inp.id];
-            if (userValue !== undefined) {
+            if (userValue !== undefined && userValue !== null) {
+              mergedParams.url = userValue;
+            }
+          }
+        }
+        // v2 format: config.inputs[].nodeId is a bare UUID; input key is "{nodeId}:out"
+        for (const ci of (pw.config.inputs ?? [])) {
+          if (ci.nodeId === nodeId) {
+            const inputKey = `${ci.nodeId}:out`;
+            const userValue = userInputs[inputKey];
+            if (userValue !== undefined && userValue !== null) {
               mergedParams.url = userValue;
             }
           }
@@ -139,30 +128,32 @@ export class PublishedWorkflowExecutor {
       }
 
       return {
-        id: nodeKey,   // Use stable index as node ID
+        id: nodeId,
         type: nodeType,
         position: { x: 0, y: 0 },
         params: mergedParams,
       };
     });
 
-    // Resolve connections: convert canvas IDs → index keys via nodeIndexMap
-    // For old data without nodeIndexMap, keep canvas IDs as-is
-    const resolvedConnections: Connection[] = (pw.config.connections ?? []).map((conn) => {
-      const fromIdx = nodeIndexMap[conn.from.nodeId] ?? conn.from.nodeId;
-      const toIdx   = nodeIndexMap[conn.to.nodeId]   ?? conn.to.nodeId;
-      return {
-        id: conn.id,
-        from: { nodeId: String(fromIdx), port: conn.from.port },
-        to:   { nodeId: String(toIdx),   port: conn.to.port },
-      };
-    });
+    // Sort nodes in topological order so the executor runs them correctly.
+    const topoResult = topologicalSort(nodes, pw.config.connections ?? []);
+    const nodeById = new Map(nodes.map((n) => [n.id, n]));
+    const sortedNodes: WorkflowNode[] = topoResult.order
+      .map((id) => nodeById.get(id)!)
+      .filter(Boolean);
+
+    // Connections: from/to already use canvas node IDs — pass through unchanged.
+    const resolvedConnections: Connection[] = (pw.config.connections ?? []).map((conn) => ({
+      id: conn.id,
+      from: { nodeId: String(conn.from.nodeId), port: conn.from.port },
+      to: { nodeId: String(conn.to.nodeId), port: conn.to.port },
+    }));
 
     const workflow: Workflow = {
       id: pw.id,
       name: pw.name,
       version: pw.version,
-      nodes,
+      nodes: sortedNodes,
       connections: resolvedConnections,
       inputs: [],
       outputs: [],

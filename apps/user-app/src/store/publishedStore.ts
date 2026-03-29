@@ -9,6 +9,12 @@ import type { ExecutionProgress, PublishedWorkflow, PublishedWorkflowExecutionRe
 const PREFIX = 'prism:published:';
 const INDEX_KEY = `${PREFIX}index`;
 
+/**
+ * Cross-port broadcast channel name (must match dev-tool's channel name).
+ * BroadcastChannel is origin-scoped and works across different ports on the same host.
+ */
+const CHANNEL_NAME = 'prism-publish-channel';
+
 export interface PublishedWorkflowMeta {
   sourceId: string;
   name: string;
@@ -79,14 +85,58 @@ function toMeta(pw: PublishedWorkflow): PublishedWorkflowMeta {
   };
 }
 
-export const useUserAppStore = create<UserAppState>((set, get) => ({
-  workflows: [],
-  isLoading: false,
-  loadError: undefined,
-  selectedWorkflow: null,
-  runState: { status: 'idle' },
+/**
+ * Save a published workflow into THIS app's localStorage.
+ * Called on initial load, on broadcast-received events, and on manual import.
+ */
+export function syncWorkflowToLocal(pw: PublishedWorkflow): void {
+  localStorage.setItem(`${PREFIX}${pw.sourceId}`, JSON.stringify(pw));
+  const ids: string[] = loadIndex();
+  if (!ids.includes(pw.sourceId)) {
+    ids.push(pw.sourceId);
+    localStorage.setItem(INDEX_KEY, JSON.stringify(ids));
+  }
+}
 
-  loadWorkflows() {
+/**
+ * Bootstrap BroadcastChannel listener.
+ * When dev-tool publishes a workflow, it broadcasts here so user-app
+ * immediately syncs without needing a page refresh.
+ */
+function bootstrapBroadcastListener(store: { loadWorkflows: () => void }) {
+  try {
+    const channel = new BroadcastChannel(CHANNEL_NAME);
+    channel.addEventListener('message', (event: MessageEvent) => {
+      if (event.data?.type === 'workflow-published') {
+        const pw = event.data.payload as PublishedWorkflow;
+        syncWorkflowToLocal(pw);
+        store.loadWorkflows();
+      }
+    });
+    channel.addEventListener('error', () => {
+      channel.close();
+    });
+  } catch {
+    // BroadcastChannel not supported — silently ignore
+  }
+}
+
+export const useUserAppStore = create<UserAppState>((set, get) => {
+  const store: UserAppState = {
+    workflows: [],
+    isLoading: false,
+    loadError: undefined,
+    selectedWorkflow: null,
+    runState: { status: 'idle' },
+    loadWorkflows() { throw new Error('not yet initialized'); },
+    selectWorkflow() { throw new Error('not yet initialized'); },
+    clearSelection() { throw new Error('not yet initialized'); },
+    setRunState() { throw new Error('not yet initialized'); },
+  };
+
+  bootstrapBroadcastListener(store);
+
+  store.loadWorkflows = function loadWorkflows() {
     set({ isLoading: true, loadError: undefined });
     try {
       const ids = loadIndex();
@@ -95,35 +145,36 @@ export const useUserAppStore = create<UserAppState>((set, get) => ({
         const pw = loadPublishedWorkflow(sourceId);
         if (pw) metas.push(toMeta(pw));
       }
-      // Sort by publish date descending (newest first)
       metas.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
       set({ workflows: metas, isLoading: false });
     } catch (err) {
       set({ loadError: String(err), isLoading: false });
     }
-  },
+  };
 
-  selectWorkflow(sourceId: string) {
+  store.selectWorkflow = function selectWorkflow(sourceId: string) {
     const pw = loadPublishedWorkflow(sourceId);
     set((state) => ({
       selectedWorkflow: pw,
       runState: { ...state.runState, status: 'idle', progress: undefined, result: undefined, error: undefined },
     }));
-  },
+  };
 
-  clearSelection() {
+  store.clearSelection = function clearSelection() {
     set((state) => ({
       selectedWorkflow: null,
       runState: { ...state.runState, status: 'idle', progress: undefined, result: undefined, error: undefined },
     }));
-  },
+  };
 
-  setRunState(stateOrUpdater: RunState | ((prev: RunState) => RunState)): void {
+  store.setRunState = function setRunState(stateOrUpdater: RunState | ((prev: RunState) => RunState)): void {
     set((state) => ({
       runState:
         typeof stateOrUpdater === 'function'
           ? stateOrUpdater(state.runState)
           : stateOrUpdater,
     }));
-  },
-}));
+  };
+
+  return store;
+});

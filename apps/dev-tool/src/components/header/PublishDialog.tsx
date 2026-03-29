@@ -1,65 +1,141 @@
 // PublishDialog - configure and publish a workflow for the user-facing app
+//
+// Refactored: v2 publish dialog with auto-infer and white-list paradigm.
+// - Auto-detects source nodes (no incoming edges | load-image type) as Inputs.
+// - Auto-detects export/leaf nodes as Outputs.
+// - All params hidden by default; developer explicitly white-lists with labels.
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
+import type { CanvasNode } from '../../store/canvasStore';
 import type {
+  PublishedWorkflow,
   PublishedInput,
   PublishedOutput,
-  PublishedWorkflow,
-  PublishedParamVisibility,
+  PublishedInputConfig,
+  PublishedParamConfig,
+  PublishedOutputConfig,
+  ExportFormat,
 } from '@prism/shared-types';
+import { Check, Copy, Download, Upload, X, Plus, ChevronDown, ChevronRight, Pencil, CircleDot } from 'lucide-react';
+import { copyWorkflowToClipboard, downloadWorkflowAsFile } from '../../utils/workflowExport';
 
 const PREFIX = 'prism:published:';
+const CHANNEL_NAME = 'prism-publish-channel';
 
-interface PublishDialogProps {
-  onClose: () => void;
+/** Build a set of node IDs that appear as a source (have at least one incoming edge) */
+function nodesWithIncomingEdges(edges: ReturnType<typeof useCanvasStore.getState>['edges']): Set<string> {
+  const s = new Set<string>();
+  for (const e of edges) s.add(e.target);
+  return s;
+}
+
+/** Build a set of node IDs that appear as a target (have at least one outgoing edge) */
+function nodesWithOutgoingEdges(edges: ReturnType<typeof useCanvasStore.getState>['edges']): Set<string> {
+  const s = new Set<string>();
+  for (const e of edges) s.add(e.source);
+  return s;
 }
 
 /**
- * Build PublishedInput[] for the publish dialog.
- * Uses topological order (stable index) as node key for PublishedInput.id stability.
- * The key format is "{nodeIndex}:{portId}" — e.g. "0:image".
+ * Infer source nodes for the Inputs section.
+ * Rule: nodes with ZERO incoming edges, OR nodes of type 'load-image' (regardless of edges).
  */
-function buildPublishedInputs(nodes: ReturnType<typeof useCanvasStore.getState>['nodes']) {
-  const result: PublishedInput[] = [];
-  // Sort nodes by their canvas id order for stable indexing
-  for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
-    const def = node.data.definition;
-    if (!def) continue;
-    for (const inp of def.inputs) {
-      result.push({
-        id: `${i}:${inp.id}`,
-        name: inp.name,
-        type: inp.type,
-        required: true,
-        visible: true,
-      });
-    }
-  }
-  return result;
+export function inferSourceNodes(
+  nodes: CanvasNode[],
+  edges: ReturnType<typeof useCanvasStore.getState>['edges']
+): CanvasNode[] {
+  const hasIncoming = nodesWithIncomingEdges(edges);
+  return nodes.filter((n) => n.data.definition && (
+    !hasIncoming.has(n.id) || n.data.nodeType === 'load-image'
+  ));
 }
 
 /**
- * Build PublishedOutput[] for the publish dialog.
- * Uses topological order (stable index) as node key for PublishedOutput.id stability.
- * The key format is "{nodeIndex}:{portId}" — e.g. "0:result".
+ * Infer output nodes for the Outputs section.
+ * Rule: type === 'export' first; fallback to leaf nodes (no outgoing edges).
  */
-function buildPublishedOutputs(nodes: ReturnType<typeof useCanvasStore.getState>['nodes']) {
-  const result: PublishedOutput[] = [];
-  for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
+export function inferOutputNodes(
+  nodes: CanvasNode[],
+  edges: ReturnType<typeof useCanvasStore.getState>['edges']
+): CanvasNode[] {
+  const exportNodes = nodes.filter((n) => n.data.definition && n.data.nodeType === 'export');
+  if (exportNodes.length > 0) return exportNodes;
+  const hasOutgoing = nodesWithOutgoingEdges(edges);
+  return nodes.filter((n) => n.data.definition && !hasOutgoing.has(n.id));
+}
+
+/**
+ * Build the PublishedConfig from the dialog's edited state.
+ * Uses canvas nodeId (UUID) as stable key for nodeTypes and nodeConfigs.
+ */
+function buildPublishedConfig(opts: {
+  nodes: CanvasNode[];
+  edges: ReturnType<typeof useCanvasStore.getState>['edges'];
+  inputLabels: Record<string, string>;
+  outputLabels: Record<string, string>;
+  outputFormats: Record<string, ExportFormat>;
+  whitelist: PublishedParamConfig[];
+}): PublishedWorkflow['config'] {
+  const { nodes, edges, inputLabels, outputLabels, outputFormats, whitelist } = opts;
+
+  const nodeConfigs: PublishedWorkflow['config']['nodeConfigs'] = {};
+  const nodeTypes: Record<string, string> = {};
+  const nodeIndexMap: Record<string, string> = {};
+
+  for (const node of nodes) {
     const def = node.data.definition;
     if (!def) continue;
-    for (const out of def.outputs) {
-      result.push({
-        id: `${i}:${out.id}`,
-        name: out.name,
-        type: out.type,
-      });
+    const nodeKey = node.id;
+    nodeIndexMap[node.id] = nodeKey;
+    nodeTypes[nodeKey] = node.data.nodeType;
+    nodeConfigs[nodeKey] = {
+      params: { ...node.data.params },
+      _internalParams: {},
+    };
+  }
+
+  // Convert white-list array into per-node exposed params map
+  for (const entry of whitelist) {
+    if (!nodeConfigs[entry.nodeId]) continue;
+    const current = nodeConfigs[entry.nodeId].params[entry.paramId];
+    // Only inject if not already set from node's own params
+    if (current === undefined) {
+      nodeConfigs[entry.nodeId].params[entry.paramId] = null;
     }
   }
-  return result;
+
+  // Build PublishedInputConfig[]
+  const sourceNodes = inferSourceNodes(nodes, edges);
+  const inputs: PublishedInputConfig[] = sourceNodes.map((n) => ({
+    nodeId: n.id,
+    label: inputLabels[n.id] ?? '',
+    type: (n.data.nodeType === 'load-image' ? 'image' : n.data.nodeType === 'load-mask' ? 'mask' : 'string'),
+  }));
+
+  // Build PublishedOutputConfig[]
+  const outputNodes = inferOutputNodes(nodes, edges);
+  const outputs: PublishedOutputConfig[] = outputNodes.map((n) => ({
+    nodeId: n.id,
+    label: outputLabels[n.id] ?? '',
+    format: outputFormats[n.id] ?? 'png',
+  }));
+
+  return {
+    connections: edges.map((e) => ({
+      id: e.id,
+      from: { nodeId: e.source, port: e.sourceHandle ?? 'out' },
+      to: { nodeId: e.target, port: e.targetHandle ?? 'in' },
+    })),
+    nodeTypes,
+    nodeIndexMap,
+    internalParams: {},
+    nodeConfigs,
+    // New v2 fields
+    inputs,
+    exposedParams: whitelist,
+    outputs,
+  };
 }
 
 function savePublishedWorkflow(pw: PublishedWorkflow): void {
@@ -72,95 +148,141 @@ function savePublishedWorkflow(pw: PublishedWorkflow): void {
   }
 }
 
-export const PublishDialog: React.FC<PublishDialogProps> = ({ onClose }) => {
+function broadcastPublish(pw: PublishedWorkflow) {
+  try {
+    const channel = new BroadcastChannel(CHANNEL_NAME);
+    channel.postMessage({ type: 'workflow-published', payload: pw });
+    channel.close();
+  } catch {
+    // BroadcastChannel not supported
+  }
+}
+
+export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { nodes, edges, workflowMeta } = useCanvasStore();
 
   const [publishName, setPublishName] = useState(workflowMeta.name);
   const [publishDesc, setPublishDesc] = useState('');
   const [publishing, setPublishing] = useState(false);
   const [published, setPublished] = useState(false);
+  const [lastPublished, setLastPublished] = useState<PublishedWorkflow | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Per-node, per-param visibility state: nodeId → paramId → visibility
-  const [visibility, setVisibility] = useState<
-    Record<string, Record<string, PublishedParamVisibility>>
-  >(() => {
-    const init: Record<string, Record<string, PublishedParamVisibility>> = {};
-    for (const node of nodes) {
-      const def = node.data.definition;
-      if (!def) continue;
-      init[node.id] = {};
-      for (const p of def.params) {
-      // Default: all visible. Developer explicitly marks internal params as hidden.
-      init[node.id][p.id] = 'visible';
-      }
-    }
+  // ── Derived node lists ──────────────────────────────────────────────────
+  const sourceNodes = useMemo(() => inferSourceNodes(nodes, edges), [nodes, edges]);
+  const outputNodes = useMemo(() => inferOutputNodes(nodes, edges), [nodes, edges]);
+
+  // ── Input labels: nodeId → developer-provided user-facing label ────────
+  const [inputLabels, setInputLabels] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    for (const n of sourceNodes) init[n.id] = '';
     return init;
   });
 
-  // Toggle a single param's visibility
-  const toggleParam = (nodeId: string, paramId: string) => {
-    setVisibility((prev) => ({
-      ...prev,
-      [nodeId]: {
-        ...prev[nodeId],
-        [paramId]: prev[nodeId][paramId] === 'visible' ? 'hidden' : 'visible',
-      },
-    }));
+  // ── Output labels & formats ────────────────────────────────────────────
+  const [outputLabels, setOutputLabels] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    for (const n of outputNodes) init[n.id] = '';
+    return init;
+  });
+  const [outputFormats, setOutputFormats] = useState<Record<string, ExportFormat>>(() => {
+    const init: Record<string, ExportFormat> = {};
+    for (const n of outputNodes) init[n.id] = 'png';
+    return init;
+  });
+
+  // ── White-list: explicitly exposed params ──────────────────────────────
+  const [whitelist, setWhitelist] = useState<PublishedParamConfig[]>([]);
+  // Map for O(1) lookup: "nodeId:paramId" → label (for editing)
+  const [whitelistLabels, setWhitelistLabels] = useState<Record<string, string>>({});
+  // Which checkboxes in the node-browser are checked
+  const [browserChecked, setBrowserChecked] = useState<Record<string, boolean>>({});
+
+  // ── Node-browser panel toggle ──────────────────────────────────────────
+  const [nodeBrowserOpen, setNodeBrowserOpen] = useState(false);
+  // Inline editing of a whitelist entry
+  const [editingEntryKey, setEditingEntryKey] = useState<string | null>(null);
+  const [editingLabel, setEditingLabel] = useState('');
+
+  // Re-sync when canvas nodes change
+  React.useEffect(() => {
+    setInputLabels((prev) => {
+      const next: Record<string, string> = {};
+      for (const n of sourceNodes) next[n.id] = prev[n.id] ?? '';
+      return next;
+    });
+    setOutputLabels((prev) => {
+      const next: Record<string, string> = {};
+      for (const n of outputNodes) next[n.id] = prev[n.id] ?? '';
+      return next;
+    });
+    setOutputFormats((prev) => {
+      const next: Record<string, ExportFormat> = {};
+      for (const n of outputNodes) next[n.id] = prev[n.id] ?? 'png';
+      return next;
+    });
+    // Prune whitelist entries whose nodes no longer exist
+    const validNodeIds = new Set(nodes.map((n) => n.id));
+    setWhitelist((prev) => prev.filter((e) => validNodeIds.has(e.nodeId)));
+    setBrowserChecked((prev) => {
+      const next: Record<string, boolean> = {};
+      for (const e of whitelist) next[`${e.nodeId}:${e.paramId}`] = true;
+      return next;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodes, edges]);
+
+  // ── Toggle a param in the node-browser ─────────────────────────────────
+  const toggleBrowserParam = (nodeId: string, paramId: string, paramName: string) => {
+    const key = `${nodeId}:${paramId}`;
+    const checked = browserChecked[key];
+    if (checked) {
+      // Un-check: remove from whitelist and labels
+      setBrowserChecked((p) => { const n = { ...p }; delete n[key]; return n; });
+      setWhitelist((p) => p.filter((e) => `${e.nodeId}:${e.paramId}` !== key));
+      setWhitelistLabels((p) => { const n = { ...p }; delete n[key]; return n; });
+    } else {
+      // Check: add to whitelist with empty label (required before publish)
+      setBrowserChecked((p) => ({ ...p, [key]: true }));
+      setWhitelist((p) => [...p, { nodeId, paramId, label: '' }]);
+      setWhitelistLabels((p) => ({ ...p, [key]: paramName }));
+    }
   };
 
-  // Auto-populated inputs/outputs (seed for the editable list)
-  const autoInputs = useMemo(() => buildPublishedInputs(nodes), [nodes]);
-  const autoOutputs = useMemo(() => buildPublishedOutputs(nodes), [nodes]);
+  // ── Apply label from browser inline input ───────────────────────────────
+  const applyBrowserLabel = (nodeId: string, paramId: string) => {
+    const key = `${nodeId}:${paramId}`;
+    const label = whitelistLabels[key] ?? '';
+    setWhitelist((p) => p.map((e) =>
+      `${e.nodeId}:${e.paramId}` === key ? { ...e, label } : e
+    ));
+  };
 
-  // Editable inputs state — initialized once from autoInputs; developer customises here
-  const [editedInputs, setEditedInputs] = useState<PublishedInput[]>(() =>
-    autoInputs.length > 0
-      ? autoInputs.map((inp) => ({ ...inp }))
-      : []
-  );
+  // ── Remove a whitelist entry ─────────────────────────────────────────────
+  const removeWhitelistEntry = (nodeId: string, paramId: string) => {
+    const key = `${nodeId}:${paramId}`;
+    setBrowserChecked((p) => { const n = { ...p }; delete n[key]; return n; });
+    setWhitelist((p) => p.filter((e) => `${e.nodeId}:${e.paramId}` !== key));
+    setWhitelistLabels((p) => { const n = { ...p }; delete n[key]; return n; });
+  };
 
-  // Editable outputs state
-  const [editedOutputs, setEditedOutputs] = useState<PublishedOutput[]>(() =>
-    autoOutputs.length > 0
-      ? autoOutputs.map((out) => ({ ...out }))
-      : []
-  );
+  // ── Start inline edit of a whitelist label ─────────────────────────────
+  const startEditLabel = (nodeId: string, paramId: string, currentLabel: string) => {
+    setEditingEntryKey(`${nodeId}:${paramId}`);
+    setEditingLabel(currentLabel);
+  };
 
-  // Re-sync when canvas nodes change (user adds/removes nodes mid-dialog)
-  React.useEffect(() => {
-    setEditedInputs(autoInputs.length > 0 ? autoInputs.map((inp) => ({ ...inp })) : []);
-    setEditedOutputs(autoOutputs.length > 0 ? autoOutputs.map((out) => ({ ...out })) : []);
-  }, [autoInputs, autoOutputs]);
+  const commitEditLabel = () => {
+    if (!editingEntryKey) return;
+    setWhitelist((p) => p.map((e) =>
+      `${e.nodeId}:${e.paramId}` === editingEntryKey ? { ...e, label: editingLabel } : e
+    ));
+    setEditingEntryKey(null);
+    setEditingLabel('');
+  };
 
-  // ── Input field helpers ───────────────────────────────────────────────────
-  const updateInput = useCallback(
-    (id: string, patch: Partial<PublishedInput>) =>
-      setEditedInputs((prev) =>
-        prev.map((inp) => (inp.id === id ? { ...inp, ...patch } : inp))
-      ),
-    []
-  );
-
-  const removeInput = useCallback(
-    (id: string) => setEditedInputs((prev) => prev.filter((inp) => inp.id !== id)),
-    []
-  );
-
-  // ── Output field helpers ─────────────────────────────────────────────────
-  const updateOutput = useCallback(
-    (id: string, patch: Partial<PublishedOutput>) =>
-      setEditedOutputs((prev) =>
-        prev.map((out) => (out.id === id ? { ...out, ...patch } : out))
-      ),
-    []
-  );
-
-  const removeOutput = useCallback(
-    (id: string) => setEditedOutputs((prev) => prev.filter((out) => out.id !== id)),
-    []
-  );
-
+  // ── Validation & publish ────────────────────────────────────────────────
   const handlePublish = async () => {
     if (!publishName.trim()) {
       setError('请输入发布名称');
@@ -170,324 +292,377 @@ export const PublishDialog: React.FC<PublishDialogProps> = ({ onClose }) => {
       setError('画布上没有节点，无法发布');
       return;
     }
+    // Validate input labels
+    for (const n of sourceNodes) {
+      if (!inputLabels[n.id]?.trim()) {
+        setError(`请为「${n.data.label}」设置面向用户的名称`);
+        return;
+      }
+    }
+    // Validate output labels
+    for (const n of outputNodes) {
+      if (!outputLabels[n.id]?.trim()) {
+        setError(`请为「${n.data.label}」设置面向用户的名称`);
+        return;
+      }
+    }
+    // Validate whitelist labels
+    for (const e of whitelist) {
+      if (!e.label?.trim()) {
+        const node = nodes.find((n) => n.id === e.nodeId);
+        const paramNode = node?.data.definition?.params.find((p) => p.id === e.paramId);
+        setError(`请为「${node?.data.label ?? e.nodeId}」→「${paramNode?.name ?? e.paramId}」设置面向用户的参数名称`);
+        return;
+      }
+    }
 
     setPublishing(true);
     setError(null);
 
     try {
-      const nodeConfigs: PublishedWorkflow['config']['nodeConfigs'] = {};
-      const nodeIndexMap: Record<string, string> = {};
-      const publishedVisibility: Record<string, Record<string, PublishedParamVisibility>> = {};
-      for (let i = 0; i < nodes.length; i++) {
-        const node = nodes[i];
-        const def = node.data.definition;
-        if (!def) continue;
-        const nodeKey = String(i);
-        nodeIndexMap[node.id] = nodeKey;
-
-        // Use index-key for paramVisibility so ExposedParamsForm can look it up correctly.
-        // (The canvas UUID was written before but ExposedParamsForm reads via index traversal.)
-        if (visibility[node.id]) {
-          publishedVisibility[nodeKey] = { ...visibility[node.id] };
-        }
-
-        // Only exposed params go into the config; internal ones use their defaults
-        const exposed: Record<string, unknown> = {};
-        const internal: Record<string, unknown> = {};
-        for (const p of def.params) {
-          const vis = visibility[node.id]?.[p.id] ?? 'visible';
-          if (vis === 'visible') {
-            exposed[p.id] = node.data.params[p.id] ?? p.default;
-          } else {
-            internal[p.id] = node.data.params[p.id] ?? p.default;
-          }
-        }
-        nodeConfigs[nodeKey] = {
-          params: exposed,
-          _internalParams: internal,
-        };
-      }
-
-      // Build PublishedWorkflow from current canvas state
-      // Use developer-customised inputs/outputs from the editor
-      const pw: PublishedWorkflow = {
-        id: crypto.randomUUID(),
-        sourceId: workflowMeta.id,
-        name: publishName.trim(),
-        description: publishDesc.trim() || undefined,
-        sourceName: workflowMeta.name,
-        version: workflowMeta.version,
-        inputs: editedInputs,
-        outputs: editedOutputs,
-        config: {
-          connections: edges.map((e) => ({
-            id: e.id,
-            from: { nodeId: e.source, port: e.sourceHandle ?? 'out' },
-            to: { nodeId: e.target, port: e.targetHandle ?? 'in' },
-          })),
-          nodeTypes: Object.fromEntries(
-            nodes.map((n, i) => [String(i), n.data.nodeType])
-          ),
-          nodeIndexMap,
-          internalParams: {},
-          nodeConfigs,
-          paramVisibility: publishedVisibility,
-        },
-        publishedAt: new Date().toISOString(),
-      };
+      const config = buildPublishedConfig({ nodes, edges, inputLabels, outputLabels, outputFormats, whitelist });
+  const publishedInputs: PublishedWorkflow['inputs'] = config.inputs.map((i) => ({
+    id: i.nodeId,
+    name: i.label,
+    // Map PublishedInputConfig.type (image|mask|string) to PortType
+    type: (i.type === 'image' ? 'image' : i.type === 'mask' ? 'mask' : 'string') as PublishedInput['type'],
+    required: true,
+    visible: true,
+  }));
+  const publishedOutputs: PublishedWorkflow['outputs'] = config.outputs.map((o) => ({
+    id: o.nodeId,
+    name: o.label,
+    type: 'image' as PublishedOutput['type'],
+  }));
+  const pw: PublishedWorkflow = {
+    id: crypto.randomUUID(),
+    sourceId: workflowMeta.id,
+    name: publishName.trim(),
+    description: publishDesc.trim() || undefined,
+    sourceName: workflowMeta.name,
+    version: workflowMeta.version,
+    inputs: publishedInputs,
+    outputs: publishedOutputs,
+    config,
+    publishedAt: new Date().toISOString(),
+  };
 
       savePublishedWorkflow(pw);
+      broadcastPublish(pw);
+      setLastPublished(pw);
       setPublished(true);
     } catch (err) {
       setError(String(err));
+    } finally {
       setPublishing(false);
     }
   };
 
+  // ── Success screen ──────────────────────────────────────────────────────
   if (published) {
     return (
       <div className="dialog-overlay" onClick={onClose}>
         <div className="dialog" role="dialog" aria-modal="true">
           <div className="dialog-header">
             <span className="dialog-title">发布成功</span>
-            <button className="dialog-close" onClick={onClose}>✕</button>
+            <button className="dialog-close" onClick={onClose}><X size={16} /></button>
           </div>
           <div className="dialog-body">
             <div className="publish-success">
-              <div className="publish-success-icon">✓</div>
+              <div className="publish-success-icon"><Check size={32} /></div>
               <div className="publish-success-msg">
                 <strong>{publishName}</strong> 已成功发布
               </div>
               <div className="publish-success-sub">
-                发布版本 {workflowMeta.version} · {nodes.length} 个节点 · {editedInputs.length} 个输入 · {editedOutputs.length} 个输出
+                发布版本 {workflowMeta.version} · {nodes.length} 个节点 · {sourceNodes.length} 个输入 · {outputNodes.length} 个输出
+              </div>
+              <div className="publish-success-primary">
+                <button className="dialog-btn dialog-btn-primary" onClick={() => window.open('http://localhost:3001', '_blank')}>
+                  在运行端测试
+                </button>
+              </div>
+              <div className="publish-success-secondary">
+                <button
+                  className={`dialog-btn dialog-btn-secondary ${copySuccess ? 'dialog-btn--success' : ''}`}
+                  onClick={async () => {
+                    if (!lastPublished) return;
+                    const ok = await copyWorkflowToClipboard(lastPublished);
+                    if (ok) { setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000); }
+                  }}
+                >
+                  <Copy size={13} />{copySuccess ? '已复制' : '复制 JSON'}
+                </button>
+                <button
+                  className="dialog-btn dialog-btn-secondary"
+                  onClick={() => lastPublished && downloadWorkflowAsFile(lastPublished)}
+                >
+                  <Download size={13} />导出文件
+                </button>
               </div>
             </div>
           </div>
           <div className="dialog-footer">
-            <button className="dialog-btn dialog-btn-primary" onClick={onClose}>
-              完成
-            </button>
+            <button className="dialog-btn dialog-btn-primary" onClick={onClose}>完成</button>
           </div>
         </div>
       </div>
     );
   }
 
+  // ── Main publish form ───────────────────────────────────────────────────
   return (
     <div className="dialog-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="dialog dialog-wide" role="dialog" aria-modal="true">
         <div className="dialog-header">
           <span className="dialog-title">发布工作流</span>
-          <button className="dialog-close" onClick={onClose}>✕</button>
+          <button className="dialog-close" onClick={onClose}><X size={16} /></button>
         </div>
 
         <div className="dialog-body">
-          {/* Basic info */}
+
+          {/* ── Basic info ─────────────────────────────────────────────────── */}
           <div className="dialog-field">
             <label className="dialog-label" htmlFor="publish-name">发布名称</label>
             <input
-              id="publish-name"
-              className="dialog-input"
-              type="text"
-              value={publishName}
-              onChange={(e) => setPublishName(e.target.value)}
-              placeholder="用户将看到的名称"
-              autoFocus
+              id="publish-name" className="dialog-input" type="text"
+              value={publishName} onChange={(e) => setPublishName(e.target.value)}
+              placeholder="用户将看到的名称" autoFocus
             />
           </div>
           <div className="dialog-field">
             <label className="dialog-label" htmlFor="publish-desc">描述（可选）</label>
             <input
-              id="publish-desc"
-              className="dialog-input"
-              type="text"
-              value={publishDesc}
-              onChange={(e) => setPublishDesc(e.target.value)}
+              id="publish-desc" className="dialog-input" type="text"
+              value={publishDesc} onChange={(e) => setPublishDesc(e.target.value)}
               placeholder="简短描述这个工作流的用途"
             />
           </div>
 
-          {/* Param visibility section */}
+          {/* ── Section 1: 定义用户上传内容 ────────────────────────────────── */}
           <div className="publish-section">
             <div className="publish-section-title">
-              参数可见性
-              <span className="publish-section-hint">控制哪些参数在用户端可见</span>
-            </div>
-
-            {nodes.length === 0 ? (
-              <div className="publish-empty">画布上没有节点</div>
-            ) : (
-              nodes.map((node) => {
-                const def = node.data.definition;
-                if (!def || def.params.length === 0) return null;
-                return (
-                  <div key={node.id} className="publish-node-block">
-                    <div className="publish-node-header">
-                      <span className="publish-node-icon">
-                        {def.category === 'input' ? '↓' : def.category === 'output' ? '↑' : '◈'}
-                      </span>
-                      <span className="publish-node-name">{node.data.label}</span>
-                      <span className="publish-node-type">{def.category}</span>
-                    </div>
-                    <div className="publish-param-list">
-                      {def.params.map((p) => {
-                        const vis = visibility[node.id]?.[p.id] ?? 'visible';
-                        return (
-                          <label key={p.id} className="publish-param-row">
-                            <span className="publish-param-name" title={p.description ?? ''}>
-                              {p.name}
-                              {p.required && vis === 'hidden' && (
-                                <span className="publish-param-required">*</span>
-                              )}
-                            </span>
-                            <button
-                              type="button"
-                              className={`publish-vis-toggle publish-vis-toggle--${vis}`}
-                              onClick={() => toggleParam(node.id, p.id)}
-                              title={vis === 'visible' ? '点击设为内部参数' : '点击设为可见参数'}
-                            >
-                              {vis === 'visible' ? '可见' : '内部'}
-                            </button>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          {/* ── Input items editor ─────────────────────────────────────────── */}
-          <div className="publish-section">
-            <div className="publish-section-title">
-              输入项
+              定义用户上传内容
               <span className="publish-section-hint">
-                {editedInputs.length === 0
-                  ? '画布上无可用输入端口'
-                  : '配置用户需要提供的输入参数'}
+                检测到 {sourceNodes.length} 个图片来源节点
               </span>
             </div>
 
-            {editedInputs.length === 0 ? (
-              <div className="publish-empty">无可用输入端口（画布上没有带输入端口的节点）</div>
+            {sourceNodes.length === 0 ? (
+              <div className="publish-empty">
+                未检测到图片上传节点，请在画布中添加 Load Image 节点
+              </div>
             ) : (
-              <div className="publish-io-editor">
-                {editedInputs.map((inp) => (
-                  <div key={inp.id} className="publish-io-row">
-                    <div className="publish-io-row-header">
-                      <span className="publish-io-port-icon" title={inp.type}>↓</span>
-                      <input
-                        className="publish-io-name-input"
-                        value={inp.name}
-                        onChange={(e) => updateInput(inp.id, { name: e.target.value })}
-                        placeholder="输入项名称"
-                        size={Math.max(inp.name.length, 8)}
-                      />
-                      <span className="publish-io-type-badge">{inp.type}</span>
-                    </div>
-                    <div className="publish-io-row-fields">
-                      <input
-                        className="publish-io-desc-input"
-                        value={inp.description ?? ''}
-                        onChange={(e) => updateInput(inp.id, { description: e.target.value })}
-                        placeholder="说明（可选）"
-                      />
-                      <div className="publish-io-toggles">
-                        <label className="publish-io-toggle" title="必填">
-                          <span className="publish-io-toggle-label">必填</span>
-                          <button
-                            type="button"
-                            className={`publish-io-toggle-btn publish-io-toggle-btn--${inp.required ? 'on' : 'off'}`}
-                            onClick={() => updateInput(inp.id, { required: !inp.required })}
-                          >
-                            {inp.required ? '是' : '否'}
-                          </button>
-                        </label>
-                        <label className="publish-io-toggle" title="用户可见">
-                          <span className="publish-io-toggle-label">可见</span>
-                          <button
-                            type="button"
-                            className={`publish-io-toggle-btn publish-io-toggle-btn--${inp.visible ? 'on' : 'off'}`}
-                            onClick={() => updateInput(inp.id, { visible: !inp.visible })}
-                          >
-                            {inp.visible ? '是' : '否'}
-                          </button>
-                        </label>
+              <div className="publish-source-list">
+                {sourceNodes.map((node) => {
+                  const def = node.data.definition;
+                  return (
+                    <div key={node.id} className="publish-source-card">
+                      <div className="publish-source-header">
+                        <span className="publish-source-icon">
+                          <Upload size={13} />
+                        </span>
+                        <span className="publish-source-node-label">{node.data.label}</span>
+                        <span className="publish-source-type-badge">{def?.category}</span>
                       </div>
-                      {inp.visible && (
+                      <div className="publish-source-label-row">
+                        <label className="dialog-label" style={{ marginBottom: 0 }}>
+                          面向用户的名称
+                        </label>
                         <input
-                          className="publish-io-default-input"
-                          value={inp.defaultValue != null ? String(inp.defaultValue) : ''}
-                          onChange={(e) =>
-                            updateInput(inp.id, {
-                              defaultValue: e.target.value === '' ? undefined : e.target.value,
-                            })
-                          }
-                          placeholder="默认值（可选）"
+                          className="dialog-input"
+                          style={{ flex: 1 }}
+                          value={inputLabels[node.id] ?? ''}
+                          onChange={(e) => setInputLabels((p) => ({ ...p, [node.id]: e.target.value }))}
+                          placeholder="如：产品白底图"
                         />
-                      )}
-                      <button
-                        type="button"
-                        className="publish-io-remove-btn"
-                        onClick={() => removeInput(inp.id)}
-                        title="移除此项"
-                      >
-                        ✕
-                      </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
 
-          {/* ── Output items editor ────────────────────────────────────────── */}
+          {/* ── Section 2: 开放给用户的调节参数 ──────────────────────────── */}
           <div className="publish-section">
             <div className="publish-section-title">
-              输出项
+              开放给用户的调节参数
+              <span className="publish-section-hint">可选</span>
+            </div>
+
+            {/* White-list entries */}
+            {whitelist.length > 0 ? (
+              <div className="publish-whitelist-list">
+                {whitelist.map((entry) => {
+                  const key = `${entry.nodeId}:${entry.paramId}`;
+                  const node = nodes.find((n) => n.id === entry.nodeId);
+                  const paramDef = node?.data.definition?.params.find((p) => p.id === entry.paramId);
+                  const isEditing = editingEntryKey === key;
+
+                  return (
+                    <div key={key} className="publish-whitelist-row">
+                      <span className="publish-whitelist-path">
+                        {node?.data.label ?? entry.nodeId} → {paramDef?.name ?? entry.paramId}
+                      </span>
+                      {isEditing ? (
+                        <div className="publish-whitelist-edit-row">
+                          <input
+                            className="dialog-input"
+                            value={editingLabel}
+                            onChange={(e) => setEditingLabel(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') commitEditLabel(); }}
+                            autoFocus
+                          />
+                          <button className="dialog-btn dialog-btn-primary" onClick={commitEditLabel}>保存</button>
+                          <button className="dialog-btn dialog-btn-secondary" onClick={() => setEditingEntryKey(null)}>取消</button>
+                        </div>
+                      ) : (
+                        <div className="publish-whitelist-actions">
+                          <span className="publish-whitelist-label">{entry.label || '(未命名)'}</span>
+                          <button
+                            className="publish-icon-btn"
+                            title="编辑名称"
+                            onClick={() => startEditLabel(entry.nodeId, entry.paramId, entry.label)}
+                          >
+                            <Pencil size={12} />
+                          </button>
+                          <button
+                            className="publish-icon-btn publish-icon-btn--danger"
+                            title="移除"
+                            onClick={() => removeWhitelistEntry(entry.nodeId, entry.paramId)}
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="publish-empty publish-empty--muted">
+                暂无对用户开放的参数
+              </div>
+            )}
+
+            {/* Add params button */}
+            <button
+              className="dialog-btn dialog-btn-secondary"
+              style={{ marginTop: '8px', width: '100%' }}
+              onClick={() => setNodeBrowserOpen((p) => !p)}
+            >
+              <Plus size={13} />
+              {nodeBrowserOpen ? '收起参数列表' : '添加向用户暴露的参数'}
+              {nodeBrowserOpen ? <ChevronDown size={13} style={{ marginLeft: 4 }} /> : <ChevronRight size={13} style={{ marginLeft: 4 }} />}
+            </button>
+
+            {/* Node-browser panel */}
+            {nodeBrowserOpen && (
+              <div className="publish-node-browser">
+                {nodes.map((node) => {
+                  const def = node.data.definition;
+                  if (!def || def.params.length === 0) return null;
+                  return (
+                    <div key={node.id} className="publish-browser-node">
+                      <div className="publish-browser-node-header">
+                        <span className="publish-source-icon">
+                          {def.category === 'INPUT' ? <Upload size={11} /> :
+                           def.category === 'OUTPUT' ? <Download size={11} /> :
+                           <CircleDot size={11} />}
+                        </span>
+                        <span className="publish-source-node-label">{node.data.label}</span>
+                      </div>
+                      <div className="publish-browser-params">
+                        {def.params.map((p) => {
+                          const key = `${node.id}:${p.id}`;
+                          const checked = !!browserChecked[key];
+                          return (
+                            <div key={p.id} className="publish-browser-param-row">
+                              <label className="publish-browser-checkbox-label">
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => toggleBrowserParam(node.id, p.id, p.name)}
+                                />
+                                <span title={p.description ?? ''}>{p.name}</span>
+                              </label>
+                              {checked && (
+                                <div className="publish-browser-param-label-row">
+                                  <input
+                                    className="dialog-input"
+                                    style={{ flex: 1 }}
+                                    value={whitelistLabels[key] ?? ''}
+                                    onChange={(e) => setWhitelistLabels((prev) => ({ ...prev, [key]: e.target.value }))}
+                                    onBlur={() => applyBrowserLabel(node.id, p.id)}
+                                    placeholder="面向用户的参数名称"
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+                {nodes.every((n) => !n.data.definition || n.data.definition.params.length === 0) && (
+                  <div className="publish-empty publish-empty--muted">所有节点均无参数</div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* ── Section 3: 最终输出 ───────────────────────────────────────── */}
+          <div className="publish-section">
+            <div className="publish-section-title">
+              最终输出
               <span className="publish-section-hint">
-                {editedOutputs.length === 0
-                  ? '画布上无可用输出端口'
-                  : '配置工作流执行后的输出结果'}
+                {outputNodes.length > 0 ? `检测到 ${outputNodes.length} 个输出节点` : '未检测到输出节点'}
               </span>
             </div>
 
-            {editedOutputs.length === 0 ? (
-              <div className="publish-empty">无可用输出端口（画布上没有带输出端口的节点）</div>
+            {outputNodes.length === 0 ? (
+              <div className="publish-empty">
+                未检测到输出节点，请确保画布中有 Export 节点或末端节点
+              </div>
             ) : (
-              <div className="publish-io-editor">
-                {editedOutputs.map((out) => (
-                  <div key={out.id} className="publish-io-row">
-                    <div className="publish-io-row-header">
-                      <span className="publish-io-port-icon" title={out.type}>↑</span>
-                      <input
-                        className="publish-io-name-input"
-                        value={out.name}
-                        onChange={(e) => updateOutput(out.id, { name: e.target.value })}
-                        placeholder="输出项名称"
-                        size={Math.max(out.name.length, 8)}
-                      />
-                      <span className="publish-io-type-badge">{out.type}</span>
+              <div className="publish-output-list">
+                {outputNodes.map((node) => {
+                  const def = node.data.definition;
+                  return (
+                    <div key={node.id} className="publish-source-card">
+                      <div className="publish-source-header">
+                        <span className="publish-source-icon">
+                          <Download size={13} />
+                        </span>
+                        <span className="publish-source-node-label">{node.data.label}</span>
+                        <span className="publish-source-type-badge">{def?.category}</span>
+                      </div>
+                      <div className="publish-source-label-row">
+                        <label className="dialog-label" style={{ marginBottom: 0 }}>面向用户的名称</label>
+                        <input
+                          className="dialog-input"
+                          style={{ flex: 1 }}
+                          value={outputLabels[node.id] ?? ''}
+                          onChange={(e) => setOutputLabels((p) => ({ ...p, [node.id]: e.target.value }))}
+                          placeholder="如：生成结果图"
+                        />
+                      </div>
+                      <div className="publish-source-label-row">
+                        <label className="dialog-label" style={{ marginBottom: 0 }}>导出格式</label>
+                        <select
+                          className="dialog-select"
+                          value={outputFormats[node.id] ?? 'png'}
+                          onChange={(e) => setOutputFormats((p) => ({ ...p, [node.id]: e.target.value as ExportFormat }))}
+                        >
+                          <option value="png">PNG</option>
+                          <option value="jpeg">JPEG</option>
+                          <option value="webp">WebP</option>
+                        </select>
+                      </div>
                     </div>
-                    <div className="publish-io-row-fields">
-                      <input
-                        className="publish-io-desc-input"
-                        value={out.description ?? ''}
-                        onChange={(e) => updateOutput(out.id, { description: e.target.value })}
-                        placeholder="说明（可选）"
-                      />
-                      <button
-                        type="button"
-                        className="publish-io-remove-btn"
-                        onClick={() => removeOutput(out.id)}
-                        title="移除此项（用户将无法获取此输出）"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -496,9 +671,7 @@ export const PublishDialog: React.FC<PublishDialogProps> = ({ onClose }) => {
         </div>
 
         <div className="dialog-footer">
-          <button className="dialog-btn dialog-btn-secondary" onClick={onClose} disabled={publishing}>
-            取消
-          </button>
+          <button className="dialog-btn dialog-btn-secondary" onClick={onClose} disabled={publishing}>取消</button>
           <button className="dialog-btn dialog-btn-primary" onClick={handlePublish} disabled={publishing}>
             {publishing ? '发布中…' : '发布'}
           </button>

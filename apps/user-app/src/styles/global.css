@@ -281,6 +281,118 @@ body { min-height: 100vh; background: var(--ua-bg); }
   line-height: 1.6;
 }
 
+.ua-empty-actions {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.ua-paste-hint {
+  font-size: 12px;
+  color: var(--ua-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ua-paste-hint kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  background: var(--ua-surface-2);
+  border: 1px solid var(--ua-border);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 11px;
+  color: var(--ua-text-muted);
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.ua-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  border: 1px solid transparent;
+}
+
+.ua-btn--secondary {
+  background: var(--ua-surface-2);
+  border-color: var(--ua-border);
+  color: var(--ua-text-muted);
+}
+
+.ua-btn--secondary:hover {
+  border-color: var(--ua-accent);
+  color: var(--ua-accent);
+  background: rgba(99, 102, 241, 0.08);
+}
+
+/* ── Import more button ─────────────────────────────────────────────────── */
+.ua-import-more-btn {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: 1.5px dashed var(--ua-border);
+  border-radius: 10px;
+  color: var(--ua-text-muted);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  margin-top: 4px;
+}
+
+.ua-import-more-btn:hover {
+  border-color: var(--ua-accent);
+  color: var(--ua-accent);
+}
+
+/* ── Toast notification ─────────────────────────────────────────────────── */
+.ua-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  animation: ua-toast-in 0.2s ease;
+}
+
+.ua-toast--success {
+  background: #1a2e1a;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #86efac;
+}
+
+.ua-toast--error {
+  background: #2e1a1a;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+.ua-toast--info {
+  background: var(--ua-surface-2);
+  border: 1px solid var(--ua-border);
+  color: var(--ua-text);
+}
+
+@keyframes ua-toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
 /* ── Run page ───────────────────────────────────────────────────────────── */
 .ua-run-page .ua-run-header {
   display: flex;
@@ -397,6 +509,19 @@ body { min-height: 100vh; background: var(--ua-bg); }
 .ua-input-required {
   color: #f87171;
   font-size: 12px;
+  margin-left: 4px;
+}
+
+.ua-input-type-badge {
+  font-size: 10px;
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 6px;
+  font-weight: 500;
+  vertical-align: middle;
 }
 
 .ua-input-desc {
@@ -451,6 +576,12 @@ body { min-height: 100vh; background: var(--ua-bg); }
   object-fit: contain;
   border-radius: 8px;
   display: block;
+}
+
+.ua-dropzone-preview--mask {
+  max-height: 120px;
+  /* Show mask with a subtle purple tint overlay hint */
+  filter: drop-shadow(0 0 0 #7c3aed);
 }
 
 .ua-dropzone-hint {

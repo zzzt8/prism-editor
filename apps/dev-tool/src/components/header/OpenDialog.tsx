@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
 import { useWorkflowStore } from '../../store/workflowStore';
+import { FileX2, X } from 'lucide-react';
 
 interface OpenDialogProps {
   onClose: () => void;
@@ -48,7 +49,7 @@ export const OpenDialog: React.FC<OpenDialogProps> = ({ onClose }) => {
       <div className="dialog dialog-wide" role="dialog" aria-modal="true">
         <div className="dialog-header">
           <span className="dialog-title">打开工作流</span>
-          <button className="dialog-close" onClick={onClose} aria-label="关闭">✕</button>
+          <button className="dialog-close" onClick={onClose} aria-label="关闭"><X size={16} /></button>
         </div>
 
         <div className="dialog-body">
@@ -62,7 +63,7 @@ export const OpenDialog: React.FC<OpenDialogProps> = ({ onClose }) => {
 
           {!isLoading && !error && savedWorkflows.length === 0 && (
             <div className="dialog-empty">
-              <span className="dialog-empty-icon">◇</span>
+              <FileX2 size={24} className="dialog-empty-icon" />
               <span>暂无已保存的工作流</span>
             </div>
           )}

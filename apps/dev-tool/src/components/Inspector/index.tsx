@@ -9,6 +9,7 @@ import { InspectorTabs } from './InspectorTabs';
 import { ParametersPanel } from './ParametersPanel';
 import { SettingsPanel } from './SettingsPanel';
 import { InfoPanel } from './InfoPanel';
+import { CircleDot } from 'lucide-react';
 
 const CATEGORY_LABELS: Record<string, string> = {
   input:    '输入',
@@ -32,7 +33,7 @@ export const Inspector: React.FC = () => {
     return (
       <aside className="param-panel inspector">
         <div className="param-panel-empty">
-          <span className="param-panel-empty-icon">◈</span>
+          <CircleDot size={16} className="param-panel-empty-icon" />
           <span>选中节点以编辑参数</span>
         </div>
       </aside>
@@ -44,7 +45,7 @@ export const Inspector: React.FC = () => {
     return (
       <aside className="param-panel inspector">
         <div className="param-panel-empty">
-          <span className="param-panel-empty-icon">◈</span>
+          <CircleDot size={16} className="param-panel-empty-icon" />
           <span>已选择 {selectedNodeIds.length} 个节点</span>
         </div>
       </aside>
