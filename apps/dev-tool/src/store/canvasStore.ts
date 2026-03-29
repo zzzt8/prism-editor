@@ -279,7 +279,13 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const sourcePort = sourceDef.outputs.find(
       (p) => p.id === connection.from.port || p.name === connection.from.port
     );
-    const targetPort = targetDef.inputs.find(
+
+    // Check both static definition inputs and dynamic extraInputs
+    const staticInputs = targetDef.inputs;
+    const extraInputs = targetNode.data.extraInputs ?? [];
+    const targetPort = staticInputs.find(
+      (p) => p.id === connection.to.port || p.name === connection.to.port
+    ) ?? extraInputs.find(
       (p) => p.id === connection.to.port || p.name === connection.to.port
     );
 
