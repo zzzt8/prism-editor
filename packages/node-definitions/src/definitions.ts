@@ -220,6 +220,32 @@ export const compositeDefinition: NodeDefinition = {
       step: 0.01,
       description: 'Overlay opacity (0-1)',
     },
+    {
+      id: 'canvasWidth',
+      name: 'Canvas Width',
+      type: 'number',
+      description: 'Output canvas width (0 = use base canvas width)',
+    },
+    {
+      id: 'canvasHeight',
+      name: 'Canvas Height',
+      type: 'number',
+      description: 'Output canvas height (0 = use base canvas height)',
+    },
+    {
+      id: 'overlayX',
+      name: 'Overlay X',
+      type: 'number',
+      default: 0,
+      description: 'Overlay top-left X position',
+    },
+    {
+      id: 'overlayY',
+      name: 'Overlay Y',
+      type: 'number',
+      default: 0,
+      description: 'Overlay top-left Y position',
+    },
   ],
 };
 
@@ -321,6 +347,32 @@ export const transformDefinition: NodeDefinition = {
       name: 'Crop Height',
       type: 'number',
       description: 'Crop region height (0 = full height)',
+    },
+    {
+      id: 'canvasWidth',
+      name: 'Canvas Width',
+      type: 'number',
+      description: 'Output canvas width (0 = use image width)',
+    },
+    {
+      id: 'canvasHeight',
+      name: 'Canvas Height',
+      type: 'number',
+      description: 'Output canvas height (0 = use image height)',
+    },
+    {
+      id: 'canvasX',
+      name: 'Canvas X',
+      type: 'number',
+      default: 0,
+      description: 'Image left offset within canvas',
+    },
+    {
+      id: 'canvasY',
+      name: 'Canvas Y',
+      type: 'number',
+      default: 0,
+      description: 'Image top offset within canvas',
     },
   ],
 };

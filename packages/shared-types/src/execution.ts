@@ -126,10 +126,23 @@ export interface ExecutionCache {
 // The `type` discriminator enables discriminated union narrowing at runtime.
 
 /**
+ * Position of an image within a canvas coordinate space.
+ * Used when image dimensions differ from the canvas they are placed in.
+ */
+export interface ImagePosition {
+  x: number;
+  y: number;
+}
+
+/**
  * Unified image runtime contract (R2 — Mandatory Rule).
  *
  * All image node outputs must conform to this shape. The `data` field holds
  * the canonical pixel data (ImageData for processing nodes, Blob for Export).
+ *
+ * The `canvasWidth` / `canvasHeight` / `position` fields model the image's
+ * placement within a shared canvas coordinate system (used by Composite).
+ * When absent the image fills its own dimensions at (0, 0).
  *
  * Design: openspec/changes/node-editor-comfyui-refactor/design.md §10
  */
@@ -138,10 +151,16 @@ export interface ImageRuntimeObject {
    * - Image processing nodes (LoadImage, Transform, etc.): ImageData
    * - Export node: Blob (the exported file) */
   data: ImageData | Blob;
-  /** Image width in pixels */
+  /** Native width of the pixel data */
   width: number;
-  /** Image height in pixels */
+  /** Native height of the pixel data */
   height: number;
+  /** Width of the canvas this image occupies (>= width). Defaults to width. */
+  canvasWidth?: number;
+  /** Height of the canvas this image occupies (>= height). Defaults to height. */
+  canvasHeight?: number;
+  /** Top-left offset of the image within its canvas. Defaults to (0, 0). */
+  position?: ImagePosition;
   /** Blob URL for UI preview (managed by ImageMemoryManager lifecycle) */
   previewUrl: string;
   /** Optional: source file name (populated by LoadImage) */
@@ -235,6 +254,23 @@ export function unwrapHeight(
   if (!value) return fallback;
   if (hasHeightProp(value)) return value.height;
   return fallback;
+}
+
+/** Read canvasWidth — falls back to regular width for backward compat */
+export function unwrapCanvasWidth(value: ImageRuntimeObject | undefined, fallback: number): number {
+  if (!value) return fallback;
+  return value.canvasWidth ?? value.width;
+}
+
+/** Read canvasHeight — falls back to regular height for backward compat */
+export function unwrapCanvasHeight(value: ImageRuntimeObject | undefined, fallback: number): number {
+  if (!value) return fallback;
+  return value.canvasHeight ?? value.height;
+}
+
+/** Read image position within canvas — defaults to (0, 0) */
+export function unwrapPosition(value: ImageRuntimeObject | undefined): ImagePosition {
+  return value?.position ?? { x: 0, y: 0 };
 }
 
 export interface LoadImageExecutorOutput extends BaseExecutorOutput {

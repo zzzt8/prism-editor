@@ -21,6 +21,9 @@ export interface PortDefinition {
 // Param types extend port types with UI-only types (select, image-file)
 export type ParamDefinitionType = PortType | 'select' | 'image-file';
 
+/** Option entry for select-type params */
+export type ParamOption = { label: string; value: unknown };
+
 export interface ParamDefinition {
   id: string;
   name: string;

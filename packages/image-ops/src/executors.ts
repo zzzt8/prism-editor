@@ -13,7 +13,11 @@ import type {
   BlendMode,
   ExecutionContext,
 } from '@prism/shared-types';
-import { unwrapImageData, type ImageRuntimeObject } from '@prism/shared-types';
+import {
+  unwrapImageData,
+  type ImageRuntimeObject,
+  type ImagePosition,
+} from '@prism/shared-types';
 import { loadCrossOriginImage, loadImageFromDataUrl, loadImageFromBlob } from './load-image';
 import { applyMask } from './apply-mask';
 import { compositeImages } from './composite';
@@ -219,17 +223,55 @@ export const compositeExecutor: NodeExecutor = async (
   params,
   ctx: ExecutionContext
 ) => {
-  const rawBase     = ctx.requireInput<Parameters<typeof unwrapImageData>[0]>('base',     'Composite');
-  const rawOverlay  = ctx.requireInput<Parameters<typeof unwrapImageData>[0]>('overlay',  'Composite');
+  const rawBase    = ctx.requireInput<Parameters<typeof unwrapImageData>[0]>('base',    'Composite');
+  const rawOverlay = ctx.requireInput<Parameters<typeof unwrapImageData>[0]>('overlay', 'Composite');
   const base    = unwrapImageData(rawBase);
   const overlay = unwrapImageData(rawOverlay);
   if (!base)    throw new Error('base input must be ImageData for Composite');
   if (!overlay) throw new Error('overlay input must be ImageData for Composite');
 
-  const blendMode = (params['blendMode'] as BlendMode) ?? 'normal';
-  const opacity = (params['opacity'] as number) ?? 1;
+  // Read base as ImageRuntimeObject to get its canvas/position metadata
+  const baseIRO = (rawBase && typeof rawBase === 'object' && 'data' in rawBase)
+    ? rawBase as ImageRuntimeObject
+    : undefined;
 
-  const result = compositeImages(base, overlay, { blendMode, opacity });
+  // Read overlay as ImageRuntimeObject to get its canvas/position metadata
+  const overlayIRO = (rawOverlay && typeof rawOverlay === 'object' && 'data' in rawOverlay)
+    ? rawOverlay as ImageRuntimeObject
+    : undefined;
+
+  // Output canvas size: params override > base canvas > base native
+  const canvasWidth =
+    (params['canvasWidth']  as number | undefined) ??
+    baseIRO?.canvasWidth  ??
+    base.width;
+  const canvasHeight =
+    (params['canvasHeight'] as number | undefined) ??
+    baseIRO?.canvasHeight ??
+    base.height;
+
+  // Blend parameters
+  const blendMode = (params['blendMode'] as BlendMode) ?? 'normal';
+  const opacity   = (params['opacity']   as number)   ?? 1;
+
+  // Overlay position: params override > overlay position metadata
+  const overlayX =
+    (params['overlayX'] as number | undefined) ??
+    overlayIRO?.position?.x ??
+    0;
+  const overlayY =
+    (params['overlayY'] as number | undefined) ??
+    overlayIRO?.position?.y ??
+    0;
+
+  const result = compositeImages(base, overlay, {
+    blendMode,
+    opacity,
+    canvasWidth,
+    canvasHeight,
+    overlayX,
+    overlayY,
+  });
 
   // Create preview
   const canvas = new OffscreenCanvas(result.width, result.height);
@@ -246,6 +288,9 @@ export const compositeExecutor: NodeExecutor = async (
       previewUrl: previewRef.url,
       width: result.width,
       height: result.height,
+      canvasWidth: result.width,
+      canvasHeight: result.height,
+      position: { x: 0, y: 0 },
     },
     previewUrl: previewRef.url,
     width: result.width,
@@ -263,37 +308,77 @@ export const transformExecutor: NodeExecutor = async (
   const image = unwrapImageData(rawImage);
   if (!image) throw new Error('image input must be ImageData for Transform');
 
+  const translateX = (params['translateX'] as number) ?? 0;
+  const translateY = (params['translateY'] as number) ?? 0;
+  const scaleX = (params['scaleX'] as number) ?? 1;
+  const scaleY = (params['scaleY'] as number) ?? 1;
+  const rotation = (params['rotation'] as number) ?? 0;
+  const cropX = (params['cropX'] as number) ?? 0;
+  const cropY = (params['cropY'] as number) ?? 0;
+  const cropWidth = (params['cropWidth'] as number) ?? 0;
+  const cropHeight = (params['cropHeight'] as number) ?? 0;
+
+  // canvasSize params: if set (> 0), embed result into a canvas of that size at (canvasX, canvasY)
+  const canvasW = (params['canvasWidth']  as number | undefined) ?? 0;
+  const canvasH = (params['canvasHeight'] as number | undefined) ?? 0;
+  const canvasX = (params['canvasX'] as number | undefined) ?? 0;
+  const canvasY = (params['canvasY'] as number | undefined) ?? 0;
+
   const result = transformImage(image, {
-    translateX: (params['translateX'] as number) ?? 0,
-    translateY: (params['translateY'] as number) ?? 0,
-    scaleX: (params['scaleX'] as number) ?? 1,
-    scaleY: (params['scaleY'] as number) ?? 1,
-    rotation: (params['rotation'] as number) ?? 0,
-    cropX: (params['cropX'] as number) ?? 0,
-    cropY: (params['cropY'] as number) ?? 0,
-    cropWidth: (params['cropWidth'] as number) ?? 0,
-    cropHeight: (params['cropHeight'] as number) ?? 0,
+    translateX,
+    translateY,
+    scaleX,
+    scaleY,
+    rotation,
+    cropX,
+    cropY,
+    cropWidth,
+    cropHeight,
   });
 
+  // If canvas dimensions are specified, embed the transformed image into that canvas
+  let finalData: ImageData = result;
+  let finalWidth  = result.width;
+  let finalHeight = result.height;
+  let finalX = 0;
+  let finalY = 0;
+  if (canvasW > 0 && canvasH > 0) {
+    // Create a canvas of the specified size and draw the result at (canvasX, canvasY)
+    const resultCanvas = new OffscreenCanvas(result.width, result.height);
+    const rc = resultCanvas.getContext('2d')!;
+    rc.putImageData(result, 0, 0);
+    const embedCanvas = new OffscreenCanvas(canvasW, canvasH);
+    const ec = embedCanvas.getContext('2d')!;
+    ec.drawImage(resultCanvas, canvasX, canvasY);
+    finalData   = ec.getImageData(0, 0, canvasW, canvasH);
+    finalWidth  = canvasW;
+    finalHeight = canvasH;
+    finalX = canvasX;
+    finalY = canvasY;
+  }
+
   // Create preview
-  const canvas = new OffscreenCanvas(result.width, result.height);
-  const cctx = canvas.getContext('2d');
-  if (!cctx) throw new Error('Failed to get 2D context for preview canvas');
-  cctx.putImageData(result, 0, 0);
-  const blob = await canvas.convertToBlob({ type: 'image/png' });
-  const previewRef = getImageMemoryManager().createObjectURL(blob, result.width, result.height);
+  const previewCanvas = new OffscreenCanvas(finalWidth, finalHeight);
+  const previewCtx = previewCanvas.getContext('2d');
+  if (!previewCtx) throw new Error('Failed to get 2D context for preview canvas');
+  previewCtx.putImageData(finalData, 0, 0);
+  const blob = await previewCanvas.convertToBlob({ type: 'image/png' });
+  const previewRef = getImageMemoryManager().createObjectURL(blob, finalWidth, finalHeight);
 
   return {
     type: 'transform',
     image: {
-      data: result,
+      data: finalData,
       previewUrl: previewRef.url,
-      width: result.width,
-      height: result.height,
+      width: finalWidth,
+      height: finalHeight,
+      canvasWidth: finalWidth,
+      canvasHeight: finalHeight,
+      position: { x: finalX, y: finalY },
     },
     previewUrl: previewRef.url,
-    width: result.width,
-    height: result.height,
+    width: finalWidth,
+    height: finalHeight,
   } satisfies TransformExecutorOutput;
 };
 
