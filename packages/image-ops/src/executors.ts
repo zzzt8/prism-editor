@@ -246,10 +246,14 @@ export const compositeExecutor: NodeExecutor = async (
   const blendMode = (params['blendMode'] as BlendMode) ?? 'normal';
   const opacity   = (params['opacity']   as number)   ?? 1;
 
-  // Collect all overlay inputs — static 'overlay' port + any dynamic 'overlayN' ports
-  const overlayKeys = Object.keys(inputs).filter(
-    (k) => k !== 'base' && (k === 'overlay' || /^overlay\d+$/.test(k))
-  );
+  // Collect all overlay inputs — static 'overlay' port first, then dynamic 'overlayN' ports sorted numerically
+  const overlayKeys = Object.keys(inputs)
+    .filter((k) => k !== 'base' && (k === 'overlay' || /^overlay\d+$/.test(k)))
+    .sort((a, b) => {
+      if (a === 'overlay') return -1;
+      if (b === 'overlay') return 1;
+      return parseInt(a.slice(7), 10) - parseInt(b.slice(7), 10);
+    });
 
   // Seed result with base
   let result = base;
