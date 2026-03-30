@@ -88,7 +88,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ nodeId }) => {
       id: `overlay${nextNum}`,
       name: `叠加 ${nextNum}`,
       type: 'image',
-      dataType: 'IMAGE' as PortDataType,
+      dataType: 'image' as PortDataType,
     });
   }, [nodeId, extraInputs, addExtraInput]);
 
