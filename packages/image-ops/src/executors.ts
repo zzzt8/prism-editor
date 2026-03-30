@@ -318,8 +318,8 @@ export const transformExecutor: NodeExecutor = async (
   const cropWidth = (params['cropWidth'] as number) ?? 0;
   const cropHeight = (params['cropHeight'] as number) ?? 0;
 
-  const result = transformImage(image, {
-    // translateX/Y are handled via canvas expansion in executor below
+  // Run scale + rotate + crop through transformImage
+  const transformed = transformImage(image, {
     translateX: 0,
     translateY: 0,
     scaleX,
@@ -331,52 +331,53 @@ export const transformExecutor: NodeExecutor = async (
     cropHeight,
   });
 
-  // Start with the transform result as the working image
-  let finalData: ImageData = result;
-  let finalWidth  = result.width;
-  let finalHeight = result.height;
+  // Canvas expansion: translateX/Y both grows the canvas and offsets the image
+  // within it. Positive → image shifts right/down, left/top margin grows.
+  // Negative → image shifts left/up, right/bottom margin shrinks (clipped).
+  const finalX = Math.floor(translateX);
+  const finalY = Math.floor(translateY);
+  const finalW = Math.max(0, transformed.width + finalX);
+  const finalH = Math.max(0, transformed.height + finalY);
 
-  // Canvas expansion from translate — translation shifts image right/down
-  // so the original top-left stays visible; the canvas grows by the offset.
-  const expandW = Math.max(0, Math.floor(translateX));
-  const expandH = Math.max(0, Math.floor(translateY));
-
-  if (expandW > 0 || expandH > 0) {
-    const expandedW = finalWidth  + expandW;
-    const expandedH = finalHeight + expandH;
-    const expanded = new OffscreenCanvas(expandedW, expandedH);
-    const ec = expanded.getContext('2d')!;
-    const src = new OffscreenCanvas(finalWidth, finalHeight);
-    const sc = src.getContext('2d')!;
-    sc.putImageData(finalData, 0, 0);
-    ec.drawImage(src, 0, 0);  // image fixed at (0,0); transparent fill extends to right/bottom
-    finalData   = ec.getImageData(0, 0, expandedW, expandedH);
-    finalWidth  = expandedW;
-    finalHeight = expandedH;
+  let finalData: ImageData;
+  if (finalW === 0 || finalH === 0) {
+    finalData = new ImageData(1, 1);
+  } else if (finalX !== 0 || finalY !== 0) {
+    // Create output canvas and draw image at (finalX, finalY)
+    // Positive finalX → left margin; negative → right clipped
+    const outCanvas = new OffscreenCanvas(finalW, finalH);
+    const outCtx = outCanvas.getContext('2d')!;
+    const srcCanvas = new OffscreenCanvas(transformed.width, transformed.height);
+    const sc = srcCanvas.getContext('2d')!;
+    sc.putImageData(transformed, 0, 0);
+    outCtx.drawImage(srcCanvas, finalX, finalY);
+    finalData = outCtx.getImageData(0, 0, finalW, finalH);
+  } else {
+    finalData = transformed;
   }
 
   // Create preview
-  const previewCanvas = new OffscreenCanvas(finalWidth, finalHeight);
+  const previewCanvas = new OffscreenCanvas(finalW, finalH);
   const previewCtx = previewCanvas.getContext('2d');
   if (!previewCtx) throw new Error('Failed to get 2D context for preview canvas');
   previewCtx.putImageData(finalData, 0, 0);
   const blob = await previewCanvas.convertToBlob({ type: 'image/png' });
-  const previewRef = getImageMemoryManager().createObjectURL(blob, finalWidth, finalHeight);
+  const previewRef = getImageMemoryManager().createObjectURL(blob, finalW, finalH);
 
   return {
     type: 'transform',
     image: {
       data: finalData,
       previewUrl: previewRef.url,
-      width: finalWidth,
-      height: finalHeight,
-      canvasWidth: finalWidth,
-      canvasHeight: finalHeight,
-      position: { x: 0, y: 0 },
+      width: finalW,
+      height: finalH,
+      canvasWidth: finalW,
+      canvasHeight: finalH,
+      position: { x: finalX > 0 ? finalX : 0, y: finalY > 0 ? finalY : 0 },
     },
     previewUrl: previewRef.url,
-    width: finalWidth,
-    height: finalHeight,
+    width: finalW,
+    height: finalH,
   } satisfies TransformExecutorOutput;
 };
 

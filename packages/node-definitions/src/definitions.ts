@@ -348,18 +348,6 @@ export const transformDefinition: NodeDefinition = {
       type: 'number',
       description: 'Crop region height (0 = full height)',
     },
-    {
-      id: 'canvasWidth',
-      name: 'Canvas Width',
-      type: 'number',
-      description: 'Fixed output canvas width (0 = dynamic from transform)',
-    },
-    {
-      id: 'canvasHeight',
-      name: 'Canvas Height',
-      type: 'number',
-      description: 'Fixed output canvas height (0 = dynamic from transform)',
-    },
   ],
 };
 
