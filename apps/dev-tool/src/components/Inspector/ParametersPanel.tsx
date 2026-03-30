@@ -49,7 +49,8 @@ function ParamField({
     const min = param.min ?? 0;
     const max = param.max ?? 100;
     const step = param.step ?? 1;
-    const hasRange = max - min > step * 2;
+    // Only show slider when the param explicitly defines both min and max bounds
+    const hasRange = param.min !== undefined && param.max !== undefined;
 
     return (
       <div className="param-row">
