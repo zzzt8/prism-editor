@@ -318,15 +318,10 @@ export const transformExecutor: NodeExecutor = async (
   const cropWidth = (params['cropWidth'] as number) ?? 0;
   const cropHeight = (params['cropHeight'] as number) ?? 0;
 
-  // canvasSize params: if set (> 0), embed result into a canvas of that size at (canvasX, canvasY)
-  const canvasW = (params['canvasWidth']  as number | undefined) ?? 0;
-  const canvasH = (params['canvasHeight'] as number | undefined) ?? 0;
-  const canvasX = (params['canvasX'] as number | undefined) ?? 0;
-  const canvasY = (params['canvasY'] as number | undefined) ?? 0;
-
   const result = transformImage(image, {
-    translateX,
-    translateY,
+    // translateX/Y are handled via canvas expansion in executor below
+    translateX: 0,
+    translateY: 0,
     scaleX,
     scaleY,
     rotation,
@@ -336,25 +331,28 @@ export const transformExecutor: NodeExecutor = async (
     cropHeight,
   });
 
-  // If canvas dimensions are specified, embed the transformed image into that canvas
+  // Start with the transform result as the working image
   let finalData: ImageData = result;
   let finalWidth  = result.width;
   let finalHeight = result.height;
-  let finalX = 0;
-  let finalY = 0;
-  if (canvasW > 0 && canvasH > 0) {
-    // Create a canvas of the specified size and draw the result at (canvasX, canvasY)
-    const resultCanvas = new OffscreenCanvas(result.width, result.height);
-    const rc = resultCanvas.getContext('2d')!;
-    rc.putImageData(result, 0, 0);
-    const embedCanvas = new OffscreenCanvas(canvasW, canvasH);
-    const ec = embedCanvas.getContext('2d')!;
-    ec.drawImage(resultCanvas, canvasX, canvasY);
-    finalData   = ec.getImageData(0, 0, canvasW, canvasH);
-    finalWidth  = canvasW;
-    finalHeight = canvasH;
-    finalX = canvasX;
-    finalY = canvasY;
+
+  // Canvas expansion from translate — translation shifts image right/down
+  // so the original top-left stays visible; the canvas grows by the offset.
+  const expandW = Math.max(0, Math.floor(translateX));
+  const expandH = Math.max(0, Math.floor(translateY));
+
+  if (expandW > 0 || expandH > 0) {
+    const expandedW = finalWidth  + expandW;
+    const expandedH = finalHeight + expandH;
+    const expanded = new OffscreenCanvas(expandedW, expandedH);
+    const ec = expanded.getContext('2d')!;
+    const src = new OffscreenCanvas(finalWidth, finalHeight);
+    const sc = src.getContext('2d')!;
+    sc.putImageData(finalData, 0, 0);
+    ec.drawImage(src, 0, 0);  // image fixed at (0,0); transparent fill extends to right/bottom
+    finalData   = ec.getImageData(0, 0, expandedW, expandedH);
+    finalWidth  = expandedW;
+    finalHeight = expandedH;
   }
 
   // Create preview
@@ -374,7 +372,7 @@ export const transformExecutor: NodeExecutor = async (
       height: finalHeight,
       canvasWidth: finalWidth,
       canvasHeight: finalHeight,
-      position: { x: finalX, y: finalY },
+      position: { x: 0, y: 0 },
     },
     previewUrl: previewRef.url,
     width: finalWidth,

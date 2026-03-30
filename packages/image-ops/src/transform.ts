@@ -31,8 +31,6 @@ export function transformImage(
   options: TransformOptions = {}
 ): ImageData {
   const {
-    translateX = 0,
-    translateY = 0,
     scaleX = 1,
     scaleY = 1,
     rotation = 0,
@@ -43,8 +41,6 @@ export function transformImage(
   } = options;
 
   const needsTransform =
-    translateX !== 0 ||
-    translateY !== 0 ||
     scaleX !== 1 ||
     scaleY !== 1 ||
     rotation !== 0 ||
@@ -88,8 +84,7 @@ export function transformImage(
   // Step 1: Move origin to center of output canvas
   outCtx.translate(outWidth / 2, outHeight / 2);
 
-  // Step 2: User translate + scale in image-local space (before rotation)
-  outCtx.translate(translateX, translateY);
+  // Step 2: Scale in image-local space (before rotation)
   outCtx.scale(scaleX, scaleY);
 
   // Step 3: Rotate around the image center
