@@ -1,11 +1,12 @@
 // PublishDialog - configure and publish a workflow for the user-facing app
 //
-// Refactored: v2 publish dialog with auto-infer and white-list paradigm.
-// - Auto-detects source nodes (no incoming edges | load-image type) as Inputs.
-// - Auto-detects export/leaf nodes as Outputs.
-// - All params hidden by default; developer explicitly white-lists with labels.
+// Refactored v3:
+// - Manual selection: developer explicitly toggles which nodes are exposed as user inputs.
+// - Each candidate shows: node name, type badge, toggle checkbox, and X to remove.
+// - Only toggled nodes appear in the published inputs and require a user-facing label.
+// - Un-selected nodes keep their built-in test data in the workflow.
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
 import type { CanvasNode } from '../../store/canvasStore';
 import type {
@@ -23,6 +24,11 @@ import { copyWorkflowToClipboard, downloadWorkflowAsFile } from '../../utils/wor
 const PREFIX = 'prism:published:';
 const CHANNEL_NAME = 'prism-publish-channel';
 
+/** Nodes with no incoming edges are potential user-input sources */
+function getInputCandidateNodes(nodes: CanvasNode[]): CanvasNode[] {
+  return nodes.filter((n) => n.data.definition != null);
+}
+
 /** Build a set of node IDs that appear as a source (have at least one incoming edge) */
 function nodesWithIncomingEdges(edges: ReturnType<typeof useCanvasStore.getState>['edges']): Set<string> {
   const s = new Set<string>();
@@ -37,24 +43,7 @@ function nodesWithOutgoingEdges(edges: ReturnType<typeof useCanvasStore.getState
   return s;
 }
 
-/**
- * Infer source nodes for the Inputs section.
- * Rule: nodes with ZERO incoming edges, OR nodes of type 'load-image' (regardless of edges).
- */
-export function inferSourceNodes(
-  nodes: CanvasNode[],
-  edges: ReturnType<typeof useCanvasStore.getState>['edges']
-): CanvasNode[] {
-  const hasIncoming = nodesWithIncomingEdges(edges);
-  return nodes.filter((n) => n.data.definition && (
-    !hasIncoming.has(n.id) || n.data.nodeType === 'load-image'
-  ));
-}
-
-/**
- * Infer output nodes for the Outputs section.
- * Rule: type === 'export' first; fallback to leaf nodes (no outgoing edges).
- */
+/** Infer output nodes: export nodes first; fallback to leaf nodes. */
 export function inferOutputNodes(
   nodes: CanvasNode[],
   edges: ReturnType<typeof useCanvasStore.getState>['edges']
@@ -68,16 +57,19 @@ export function inferOutputNodes(
 /**
  * Build the PublishedConfig from the dialog's edited state.
  * Uses canvas nodeId (UUID) as stable key for nodeTypes and nodeConfigs.
+ *
+ * @param userInputNodes  Node IDs explicitly selected as user-facing inputs.
  */
 function buildPublishedConfig(opts: {
   nodes: CanvasNode[];
   edges: ReturnType<typeof useCanvasStore.getState>['edges'];
+  userInputNodes: CanvasNode[];
   inputLabels: Record<string, string>;
   outputLabels: Record<string, string>;
   outputFormats: Record<string, ExportFormat>;
   whitelist: PublishedParamConfig[];
 }): PublishedWorkflow['config'] {
-  const { nodes, edges, inputLabels, outputLabels, outputFormats, whitelist } = opts;
+  const { nodes, edges, userInputNodes, inputLabels, outputLabels, outputFormats, whitelist } = opts;
 
   const nodeConfigs: PublishedWorkflow['config']['nodeConfigs'] = {};
   const nodeTypes: Record<string, string> = {};
@@ -99,18 +91,16 @@ function buildPublishedConfig(opts: {
   for (const entry of whitelist) {
     if (!nodeConfigs[entry.nodeId]) continue;
     const current = nodeConfigs[entry.nodeId].params[entry.paramId];
-    // Only inject if not already set from node's own params
     if (current === undefined) {
       nodeConfigs[entry.nodeId].params[entry.paramId] = null;
     }
   }
 
-  // Build PublishedInputConfig[]
-  const sourceNodes = inferSourceNodes(nodes, edges);
-  const inputs: PublishedInputConfig[] = sourceNodes.map((n) => ({
+  // Build PublishedInputConfig[] — only from explicitly selected nodes
+  const inputs: PublishedInputConfig[] = userInputNodes.map((n) => ({
     nodeId: n.id,
     label: inputLabels[n.id] ?? '',
-    type: (n.data.nodeType === 'load-image' ? 'image' : n.data.nodeType === 'load-mask' ? 'mask' : 'string'),
+    type: n.data.nodeType === 'load-image' ? 'image' : n.data.nodeType === 'load-mask' ? 'mask' : 'string',
   }));
 
   // Build PublishedOutputConfig[]
@@ -131,7 +121,6 @@ function buildPublishedConfig(opts: {
     nodeIndexMap,
     internalParams: {},
     nodeConfigs,
-    // New v2 fields
     inputs,
     exposedParams: whitelist,
     outputs,
@@ -170,15 +159,16 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
   const [error, setError] = useState<string | null>(null);
 
   // ── Derived node lists ──────────────────────────────────────────────────
-  const sourceNodes = useMemo(() => inferSourceNodes(nodes, edges), [nodes, edges]);
   const outputNodes = useMemo(() => inferOutputNodes(nodes, edges), [nodes, edges]);
 
+  // All defined nodes are input candidates; developer manually selects which to expose
+  const candidateNodes = useMemo(() => getInputCandidateNodes(nodes), [nodes]);
+
+  // ── User-input selection (manual toggle) ────────────────────────────────
+  const [selectedInputIds, setSelectedInputIds] = useState<Set<string>>(new Set<string>());
+
   // ── Input labels: nodeId → developer-provided user-facing label ────────
-  const [inputLabels, setInputLabels] = useState<Record<string, string>>(() => {
-    const init: Record<string, string> = {};
-    for (const n of sourceNodes) init[n.id] = '';
-    return init;
-  });
+  const [inputLabels, setInputLabels] = useState<Record<string, string>>({});
 
   // ── Output labels & formats ────────────────────────────────────────────
   const [outputLabels, setOutputLabels] = useState<Record<string, string>>(() => {
@@ -205,13 +195,27 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
   const [editingEntryKey, setEditingEntryKey] = useState<string | null>(null);
   const [editingLabel, setEditingLabel] = useState('');
 
-  // Re-sync when canvas nodes change
-  React.useEffect(() => {
-    setInputLabels((prev) => {
-      const next: Record<string, string> = {};
-      for (const n of sourceNodes) next[n.id] = prev[n.id] ?? '';
+  // ── Toggle a node as a user input ───────────────────────────────────────
+  const toggleInputNode = useCallback((nodeId: string, selected: boolean) => {
+    setSelectedInputIds((prev) => {
+      const next = new Set(prev);
+      if (selected) { next.add(nodeId); }
+      else {
+        next.delete(nodeId);
+        setInputLabels((l) => { const n = { ...l }; delete n[nodeId]; return n; });
+      }
       return next;
     });
+  }, []);
+
+  // ── Derived: nodes currently selected as user inputs ───────────────────
+  const selectedInputNodes = useMemo(
+    () => candidateNodes.filter((n) => selectedInputIds.has(n.id)),
+    [candidateNodes, selectedInputIds]
+  );
+
+  // Re-sync when canvas nodes change
+  React.useEffect(() => {
     setOutputLabels((prev) => {
       const next: Record<string, string> = {};
       for (const n of outputNodes) next[n.id] = prev[n.id] ?? '';
@@ -226,9 +230,9 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     const validNodeIds = new Set(nodes.map((n) => n.id));
     setWhitelist((prev) => prev.filter((e) => validNodeIds.has(e.nodeId)));
     setBrowserChecked((prev) => {
-      const next: Record<string, boolean> = {};
-      for (const e of whitelist) next[`${e.nodeId}:${e.paramId}`] = true;
-      return next;
+      const n: Record<string, boolean> = {};
+      for (const e of whitelist) n[`${e.nodeId}:${e.paramId}`] = true;
+      return n;
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, edges]);
@@ -292,8 +296,8 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
       setError('画布上没有节点，无法发布');
       return;
     }
-    // Validate input labels
-    for (const n of sourceNodes) {
+    // Validate input labels — only for selected input nodes
+    for (const n of selectedInputNodes) {
       if (!inputLabels[n.id]?.trim()) {
         setError(`请为「${n.data.label}」设置面向用户的名称`);
         return;
@@ -320,7 +324,7 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     setError(null);
 
     try {
-      const config = buildPublishedConfig({ nodes, edges, inputLabels, outputLabels, outputFormats, whitelist });
+      const config = buildPublishedConfig({ nodes, edges, userInputNodes: selectedInputNodes, inputLabels, outputLabels, outputFormats, whitelist });
   const publishedInputs: PublishedWorkflow['inputs'] = config.inputs.map((i) => ({
     id: i.nodeId,
     name: i.label,
@@ -374,7 +378,7 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                 <strong>{publishName}</strong> 已成功发布
               </div>
               <div className="publish-success-sub">
-                发布版本 {workflowMeta.version} · {nodes.length} 个节点 · {sourceNodes.length} 个输入 · {outputNodes.length} 个输出
+                发布版本 {workflowMeta.version} · {nodes.length} 个节点 · {selectedInputNodes.length} 个用户输入 · {outputNodes.length} 个输出
               </div>
               <div className="publish-success-primary">
                 <button className="dialog-btn dialog-btn-primary" onClick={() => window.open('http://localhost:3001', '_blank')}>
@@ -443,39 +447,68 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
             <div className="publish-section-title">
               定义用户上传内容
               <span className="publish-section-hint">
-                检测到 {sourceNodes.length} 个图片来源节点
+                勾选要开放给用户的节点 · 未勾选的节点使用内置测试数据
               </span>
             </div>
 
-            {sourceNodes.length === 0 ? (
+            {candidateNodes.length === 0 ? (
               <div className="publish-empty">
-                未检测到图片上传节点，请在画布中添加 Load Image 节点
+                画布中暂无可用节点
               </div>
             ) : (
-              <div className="publish-source-list">
-                {sourceNodes.map((node) => {
+              <div className="publish-input-candidates">
+                {candidateNodes.map((node) => {
                   const def = node.data.definition;
+                  const isSelected = selectedInputIds.has(node.id);
+                  const nodeTypeIcon =
+                    node.data.nodeType === 'load-image' ? <Upload size={11} /> :
+                    node.data.nodeType === 'load-mask'  ? <CircleDot size={11} /> :
+                    <CircleDot size={11} />;
+                  const typeLabel =
+                    node.data.nodeType === 'load-image' ? '图片' :
+                    node.data.nodeType === 'load-mask'  ? '蒙版' : def?.category ?? '节点';
+
                   return (
-                    <div key={node.id} className="publish-source-card">
-                      <div className="publish-source-header">
-                        <span className="publish-source-icon">
-                          <Upload size={13} />
-                        </span>
-                        <span className="publish-source-node-label">{node.data.label}</span>
-                        <span className="publish-source-type-badge">{def?.category}</span>
-                      </div>
-                      <div className="publish-source-label-row">
-                        <label className="dialog-label" style={{ marginBottom: 0 }}>
-                          面向用户的名称
+                    <div key={node.id} className={`publish-input-candidate ${isSelected ? 'publish-input-candidate--selected' : ''}`}>
+                      <div className="publish-input-candidate-row">
+                        {/* Toggle checkbox */}
+                        <label className="publish-input-toggle">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => toggleInputNode(node.id, e.target.checked)}
+                          />
+                          <span className="publish-input-candidate-icon">
+                            {nodeTypeIcon}
+                          </span>
+                          <span className="publish-input-candidate-name">{node.data.label}</span>
+                          <span className="publish-source-type-badge">{typeLabel}</span>
                         </label>
-                        <input
-                          className="dialog-input"
-                          style={{ flex: 1 }}
-                          value={inputLabels[node.id] ?? ''}
-                          onChange={(e) => setInputLabels((p) => ({ ...p, [node.id]: e.target.value }))}
-                          placeholder="如：产品白底图"
-                        />
+                        {/* Remove button — only visible when selected */}
+                        <button
+                          className={`publish-icon-btn publish-icon-btn--danger ${!isSelected ? 'publish-icon-btn--hidden' : ''}`}
+                          title="移除，不开放给用户"
+                          onClick={() => toggleInputNode(node.id, false)}
+                        >
+                          <X size={11} />
+                        </button>
                       </div>
+
+                      {/* Label input — only shown when selected */}
+                      {isSelected && (
+                        <div className="publish-input-label-row">
+                          <label className="dialog-label" style={{ marginBottom: 0, fontSize: 11 }}>
+                            面向用户的名称
+                          </label>
+                          <input
+                            className="dialog-input"
+                            style={{ flex: 1 }}
+                            value={inputLabels[node.id] ?? ''}
+                            onChange={(e) => setInputLabels((p) => ({ ...p, [node.id]: e.target.value }))}
+                            placeholder="如：产品白底图"
+                          />
+                        </div>
+                      )}
                     </div>
                   );
                 })}

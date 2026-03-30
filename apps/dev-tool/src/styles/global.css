@@ -2328,6 +2328,81 @@ body {
   padding: 7px 10px;
 }
 
+/* ── Input-candidate list (v3 manual selection) ─────────────────────── */
+.publish-input-candidates {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.publish-input-candidate {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.publish-input-candidate--selected {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.04);
+}
+
+.publish-input-candidate-row {
+  display: flex;
+  align-items: center;
+  padding: 5px 8px;
+  gap: 6px;
+}
+
+.publish-input-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  cursor: pointer;
+  user-select: none;
+}
+
+.publish-input-toggle input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: #3b82f6;
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+.publish-input-candidate-icon {
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.publish-input-candidate-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.publish-input-label-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px 7px 30px;
+  border-top: 1px dashed var(--color-border);
+}
+
+.publish-icon-btn--hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 /* Whitelist section */
 .publish-whitelist-list {
   padding: 6px 8px;
