@@ -223,21 +223,13 @@ export const compositeExecutor: NodeExecutor = async (
   params,
   ctx: ExecutionContext
 ) => {
-  const rawBase    = ctx.requireInput<Parameters<typeof unwrapImageData>[0]>('base',    'Composite');
-  const rawOverlay = ctx.requireInput<Parameters<typeof unwrapImageData>[0]>('overlay', 'Composite');
+  const rawBase = ctx.requireInput<Parameters<typeof unwrapImageData>[0]>('base', 'Composite');
   const base    = unwrapImageData(rawBase);
-  const overlay = unwrapImageData(rawOverlay);
-  if (!base)    throw new Error('base input must be ImageData for Composite');
-  if (!overlay) throw new Error('overlay input must be ImageData for Composite');
+  if (!base) throw new Error('base input must be ImageData for Composite');
 
   // Read base as ImageRuntimeObject to get its canvas/position metadata
   const baseIRO = (rawBase && typeof rawBase === 'object' && 'data' in rawBase)
     ? rawBase as ImageRuntimeObject
-    : undefined;
-
-  // Read overlay as ImageRuntimeObject to get its canvas/position metadata
-  const overlayIRO = (rawOverlay && typeof rawOverlay === 'object' && 'data' in rawOverlay)
-    ? rawOverlay as ImageRuntimeObject
     : undefined;
 
   // Output canvas size: params override > base canvas > base native
@@ -254,31 +246,50 @@ export const compositeExecutor: NodeExecutor = async (
   const blendMode = (params['blendMode'] as BlendMode) ?? 'normal';
   const opacity   = (params['opacity']   as number)   ?? 1;
 
-  // Overlay position: params override > overlay position metadata
-  const overlayX =
-    (params['overlayX'] as number | undefined) ??
-    overlayIRO?.position?.x ??
-    0;
-  const overlayY =
-    (params['overlayY'] as number | undefined) ??
-    overlayIRO?.position?.y ??
-    0;
+  // Collect all overlay inputs — static 'overlay' port + any dynamic 'overlayN' ports
+  const overlayKeys = Object.keys(inputs).filter(
+    (k) => k !== 'base' && (k === 'overlay' || /^overlay\d+$/.test(k))
+  );
 
-  const result = compositeImages(base, overlay, {
-    blendMode,
-    opacity,
-    canvasWidth,
-    canvasHeight,
-    overlayX,
-    overlayY,
-  });
+  // Seed result with base
+  let result = base;
+
+  for (const key of overlayKeys) {
+    const raw = inputs[key] as Parameters<typeof unwrapImageData>[0];
+    const img = unwrapImageData(raw);
+    if (!img) continue; // skip optional disconnected ports
+
+    const overlayIRO = (raw && typeof raw === 'object' && 'data' in raw)
+      ? raw as ImageRuntimeObject
+      : undefined;
+
+    const overlayX =
+      (params[`${key}X`]         as number | undefined) ??
+      (params['overlayX']         as number | undefined) ??
+      overlayIRO?.position?.x ??
+      0;
+    const overlayY =
+      (params[`${key}Y`]         as number | undefined) ??
+      (params['overlayY']         as number | undefined) ??
+      overlayIRO?.position?.y ??
+      0;
+
+    result = compositeImages(result, img, {
+      blendMode,
+      opacity,
+      canvasWidth,
+      canvasHeight,
+      overlayX,
+      overlayY,
+    });
+  }
 
   // Create preview
-  const canvas = new OffscreenCanvas(result.width, result.height);
-  const cctx = canvas.getContext('2d');
-  if (!cctx) throw new Error('Failed to get 2D context for preview canvas');
-  cctx.putImageData(result, 0, 0);
-  const blob = await canvas.convertToBlob({ type: 'image/png' });
+  const previewCanvas = new OffscreenCanvas(result.width, result.height);
+  const previewCtx = previewCanvas.getContext('2d');
+  if (!previewCtx) throw new Error('Failed to get 2D context for preview canvas');
+  previewCtx.putImageData(result, 0, 0);
+  const blob = await previewCanvas.convertToBlob({ type: 'image/png' });
   const previewRef = getImageMemoryManager().createObjectURL(blob, result.width, result.height);
 
   return {
