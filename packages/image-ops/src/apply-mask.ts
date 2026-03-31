@@ -4,6 +4,10 @@
 type ImageData = globalThis.ImageData;
 import type { MaskOptions } from '@prism/shared-types';
 import { resizeImageData } from './transform';
+import { unwrapImageData } from '@prism/shared-types';
+import { getImageMemoryManager } from './memory-manager';
+import type { NodeExecutor, ApplyMaskExecutorOutput } from '@prism/shared-types';
+import type { ExecutionContext } from '@prism/shared-types';
 
 function getLuminance(r: number, g: number, b: number): number {
   return 0.299 * r + 0.587 * g + 0.114 * b;
@@ -138,3 +142,45 @@ function applyMaskWithResize(
       throw new Error(`Unknown mask type: ${type}`);
   }
 }
+
+// ─── ApplyMask executor ────────────────────────────────────────────────────────
+
+export const applyMaskExecutor: NodeExecutor = async (
+  inputs,
+  params,
+  ctx: ExecutionContext
+) => {
+  const rawImage = ctx.requireInput<Parameters<typeof unwrapImageData>[0]>('image', 'ApplyMask');
+  const rawMask  = ctx.requireInput<Parameters<typeof unwrapImageData>[0]>('mask',  'ApplyMask');
+  const image = unwrapImageData(rawImage);
+  const mask  = unwrapImageData(rawMask);
+  if (!image) throw new Error('image input must be ImageData for ApplyMask');
+  if (!mask)  throw new Error('mask input must be ImageData for ApplyMask');
+
+  const maskType = (params['maskType'] as 'alpha' | 'brightness' | 'luminance') ?? 'alpha';
+  const threshold = (params['threshold'] as number) ?? 128;
+  const invert = (params['invert'] as boolean) ?? false;
+
+  const result = applyMask(image, mask, { type: maskType, threshold, invert });
+
+  // Create preview
+  const canvas = new OffscreenCanvas(result.width, result.height);
+  const cctx = canvas.getContext('2d');
+  if (!cctx) throw new Error('Failed to get 2D context for preview canvas');
+  cctx.putImageData(result, 0, 0);
+  const blob = await canvas.convertToBlob({ type: 'image/png' });
+  const previewRef = getImageMemoryManager().createObjectURL(blob, result.width, result.height);
+
+  return {
+    type: 'apply-mask',
+    image: {
+      data: result,
+      previewUrl: previewRef.url,
+      width: result.width,
+      height: result.height,
+    },
+    previewUrl: previewRef.url,
+    width: result.width,
+    height: result.height,
+  } satisfies ApplyMaskExecutorOutput;
+};

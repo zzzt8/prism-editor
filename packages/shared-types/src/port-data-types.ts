@@ -2,6 +2,24 @@
 //
 // Defines PortDataType enum, PipelineData wrapper, type compatibility matrix,
 // and type conversion utilities used across all packages.
+//
+// ─── PortType vs PortDataType ─────────────────────────────────────────────
+//
+// `PortDataType` is the canonical type definition (defined in this file as an enum).
+// `PortType` (defined in ./port-types.ts) is a string-alias convenience type that
+// maps 1:1 to PortDataType values for brevity in inline contexts.
+//
+// Decision: keep both — PortDataType is the authoritative form used in all interface
+// signatures; PortType exists as a shorthand alias for convenience in typed literals.
+// Both share the same underlying string values (e.g. 'image', 'mask').
+// When in doubt, use PortDataType.
+//
+// ─── Relationship to execution.ts CacheEntry ─────────────────────────────
+//
+// `CacheEntry` (defined in execution.ts) stores execution results by inputs hash.
+// The `accessCount` field is a monotonically increasing LRU counter used by
+// workflow-core's cache eviction — it is NOT part of the shared contract and
+// should NOT be referenced outside of packages/workflow-core/src/cache.ts.
 
 import type { PortDefinition } from './node';
 

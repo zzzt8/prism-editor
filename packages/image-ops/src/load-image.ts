@@ -247,3 +247,162 @@ export function validateCorsHeaders(response: Response, origin: string): boolean
   const allow = response.headers.get('Access-Control-Allow-Origin');
   return allow === '*' || allow === origin;
 }
+
+// ─── Load Image executor ───────────────────────────────────────────────────────
+
+import type { NodeExecutor, LoadImageExecutorOutput } from '@prism/shared-types';
+import { getImageMemoryManager } from './memory-manager';
+
+// ImageFile param value shape (from UI file picker)
+interface ImageFileValue {
+  dataUrl: string;
+  width: number;
+  height: number;
+  fileName: string;
+}
+
+/** Assert a required param is present and non-empty */
+function requireParam<T>(
+  params: Record<string, unknown>,
+  key: string,
+  nodeName: string
+): T {
+  const value = params[key] as T | undefined;
+  if (value === undefined || value === null) {
+    throw new Error(`${key} param is required for ${nodeName} node`);
+  }
+  return value;
+}
+
+/**
+ * LoadImage executor — supports three input sources:
+ * 1. imageFile  — data URL from UI file picker  (preferred, no network)
+ * 2. url        — HTTP/HTTPS URL (legacy, CORS-aware)
+ * 3. blob       — Blob object (future: drag-drop)
+ */
+export const loadImageExecutor: NodeExecutor = async (
+  inputs,
+  params,
+  ctx
+) => {
+  let imageData: globalThis.ImageData;
+  let imageRef: import('@prism/shared-types').ImageRef;
+
+  // ── Source 1: imageFile (from UI file picker via ParamPanel) ──────────────
+  const imageFile = params['imageFile'] as ImageFileValue | undefined;
+  if (imageFile?.dataUrl) {
+    const result = await loadImageFromDataUrl(imageFile.dataUrl);
+    imageData = result.imageData;
+    imageRef = result.imageRef;
+  }
+  // ── Source 2: url (legacy URL string) ────────────────────────────────────
+  else if (params['url'] !== undefined) {
+    const url = requireParam<string>(params, 'url', 'LoadImage');
+    const crossOrigin = params['crossOrigin'] as string | undefined;
+    const loadOptions = crossOrigin && crossOrigin !== 'none'
+      ? { crossOrigin: crossOrigin as 'anonymous' | 'use-credentials' }
+      : {};
+    const result = await loadCrossOriginImage(url, loadOptions);
+    imageData = result.imageData;
+    imageRef = result.imageRef;
+  }
+  // ── Source 3: blob ──────────────────────────────────────────────────────
+  else if (params['blob'] !== undefined) {
+    const blob = requireParam<Blob>(params, 'blob', 'LoadImage');
+    const result = await loadImageFromBlob(blob);
+    imageData = result.imageData;
+    imageRef = result.imageRef;
+  }
+  else {
+    throw new Error('imageFile, url, or blob param is required for LoadImage node');
+  }
+
+  // Store imageRef in execution context
+  if (imageRef.type !== 'data-url') {
+    ctx.imageRefs.set(imageRef.url, imageRef);
+    getImageMemoryManager().registerRef(imageRef);
+  }
+
+  // Create blob URL for preview
+  const canvas = new OffscreenCanvas(imageData.width, imageData.height);
+  const cctx = canvas.getContext('2d');
+  if (!cctx) throw new Error('Failed to get 2D context for preview canvas');
+  cctx.putImageData(imageData, 0, 0);
+  const blob = await canvas.convertToBlob({ type: 'image/png' });
+  const previewRef = getImageMemoryManager().createObjectURL(
+    blob,
+    imageData.width,
+    imageData.height
+  );
+
+  return {
+    type: 'load-image',
+    image: {
+      data: imageData,
+      previewUrl: previewRef.url,
+      width: imageData.width,
+      height: imageData.height,
+      sourceFileName: imageFile?.fileName,
+    },
+    previewUrl: previewRef.url,
+    width: imageData.width,
+    height: imageData.height,
+  } satisfies LoadImageExecutorOutput;
+};
+
+// ─── Load Mask executor ────────────────────────────────────────────────────────
+
+import type { LoadMaskExecutorOutput } from '@prism/shared-types';
+
+interface MaskFileValue {
+  dataUrl: string;
+  width: number;
+  height: number;
+  fileName: string;
+}
+
+/** LoadMask executor — identical to Load Image but outputs MASK type */
+export const loadMaskExecutor: NodeExecutor = async (
+  inputs,
+  params,
+  ctx
+) => {
+  const urlValue = params['url'] as string | undefined;
+  const maskFile = params['maskFile'] as MaskFileValue | undefined;
+  const sourceUrl = urlValue ?? maskFile?.dataUrl;
+
+  if (!sourceUrl) {
+    throw new Error('maskFile param is required for LoadMask node');
+  }
+
+  const isDataUrl = sourceUrl.startsWith('data:');
+  const result = isDataUrl
+    ? await loadImageFromDataUrl(sourceUrl)
+    : await loadCrossOriginImage(sourceUrl);
+  const imageData = result.imageData;
+
+  const canvas = new OffscreenCanvas(imageData.width, imageData.height);
+  const cctx = canvas.getContext('2d');
+  if (!cctx) throw new Error('Failed to get 2D context for preview canvas');
+  cctx.putImageData(imageData, 0, 0);
+  const blob = await canvas.convertToBlob({ type: 'image/png' });
+  const previewRef = getImageMemoryManager().createObjectURL(
+    blob,
+    imageData.width,
+    imageData.height
+  );
+
+  return {
+    type: 'load-mask',
+    mask: {
+      data: imageData,
+      previewUrl: previewRef.url,
+      width: imageData.width,
+      height: imageData.height,
+      sourceFileName: maskFile?.fileName,
+    },
+    previewUrl: previewRef.url,
+    width: imageData.width,
+    height: imageData.height,
+  } satisfies LoadMaskExecutorOutput;
+};

@@ -59,6 +59,20 @@ export interface ExecutionProgress {
 
 // NOTE: ExecutionContext is defined in @prism/workflow-core/src/context.ts
 // to keep it co-located with the factory functions. Import it from there.
+
+/**
+ * Lightweight cache configuration — the stable part of a cache entry,
+ * shared between the execution contract and workflow-core's LRU cache.
+ *
+ * The `accessCount` field is workflow-core specific (LRU eviction) and lives
+ * in packages/workflow-core/src/cache.ts.
+ */
+export interface CacheConfig {
+  result: Record<string, unknown>;
+  timestamp: number;
+  inputsHash: string;
+}
+
 export interface ExecutionContext {
   workflowId: string;
   nodeId: string;
@@ -107,14 +121,8 @@ export interface TopologicalSortResult {
   cycleNodes?: string[];
 }
 
-export interface CacheEntry {
-  result: Record<string, unknown>;
-  timestamp: number;
-  inputsHash: string;
-}
-
 export interface ExecutionCache {
-  get(workflowId: string, nodeId: string, inputsHash: string): CacheEntry | undefined;
+  get(workflowId: string, nodeId: string, inputsHash: string): CacheConfig | undefined;
   set(workflowId: string, nodeId: string, inputsHash: string, result: Record<string, unknown>): void;
   clear(): void;
   clearWorkflow(workflowId: string): void;

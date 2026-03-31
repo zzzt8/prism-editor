@@ -54,6 +54,56 @@ export function inferOutputNodes(
   return nodes.filter((n) => n.data.definition && !hasOutgoing.has(n.id));
 }
 
+/** Strip base64 dataUrl from imageFile/maskFile params — we only need metadata (dimensions, filename).
+ *
+ *  IMPORTANT: only strip the dataUrl for nodes that are NOT selected as user-input sources.
+ *  For nodes exposed as user inputs, the user provides the URL at runtime via mergedParams.url
+ *  (injected by PublishedWorkflowExecutor.reconstruct()). Those nodes still get their dataUrl
+ *  cleaned because we never store large blobs in published config.
+ *
+ *  For non-user-input load-image/load-mask nodes, the developer already set the dataUrl
+ *  (via dev-tool UI), and it should be preserved so the executor can read it.
+ *  We still strip the actual base64 string — but for load-image/load-mask, we do NOT strip
+ *  the dataUrl here; instead we rely on the executor's normal priority chain:
+ *    imageFile.dataUrl → params.url → params.blob
+ *  Since we're not stripping it, the executor falls back to params.url if imageFile is empty.
+ *
+ *  Wait — we DO strip it for ALL nodes (to keep published workflows small).
+ *  The executor's `params.url` fallback is set by PublishedWorkflowExecutor.reconstruct()
+ *  for nodes that ARE user inputs (injected from inputValues). For nodes that are NOT
+ *  user inputs, we need to preserve the URL so the executor can load it.
+ *  Solution: only strip dataUrl for user-input nodes (identified by being in config.inputs).
+ */
+function sanitizeParamsForPublish(
+  params: Record<string, unknown>,
+  nodeId: string,
+  isUserInputNode: boolean,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, val] of Object.entries(params)) {
+    if (val && typeof val === 'object' && !Array.isArray(val)) {
+      const obj = val as Record<string, unknown>;
+      if ('dataUrl' in obj) {
+        if (isUserInputNode) {
+          // User-input nodes get their URL injected from inputValues at runtime;
+          // strip the dataUrl to keep published workflow size small.
+          out[key] = {
+            width: obj['width'],
+            height: obj['height'],
+            fileName: obj['fileName'],
+          };
+        } else {
+          // Non-user-input nodes: preserve dataUrl so the executor can load it.
+          out[key] = obj;
+        }
+        continue;
+      }
+    }
+    out[key] = val;
+  }
+  return out;
+}
+
 /**
  * Build the PublishedConfig from the dialog's edited state.
  * Uses canvas nodeId (UUID) as stable key for nodeTypes and nodeConfigs.
@@ -75,6 +125,8 @@ function buildPublishedConfig(opts: {
   const nodeTypes: Record<string, string> = {};
   const nodeIndexMap: Record<string, string> = {};
 
+  const userInputNodeIds = new Set(userInputNodes.map((n) => n.id));
+
   for (const node of nodes) {
     const def = node.data.definition;
     if (!def) continue;
@@ -82,7 +134,11 @@ function buildPublishedConfig(opts: {
     nodeIndexMap[node.id] = nodeKey;
     nodeTypes[nodeKey] = node.data.nodeType;
     nodeConfigs[nodeKey] = {
-      params: { ...node.data.params },
+      params: sanitizeParamsForPublish(
+        node.data.params,
+        nodeKey,
+        userInputNodeIds.has(nodeKey)
+      ),
       _internalParams: {},
     };
   }
@@ -334,7 +390,10 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     visible: true,
   }));
   const publishedOutputs: PublishedWorkflow['outputs'] = config.outputs.map((o) => ({
-    id: o.nodeId,
+    // Output ID must use {nodeId}:{portId} format so that WorkflowRunPage.handleRun()
+    // can correctly parse nodeId and portId via output.id.indexOf(':').
+    // The executor result for an export/composite node is keyed as {nodeId}:image.
+    id: `${o.nodeId}:image`,
     name: o.label,
     type: 'image' as PublishedOutput['type'],
   }));

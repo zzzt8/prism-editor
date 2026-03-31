@@ -133,17 +133,14 @@ const mockExport = (
 /**
  * Builds a realistic PublishedWorkflow matching production output from PublishDialog.
  *
- * Key differences from the broken version (Bug 2):
- * - canvas IDs (not index strings) are used as connection endpoints
- * - nodeIndexMap maps canvas ID → topological index
- * - nodeTypes/nodeConfigs/paramVisibility all use index keys
- *
- * This exercises the canvas-ID → index resolution in PublishedWorkflowExecutor.reconstruct().
+ * ALL config maps use canvas nodeId (UUID) as keys — exactly matching what
+ * buildPublishedConfig() produces (node.id as nodeKey = canvas UUID).
+ * The nodeIndexMap maps each canvas ID → itself (identity), meaning results
+ * are keyed by canvas ID throughout the execution pipeline.
  */
 function makePW(
   nodes: Array<{
-    canvasId: string; // canvas UUID, matches edges
-    idx: string;      // topological index
+    canvasId: string; // canvas UUID, used as ALL config keys and result IDs
     type: string;
     params?: Record<string, unknown>;
     internalParams?: Record<string, unknown>;
@@ -151,7 +148,8 @@ function makePW(
   }>,
   connections: Array<{ fromCanvasId: string; fromPort: string; toCanvasId: string; toPort: string }>,
   inputs: PublishedWorkflow['inputs'] = [],
-  outputs: PublishedWorkflow['outputs'] = []
+  outputs: PublishedWorkflow['outputs'] = [],
+  configOutputs: Array<{ nodeId: string; label: string; format: string }> = [],
 ): PublishedWorkflow {
   return {
     id: 'pw-e2e',
@@ -163,22 +161,22 @@ function makePW(
     inputs,
     outputs,
     config: {
-      // nodeIndexMap: canvas UUID → topological index (real production format)
-      nodeIndexMap: Object.fromEntries(nodes.map((n) => [n.canvasId, n.idx])),
-      // nodeTypes: index → node type string
-      nodeTypes:    Object.fromEntries(nodes.map((n) => [n.idx, n.type])),
-      // nodeConfigs: index → { params, _internalParams }
+      // nodeIndexMap: canvas UUID → canvas UUID (identity, matching production)
+      nodeIndexMap: Object.fromEntries(nodes.map((n) => [n.canvasId, n.canvasId])),
+      // nodeTypes: canvas ID → node type string
+      nodeTypes:    Object.fromEntries(nodes.map((n) => [n.canvasId, n.type])),
+      // nodeConfigs: canvas ID → { params, _internalParams }
       nodeConfigs:  Object.fromEntries(nodes.map((n) => [
-        n.idx,
+        n.canvasId,
         { params: n.params ?? {}, _internalParams: n.internalParams ?? {} },
       ])),
-      // paramVisibility: index → { paramId → visibility } (Bug 1 fix)
+      // paramVisibility: canvas ID → { paramId → visibility }
       paramVisibility: Object.fromEntries(
         nodes
           .filter((n) => n.paramVisibility)
-          .map((n) => [n.idx, n.paramVisibility!])
+          .map((n) => [n.canvasId, n.paramVisibility!])
       ),
-      // Connections use canvas IDs (real production format)
+      // Connections use canvas IDs (matching production format)
       connections: connections.map((c, i) => ({
         id: `c${i}`,
         from: { nodeId: c.fromCanvasId, port: c.fromPort },
@@ -188,10 +186,98 @@ function makePW(
       // New v2 publish config fields
       inputs: [],
       exposedParams: [],
-      outputs: [],
+      outputs: configOutputs,
     },
   };
 }
+
+// ─── Output ID format and composite chain tests ────────────────────────────────
+describe('14.4 Output ID format: composite → export with correct output.id', () => {
+  // Reproduces the bug found in production JSON:
+  // output.id was just 'node-4' (canvas ID) without ':image' suffix,
+  // causing handleRun's output mapping to fall through to the wrong fallback
+  // and display the first load-image result instead of the composite result.
+
+  it('correct output.id format (node-3:image) returns composite result', async () => {
+    const pwEx = new PublishedWorkflowExecutor({
+      'load-image': mockLoadImage('blue'),
+      'load-image2': mockLoadImage('red'),
+      'composite':  mockComposite('normal', 1),
+      'export':     mockExport('png'),
+    });
+
+    // Production structure: composite node-3 is the final output node
+    // configOutputs uses PublishedOutputConfig format (nodeId + format + label)
+    const pw = makePW(
+      [
+        { canvasId: 'node-1', type: 'load-image', params: { url: 'test://blue.png' } },
+        { canvasId: 'node-2', type: 'load-image', params: { url: 'test://red.png' } },
+        { canvasId: 'node-3', type: 'composite',  params: { blendMode: 'normal', opacity: 1 } },
+        { canvasId: 'node-4', type: 'export',     params: { format: 'png' } },
+      ],
+      [
+        { fromCanvasId: 'node-1', fromPort: 'image', toCanvasId: 'node-3', toPort: 'base' },
+        { fromCanvasId: 'node-2', fromPort: 'image', toCanvasId: 'node-3', toPort: 'overlay' },
+        { fromCanvasId: 'node-3', fromPort: 'image', toCanvasId: 'node-4', toPort: 'image' },
+      ],
+      [],
+      [], // top-level outputs (unused in v2; config.outputs is used)
+      // CORRECT v2 format: PublishedOutputConfig[] — nodeId is the canvas ID
+      [
+        { nodeId: 'node-3', label: '输出', format: 'png' },
+      ]
+    );
+
+    const result = await pwEx.execute(pw, { inputs: {} });
+    expect(result.status).toBe('done');
+
+    // executorResults is keyed by canvas ID
+    // composite result (node-3) has type='composite' and previewUrl at top level
+    const compositeResult = result.results['node-3'] as Record<string, unknown>;
+    expect(compositeResult).toMatchObject({ type: 'composite' });
+    expect(compositeResult.previewUrl).toBeDefined();
+  });
+
+  it('wrong output.id (no colon, canvas ID only) falls back to first node with previewUrl — proves the bug', async () => {
+    const pwEx = new PublishedWorkflowExecutor({
+      'load-image': mockLoadImage('blue'),
+      'load-image2': mockLoadImage('red'),
+      'composite':  mockComposite('normal', 1),
+      'export':     mockExport('png'),
+    });
+
+    const pw = makePW(
+      [
+        { canvasId: 'node-1', type: 'load-image', params: { url: 'test://blue.png' } },
+        { canvasId: 'node-2', type: 'load-image', params: { url: 'test://red.png' } },
+        { canvasId: 'node-3', type: 'composite',  params: { blendMode: 'normal', opacity: 1 } },
+        { canvasId: 'node-4', type: 'export',     params: { format: 'png' } },
+      ],
+      [
+        { fromCanvasId: 'node-1', fromPort: 'image', toCanvasId: 'node-3', toPort: 'base' },
+        { fromCanvasId: 'node-2', fromPort: 'image', toCanvasId: 'node-3', toPort: 'overlay' },
+        { fromCanvasId: 'node-3', fromPort: 'image', toCanvasId: 'node-4', toPort: 'image' },
+      ],
+      [],
+      [],
+      // WRONG format: canvas ID only (node-1), NOT the actual output node
+      [
+        { nodeId: 'node-1', label: '输出', format: 'png' },
+      ]
+    );
+
+    const result = await pwEx.execute(pw, { inputs: {} });
+    expect(result.status).toBe('done');
+
+    // executor result for node-1 (load-image blue)
+    const node1Result = result.results['node-1'] as Record<string, unknown>;
+    expect(node1Result).toMatchObject({ type: 'load-image' });
+    expect(node1Result.previewUrl).toBeDefined();
+
+    // The wrong format (nodeId pointing to load-image instead of composite)
+    // shows that picking the wrong node gets the wrong result
+  });
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TASK 14.1: LoadImage → Export complete chain
@@ -524,8 +610,8 @@ describe('14.3 PublishedWorkflowExecutor publish-run end-to-end', () => {
 
     const pw = makePW(
       [
-        { canvasId: 'canvas-0', idx: '0', type: 'load-image', params: { url: 'test://blue.png' } },
-        { canvasId: 'canvas-1', idx: '1', type: 'export',     params: { format: 'png' } },
+        { canvasId: 'canvas-0', type: 'load-image', params: { url: 'test://blue.png' } },
+        { canvasId: 'canvas-1', type: 'export',     params: { format: 'png' } },
       ],
       [
         // Connections use canvas IDs, NOT index strings
@@ -536,7 +622,7 @@ describe('14.3 PublishedWorkflowExecutor publish-run end-to-end', () => {
     const result = await pwEx.execute(pw, { inputs: {} });
 
     expect(result.status).toBe('done');
-    const out = result.results['1'] as Record<string, unknown>;
+    const out = result.results['canvas-1'] as Record<string, unknown>;
     expect(out).toHaveProperty('dataUrl');
     expect(String(out.dataUrl)).toMatch(/^data:image\/png;base64,/);
     expect(out).toMatchObject({ width: 4, height: 4, mimeType: 'image/png' });
@@ -561,21 +647,21 @@ describe('14.3 PublishedWorkflowExecutor publish-run end-to-end', () => {
       'export':     mockExport('png'),
     });
 
-    // PublishedInput.id format: "{nodeIdx}:{portId}"
+    // PublishedInput.id format: "{canvasId}:{portId}" (canvas ID-based)
     const pw = makePW(
       [
-        { canvasId: 'canvas-0', idx: '0', type: 'load-image', params: {} },
-        { canvasId: 'canvas-1', idx: '1', type: 'export',     params: { format: 'png' } },
+        { canvasId: 'canvas-0', type: 'load-image', params: {} },
+        { canvasId: 'canvas-1', type: 'export',     params: { format: 'png' } },
       ],
       [
         { fromCanvasId: 'canvas-0', fromPort: 'image', toCanvasId: 'canvas-1', toPort: 'image' },
       ],
       [
-        { id: '0:image', name: 'Image', type: 'image', visible: true, required: true },
+        { id: 'canvas-0:image', name: 'Image', type: 'image', visible: true, required: true },
       ]
     );
 
-    await pwEx.execute(pw, { inputs: { '0:image': 'user-provided-url.jpg' } });
+    await pwEx.execute(pw, { inputs: { 'canvas-0:image': 'user-provided-url.jpg' } });
     expect(capturedUrl).toBe('user-provided-url.jpg');
   });
 
@@ -605,8 +691,8 @@ describe('14.3 PublishedWorkflowExecutor publish-run end-to-end', () => {
     // nodeConfig.params: format='png'; exposedParams overrides → 'jpeg'
     const pw = makePW(
       [
-        { canvasId: 'canvas-0', idx: '0', type: 'load-image', params: { url: 'test://blue.png' } },
-        { canvasId: 'canvas-1', idx: '1', type: 'export',     params: { format: 'png' } },
+        { canvasId: 'canvas-0', type: 'load-image', params: { url: 'test://blue.png' } },
+        { canvasId: 'canvas-1', type: 'export',     params: { format: 'png' } },
       ],
       [
         { fromCanvasId: 'canvas-0', fromPort: 'image', toCanvasId: 'canvas-1', toPort: 'image' },
@@ -615,7 +701,7 @@ describe('14.3 PublishedWorkflowExecutor publish-run end-to-end', () => {
 
     await pwEx.execute(pw, {
       inputs: {},
-      exposedParams: { '1': { format: 'jpeg' } },
+      exposedParams: { 'canvas-1': { format: 'jpeg' } },
     });
 
     expect(usedFormat).toBe('jpeg');
@@ -655,8 +741,8 @@ describe('14.3 PublishedWorkflowExecutor publish-run end-to-end', () => {
 
     const pw = makePW(
       [
-        { canvasId: 'canvas-0', idx: '0', type: 'load-image', params: { url: 'test://blue.png' } },
-        { canvasId: 'canvas-1', idx: '1', type: 'export',     params: { format: 'png' } },
+        { canvasId: 'canvas-0', type: 'load-image', params: { url: 'test://blue.png' } },
+        { canvasId: 'canvas-1', type: 'export',     params: { format: 'png' } },
       ],
       [
         { fromCanvasId: 'canvas-0', fromPort: 'image', toCanvasId: 'canvas-1', toPort: 'image' },
@@ -684,8 +770,8 @@ describe('14.3 PublishedWorkflowExecutor publish-run end-to-end', () => {
 
     const pw = makePW(
       [
-        { canvasId: 'canvas-0', idx: '0', type: 'load-image', params: { url: 'test://blue.png' } },
-        { canvasId: 'canvas-1', idx: '1', type: 'export',     params: { format: 'png' } },
+        { canvasId: 'canvas-0', type: 'load-image', params: { url: 'test://blue.png' } },
+        { canvasId: 'canvas-1', type: 'export',     params: { format: 'png' } },
       ],
       [
         { fromCanvasId: 'canvas-0', fromPort: 'image', toCanvasId: 'canvas-1', toPort: 'image' },
@@ -711,8 +797,8 @@ describe('14.3 PublishedWorkflowExecutor publish-run end-to-end', () => {
     // Build a cyclic workflow: 0 → 1 → 0
     const pw = makePW(
       [
-        { canvasId: 'canvas-0', idx: '0', type: 'load-image', params: { url: 'test://blue.png' } },
-        { canvasId: 'canvas-1', idx: '1', type: 'export',     params: { format: 'png' } },
+        { canvasId: 'canvas-0', type: 'load-image', params: { url: 'test://blue.png' } },
+        { canvasId: 'canvas-1', type: 'export',     params: { format: 'png' } },
       ],
       [
         { fromCanvasId: 'canvas-0', fromPort: 'image', toCanvasId: 'canvas-1', toPort: 'image' },
@@ -736,8 +822,8 @@ describe('14.3 PublishedWorkflowExecutor publish-run end-to-end', () => {
 
     const pw = makePW(
       [
-        { canvasId: 'canvas-0', idx: '0', type: 'load-image', params: { url: 'test://blue.png' } },
-        { canvasId: 'canvas-1', idx: '1', type: 'export',     params: { format: 'png' } },
+        { canvasId: 'canvas-0', type: 'load-image', params: { url: 'test://blue.png' } },
+        { canvasId: 'canvas-1', type: 'export',     params: { format: 'png' } },
       ],
       [
         { fromCanvasId: 'canvas-0', fromPort: 'image', toCanvasId: 'canvas-1', toPort: 'image' },
@@ -746,7 +832,7 @@ describe('14.3 PublishedWorkflowExecutor publish-run end-to-end', () => {
 
     const result = await pwEx.execute(pw, { inputs: {} });
     expect(result.status).toBe('done');
-    expect(result.results['1']).toMatchObject({ mimeType: 'image/png' });
+    expect(result.results['canvas-1']).toMatchObject({ mimeType: 'image/png' });
   });
 
   // Missing scenario: paramVisibility controls which params are in nodeConfigs
@@ -774,9 +860,9 @@ describe('14.3 PublishedWorkflowExecutor publish-run end-to-end', () => {
     // Node 1 has both a visible param (format) and a hidden param (quality)
     const pw = makePW(
       [
-        { canvasId: 'canvas-0', idx: '0', type: 'load-image', params: { url: 'test://blue.png' } },
+        { canvasId: 'canvas-0', type: 'load-image', params: { url: 'test://blue.png' } },
         {
-          canvasId: 'canvas-1', idx: '1', type: 'export',
+          canvasId: 'canvas-1', type: 'export',
           params:     { format: 'png', quality: 0.5 },
           internalParams: {},
           // paramVisibility marks quality as hidden
@@ -796,6 +882,55 @@ describe('14.3 PublishedWorkflowExecutor publish-run end-to-end', () => {
     // This is expected: _internalParams are merged into mergedParams so executor can read them
     expect(receivedParams).toHaveProperty('quality');
     expect(receivedParams['format']).toBe('png');
+  });
+
+  // Bug fix: composite node with published workflow + user inputs
+  it('composite: load-image(base) + load-image(overlay) → composite → export via PublishedWorkflowExecutor', async () => {
+    // Test the complete published executor chain for a composite workflow.
+    // Simulates: base load-image → overlay load-image → composite → export
+    const pwEx = new PublishedWorkflowExecutor({
+      'load-image': mockLoadImage('blue'),
+      'composite':  mockComposite('normal', 1),
+      'export':     mockExport('png'),
+    });
+
+    // canvas-0: base image (blue 4×4)
+    // canvas-1: overlay image (red 4×4)
+    // canvas-2: composite (uses base + overlay)
+    // canvas-3: export
+    const pw = makePW(
+      [
+        { canvasId: 'canvas-0', type: 'load-image', params: { url: 'test://blue.png' } },
+        { canvasId: 'canvas-1', type: 'load-image', params: { url: 'test://red.png' } },
+        { canvasId: 'canvas-2', type: 'composite',  params: { blendMode: 'normal', opacity: 1 } },
+        { canvasId: 'canvas-3', type: 'export',     params: { format: 'png' } },
+      ],
+      [
+        // base load-image → composite
+        { fromCanvasId: 'canvas-0', fromPort: 'image', toCanvasId: 'canvas-2', toPort: 'base' },
+        // overlay load-image → composite
+        { fromCanvasId: 'canvas-1', fromPort: 'image', toCanvasId: 'canvas-2', toPort: 'overlay' },
+        // composite → export
+        { fromCanvasId: 'canvas-2', fromPort: 'image', toCanvasId: 'canvas-3', toPort: 'image' },
+      ],
+      [], // no user inputs
+      []  // no published outputs (we'll check executor results directly)
+    );
+
+    const result = await pwEx.execute(pw, { inputs: {} });
+
+    // All nodes should succeed
+    expect(result.status).toBe('done');
+
+    // Composite node receives both base and overlay
+    const compositeResult = result.results['canvas-2'] as Record<string, unknown>;
+    expect(compositeResult).toHaveProperty('previewUrl');
+    expect(compositeResult).toMatchObject({ width: 4, height: 4, type: 'composite' });
+
+    // Export node produces a data URL
+    const exportResult = result.results['canvas-3'] as Record<string, unknown>;
+    expect(exportResult).toHaveProperty('dataUrl');
+    expect(exportResult).toMatchObject({ width: 4, height: 4, mimeType: 'image/png' });
   });
 
   // Bug 2 verification: nodeIndexMap fallback for old data without it

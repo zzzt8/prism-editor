@@ -153,13 +153,17 @@ export const WorkflowRunPage: React.FC = () => {
         const executorResults = result.results;
 
         for (const output of selectedWorkflow.outputs) {
+          // v2 output.id format: '{nodeId}:{portId}' (e.g. 'node-4:image')
           const colonIdx = output.id.indexOf(':');
           if (colonIdx > 0) {
-            const nodeId = output.id.slice(0, colonIdx);
-            const portId = output.id.slice(colonIdx + 1);
-            const nodeOutputs = executorResults[nodeId];
-            if (nodeOutputs && portId in nodeOutputs) {
-              outputs[output.id] = nodeOutputs[portId];
+            const nodeId = output.id.slice(0, colonIdx);   // e.g. 'node-4'
+            const portId = output.id.slice(colonIdx + 1);   // e.g. 'image' (ignored for IMAGE type)
+            const nodeOutputs = executorResults[nodeId] as Record<string, unknown> | undefined;
+            if (nodeOutputs && Object.keys(nodeOutputs).length > 0) {
+              // Executor outputs (both composite and export) have previewUrl/dataUrl at the
+              // top level. Use the node result directly — the OutputPreview component
+              // knows how to extract previewUrl from any valid image executor output.
+              outputs[output.id] = nodeOutputs;
               continue;
             }
           }
@@ -194,7 +198,8 @@ export const WorkflowRunPage: React.FC = () => {
   const configOutputs = selectedWorkflow.config.outputs;
   const effectiveOutputs = configOutputs && configOutputs.length > 0
     ? configOutputs.map((co) => ({
-        id: co.nodeId,
+        // v2 format: id must be {nodeId}:{portId} to match handleRun's indexOf(':') parsing
+        id: `${co.nodeId}:image`,
         name: co.label,
         type: 'image' as const,
       }))

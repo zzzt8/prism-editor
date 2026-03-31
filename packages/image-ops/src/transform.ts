@@ -3,6 +3,10 @@
 // ImageData is a browser built-in
 type ImageData = globalThis.ImageData;
 import type { TransformOptions } from '@prism/shared-types';
+import { unwrapImageData } from '@prism/shared-types';
+import { getImageMemoryManager } from './memory-manager';
+import type { NodeExecutor, TransformExecutorOutput } from '@prism/shared-types';
+import type { ExecutionContext } from '@prism/shared-types';
 
 function createCanvas(
   width: number,
@@ -218,3 +222,80 @@ export function flipVertical(imageData: ImageData): ImageData {
 
   return result;
 }
+
+// ─── Transform executor ────────────────────────────────────────────────────────
+
+export const transformExecutor: NodeExecutor = async (
+  inputs,
+  params,
+  ctx: ExecutionContext
+) => {
+  const rawImage = ctx.requireInput<Parameters<typeof unwrapImageData>[0]>('image', 'Transform');
+  const image = unwrapImageData(rawImage);
+  if (!image) throw new Error('image input must be ImageData for Transform');
+
+  const translateX = (params['translateX'] as number) ?? 0;
+  const translateY = (params['translateY'] as number) ?? 0;
+  const scaleX = (params['scaleX'] as number) ?? 1;
+  const scaleY = (params['scaleY'] as number) ?? 1;
+  const rotation = (params['rotation'] as number) ?? 0;
+  const cropX = (params['cropX'] as number) ?? 0;
+  const cropY = (params['cropY'] as number) ?? 0;
+  const cropWidth = (params['cropWidth'] as number) ?? 0;
+  const cropHeight = (params['cropHeight'] as number) ?? 0;
+
+  const transformed = transformImage(image, {
+    translateX: 0,
+    translateY: 0,
+    scaleX,
+    scaleY,
+    rotation,
+    cropX,
+    cropY,
+    cropWidth,
+    cropHeight,
+  });
+
+  const finalX = Math.floor(translateX);
+  const finalY = Math.floor(translateY);
+  const finalW = Math.max(0, transformed.width + finalX);
+  const finalH = Math.max(0, transformed.height + finalY);
+
+  let finalData: ImageData;
+  if (finalW === 0 || finalH === 0) {
+    finalData = new ImageData(1, 1);
+  } else if (finalX !== 0 || finalY !== 0) {
+    const outCanvas = new OffscreenCanvas(finalW, finalH);
+    const outCtx = outCanvas.getContext('2d')!;
+    const srcCanvas = new OffscreenCanvas(transformed.width, transformed.height);
+    const sc = srcCanvas.getContext('2d')!;
+    sc.putImageData(transformed, 0, 0);
+    outCtx.drawImage(srcCanvas, finalX, finalY);
+    finalData = outCtx.getImageData(0, 0, finalW, finalH);
+  } else {
+    finalData = transformed;
+  }
+
+  const previewCanvas = new OffscreenCanvas(finalW, finalH);
+  const previewCtx = previewCanvas.getContext('2d');
+  if (!previewCtx) throw new Error('Failed to get 2D context for preview canvas');
+  previewCtx.putImageData(finalData, 0, 0);
+  const blob = await previewCanvas.convertToBlob({ type: 'image/png' });
+  const previewRef = getImageMemoryManager().createObjectURL(blob, finalW, finalH);
+
+  return {
+    type: 'transform',
+    image: {
+      data: finalData,
+      previewUrl: previewRef.url,
+      width: finalW,
+      height: finalH,
+      canvasWidth: finalW,
+      canvasHeight: finalH,
+      position: { x: finalX > 0 ? finalX : 0, y: finalY > 0 ? finalY : 0 },
+    },
+    previewUrl: previewRef.url,
+    width: finalW,
+    height: finalH,
+  } satisfies TransformExecutorOutput;
+};

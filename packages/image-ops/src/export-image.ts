@@ -4,6 +4,10 @@
 type ImageData = globalThis.ImageData;
 import type { ExportOptions } from '@prism/shared-types';
 import { resizeImageData } from './transform';
+import { unwrapImageData } from '@prism/shared-types';
+import { getImageMemoryManager } from './memory-manager';
+import type { NodeExecutor, ExportExecutorOutput } from '@prism/shared-types';
+import type { ExecutionContext } from '@prism/shared-types';
 
 /**
  * Creates a canvas with ImageData drawn on it.
@@ -168,3 +172,37 @@ async function blobToDataUrl(blob: Blob): Promise<string> {
     reader.readAsDataURL(blob);
   });
 }
+
+// ─── Export executor ────────────────────────────────────────────────────────────
+
+export const exportExecutor: NodeExecutor = async (
+  inputs,
+  _params,
+  ctx: ExecutionContext
+) => {
+  const rawImage = ctx.requireInput<Parameters<typeof unwrapImageData>[0]>('image', 'Export');
+  const image = unwrapImageData(rawImage);
+  if (!image) throw new Error('image input must be ImageData for Export');
+
+  const exportResult = await exportImage(image, {
+    format: 'png',
+    quality: 0.92,
+    width: 0,
+    height: 0,
+  });
+
+  const previewRef = getImageMemoryManager().createObjectURL(
+    exportResult.blob,
+    exportResult.width,
+    exportResult.height
+  );
+
+  return {
+    type: 'export',
+    previewUrl: previewRef.url,
+    width: exportResult.width,
+    height: exportResult.height,
+    mimeType: exportResult.mimeType,
+    dataUrl: exportResult.dataUrl,
+  } satisfies ExportExecutorOutput;
+};

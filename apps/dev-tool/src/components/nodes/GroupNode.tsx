@@ -13,6 +13,7 @@ import { useCanvasStore, type NodeGroup } from '../../store/canvasStore';
 
 interface GroupNodeData {
   group: NodeGroup;
+  [key: string]: unknown;
 }
 
 export type GroupNodeType = Node<GroupNodeData, 'groupNode'>;

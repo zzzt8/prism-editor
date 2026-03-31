@@ -1,13 +1,12 @@
+import type { CacheConfig } from '@prism/shared-types';
+
 // Execution result caching
 
-export interface CacheEntry {
-  result: Record<string, unknown>;
-  timestamp: number;
+export interface CacheEntry extends CacheConfig {
   /** Monotonically increasing counter — avoids floating-point precision issues
    * that make timestamp subtraction unreliable when entries are inserted
    * within the same millisecond. */
   accessCount: number;
-  inputsHash: string;
 }
 
 export interface ExecutionCache {

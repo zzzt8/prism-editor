@@ -86,11 +86,50 @@ function toMeta(pw: PublishedWorkflow): PublishedWorkflowMeta {
 }
 
 /**
+ * Strip base64 dataUrl from imageFile/maskFile params for user-input nodes only.
+ *
+ * For nodes exposed as user inputs (listed in config.inputs), the URL is injected
+ * at runtime via PublishedWorkflowExecutor.reconstruct() from inputValues — the
+ * stored dataUrl is not needed.
+ *
+ * For non-user-input nodes (e.g. a dev-set load-image used as internal data),
+ * we preserve the dataUrl so the executor can load it normally.
+ */
+function stripImageData(pw: PublishedWorkflow): PublishedWorkflow {
+  const userInputNodeIds = new Set((pw.config.inputs ?? []).map((ci) => ci.nodeId));
+
+  const configs = { ...pw.config, nodeConfigs: { ...pw.config.nodeConfigs } };
+  for (const [nodeId, cfg] of Object.entries(configs.nodeConfigs)) {
+    const isUserInput = userInputNodeIds.has(nodeId);
+    const params: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(cfg.params)) {
+      if (val && typeof val === 'object' && !Array.isArray(val)) {
+        const obj = val as Record<string, unknown>;
+        if ('dataUrl' in obj) {
+          if (isUserInput) {
+            // User-input nodes: strip dataUrl (URL comes from inputValues at runtime)
+            params[key] = { width: obj['width'], height: obj['height'], fileName: obj['fileName'] };
+          } else {
+            // Non-user-input nodes: preserve the full object (dataUrl included)
+            params[key] = obj;
+          }
+          continue;
+        }
+      }
+      params[key] = val;
+    }
+    configs.nodeConfigs[nodeId] = { ...cfg, params };
+  }
+  return { ...pw, config: configs };
+}
+
+/**
  * Save a published workflow into THIS app's localStorage.
  * Called on initial load, on broadcast-received events, and on manual import.
  */
 export function syncWorkflowToLocal(pw: PublishedWorkflow): void {
-  localStorage.setItem(`${PREFIX}${pw.sourceId}`, JSON.stringify(pw));
+  const safe = stripImageData(pw);
+  localStorage.setItem(`${PREFIX}${safe.sourceId}`, JSON.stringify(safe));
   const ids: string[] = loadIndex();
   if (!ids.includes(pw.sourceId)) {
     ids.push(pw.sourceId);

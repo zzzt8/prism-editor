@@ -64,7 +64,21 @@ export class PublishedWorkflowExecutor {
    * @param options  User inputs and executor options
    */
   async execute(pw: PublishedWorkflow, options: PublishedExecutorOptions): Promise<ExecutorResult> {
-    const workflow = this.reconstruct(pw, options.inputs, options.exposedParams);
+    let workflow: Workflow;
+    try {
+      workflow = this.reconstruct(pw, options.inputs, options.exposedParams);
+    } catch (err) {
+      // PublishedWorkflowExecutorVersionError: re-throw so the promise rejects
+      if (err instanceof PublishedWorkflowExecutorVersionError) {
+        throw err;
+      }
+      return {
+        workflowId: pw.id,
+        status: 'error',
+        results: {},
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
     return this.executor.execute(workflow, {
       signal: options.signal,
       onProgress: options.onProgress,
@@ -86,15 +100,20 @@ export class PublishedWorkflowExecutor {
     userInputs: Record<string, unknown>,
     exposedParams: Record<string, Record<string, unknown>> = {}
   ): Workflow {
-    const nodeTypes = pw.config.nodeTypes ?? {};
-    const nodeConfigMap = pw.config.nodeConfigs ?? {};
-
     // nodeTypes keys are canvas node IDs (UUIDs) — stable identifiers.
-    const nodeIds = Object.keys(nodeTypes);
+    const nodeTypesEntries = pw.config?.nodeTypes ?? {};
+    const nodeConfigMap = pw.config?.nodeConfigs ?? {};
+
+    // Missing nodeTypes means old published data — throw a version error.
+    if (Object.keys(nodeTypesEntries).length === 0) {
+      throw new PublishedWorkflowExecutorVersionError();
+    }
+
+    const nodeIds = Object.keys(nodeTypesEntries);
 
     // Build WorkflowNode array for each canvas nodeId.
     const nodes: WorkflowNode[] = nodeIds.map((nodeId) => {
-      const nodeType = nodeTypes[nodeId];
+      const nodeType = nodeTypesEntries[nodeId];
       const nodeConfig = nodeConfigMap[nodeId];
 
       // Merge order: _internalParams (developer-locked) → params (exposed defaults) → exposedParams (user override)
@@ -137,10 +156,13 @@ export class PublishedWorkflowExecutor {
 
     // Sort nodes in topological order so the executor runs them correctly.
     const topoResult = topologicalSort(nodes, pw.config.connections ?? []);
+    if (topoResult.hasCycle) {
+      throw new Error(
+        `Cycle detected in published workflow: ${(topoResult.cycleNodes ?? []).join(', ')}`
+      );
+    }
     const nodeById = new Map(nodes.map((n) => [n.id, n]));
-    const sortedNodes: WorkflowNode[] = topoResult.order
-      .map((id) => nodeById.get(id)!)
-      .filter(Boolean);
+    const sortedNodes: WorkflowNode[] = topoResult.order.map((id) => nodeById.get(id)!);
 
     // Connections: from/to already use canvas node IDs — pass through unchanged.
     const resolvedConnections: Connection[] = (pw.config.connections ?? []).map((conn) => ({
