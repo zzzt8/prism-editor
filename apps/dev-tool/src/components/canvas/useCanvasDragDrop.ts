@@ -1,5 +1,6 @@
 // useCanvasDragDrop — file drop handling for canvas
 // Supports: node creation via NodeSearchModal, image replacement via LoadImage/LoadMask nodes
+// Also manages isDraggingFromPanel state for canvas drag feedback overlay.
 
 import { useEffect } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
@@ -9,6 +10,31 @@ import type { useReactFlow } from '@xyflow/react';
 type ReactFlowInstance = ReturnType<typeof useReactFlow>;
 
 export function useCanvasDragDrop(reactFlowInstance: ReactFlowInstance) {
+  // Listen for dragstart on node cards to detect panel drags
+  useEffect(() => {
+    const setDragging = useCanvasStore.getState().setDraggingFromPanel;
+
+    const handleDragStart = (e: DragEvent) => {
+      const nodeType = e.dataTransfer?.types.includes('application/prism-node-type');
+      if (nodeType) {
+        setDragging(true);
+      }
+    };
+
+    const handleDragEnd = () => {
+      setDragging(false);
+    };
+
+    // Use a capture phase listener so we get it before the React handler
+    document.addEventListener('dragstart', handleDragStart, true);
+    document.addEventListener('dragend', handleDragEnd, true);
+
+    return () => {
+      document.removeEventListener('dragstart', handleDragStart, true);
+      document.removeEventListener('dragend', handleDragEnd, true);
+    };
+  }, []);
+
   useEffect(() => {
     const handleGlobalDragEnter = (_e: DragEvent) => {
       // No-op — handled on drop

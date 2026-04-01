@@ -42,7 +42,7 @@
 - [x] 1.4 定义端口类型颜色 CSS 变量（`--port-image` / `--port-mask` / `--port-number` 等）
 - [x] 1.5 定义 Group 样式：`.dcn-group` / `.dcn-group-header` / `.dcn-group-body`
 - [x] 1.6 定义 ContextMenu 样式：`.dcn-context-menu` / `.dcn-context-menu-item`
-- [ ] 1.7 验证：启动 dev-tool，所有现有节点样式正常，无布局错乱
+- [x] 1.7 验证：启动 dev-tool，所有现有节点样式正常，无布局错乱
 
 ## 2. 节点 UI 全面改造（PrismNode）
 
@@ -56,7 +56,7 @@
 - [x] 2.5 实现节点主体区：替换现有 Chips + 缩略图，为图像节点预留预览区布局
 - [x] 2.6 实现执行状态错误展示（保留现有逻辑，适配新样式）
 - [x] 2.7 实现选中态 / hover 态 / error 态 / running 态样式
-- [ ] 2.8 验证：LoadImage / Transform / ApplyMask / Composite / Export 五个节点均以新样式渲染
+- [x] 2.8 验证：LoadImage / Transform / ApplyMask / Composite / Export 五个节点均以新样式渲染
 
 ## 3. 端口类型颜色体系与连线颜色
 
@@ -68,7 +68,7 @@
 - [x] 3.3 改造 PrismEdge：从 sourceHandleId 获取源端口类型，读取 PORT_TYPE_COLORS 设置 `style.stroke`
 - [x] 3.4 实现连线 hover 高亮（opacity 提升，stroke-width 加粗）
 - [x] 3.5 实现连线 selected 高亮（使用选中态颜色）
-- [ ] 3.6 验证：从 LoadImage 拖出的 image 类型连线为蓝色，从 ApplyMask 拖出的 mask 类型连线为绿色；hover 时高亮
+- [x] 3.6 验证：从 LoadImage 拖出的 image 类型连线为蓝色，从 ApplyMask 拖出的 mask 类型连线为绿色；hover 时高亮
 
 ## 4. 节点 Resize 机制
 
@@ -81,7 +81,7 @@
 - [x] 4.3 设置图像节点 resize 范围：minWidth=200, minHeight=120, maxWidth=480, maxHeight=360
 - [x] 4.4 定义 `.dcn-node--resizing` 样式（resize 过程中节点边框高亮）
 - [x] 4.5 图像预览区使用 CSS `object-fit: contain` 响应容器尺寸变化
-- [ ] 4.6 验证：选中 LoadImage 节点，拖动右下角 resize handle，节点和预览图同步缩放；取消选中后 resize handle 消失
+- [x] 4.6 验证：选中 LoadImage 节点，拖动右下角 resize handle，节点和预览图同步缩放；取消选中后 resize handle 消失
 
 ## 5. 多选与分组
 
@@ -95,7 +95,7 @@
 - [x] 5.5 创建 `GroupNode.tsx`：圆角矩形背景 + 标题 + 整体拖动同步子节点
 > **已确认**：Group 拖动标题时同步移动所有子节点（Group 移动 = 批量 translate 子节点）
 - [x] 5.6 在 WorkflowCanvas 中监听键盘事件（按 G 且有多选节点时调用 `addGroup`）
-- [ ] 5.7 验证：选中 2-3 个节点，按 G 创建 Group；拖动 Group 标题，所有子节点同步移动
+- [x] 5.7 验证：选中 2-3 个节点，按 G 创建 Group；拖动 Group 标题，所有子节点同步移动
 
 ## 6. 节点右键上下文菜单
 
@@ -113,7 +113,7 @@
 - [x] 6.8 实现「最小化」：节点 data 中设置 `minimized=true`，PrismNode 渲染为仅标题
 - [x] 6.9 实现「删除」：调用 canvasStore `removeNode`，删除关联 edges
 - [x] 6.10 实现「节点信息」：选中节点，切换 Inspector 到「信息」Tab
-- [ ] 6.11 验证：右键 LoadImage 节点，弹出菜单，选择「删除」，节点和连线被移除
+- [x] 6.11 验证：右键 LoadImage 节点，弹出菜单，选择「删除」，节点和连线被移除
 
 ## 7. 图像节点重构（LoadImage / Transform / ApplyMask / Composite / Export）
 
@@ -125,34 +125,34 @@
 - [x] 7.1.1 节点主体改为：已选文件名 + 上传按钮 + 图像预览（固定比例框）+ 分辨率标签（`2100 × 2100`）
 - [x] 7.1.2 点击图像预览区域，显示「图像编辑指令」占位框（初版仅 UI 预留，暂不实现编辑逻辑）
 - [x] 7.1.3 左侧无输入端口，右侧输出 image（蓝色）+ mask（绿色）两个端口
-- [ ] 7.1.4 验证：添加 LoadImage 节点，上传图片，节点显示文件名 + 预览图 + 分辨率
+- [x] 7.1.4 验证：添加 LoadImage 节点，上传图片，节点显示文件名 + 预览图 + 分辨率
 
 ### 7.2 Transform 节点
 
 - [x] 7.2.1 节点主体内联展示：缩放算法（下拉）+ 宽度 + 高度 + 裁剪区域
 - [x] 7.2.2 输入 image（左侧蓝色），输出 image（右侧蓝色）
 - [x] 7.2.3 如果有输入图像来源，连线旁边显示输入分辨率（`1920 × 1080`）
-- [ ] 7.2.4 验证：LoadImage → Transform 连线，Transform 节点显示输入分辨率，Transform 预览显示处理结果
+- [x] 7.2.4 验证：LoadImage → Transform 连线，Transform 节点显示输入分辨率，Transform 预览显示处理结果
 
 ### 7.3 ApplyMask 节点
 
 - [x] 7.3.1 节点主体内联展示：mask type（下拉）+ threshold（slider）+ invert（toggle）
 - [x] 7.3.2 输入 image + mask（左侧蓝+绿色），输出 image（右侧蓝色）
 - [x] 7.3.3 如果有输入图像来源，显示输入图像分辨率
-- [ ] 7.3.4 验证：LoadImage → ApplyMask 连线，执行后 ApplyMask 预览正确
+- [x] 7.3.4 验证：LoadImage → ApplyMask 连线，执行后 ApplyMask 预览正确
 
 ### 7.4 Composite 节点
 
 - [x] 7.4.1 节点主体内联展示：blend mode（下拉）+ opacity（slider + value）
 - [x] 7.4.2 输入 base + overlay（左侧两个蓝色），输出 image（右侧蓝色）
-- [ ] 7.4.3 验证：LoadImage + LoadImage → Composite → PreviewImage，执行后合成效果正确
+- [x] 7.4.3 验证：LoadImage + LoadImage → Composite → PreviewImage，执行后合成效果正确
 
 ### 7.5 Export 节点
 
 - [x] 7.5.1 节点主体内联展示：format（PNG/JPEG/WebP）+ quality + 输出宽高
 - [x] 7.5.2 输入 image（左侧蓝色），输出 exported（右侧粉色/灰色）
 - [x] 7.5.3 节点内部无预览区（Export 专注导出）
-- [ ] 7.5.4 验证：LoadImage → Transform → Export，点击 Export 节点触发文件下载
+- [x] 7.5.4 验证：LoadImage → Transform → Export，点击 Export 节点触发文件下载
 
 ## 8. 新增 PreviewImage 节点
 
@@ -166,7 +166,7 @@
 - [x] 8.4 在 `workflow-core/src/executor.ts` 中注册 `preview-image` executor
 - [x] 8.5 创建 `PreviewImageNode.tsx`（可作为 PrismNode 子类或独立组件）：主体为大面积图像预览 + 分辨率标签 + 右下角 resize handle
 - [x] 8.6 在 `NodePanel` 中添加 PreviewImage 节点可拖拽项
-- [ ] 8.7 验证：LoadImage → PreviewImage 连线，PreviewImage 显示预览图，拖动 resize handle 预览区缩放
+- [x] 8.7 验证：LoadImage → PreviewImage 连线，PreviewImage 显示预览图，拖动 resize handle 预览区缩放
 
 ## 9. Inspector 三栏改造
 
@@ -179,7 +179,7 @@
 - [x] 9.4 创建 `Inspector/InfoPanel.tsx`：节点类型、节点 ID、输入/输出端口列表（含连接状态）、执行时间/状态
 - [x] 9.5 重构 `ParamPanel.tsx` 为 `Inspector/index.tsx`：Tab 容器 + 三个 Panel 条件渲染
 - [x] 9.6 实现 Tab 切换时保持 Panel 内部滚动位置
-- [ ] 9.7 验证：选中 LoadImage 节点，切换到「信息」Tab 显示节点类型和 ID；切换到「设置」Tab 可编辑别名
+- [x] 9.7 验证：选中 LoadImage 节点，切换到「信息」Tab 显示节点类型和 ID；切换到「设置」Tab 可编辑别名
 
 ## 10. 动态输入端口（Composite SettingsPanel）
 
@@ -193,7 +193,7 @@
 - [x] 10.4 在 SettingsPanel 中为 Composite 节点显示「+ 添加输入」按钮
 - [x] 10.5 点击「添加输入」，自动生成 `overlayN` 格式 id（如 overlay3），追加到 `extraInputs`
 - [x] 10.6 点击端口旁边的删除按钮，调用 `removeExtraInput`
-- [ ] 10.7 验证：选中 Composite 节点 → Settings → 添加 overlay3 输入 → 连线 LoadImage → Composite(overlay3) → 执行成功
+- [x] 10.7 验证：选中 Composite 节点 → Settings → 添加 overlay3 输入 → 连线 LoadImage → Composite(overlay3) → 执行成功
 
 ## 11. 端口命名统一验证（含强制规则 R1 执行）
 

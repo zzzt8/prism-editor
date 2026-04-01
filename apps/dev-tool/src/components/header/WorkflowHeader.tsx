@@ -1,62 +1,42 @@
-// WorkflowHeader - top bar with workflow management actions
+// WorkflowHeader - editor top bar
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  Box, Play, Square, CheckCircle2,
+  Loader2, FileUp, Settings, User,
+} from 'lucide-react';
 import { useCanvasStore } from '../../store/canvasStore';
-import { useWorkflowStore } from '../../store/workflowStore';
-import { SaveDialog } from './SaveDialog';
-import { OpenDialog } from './OpenDialog';
-import { PublishDialog } from './PublishDialog';
+import { useAppStore } from '../../store/appStore';
+import { PanelToggle } from './PanelToggle';
 
 interface WorkflowHeaderProps {
-  leftVisible?: boolean;
-  onToggleLeft?: () => void;
-  rightVisible?: boolean;
-  onToggleRight?: () => void;
+  onPublishClick: () => void;
+  publishStatus: 'idle' | 'loading' | 'done';
 }
 
-export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
-  leftVisible = true,
-  onToggleLeft,
-  rightVisible = true,
-  onToggleRight,
-}) => {
+export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({ onPublishClick, publishStatus }) => {
   const workflowMeta = useCanvasStore((s) => s.workflowMeta);
   const isDirty = useCanvasStore((s) => s.isDirty);
   const nodes = useCanvasStore((s) => s.nodes);
   const executionStatus = useCanvasStore((s) => s._executionStatus);
-  const currentNodeId = useCanvasStore((s) => s._currentNodeId);
   const executeWorkflow = useCanvasStore((s) => s.executeWorkflow);
   const cancelExecution = useCanvasStore((s) => s.cancelExecution);
-  const newWorkflow = useCanvasStore((s) => s.loadWorkflow);
   const importWorkflowFromFile = useCanvasStore((s) => s.importWorkflowFromFile);
-  const exportWorkflowAsJson = useCanvasStore((s) => s.exportWorkflowAsJson);
-  const loadSavedWorkflows = useWorkflowStore((s) => s.loadSavedWorkflows);
+  const renameWorkflow = useCanvasStore((s) => s.renameWorkflow);
+  const leftPanelOpen = useAppStore((s) => s.leftPanelOpen);
+  const rightPanelOpen = useAppStore((s) => s.rightPanelOpen);
 
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [showOpenDialog, setShowOpenDialog] = useState(false);
-  const [showPublishDialog, setShowPublishDialog] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
-  const [executingMsg, setExecutingMsg] = useState<string | null>(null);
-
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleValue, setTitleValue] = useState(workflowMeta.name);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  const isRunning = executionStatus === 'running';
 
   const showMsg = (msg: string) => {
     setStatusMsg(msg);
     setTimeout(() => setStatusMsg(null), 2500);
-  };
-
-  const handleNew = () => {
-    if (isDirty && !window.confirm('当前有未保存的更改，确定要新建工作流吗？')) return;
-    newWorkflow({
-      id: crypto.randomUUID(),
-      name: 'Untitled Workflow',
-      version: '1.0.0',
-      nodes: [],
-      connections: [],
-      inputs: [],
-      outputs: [],
-      metadata: { createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    });
   };
 
   const handleImportJson = () => {
@@ -76,7 +56,7 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
   };
 
   const handleExecute = async () => {
-    if (executionStatus === 'running') {
+    if (isRunning) {
       cancelExecution();
       return;
     }
@@ -84,145 +64,141 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
       showMsg('画布上没有节点');
       return;
     }
-    setExecutingMsg('执行中…');
     try {
       const result = await executeWorkflow();
-      if (result.status === 'done') {
-        showMsg('执行完成');
-      } else if (result.status === 'cancelled') {
-        showMsg('已取消');
-      } else {
-        showMsg(`执行出错: ${result.error}`);
-      }
+      if (result.status === 'done') showMsg('执行完成');
+      else if (result.status === 'cancelled') showMsg('已取消');
+      else showMsg(`执行出错: ${result.error}`);
     } catch (err) {
       showMsg(`执行出错: ${String(err)}`);
-    } finally {
-      setExecutingMsg(null);
     }
   };
 
-  const isRunning = executionStatus === 'running';
-  const executeLabel = isRunning ? '停止' : '执行';
-  const executeTitle = isRunning ? '停止执行' : '执行工作流';
+  const handlePublish = () => {
+    onPublishClick();
+  };
+
+  useEffect(() => {
+    if (!editingTitle) {
+      setTitleValue(workflowMeta.name);
+    }
+  }, [workflowMeta.name, editingTitle]);
+
+  const startEditTitle = () => {
+    setTitleValue(workflowMeta.name);
+    setEditingTitle(true);
+    setTimeout(() => titleInputRef.current?.select(), 0);
+  };
+
+  const saveTitle = () => {
+    const trimmed = titleValue.trim();
+    if (trimmed && trimmed !== workflowMeta.name) {
+      renameWorkflow(trimmed);
+    }
+    setEditingTitle(false);
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') saveTitle();
+    if (e.key === 'Escape') setEditingTitle(false);
+  };
 
   return (
     <>
-      <header className="dev-tool-header">
-        <div className="dev-tool-header-left">
-          <h1 className="dev-tool-title">Prism Editor</h1>
-          <span className="dev-tool-subtitle">
-            {workflowMeta.name}
-            {isDirty && <span className="dirty-dot" title="有未保存的更改">●</span>}
+      <header className="wf-header">
+        {/* ── Left Zone ─────────────────────────────── */}
+        <div className="wf-header-left">
+          <div className="wf-logo-group">
+            <div className="wf-logo-icon">
+              <Box size={16} />
+            </div>
+            <span className="wf-logo-text">Prism Editor</span>
+          </div>
+
+          <span className="wf-sep">/</span>
+
+          {editingTitle ? (
+            <input
+              ref={titleInputRef}
+              className="wf-title-input"
+              value={titleValue}
+              onChange={(e) => setTitleValue(e.target.value)}
+              onBlur={saveTitle}
+              onKeyDown={handleTitleKeyDown}
+              maxLength={64}
+            />
+          ) : (
+            <span
+              className="wf-workflow-name"
+              title="双击修改标题"
+              onDoubleClick={startEditTitle}
+            >
+              {workflowMeta.name}
+            </span>
+          )}
+
+          <span className={`wf-save-badge ${isDirty ? 'wf-save-badge--dirty' : 'wf-save-badge--saved'}`}>
+            <span className="wf-save-dot" />
+            {isDirty ? 'DRAFT' : 'SAVED'}
           </span>
         </div>
 
-        <div className="dev-tool-header-actions">
-          {onToggleLeft && (
-            <button
-              className={`header-panel-toggle ${leftVisible ? 'header-panel-toggle--active' : ''}`}
-              onClick={onToggleLeft}
-              title={leftVisible ? '隐藏节点面板' : '显示节点面板'}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <path d="M9 3v18"/>
-              </svg>
-              <span>节点</span>
-            </button>
-          )}
+        {/* ── Center Zone ──────────────────────────── */}
+        <div className="wf-header-center">
+          <PanelToggle />
+        </div>
 
-          {onToggleRight && (
-            <button
-              className={`header-panel-toggle ${rightVisible ? 'header-panel-toggle--active' : ''}`}
-              onClick={onToggleRight}
-              title={rightVisible ? '隐藏属性面板' : '显示属性面板'}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <path d="M15 3v18"/>
-              </svg>
-              <span>属性</span>
-            </button>
-          )}
-
-          <div className="header-divider" />
-          <button className="header-btn" onClick={handleNew} title="新建工作流">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="12" y1="18" x2="12" y2="12"/>
-              <line x1="9" y1="15" x2="15" y2="15"/>
-            </svg>
-            新建
-          </button>
-
-          <button className="header-btn" onClick={() => { loadSavedWorkflows(); setShowOpenDialog(true); }} title="打开工作流">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-            </svg>
-            打开
-          </button>
-
-          <button className="header-btn header-btn-primary" onClick={() => setShowSaveDialog(true)} title="保存工作流">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-              <polyline points="17 21 17 13 7 13 7 21"/>
-              <polyline points="7 3 7 8 15 8"/>
-            </svg>
-            保存
-          </button>
-
-          <button className="header-btn header-btn-publish" onClick={() => setShowPublishDialog(true)} title="发布工作流">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="17 1 21 5 17 9"/>
-              <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
-              <polyline points="7 23 3 19 7 15"/>
-              <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-            </svg>
-            发布
-          </button>
-
+        {/* ── Right Zone ──────────────────────────── */}
+        <div className="wf-header-right">
+          {/* Execute — purple, like homepage */}
           <button
-            className={`header-btn header-btn-execute ${isRunning ? 'header-btn-execute--running' : 'header-btn-execute--ready'}`}
+            className={`wf-execute-btn ${isRunning ? 'wf-execute-btn--running' : 'wf-execute-btn--ready'}`}
             onClick={handleExecute}
             disabled={!isRunning && nodes.length === 0}
-            title={executeTitle}
+            title={isRunning ? '停止执行' : '执行工作流'}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              {isRunning ? (
-                <>
-                  <rect x="6" y="6" width="12" height="12" rx="1"/>
-                </>
-              ) : (
-                <polygon points="5 3 19 12 5 21 5 3"/>
-              )}
-            </svg>
-            {executeLabel}
-            {executingMsg && <span className="execute-spinner" />}
+            {isRunning ? (
+              <Square size={14} fill="currentColor" />
+            ) : (
+              <Play size={14} fill="currentColor" />
+            )}
+            {isRunning ? '停止' : 'Execute'}
           </button>
 
-          <div className="header-divider" />
-
-          <button className="header-btn" onClick={exportWorkflowAsJson} title="导出为 JSON 文件">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            导出
+          {/* Publish */}
+          <button
+            className="wf-publish-btn"
+            onClick={handlePublish}
+            title="发布工作流"
+            disabled={publishStatus === 'loading'}
+          >
+            {publishStatus === 'loading' ? (
+              <Loader2 size={14} className="wf-spin" />
+            ) : publishStatus === 'done' ? (
+              <CheckCircle2 size={14} />
+            ) : (
+              <FileUp size={14} />
+            )}
+            Publish
           </button>
 
-          <button className="header-btn" onClick={handleImportJson} title="从 JSON 文件导入">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
-            导入
+          {/* Import JSON */}
+          <button className="wf-icon-btn" onClick={handleImportJson} title="导入 JSON">
+            <FileUp size={14} />
+          </button>
+
+          {/* Settings */}
+          <button className="wf-icon-btn" title="Settings" onClick={() => showMsg('Settings coming soon')}>
+            <Settings size={14} />
+          </button>
+
+          {/* User */}
+          <button className="wf-icon-btn" title="User" onClick={() => showMsg('User settings coming soon')}>
+            <User size={14} />
           </button>
         </div>
 
-        {statusMsg && <span className="header-status">{statusMsg}</span>}
+        {statusMsg && <span className="wf-status-msg">{statusMsg}</span>}
 
         <input
           ref={fileInputRef}
@@ -233,9 +209,289 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
         />
       </header>
 
-      {showSaveDialog && <SaveDialog onClose={() => setShowSaveDialog(false)} />}
-      {showOpenDialog && <OpenDialog onClose={() => setShowOpenDialog(false)} />}
-      {showPublishDialog && <PublishDialog onClose={() => setShowPublishDialog(false)} />}
+      <style>{`
+        .wf-header {
+          height: 56px;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 24px;
+          background: #18181b;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          position: relative;
+          gap: 12px;
+          z-index: 40;
+        }
+
+        /* Left Zone */
+        .wf-header-left {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex: 1;
+          min-width: 0;
+        }
+
+        .wf-logo-group {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-shrink: 0;
+        }
+
+        .wf-logo-icon {
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          background: #a855f7;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+        }
+
+        .wf-logo-text {
+          font-size: 15px;
+          font-weight: 700;
+          color: #f4f4f5;
+          letter-spacing: -0.02em;
+        }
+
+        .wf-sep {
+          color: rgba(255, 255, 255, 0.15);
+          font-size: 15px;
+          font-weight: 400;
+          flex-shrink: 0;
+        }
+
+        .wf-workflow-name {
+          font-size: 15px;
+          font-weight: 500;
+          color: #a1a1aa;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          cursor: text;
+          transition: color 0.12s;
+          flex: 1;
+          min-width: 0;
+        }
+        .wf-workflow-name:hover {
+          color: #f4f4f5;
+        }
+
+        .wf-title-input {
+          flex: 1;
+          min-width: 0;
+          font-size: 15px;
+          font-weight: 500;
+          color: #f4f4f5;
+          background: #27272a;
+          border: 1px solid #a855f7;
+          border-radius: 6px;
+          padding: 2px 8px;
+          outline: none;
+          font-family: inherit;
+          box-shadow: 0 0 0 2px rgba(177, 161, 255, 0.15);
+        }
+
+        .wf-save-badge {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+          padding: 2px 7px;
+          border-radius: 9999px;
+          border: 1px solid;
+          flex-shrink: 0;
+        }
+
+        .wf-save-badge--saved {
+          color: #4ade80;
+          background: rgba(74, 222, 128, 0.1);
+          border-color: rgba(74, 222, 128, 0.25);
+        }
+
+        .wf-save-badge--dirty {
+          color: #f59e0b;
+          background: rgba(245, 158, 11, 0.1);
+          border-color: rgba(245, 158, 11, 0.25);
+        }
+
+        .wf-save-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: currentColor;
+        }
+
+        /* Center Zone */
+        .wf-header-center {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        /* PanelToggle styles */
+        .panel-toggle-pill {
+          display: flex;
+          align-items: center;
+          background: transparent;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 6px;
+          padding: 3px;
+          gap: 2px;
+        }
+
+        .panel-toggle-btn {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 4px 10px;
+          border: none;
+          background: transparent;
+          color: #a1a1aa;
+          font-size: 12px;
+          font-weight: 500;
+          cursor: pointer;
+          border-radius: 6px;
+          font-family: inherit;
+          transition: background 0.12s, color 0.12s;
+          white-space: nowrap;
+        }
+        .panel-toggle-btn:hover {
+          background: #27272a;
+          color: #f4f4f5;
+        }
+        .panel-toggle-btn--active {
+          background: #27272a;
+          color: #f4f4f5;
+        }
+
+        /* Right Zone */
+        .wf-header-right {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex: 1;
+          justify-content: flex-end;
+        }
+
+        .wf-execute-btn {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          padding: 5px 12px;
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          border: 1px solid;
+          font-family: inherit;
+          transition: opacity 0.12s, transform 0.12s;
+        }
+        .wf-execute-btn:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+        /* Purple — matches homepage accent */
+        .wf-execute-btn--ready {
+          color: #ffffff;
+          background: #a855f7;
+          border-color: #a855f7;
+        }
+        .wf-execute-btn--ready:hover:not(:disabled) {
+          background: #c084fc;
+          border-color: #c084fc;
+        }
+        /* Stop button stays red */
+        .wf-execute-btn--running {
+          color: #fff;
+          background: #dc2626;
+          border-color: #dc2626;
+        }
+        .wf-execute-btn--running:hover {
+          background: #b91c1c;
+          border-color: #b91c1c;
+        }
+
+        .wf-publish-btn {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          padding: 5px 12px;
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          border: 1px solid rgba(177, 161, 255, 0.35);
+          background: rgba(177, 161, 255, 0.08);
+          color: #c084fc;
+          font-family: inherit;
+          transition: background 0.12s, color 0.12s;
+        }
+        .wf-publish-btn:hover:not(:disabled) {
+          background: rgba(177, 161, 255, 0.18);
+          color: #c084fc;
+        }
+        .wf-publish-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .wf-icon-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 32px;
+          height: 32px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: transparent;
+          color: #a1a1aa;
+          cursor: pointer;
+          border-radius: 6px;
+          transition: background 0.12s, color 0.12s, border-color 0.12s;
+        }
+        .wf-icon-btn:hover {
+          background: #27272a;
+          color: #f4f4f5;
+          border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .wf-spin {
+          animation: wf-spin 0.8s linear infinite;
+        }
+
+        @keyframes wf-spin {
+          to { transform: rotate(360deg); }
+        }
+
+        .wf-status-msg {
+          position: absolute;
+          left: 50%;
+          transform: translateX(-50%);
+          bottom: -28px;
+          background: #27272a;
+          color: #c084fc;
+          font-size: 11px;
+          padding: 4px 10px;
+          border-radius: 6px;
+          white-space: nowrap;
+          z-index: 100;
+          animation: fadeIn 0.15s ease;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          border: 1px solid rgba(177, 161, 255, 0.15);
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `}</style>
     </>
   );
 };

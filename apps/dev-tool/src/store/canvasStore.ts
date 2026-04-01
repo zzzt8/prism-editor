@@ -1,12 +1,36 @@
 // Canvas store - manages workflow canvas state using Zustand
 
 import { create } from 'zustand';
-import type { Connection, Workflow, WorkflowNode, ExecutionProgress } from '@prism/shared-types';
-import type { NodeDefinition, PortDataType } from '@prism/shared-types';
+import type { NodeChange, EdgeChange, Connection } from '@xyflow/react';
+import type { Workflow, WorkflowNode, ExecutionProgress, NodeDefinition, PortDataType } from '@prism/shared-types';
 import { canConnectByDataType } from '@prism/shared-types';
 import { createRegistry } from '@prism/node-definitions';
 import { localStorageAdapter } from '../storage';
 import { PORT_TYPE_COLORS } from '../utils/portTypeStyles';
+
+const AUTO_SAVE_DELAY_MS = 1500;
+
+let nodeCounter = 0;
+let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+function cancelAutoSave(): void {
+  if (autoSaveTimer !== null) {
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = null;
+  }
+}
+
+function scheduleAutoSave(saveFn: () => Promise<void>, onDone: () => void): void {
+  cancelAutoSave();
+  autoSaveTimer = setTimeout(async () => {
+    autoSaveTimer = null;
+    try {
+      await saveFn();
+    } finally {
+      onDone();
+    }
+  }, AUTO_SAVE_DELAY_MS);
+}
 
 /** Result of a connection validation check (enhanced with PortDataType) */
 export interface ConnectionValidation {
@@ -93,6 +117,7 @@ interface CanvasState {
   workflowMeta: { id: string; name: string; version: string };
   isDirty: boolean;
   viewport: { x: number; y: number; zoom: number };
+  isDraggingFromPanel: boolean;
   _executionStatus: 'idle' | 'running' | 'done' | 'error' | 'cancelled';
   _currentNodeId: string | null;
   _executionAbort: (() => void) | null;
@@ -104,15 +129,18 @@ interface CanvasState {
   updateNodeData: (id: string, data: Partial<CanvasNodeData>) => void;
   setNodes: (nodes: CanvasNode[]) => void;
   setEdges: (edges: CanvasEdge[]) => void;
-  onNodesChange: (changes: any[]) => void;
-  onEdgesChange: (changes: any[]) => void;
+  onNodesChange: (changes: NodeChange[]) => void;
+  onEdgesChange: (changes: EdgeChange[]) => void;
   onConnect: (connection: Connection) => ConnectionValidation;
   selectNode: (id: string, multi?: boolean) => void;
   clearSelection: () => void;
   setViewport: (viewport: { x: number; y: number; zoom: number }) => void;
   setWorkflowMeta: (meta: { id: string; name: string; version: string }) => void;
+  renameWorkflow: (name: string) => Promise<void>;
   markDirty: () => void;
   markClean: () => void;
+  setDraggingFromPanel: (dragging: boolean) => void;
+  _triggerAutoSave: () => void;
   newWorkflow: () => void;
   toWorkflow: () => Workflow;
   loadWorkflow: (workflow: Workflow) => void;
@@ -146,8 +174,6 @@ interface CanvasState {
   removeExtraInput: (nodeId: string, portId: string) => void;
 }
 
-let nodeCounter = 0;
-
 export const useCanvasStore = create<CanvasState>((set, get) => ({
   nodes: [],
   edges: [],
@@ -160,6 +186,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   workflowMeta: { id: crypto.randomUUID(), name: 'Untitled Workflow', version: '1.0.0' },
   isDirty: false,
   viewport: { x: 0, y: 0, zoom: 1 },
+  isDraggingFromPanel: false,
   _executionStatus: 'idle',
   _currentNodeId: null,
   _executionAbort: null,
@@ -186,7 +213,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       },
     };
 
-    set((state) => ({ nodes: [...state.nodes, newNode], isDirty: true }));
+    set((state) => ({ nodes: [...state.nodes, newNode] }));
+    get()._triggerAutoSave();
   },
 
   removeNode(id) {
@@ -194,8 +222,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       nodes: state.nodes.filter((n) => n.id !== id),
       edges: state.edges.filter((e) => e.source !== id && e.target !== id),
       selectedNodeIds: state.selectedNodeIds.filter((sid) => sid !== id),
-      isDirty: true,
     }));
+    get()._triggerAutoSave();
   },
 
   updateNodePosition(id, position) {
@@ -203,8 +231,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       nodes: state.nodes.map((n) =>
         n.id === id ? { ...n, position } : n
       ),
-      isDirty: true,
     }));
+    get()._triggerAutoSave();
   },
 
   updateNodeParams(id, params) {
@@ -212,8 +240,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       nodes: state.nodes.map((n) =>
         n.id === id ? { ...n, data: { ...n.data, params } } : n
       ),
-      isDirty: true,
     }));
+    get()._triggerAutoSave();
   },
 
   setNodes(nodes) {
@@ -225,38 +253,36 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   },
 
   onNodesChange(changes) {
-    set((state) => {
-      let updatedNodes = state.nodes;
-      let selectedIds = [...state.selectedNodeIds];
+    let updatedNodes = get().nodes;
+    let selectedIds = get().selectedNodeIds;
 
-      for (const change of changes) {
-        if (change.type === 'position' && change.position) {
-          updatedNodes = updatedNodes.map((n) =>
-            n.id === change.id ? { ...n, position: change.position } : n
-          );
-        }
-        if (change.type === 'remove') {
-          updatedNodes = updatedNodes.filter((n) => n.id !== change.id);
-          selectedIds = selectedIds.filter((sid) => sid !== change.id);
-        }
+    for (const change of changes) {
+      if (change.type === 'position' && change.position) {
+        updatedNodes = updatedNodes.map((n) =>
+          n.id === change.id ? { ...n, position: change.position } : n
+        );
       }
+      if (change.type === 'remove') {
+        updatedNodes = updatedNodes.filter((n) => n.id !== change.id);
+        selectedIds = selectedIds.filter((sid) => sid !== change.id);
+      }
+    }
 
-      return { nodes: updatedNodes, selectedNodeIds: selectedIds, isDirty: true };
-    });
+    set({ nodes: updatedNodes, selectedNodeIds: selectedIds });
+    get()._triggerAutoSave();
   },
 
   onEdgesChange(changes) {
-    set((state) => {
-      let updatedEdges = state.edges;
-      let selectedEdgeIds = [...state.selectedEdgeIds];
-      for (const change of changes) {
-        if (change.type === 'remove') {
-          updatedEdges = updatedEdges.filter((e) => e.id !== change.id);
-          selectedEdgeIds = selectedEdgeIds.filter((eid) => eid !== change.id);
-        }
+    let updatedEdges = get().edges;
+    let selectedEdgeIds = get().selectedEdgeIds;
+    for (const change of changes) {
+      if (change.type === 'remove') {
+        updatedEdges = updatedEdges.filter((e) => e.id !== change.id);
+        selectedEdgeIds = selectedEdgeIds.filter((eid) => eid !== change.id);
       }
-      return { edges: updatedEdges, selectedEdgeIds, isDirty: true };
-    });
+    }
+    set({ edges: updatedEdges, selectedEdgeIds });
+    get()._triggerAutoSave();
   },
 
   onConnect(connection): ConnectionValidation {
@@ -343,7 +369,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       data: { color: edgeColor },
     };
 
-    set((state) => ({ edges: [...state.edges, newEdge], isDirty: true }));
+    set((state) => ({ edges: [...state.edges, newEdge] }));
+    get()._triggerAutoSave();
     return { valid: true };
   },
 
@@ -381,8 +408,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       ),
       selectedNodeIds: [],
       selectedEdgeIds: [],
-      isDirty: true,
     }));
+    get()._triggerAutoSave();
   },
 
   removeSelectedEdges() {
@@ -392,8 +419,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     set((state) => ({
       edges: state.edges.filter((e) => !selectedEdgeIds.includes(e.id)),
       selectedEdgeIds: [],
-      isDirty: true,
     }));
+    get()._triggerAutoSave();
   },
 
   updateNodeExecution(id, result, error) {
@@ -407,7 +434,16 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   },
 
   setWorkflowMeta(meta) {
-    set({ workflowMeta: meta });
+    set({ workflowMeta: meta, isDirty: true });
+    get()._triggerAutoSave();
+  },
+
+  async renameWorkflow(name: string): Promise<void> {
+    const { workflowMeta } = get();
+    const trimmed = name.trim();
+    if (!trimmed || trimmed === workflowMeta.name) return;
+    set({ workflowMeta: { ...workflowMeta, name: trimmed }, isDirty: true });
+    await get().saveWorkflow();
   },
 
   newWorkflow() {
@@ -416,14 +452,17 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     if (_executionAbort) {
       _executionAbort();
     }
+    cancelAutoSave();
     nodeCounter = 0;
     set({
       nodes: [],
       edges: [],
+      groups: [],
       selectedNodeIds: [],
       selectedEdgeIds: [],
       workflowMeta: { id: crypto.randomUUID(), name: 'Untitled Workflow', version: '1.0.0' },
       isDirty: false,
+      isDraggingFromPanel: false,
       _executionStatus: 'idle',
       _currentNodeId: null,
       _executionAbort: null,
@@ -432,10 +471,55 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
   markDirty() {
     set({ isDirty: true });
+    get()._triggerAutoSave();
   },
 
   markClean() {
     set({ isDirty: false });
+  },
+
+  setDraggingFromPanel(dragging: boolean) {
+    set({ isDraggingFromPanel: dragging });
+  },
+
+  _triggerAutoSave() {
+    const { workflowMeta } = get();
+    if (!workflowMeta.id) return;
+
+    scheduleAutoSave(
+      async () => {
+        const { workflowMeta: meta, nodes, edges } = get();
+        const workflow: Workflow = {
+          id: meta.id,
+          name: meta.name,
+          version: meta.version,
+          nodes: nodes.map((n): WorkflowNode => ({
+            id: n.id,
+            type: n.data.nodeType,
+            position: n.position,
+            params: n.data.params,
+          })),
+          connections: edges.map((e): Connection => ({
+            id: e.id,
+            from: {
+              nodeId: e.source,
+              port: e.sourceHandle ?? (() => { throw new Error('sourceHandle is required'); })(),
+            },
+            to: {
+              nodeId: e.target,
+              port: e.targetHandle ?? (() => { throw new Error('targetHandle is required'); })(),
+            },
+          })),
+          inputs: [],
+          outputs: [],
+          metadata: { createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        };
+        await localStorageAdapter.save(workflow);
+      },
+      () => {
+        set({ isDirty: false });
+      }
+    );
   },
 
   toWorkflow(): Workflow {
@@ -472,6 +556,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   },
 
   loadWorkflow(workflow) {
+    cancelAutoSave();
+
     const registry = createRegistry();
     const canvasNodes: CanvasNode[] = workflow.nodes.map((n) => {
       const def = registry.get(n.type);
@@ -509,15 +595,18 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     set({
       nodes: canvasNodes,
       edges: canvasEdges,
+      groups: [],
       workflowMeta: { id: workflow.id, name: workflow.name, version: workflow.version },
       selectedNodeIds: [],
       isDirty: false,
+      isDraggingFromPanel: false,
       _executionStatus: 'idle',
       _currentNodeId: null,
     });
   },
 
   async saveWorkflow(workflowName?: string): Promise<void> {
+    cancelAutoSave();
     const { workflowMeta } = get();
 
     const existing = await localStorageAdapter.load(workflowMeta.id).catch(() => null);
@@ -556,6 +645,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     set({
       workflowMeta: { ...workflowMeta, name: workflow.name },
       isDirty: false,
+      isDraggingFromPanel: false,
     });
   },
 
@@ -702,15 +792,16 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       bounds: { x: minX, y: minY, width, height },
     };
 
-    set((s) => ({ groups: [...s.groups, group], isDirty: true }));
+    set((s) => ({ groups: [...s.groups, group] }));
+    get()._triggerAutoSave();
     return id;
   },
 
   removeGroup(groupId) {
     set((state) => ({
       groups: state.groups.filter((g) => g.id !== groupId),
-      isDirty: true,
     }));
+    get()._triggerAutoSave();
   },
 
   updateGroup(groupId, updates) {
@@ -718,8 +809,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       groups: state.groups.map((g) =>
         g.id === groupId ? { ...g, ...updates } : g
       ),
-      isDirty: true,
     }));
+    get()._triggerAutoSave();
   },
 
   /**
@@ -752,8 +843,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
             }
           : g
       ),
-      isDirty: true,
     }));
+    get()._triggerAutoSave();
   },
 
   // ── Context menu & clipboard ─────────────────────────────────────────────
@@ -776,8 +867,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       nodes: s.nodes.filter((n) => !nodeIds.includes(n.id)),
       edges: s.edges.filter((e) => !nodeIds.includes(e.source) && !nodeIds.includes(e.target)),
       selectedNodeIds: s.selectedNodeIds.filter((id) => !nodeIds.includes(id)),
-      isDirty: true,
     }));
+    get()._triggerAutoSave();
   },
 
   pasteNodes(position) {
@@ -808,8 +899,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     set((s) => ({
       nodes: [...s.nodes, ...newNodes],
       clipboard: newNodes,
-      isDirty: true,
     }));
+    get()._triggerAutoSave();
   },
 
   openInspector(tab, nodeId) {
@@ -824,8 +915,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       nodes: state.nodes.map((n) =>
         n.id === id ? { ...n, data: { ...n.data, ...data } } : n
       ),
-      isDirty: true,
     }));
+    get()._triggerAutoSave();
   },
 
   addExtraInput(nodeId, port) {
@@ -841,8 +932,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
           },
         };
       }),
-      isDirty: true,
     }));
+    get()._triggerAutoSave();
   },
 
   removeExtraInput(nodeId, portId) {
@@ -857,7 +948,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
           },
         };
       }),
-      isDirty: true,
     }));
+    get()._triggerAutoSave();
   },
 }));

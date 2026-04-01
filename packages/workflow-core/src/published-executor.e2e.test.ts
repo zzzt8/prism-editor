@@ -19,7 +19,7 @@ import type {
   CompositeExecutorOutput,
   ExportExecutorOutput,
 } from '@prism/shared-types';
-import { unwrapImageData } from '@prism/shared-types';
+import { unwrapImageData, type ExportFormat } from '@prism/shared-types';
 import { WorkflowExecutor } from '../src/executor';
 import { PublishedWorkflowExecutor } from '../src/published-executor';
 import { applyMask, compositeImages, exportImage } from '@prism/image-ops';
@@ -149,7 +149,7 @@ function makePW(
   connections: Array<{ fromCanvasId: string; fromPort: string; toCanvasId: string; toPort: string }>,
   inputs: PublishedWorkflow['inputs'] = [],
   outputs: PublishedWorkflow['outputs'] = [],
-  configOutputs: Array<{ nodeId: string; label: string; format: string }> = [],
+  configOutputs: Array<{ nodeId: string; label: string; format: ExportFormat }> = [],
 ): PublishedWorkflow {
   return {
     id: 'pw-e2e',

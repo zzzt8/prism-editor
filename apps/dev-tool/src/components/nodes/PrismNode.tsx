@@ -141,7 +141,12 @@ export const PrismNode: FC<NodeProps<PrismNodeType>> = ({ id, data, selected }) 
   const showPortDivider = hasAnyPorts && (hasBodyContent || allOutputs.length > 0);
 
   return (
-    <>
+    <div className="dcn-node-wrapper">
+      {/* ── Node index badge — floats outside top-right of node box ── */}
+      <span className="dcn-node-index" title={`节点 #${nodeIndex}`}>
+        #{nodeIndex}
+      </span>
+
       <div
         className={[
           'dcn-node',
@@ -323,7 +328,7 @@ export const PrismNode: FC<NodeProps<PrismNodeType>> = ({ id, data, selected }) 
           />
         )}
       </div>
-    </>
+    </div>
   );
 };
 

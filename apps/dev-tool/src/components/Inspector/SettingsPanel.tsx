@@ -351,7 +351,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ nodeId }) => {
           justify-content: center;
           background: transparent;
           border: none;
-          border-radius: 4px;
+          border-radius: 6px;
           color: var(--color-text-muted);
           font-size: 14px;
           font-weight: 600;

@@ -2,6 +2,7 @@
 // Part of the PrismNode split (openspec/changes/codebase-cleanup/design.md §Decision 6)
 
 import React, { type FC, useMemo, useState } from 'react';
+import { Upload } from 'lucide-react';
 import {
   unwrapImageData,
   unwrapPreviewUrl,
@@ -313,17 +314,25 @@ export const LoadImageBody: FC<{
   }
 
   return (
-    <button className="image-file-upload-btn" style={{ fontSize: 11, padding: '6px 8px' }}
-      onClick={() => inputRef.current?.click()}>
-      上传图片
-      <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }}
+    <div
+      className="dcn-dropzone"
+      onClick={() => inputRef.current?.click()}
+      title="点击上传或拖放图片"
+    >
+      <Upload size={13} className="dcn-dropzone-icon" />
+      <span>上传图片</span>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
         onChange={(e) => {
           const file = e.target.files?.[0];
           if (file) processImageFile(file, updateNodeParams, nodeId, params, 'imageFile');
           e.target.value = '';
         }}
       />
-    </button>
+    </div>
   );
 };
 
@@ -420,17 +429,25 @@ export const LoadMaskBody: FC<{
   }
 
   return (
-    <button className="image-file-upload-btn" style={{ fontSize: 11, padding: '6px 8px' }}
-      onClick={() => inputRef.current?.click()}>
-      上传遮罩
-      <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }}
+    <div
+      className="dcn-dropzone"
+      onClick={() => inputRef.current?.click()}
+      title="点击上传或拖放遮罩"
+    >
+      <Upload size={13} className="dcn-dropzone-icon" />
+      <span>上传遮罩</span>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
         onChange={(e) => {
           const file = e.target.files?.[0];
           if (file) processImageFile(file, updateNodeParams, nodeId, params, 'maskFile');
           e.target.value = '';
         }}
       />
-    </button>
+    </div>
   );
 };
 
@@ -451,7 +468,7 @@ export const TransformBody: FC<{
     <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
         <select
-          style={{ fontSize: 9, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 3, color: '#fff', padding: '1px 3px', flex: 1, cursor: 'pointer' }}
+          style={{ fontSize: 9, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, color: '#fff', padding: '1px 3px', flex: 1, cursor: 'pointer' }}
           value={scaleAlg}
           onChange={(e) => updateNodeParams(nodeId, { ...params, scaleAlgorithm: e.target.value })}
         >
@@ -488,7 +505,7 @@ export const ApplyMaskBody: FC<{
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       <select
-        style={{ fontSize: 9, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 3, color: '#fff', padding: '1px 3px', cursor: 'pointer' }}
+        style={{ fontSize: 9, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, color: '#fff', padding: '1px 3px', cursor: 'pointer' }}
         value={maskType}
         onChange={(e) => updateNodeParams(nodeId, { ...params, maskType: e.target.value })}
       >
@@ -538,7 +555,7 @@ export const CompositeBody: FC<{
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       <select
-        style={{ fontSize: 9, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 3, color: '#fff', padding: '1px 3px', cursor: 'pointer' }}
+        style={{ fontSize: 9, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, color: '#fff', padding: '1px 3px', cursor: 'pointer' }}
         value={blendMode}
         onChange={(e) => updateNodeParams(nodeId, { ...params, blendMode: e.target.value })}
       >
@@ -586,7 +603,7 @@ export const ExportBody: FC<{
   return (
     <div className="dcn-preview-placeholder">
       <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>预览区域</span>
-      <span style={{ fontSize: 9, color: ready ? '#4ade80' : 'rgba(255,255,255,0.3)' }}>{ready ? '就绪' : '待执行'}</span>
+      <span style={{ fontSize: 9, color: ready ? '#22c55e' : 'rgba(255,255,255,0.3)' }}>{ready ? '就绪' : '待执行'}</span>
     </div>
   );
 };

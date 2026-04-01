@@ -158,6 +158,8 @@ export const WorkflowCanvas: React.FC = () => {
     return [...nodes, ...groupNodes];
   }, [nodes, groups]);
 
+  const isDraggingFromPanel = useCanvasStore((s) => s.isDraggingFromPanel);
+
   const handlePaneClick = useCallback(
     () => {
       clearSelection();
@@ -194,7 +196,7 @@ export const WorkflowCanvas: React.FC = () => {
 
   return (
     <CanvasErrorBoundary>
-    <div ref={containerRef} className="workflow-canvas-container">
+    <div ref={containerRef} className="workflow-canvas-container" style={{ width: '100%', height: '100%' }}>
       <ReactFlow
         className="dark"
         style={{ width: '100%', height: '100%' }}
@@ -234,17 +236,33 @@ export const WorkflowCanvas: React.FC = () => {
           variant={BackgroundVariant.Dots}
           gap={20}
           size={1.5}
-          color="var(--canvas-grid-color, #2A2A2D)"
+          color="var(--canvas-grid-color, #3f3f46)"
         />
         <Controls position="bottom-right" showInteractive={false} />
         <MiniMap
           position="bottom-left"
-          nodeColor="#3a3a50"
-          maskColor="rgba(0,0,0,0.6)"
+          nodeColor="#6B6B8A"
+          maskColor="rgba(14, 14, 18, 0.75)"
           pannable
           zoomable
         />
       </ReactFlow>
+
+      {/* Drag-from-panel overlay */}
+      {isDraggingFromPanel && (
+        <div className="canvas-drag-overlay" aria-hidden="true">
+          <div className="canvas-drag-overlay-content">
+            <div className="canvas-drag-overlay-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="16" />
+                <line x1="8" y1="12" x2="16" y2="12" />
+              </svg>
+            </div>
+            <span className="canvas-drag-overlay-label">Drop to create node</span>
+          </div>
+        </div>
+      )}
       <CanvasToolbar />
       {searchOpen && (
         <NodeSearchModal

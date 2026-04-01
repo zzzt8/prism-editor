@@ -3,92 +3,92 @@
  *
  * @package @prism/shared-ui
  *
- * Color palette following the Prism Editor design system.
+ * Color palette following the Prism Editor design system — Zinc palette.
  * These are CSS custom properties registered on :root.
  *
  * ## Background Layers
  *
- * | Token               | Value     | Usage                      |
- * |---------------------|-----------|----------------------------|
- * | --bg-canvas         | #0D0D0F   | Canvas / page background   |
- * | --bg-surface        | #141416   | Panel / sidebar background |
- * | --bg-elevated       | #1A1A1D   | Dropdowns, popovers, modals|
- * | --bg-hover          | #222225   | Hover states               |
+ * | Token               | Value     | Tailwind | Usage                      |
+ * |---------------------|-----------|----------|----------------------------|
+ * | --bg-canvas         | #09090b   | zinc-950 | Canvas / page background   |
+ * | --bg-surface        | #18181b   | zinc-900 | Panel / sidebar background |
+ * | --bg-elevated       | #27272a   | zinc-800 | Dropdowns, popovers, modals|
+ * | --bg-hover          | #3f3f46   | zinc-700 | Hover states               |
  *
  * ## Border Layers
  *
- * | Token               | Value     | Usage                      |
- * |---------------------|-----------|----------------------------|
- * | --border-subtle     | #2A2A2D   | Faint dividers             |
- * | --border-default    | #3A3A3D   | Component borders           |
- * | --border-strong     | #4A4A4D   | Emphasis borders           |
+ * | Token               | Value     | Tailwind | Usage                      |
+ * |---------------------|-----------|----------|----------------------------|
+ * | --border-subtle     | #3f3f46   | zinc-700 | Faint dividers             |
+ * | --border-default    | #52525b   | zinc-600 | Component borders           |
+ * | --border-strong     | #71717a   | zinc-500 | Emphasis borders           |
  *
  * ## Text Colors
  *
- * | Token               | Value     | Usage                      |
- * |---------------------|-----------|----------------------------|
- * | --text-primary      | #FFFFFF   | Main body text             |
- * | --text-secondary    | #A0A0A5   | Labels, secondary info     |
- * | --text-tertiary     | #606065   | Placeholder, hints         |
- * | --text-disabled     | #404045   | Disabled state text        |
+ * | Token               | Value     | Tailwind | Usage                      |
+ * |---------------------|-----------|----------|----------------------------|
+ * | --text-primary      | #f4f4f5   | zinc-100 | Main body text             |
+ * | --text-secondary    | #a1a1aa   | zinc-400 | Labels, secondary info     |
+ * | --text-tertiary     | #71717a   | zinc-500 | Placeholder, hints         |
+ * | --text-disabled     | #52525b   | zinc-600 | Disabled state text        |
  *
  * ## Accent Colors
  *
  * | Token               | Value     | Usage                      |
  * |---------------------|-----------|----------------------------|
- * | --accent-primary    | #6366F1   | Primary action, brand      |
- * | --accent-hover      | #818CF8   | Hover state                |
+ * | --accent-primary    | #a855f7   | Primary action, brand (purple) |
+ * | --accent-hover      | #c084fc   | Hover state                |
  * | --accent-muted      | rgba(...)  | Backgrounds, badges        |
  *
  * ## Status Colors
  *
  * | Token               | Value     | Usage                      |
  * |---------------------|-----------|----------------------------|
- * | --status-success    | #22C55E   | Success states             |
- * | --status-warning    | #F59E0B   | Warning states             |
- * | --status-error      | #EF4444   | Error states               |
- * | --status-info       | #3B82F6   | Info / neutral states      |
+ * | --status-success    | #22c55e   | Success states             |
+ * | --status-warning    | #f59e0b   | Warning states             |
+ * | --status-error      | #ef4444   | Error states               |
+ * | --status-info       | #8b5cf6   | Info / neutral states      |
  *
  * ## Port Type Colors
  *
  * | Token               | Value     | Usage                      |
  * |---------------------|-----------|----------------------------|
- * | --port-image        | #8B5CF6   | Image port type            |
- * | --port-mask         | #06B6D4   | Mask port type             |
- * | --port-number       | #F59E0B   | Number port type           |
+ * | --port-image        | #8b5cf6   | Image port type            |
+ * | --port-mask         | #22c55e   | Mask port type             |
+ * | --port-number       | #f59e0b   | Number port type           |
  */
 
 :root {
   /* Background */
-  --bg-canvas:   #0D0D0F;
-  --bg-surface:  #141416;
-  --bg-elevated: #1A1A1D;
-  --bg-hover:    #222225;
+  --bg-canvas:   #09090b;
+  --bg-surface:  #18181b;
+  --bg-elevated: #27272a;
+  --bg-hover:    #3f3f46;
 
   /* Border */
-  --border-subtle:  #2A2A2D;
-  --border-default: #3A3A3D;
-  --border-strong:  #4A4A4D;
+  --border-subtle:  #3f3f46;
+  --border-default: #52525b;
+  --border-strong:  #71717a;
 
   /* Text */
-  --text-primary:   #FFFFFF;
-  --text-secondary: #A0A0A5;
-  --text-tertiary:  #606065;
-  --text-disabled:  #404045;
+  --text-primary:   #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --text-tertiary:  #71717a;
+  --text-disabled:  #52525b;
 
   /* Accent */
-  --accent-primary: #6366F1;
-  --accent-hover:   #818CF8;
-  --accent-muted:   rgba(99, 102, 241, 0.15);
+  --accent-primary: #a855f7;
+  --accent-hover:   #c084fc;
+  --accent-muted:   rgba(168, 85, 247, 0.15);
 
   /* Status */
-  --status-success: #22C55E;
-  --status-warning: #F59E0B;
-  --status-error:   #EF4444;
-  --status-info:    #3B82F6;
+  --status-success: #22c55e;
+  --status-warning: #f59e0b;
+  --status-error:   #ef4444;
+  --status-info:    #8b5cf6;
 
   /* Port types */
-  --port-image:  #8B5CF6;
-  --port-mask:   #06B6D4;
-  --port-number: #F59E0B;
+  --port-image:  #8b5cf6;
+  --port-mask:   #22c55e;
+  --port-number: #f59e0b;
 }

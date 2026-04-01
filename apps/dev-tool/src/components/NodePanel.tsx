@@ -1,9 +1,10 @@
-// NodePanel — sidebar listing all available node types with search
+// NodePanel — sidebar listing all available node types with collapsible categories
 
 import React, { useState, useMemo } from 'react';
 import { createRegistry, listAll } from '@prism/node-definitions';
 import type { NodeDefinition } from '@prism/shared-types';
-import { Download, RefreshCw, VenetianMask, Image, Upload, Search, X, Hexagon, CircleDot } from 'lucide-react';
+import { Download, RefreshCw, VenetianMask, Image, Upload, Search, X, Hexagon, CircleDot, ChevronDown, Plus, Settings, ExternalLink } from 'lucide-react';
+import './NodePanel.css';
 
 const registry = createRegistry();
 
@@ -13,6 +14,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   mask:      '遮罩',
   composite: '合成',
   output:    '输出',
+  custom:    '自定义',
 };
 
 function getCategoryIcon(category: string) {
@@ -52,28 +54,67 @@ function NodeCard({ definition }: NodeCardProps) {
 interface CategoryGroupProps {
   category: string;
   definitions: NodeDefinition[];
+  collapsed: boolean;
+  onToggle: () => void;
 }
 
-function CategoryGroup({ category, definitions }: CategoryGroupProps) {
+function CategoryGroup({ category, definitions, collapsed, onToggle }: CategoryGroupProps) {
   if (definitions.length === 0) return null;
 
   return (
     <div className="node-category">
-      <h3 className="node-category-title">
-        {CATEGORY_LABELS[category] ?? category}
+      <button
+        className="node-category-header"
+        onClick={onToggle}
+        type="button"
+      >
+        <span className="node-category-icon">
+          {getCategoryIcon(category)}
+        </span>
+        <span className="node-category-title">
+          {CATEGORY_LABELS[category] ?? category}
+        </span>
         <span className="node-category-count">{definitions.length}</span>
-      </h3>
-      <div className="node-category-items">
-        {definitions.map((def) => (
-          <NodeCard key={def.type} definition={def} />
-        ))}
+        <ChevronDown
+          size={12}
+          className={`node-category-chevron ${collapsed ? 'node-category-chevron--collapsed' : ''}`}
+        />
+      </button>
+
+      <div className={`node-category-body ${collapsed ? 'node-category-body--collapsed' : ''}`}>
+        <div className="node-category-items">
+          {definitions.map((def) => (
+            <NodeCard key={def.type} definition={def} />
+          ))}
+        </div>
       </div>
     </div>
   );
 }
 
+// Simple inline toast — no external toast library needed
+interface ToastProps {
+  message: string;
+  onDismiss: () => void;
+}
+
+function Toast({ message, onDismiss }: ToastProps) {
+  return (
+    <div className="node-toast">
+      <span>{message}</span>
+      <button className="node-toast-dismiss" onClick={onDismiss} type="button">
+        <X size={12} />
+      </button>
+    </div>
+  );
+}
+
+const APP_VERSION = '1.0.0';
+
 export const NodePanel: React.FC = () => {
   const [query, setQuery] = useState('');
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [toast, setToast] = useState<string | null>(null);
 
   const allDefinitions = useMemo(() => listAll(registry), []);
 
@@ -100,8 +141,26 @@ export const NodePanel: React.FC = () => {
     [filtered]
   );
 
+  const handleToggle = (cat: string) => {
+    setCollapsed((prev) => ({ ...prev, [cat]: !prev[cat] }));
+  };
+
+  const handleAddCustomNode = () => {
+    setToast('自定义节点功能即将推出');
+  };
+
   const hasResults = filtered.length > 0;
   const hasQuery = query.trim().length > 0;
+
+  const sortedCategories = Object.keys(byCategory).sort((a, b) => {
+    const order = ['input', 'transform', 'mask', 'composite', 'output', 'custom'];
+    const ai = order.indexOf(a);
+    const bi = order.indexOf(b);
+    if (ai === -1 && bi === -1) return a.localeCompare(b);
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
 
   return (
     <aside className="node-panel">
@@ -128,18 +187,50 @@ export const NodePanel: React.FC = () => {
         )}
       </div>
 
-      {/* Results */}
-      {hasResults ? (
-        Object.entries(byCategory).map(([category, defs]) => (
-          <CategoryGroup key={category} category={category} definitions={defs} />
-        ))
+      {/* Results — scrollable area */}
+      <div className="node-panel-scroll">
+        {hasResults ? (
+          sortedCategories.map((cat) => (
+            <CategoryGroup
+              key={cat}
+              category={cat}
+              definitions={byCategory[cat]}
+              collapsed={!!collapsed[cat]}
+              onToggle={() => handleToggle(cat)}
+            />
+          ))
         ) : (
           <div className="node-search-empty">
             <CircleDot size={14} className="node-search-empty-icon" aria-hidden="true" />
             <span className="node-search-empty-text">
-            {hasQuery ? `未找到与"${query}"相关的节点` : '暂无可用节点'}
-          </span>
+              {hasQuery ? `未找到与"${query}"相关的节点` : '暂无可用节点'}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Footer — always visible */}
+      <div className="node-panel-footer">
+        <button className="node-add-custom-btn" onClick={handleAddCustomNode} type="button">
+          <Plus size={13} />
+          Add Custom Node
+        </button>
+        <div className="node-footer-links">
+          <button className="node-footer-link" type="button">Settings</button>
+          <span className="node-footer-sep" />
+          <button className="node-footer-link" type="button">Support</button>
         </div>
+        <div className="node-footer-version">V{APP_VERSION}</div>
+      </div>
+
+      {/* Toast */}
+      {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
+
+      {toast && (
+        <div
+          className="node-toast-auto-dismiss"
+          onAnimationEnd={() => setToast(null)}
+        />
       )}
     </aside>
   );

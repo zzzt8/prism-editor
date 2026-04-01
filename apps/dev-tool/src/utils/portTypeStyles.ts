@@ -13,7 +13,7 @@ export interface PortTypeStyle {
 
 /** CSS colors for each PortDataType — aligned with design spec */
 export const PORT_TYPE_COLORS: Record<PortDataType, string> = {
-  [PortDataType.IMAGE]:    '#3B82F6',  // blue   (design: image=蓝)
+  [PortDataType.IMAGE]:    '#8B5CF6',  // purple  (was blue #3B82F6)
   [PortDataType.MASK]:     '#22C55E',  // green  (design: mask=绿)
   [PortDataType.NUMBER]:   '#F97316',  // orange (design: number=橙)
   [PortDataType.BOOLEAN]:  '#A855F7',  // purple (design: boolean=紫)

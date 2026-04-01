@@ -387,20 +387,13 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({ nodeId }) => {
       )}
 
       <style>{`
+        /* ParametersPanel body — no padding, let Inspector container handle scroll */
         .inspector-panel-body {
-          padding: 0;
+          /* flex/overflow inherited from Inspector container */
         }
 
         .inspector-panel-empty {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          padding: 40px 24px;
-          color: var(--color-text-muted);
-          font-size: 12px;
-          text-align: center;
+          /* empty styles removed — base from Inspector */
         }
 
         .inspector-alias-row {
@@ -413,7 +406,7 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({ nodeId }) => {
           color: var(--color-text);
           cursor: text;
           padding: 4px 6px;
-          border-radius: 4px;
+          border-radius: 6px;
           transition: background 0.12s;
           display: inline-block;
         }

@@ -6,45 +6,89 @@
    ================================================================ */
 
 /* ----------------------------------------------------------------
-   1. Design Tokens — CSS Variables
+   1. Design Tokens — CSS Variables (aligned with shared-ui + homepage)
    ---------------------------------------------------------------- */
 
 :root {
   /* Port type colors — per design spec */
-  --port-image:    #55AAFF;
-  --port-method:   #B191FF;
-  --port-number:   #FF9844;
-  --port-boolean:  #FF6B6B;
-  --port-string:   #9CA3AF;
-  --port-file:     #EC4899;
-  --port-video:    #EF4444;
-  --port-audio:    #EAB308;
-  --port-json:     #06B6D4;
-  --port-void:     #6B7280;
-  --port-any:      #FFFFFF;
+  --port-image:    #8b5cf6;
+  --port-method:   #a855f7;
+  --port-number:   #f59e0b;
+  --port-boolean:  #f97316;
+  --port-string:   #94a3b8;
+  --port-file:     #ec4899;
+  --port-video:    #ef4444;
+  --port-audio:    #eab308;
+  --port-json:     #06b6d4;
+  --port-void:     #71717a;
+  --port-any:      #ffffff;
 
   /* Node state colors */
-  --node-status-idle:    #6B7280;
-  --node-status-running: #55AAFF;
-  --node-status-done:    #4ADE80;
-  --node-status-error:   #FF6B6B;
+  --node-status-idle:    #71717a;
+  --node-status-running: #818cf8;
+  --node-status-done:    #22c55e;
+  --node-status-error:   #ef4444;
 
   /* Category accent colors */
   --node-cat-input:     #22c55e;
-  --node-cat-transform: #55AAFF;
-  --node-cat-mask:     #FF9844;
-  --node-cat-composite: #B191FF;
-  --node-cat-output:    #FF6B6B;
+  --node-cat-transform: #8b5cf6;
+  --node-cat-mask:      #f59e0b;
+  --node-cat-composite: #a855f7;
+  --node-cat-output:    #ef4444;
 
   /* Node layout tokens */
-  --dcn-radius:      10px;
+  --dcn-radius:      8px;
   --dcn-radius-sm:   6px;
   --dcn-radius-xs:   4px;
-  --dcn-header-h:    32px;
+  --dcn-header-h:    36px;
+
+  /* Node color tokens — Zinc palette */
+  --dcn-bg:          #27272a;
+  --dcn-bg-header:   #27272a;
+  --dcn-bg-hover:    #3f3f46;
+  --dcn-border:      #3f3f46;
+  --dcn-text:        #f4f4f5;
+  --dcn-text-muted:  #a1a1aa;
+  --dcn-text-dim:    #71717a;
+  --dcn-accent:      #a855f7;
+  --dcn-accent-glow: rgba(168, 85, 247, 0.25);
+  --dcn-shadow:      0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
 }
 
 /* ----------------------------------------------------------------
-   2. Node Container — fixed-width, 10px radius, breathing shadow
+   2. Node Wrapper — positions the floating node-index badge
+   ---------------------------------------------------------------- */
+
+/* Wrapper is position:relative so the badge floats outside the node border */
+.dcn-node-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+/* Floating node-index badge — sits above the node's top-right corner */
+.dcn-node-index {
+  position: absolute;
+  top: -8px;
+  right: 8px;
+  font-size: 10px;
+  font-weight: 500;
+  font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+  color: var(--dcn-text-muted);
+  /* small pill background so it reads on any node color */
+  background: var(--dcn-bg);
+  border: 1px solid var(--dcn-border);
+  border-radius: 4px;
+  padding: 0 4px;
+  line-height: 16px;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+  /* Subtle shadow to separate from node surface */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* ----------------------------------------------------------------
+   3. Node Container — fixed-width, 8px radius, refined shadow
    ---------------------------------------------------------------- */
 
 .dcn-node {
@@ -53,9 +97,12 @@
   min-width: 240px;
   max-width: 560px;
   border-radius: var(--dcn-radius);
-  border: 1px solid #333333;
-  background: #222222;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--dcn-border);
+  background: var(--dcn-bg);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.5),
+    0 2px 4px -2px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(0, 0, 0, 0.2);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -65,63 +112,44 @@
   min-height: var(--dcn-header-h);
 }
 
-/* Selected — blue glow */
+/* Selected — 2px solid purple ring, no glow */
 .dcn-node--selected {
-  border-color: #55AAFF;
-  box-shadow: 0 0 0 2px rgba(85, 170, 255, 0.25), 0 4px 20px rgba(0, 0, 0, 0.5);
+  border: 2px solid #a855f7;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.5),
+    0 2px 4px -2px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(0, 0, 0, 0.2);
 }
 
-/* ── Node index badge — outside top-right corner ── */
-.dcn-node-index {
-  position: absolute;
-  top: -11px;
-  right: -11px;
-  font-family: 'Space Grotesk', 'Segoe UI', monospace;
-  font-size: 10px;
-  font-weight: 700;
-  color: #9CA3AF;
-  background: #222222;
-  border: 1px solid #444444;
-  border-radius: 4px;
-  padding: 1px 5px;
-  line-height: 1.4;
-  pointer-events: none;
-  z-index: 10;
-  user-select: none;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-  letter-spacing: 0.02em;
-}
-.dcn-node--selected .dcn-node-index {
-  color: #55AAFF;
-  border-color: #55AAFF;
-}
-
-/* Running pulse */
+/* Running — no glow, just border color change */
 .dcn-node--running {
   border-color: var(--node-status-running);
   animation: dcn-running-pulse 1.4s ease-in-out infinite;
 }
 
 @keyframes dcn-running-pulse {
-  0%, 100% { box-shadow: 0 0 0 2px rgba(85, 170, 255, 0.2), 0 4px 16px rgba(0, 0, 0, 0.4); }
-  50%       { box-shadow: 0 0 0 5px rgba(85, 170, 255, 0.1),  0 4px 24px rgba(0, 0, 0, 0.5); }
+  0%, 100% { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.2); }
+  50%       { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.2); }
 }
 
-/* Error */
+/* Error — solid red border, no glow */
 .dcn-node--error {
   border-color: var(--node-status-error);
-  box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.2), 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.5),
+    0 2px 4px -2px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(0, 0, 0, 0.2);
 }
 
 /* ----------------------------------------------------------------
-   3. Header — #2A2A2A, status dot, Space Grotesk title
+   3. Header — category accent bar + status dot + title
    ---------------------------------------------------------------- */
 
 .dcn-header {
-  background-color: #2A2A2A;
+  background-color: var(--dcn-bg-header);
   padding: 0 14px;
   height: var(--dcn-header-h);
-  border-bottom: 1px solid #333333;
+  border-bottom: 1px solid var(--dcn-border);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -135,7 +163,7 @@
 .dcn-header--cat-mask       { border-left: 3px solid var(--node-cat-mask); }
 .dcn-header--cat-composite  { border-left: 3px solid var(--node-cat-composite); }
 .dcn-header--cat-output     { border-left: 3px solid var(--node-cat-output); }
-.dcn-header--cat-default    { border-left: 3px solid #555555; }
+.dcn-header--cat-default    { border-left: 3px solid #52525b; }
 
 /* Status dot */
 .dcn-status-dot {
@@ -144,7 +172,7 @@
   border-radius: 50%;
   flex-shrink: 0;
 }
-.dcn-status-dot--idle    { background-color: #555; }
+.dcn-status-dot--idle    { background-color: var(--node-status-idle); }
 .dcn-status-dot--running { background-color: var(--node-status-running); animation: dcn-dot-pulse 1s ease-in-out infinite; }
 .dcn-status-dot--done    { background-color: var(--node-status-done); }
 .dcn-status-dot--error   { background-color: var(--node-status-error); }
@@ -160,7 +188,7 @@
   font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
   font-size: 13px;
   font-weight: 700;
-  color: #FFFFFF;
+  color: var(--dcn-text);
   letter-spacing: 0.02em;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -186,7 +214,7 @@
   border: none;
   background: transparent;
   border-radius: var(--dcn-radius-xs);
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--dcn-text-dim);
   font-size: 14px;
   cursor: pointer;
   transition: background 0.1s, color 0.1s;
@@ -194,21 +222,21 @@
   line-height: 1;
 }
 .dcn-header-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.85);
+  background: var(--dcn-bg-hover);
+  color: var(--dcn-text);
 }
 
 /* ----------------------------------------------------------------
-   4. Body — padding 12px 14px, gap 8px, flex column
+   4. Body — padding 12px 16px, gap 8px, flex column
    ---------------------------------------------------------------- */
 
 .dcn-body {
   padding: 12px var(--dcn-body-pad-x, 16px);
   display: flex;
   flex-direction: column;
-  gap: 10px; /* V6 fix: 10px gap gives rows breathing room */
+  gap: 10px;
   flex: 1;
-  background: #222222;
+  background: var(--dcn-bg);
   /* V6: expose padding as CSS variable so handle positioning can negate it */
   --dcn-body-pad-x: 16px;
 }
@@ -220,8 +248,8 @@
   gap: 6px;
   font-size: 11px;
   color: var(--node-status-error);
-  background: rgba(255, 107, 107, 0.1);
-  border: 1px solid rgba(255, 107, 107, 0.2);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.15);
   border-radius: var(--dcn-radius-xs);
   padding: 6px;
 }
@@ -264,7 +292,7 @@
 
 /* Port label — text-label color per spec */
 .dcn-port-label {
-  color: #9CA3AF;
+  color: var(--dcn-text-muted);
   font-size: 12px;
   font-family: 'Inter', sans-serif;
   flex: 1;
@@ -307,12 +335,12 @@
 .react-flow__handle-comfy {
   width: 14px !important;
   height: 14px !important;
-  border: 2px solid #222222 !important;
+  border: 2px solid var(--dcn-bg) !important;
   opacity: 0.9;
   cursor: crosshair;
   top: 50% !important;
   transform: translateY(-50%) !important;
-  z-index: 10 !important; /* V6: handle floats above the node's border line */
+  z-index: 10 !important;
   overflow: visible !important;
   transition:
     opacity 0.15s,
@@ -326,7 +354,7 @@
   opacity: 1;
   border-color: #ffffff !important;
   transform: translateY(-50%) scale(1.4) !important;
-  z-index: 20 !important; /* lift above siblings during hover */
+  z-index: 20 !important;
   box-shadow: 0 0 8px currentColor;
 }
 
@@ -348,15 +376,14 @@
   height: 32px;
   border-radius: var(--dcn-radius-xs);
   overflow: hidden;
-  border: 1px solid #333333;
+  border: 1px solid var(--dcn-border);
   cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
   flex-shrink: 0;
-  background: repeating-conic-gradient(#1a1a1a 0% 25%, #222 0% 50%) 0 0 / 8px 8px;
+  background: var(--dcn-bg-header);
 }
 .dcn-port-thumb:hover {
-  border-color: #55AAFF;
-  box-shadow: 0 0 6px rgba(85, 170, 255, 0.3);
+  border-color: var(--dcn-accent);
   transform: scale(1.05);
 }
 .dcn-port-thumb img {
@@ -408,7 +435,7 @@
 
 .dcn-section-divider {
   height: 1px;
-  background: #333333;
+  background: var(--dcn-border);
   margin: 0;
 }
 
@@ -420,22 +447,22 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 6px; /* V6 fix: slightly more breathing between widget rows */
+  gap: 6px;
 }
 
 .dcn-widget-label {
-  color: #9CA3AF;
+  color: var(--dcn-text-dim);
   font-size: 11px;
   font-family: 'Inter', sans-serif;
 }
 
-/* Deep capsule select — per design spec */
+/* Deep capsule select */
 .dcn-select {
   font-family: 'Inter', sans-serif;
   font-size: 12px;
-  color: #E5E7EB;
-  background: #1A1A1A;
-  border: 1px solid #333333;
+  color: var(--dcn-text);
+  background: var(--dcn-bg-header);
+  border: 1px solid var(--dcn-border);
   border-radius: var(--dcn-radius-xs);
   padding: 4px 28px 4px 10px;
   height: 28px;
@@ -444,21 +471,21 @@
   transition: border-color 0.15s;
   appearance: none;
   -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239CA3AF' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23A1A1AA' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 8px center;
   width: 100%;
 }
-.dcn-select:hover  { border-color: #55AAFF; color: #FFFFFF; }
-.dcn-select:focus  { border-color: #55AAFF; box-shadow: 0 0 0 2px rgba(85, 170, 255, 0.15); }
+.dcn-select:hover  { border-color: var(--dcn-accent); color: var(--dcn-text); }
+.dcn-select:focus  { border-color: var(--dcn-accent); box-shadow: 0 0 0 2px var(--dcn-accent-glow); }
 
-/* Number input — deep capsule style */
+/* Number input */
 .dcn-number-input {
   font-family: 'Inter', monospace;
   font-size: 12px;
-  color: #E5E7EB;
-  background: #1A1A1A;
-  border: 1px solid #333333;
+  color: var(--dcn-text);
+  background: var(--dcn-bg-header);
+  border: 1px solid var(--dcn-border);
   border-radius: var(--dcn-radius-xs);
   padding: 4px 8px;
   height: 28px;
@@ -466,20 +493,20 @@
   transition: border-color 0.15s;
   width: 80px;
 }
-.dcn-number-input:hover { border-color: #55AAFF; color: #FFFFFF; }
-.dcn-number-input:focus { border-color: #55AAFF; box-shadow: 0 0 0 2px rgba(85, 170, 255, 0.15); }
+.dcn-number-input:hover { border-color: var(--dcn-accent); color: var(--dcn-text); }
+.dcn-number-input:focus { border-color: var(--dcn-accent); box-shadow: 0 0 0 2px var(--dcn-accent-glow); }
 
-/* Slider — flat dark track */
+/* Slider */
 .dcn-input-slider {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
   height: 4px;
-  background: #1A1A1A;
+  background: var(--dcn-bg-header);
   border-radius: 2px;
   outline: none;
   cursor: pointer;
-  border: 1px solid #333333;
+  border: 1px solid var(--dcn-border);
 }
 .dcn-input-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -487,21 +514,21 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #55AAFF;
-  border: 2px solid #222222;
+  background: var(--dcn-accent);
+  border: 2px solid var(--dcn-bg);
   cursor: pointer;
   transition: transform 0.1s, box-shadow 0.1s;
 }
 .dcn-input-slider::-webkit-slider-thumb:hover {
   transform: scale(1.15);
-  box-shadow: 0 0 6px rgba(85, 170, 255, 0.5);
+  box-shadow: 0 0 6px var(--dcn-accent-glow);
 }
 .dcn-input-slider::-moz-range-thumb {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #55AAFF;
-  border: 2px solid #222222;
+  background: var(--dcn-accent);
+  border: 2px solid var(--dcn-bg);
   cursor: pointer;
 }
 
@@ -509,16 +536,14 @@
    9. Image Preview Area
    ---------------------------------------------------------------- */
 
-/* Core preview container — fills available width, min 100px tall,
-   max 250px so images don't blow the node out of proportion. */
 .dcn-preview {
   width: 100%;
   min-height: 100px;
   max-height: 250px;
   border-radius: var(--dcn-radius-sm);
   overflow: hidden;
-  background: repeating-conic-gradient(#1a1a1a 0% 25%, #222 0% 50%) 0 0 / 12px 12px;
-  border: 1px solid #333333;
+  background: var(--dcn-bg-header);
+  border: 1px solid var(--dcn-border);
   position: relative;
   display: flex;
   align-items: center;
@@ -526,8 +551,6 @@
   cursor: zoom-in;
 }
 
-/* The preview image — object-fit: contain is the only reliable way to
-   keep the image ratio correct without distortion or blowout. */
 .dcn-preview-img {
   width: 100%;
   height: 100%;
@@ -543,25 +566,25 @@
   right: 6px;
   font-size: 10px;
   font-family: 'Space Grotesk', monospace;
-  color: #E5E7EB;
+  color: var(--dcn-text);
   background: rgba(0, 0, 0, 0.65);
   border-radius: var(--dcn-radius-xs);
   padding: 2px 6px;
   pointer-events: none;
   line-height: 1.3;
-  border: 1px solid #333333;
+  border: 1px solid var(--dcn-border);
 }
 
 /* Drag and drop overlay */
 .dcn-preview-drag-over {
-  border-color: #55AAFF !important;
-  box-shadow: 0 0 0 2px rgba(85, 170, 255, 0.3);
+  border-color: var(--dcn-accent) !important;
+  box-shadow: 0 0 0 2px var(--dcn-accent-glow);
 }
 
 .dcn-preview-drop-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(85, 170, 255, 0.15);
+  background: rgba(177, 161, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -569,13 +592,13 @@
 }
 
 .dcn-preview-drop-overlay span {
-  color: #55AAFF;
+  color: var(--dcn-accent);
   font-size: 12px;
   font-weight: 600;
   background: rgba(0, 0, 0, 0.7);
   padding: 6px 12px;
   border-radius: var(--dcn-radius-sm);
-  border: 1px solid rgba(85, 170, 255, 0.4);
+  border: 1px solid rgba(177, 161, 255, 0.3);
 }
 
 /* File info row */
@@ -590,12 +613,55 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #9CA3AF;
+  color: var(--dcn-text-muted);
+}
+
+/* ----------------------------------------------------------------
+   Dropzone — lightweight upload trigger for LoadImage / LoadMask
+   ---------------------------------------------------------------- */
+
+.dcn-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px 12px;
+  border-radius: var(--dcn-radius-sm);
+  border: 2px dashed var(--dcn-border);
+  background: transparent;
+  color: var(--dcn-text-dim);
+  font-size: 11px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background-color 0.15s ease;
+  user-select: none;
+  line-height: 1;
+}
+
+.dcn-dropzone:hover {
+  border-color: var(--dcn-accent);
+  color: var(--dcn-accent);
+  background: rgba(168, 85, 247, 0.05);
+}
+
+.dcn-dropzone-icon {
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
+}
+
+.dcn-dropzone:hover .dcn-dropzone-icon {
+  opacity: 1;
 }
 .dcn-file-resolution {
   color: var(--port-image);
-  background: rgba(85, 170, 255, 0.1);
-  border: 1px solid rgba(85, 170, 255, 0.2);
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
   border-radius: var(--dcn-radius-xs);
   padding: 1px 6px;
   font-family: 'Space Grotesk', monospace;
@@ -616,9 +682,9 @@
 .dcn-param-chip {
   font-size: 11px;
   font-family: 'Inter', monospace;
-  color: #E5E7EB;
-  background: #1A1A1A;
-  border: 1px solid #333333;
+  color: var(--dcn-text);
+  background: var(--dcn-bg-header);
+  border: 1px solid var(--dcn-border);
   border-radius: var(--dcn-radius-xs);
   padding: 3px 8px;
   white-space: nowrap;
@@ -662,7 +728,7 @@
    ---------------------------------------------------------------- */
 
 .dcn-group {
-  border: 1px dashed #333333;
+  border: 1px dashed var(--dcn-border);
   border-radius: var(--dcn-radius);
   background: rgba(85, 170, 255, 0.03);
   position: absolute;
@@ -678,12 +744,12 @@
   font-size: 10px;
   font-weight: 700;
   color: rgba(85, 170, 255, 0.6);
-  background: #222222;
+  background: #27272a;
   padding: 0 6px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   pointer-events: none;
-  border: 1px solid #333333;
+  border: 1px solid var(--dcn-border);
   border-radius: var(--dcn-radius-xs);
 }
 
@@ -695,8 +761,8 @@
   position: fixed;
   z-index: 1000;
   min-width: 180px;
-  background: #222222;
-  border: 1px solid #333333;
+  background: #27272a;
+  border: 1px solid var(--dcn-border);
   border-radius: var(--dcn-radius-sm);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
   overflow: hidden;
@@ -716,8 +782,8 @@
   padding: 8px 14px;
   background: none;
   border: none;
-  border-bottom: 1px solid #2a2a2a;
-  color: #E5E7EB;
+  border-bottom: 1px solid #3f3f46;
+  color: #f4f4f5;
   font-family: 'Inter', sans-serif;
   font-size: 12px;
   cursor: pointer;
@@ -725,15 +791,15 @@
   transition: background 0.1s;
 }
 .dcn-context-menu-item:last-child { border-bottom: none; }
-.dcn-context-menu-item:hover { background: #2A2A2A; }
-.dcn-context-menu-item:active { background: #333333; }
+.dcn-context-menu-item:hover { background: var(--dcn-bg-hover); }
+.dcn-context-menu-item:active { background: var(--dcn-bg-header); }
 .dcn-context-menu-item--danger { color: #FF6B6B; }
 .dcn-context-menu-item--danger:hover { background: rgba(255, 107, 107, 0.1); }
 
 .dcn-context-menu-shortcut {
   margin-left: auto;
   font-size: 10px;
-  color: #555555;
+  color: #71717a;
   font-family: 'Space Grotesk', monospace;
 }
 
@@ -768,8 +834,8 @@
   height: 32px;
   border-radius: var(--dcn-radius-xs);
   overflow: hidden;
-  border: 1px solid #333333;
-  background: repeating-conic-gradient(#1a1a1a 0% 25%, #222 0% 50%) 0 0 / 8px 8px;
+  border: 1px solid var(--dcn-border);
+  background: var(--dcn-bg-header);
   flex-shrink: 0;
   pointer-events: none;
 }
@@ -786,8 +852,8 @@
   min-height: 100px;
   max-height: 250px;
   border-radius: var(--dcn-radius-sm);
-  border: 1px solid #333333;
-  background: repeating-conic-gradient(#1a1a1a 0% 25%, #222 0% 50%) 0 0 / 12px 12px;
+  border: 1px solid var(--dcn-border);
+  background: var(--dcn-bg-header);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -802,8 +868,8 @@
   min-height: 60px;
   max-height: 150px;
   border-radius: var(--dcn-radius-sm);
-  border: 1px solid #333333;
-  background: #1a1a1a;
+  border: 1px solid var(--dcn-border);
+  background: var(--dcn-bg-header);
   padding: 8px;
   overflow: hidden;
   cursor: pointer;
@@ -811,5 +877,5 @@
 }
 
 .dcn-text-preview:hover {
-  border-color: #55AAFF;
+  border-color: var(--dcn-accent);
 }

@@ -5,7 +5,7 @@ import React, { type FC, useState, useCallback } from 'react';
 
 export const CATEGORY_COLORS: Record<string, string> = {
   input:     '#22c55e',
-  transform:  '#3b82f6',
+  transform:  '#8b5cf6',
   mask:      '#f59e0b',
   composite: '#8b5cf6',
   output:    '#ef4444',

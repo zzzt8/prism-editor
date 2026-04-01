@@ -225,16 +225,53 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ nodeId }) => {
       <style>{`
         .info-mono {
           font-family: 'SF Mono', 'Cascadia Code', monospace;
-          font-size: 11px;
+          font-size: 12px;
           color: var(--color-text-muted);
         }
 
+        .param-node-info {
+          display: flex;
+          flex-direction: column;
+          gap: 0;
+        }
+
         .info-description {
-          font-size: 11px;
+          font-size: 12px;
           color: var(--color-text-muted);
           line-height: 1.5;
           overflow: hidden;
           text-overflow: ellipsis;
+        }
+
+        .param-info-row {
+          display: flex;
+          align-items: baseline;
+          justify-content: space-between;
+          gap: 8px;
+          padding: 4px 0;
+          border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .param-info-row:last-child {
+          border-bottom: none;
+        }
+
+        .param-info-row--column {
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .param-info-label {
+          font-size: 12px;
+          color: #71717a;
+          flex-shrink: 0;
+        }
+
+        .param-info-row > span:not(.param-info-label):not(.info-mono):not(.info-description) {
+          font-size: 12px;
+          color: var(--color-text);
+          text-align: right;
+          word-break: break-all;
         }
 
         .info-port-count {
@@ -246,7 +283,7 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ nodeId }) => {
           padding: 0 4px;
           background: var(--color-surface-2);
           border: 1px solid var(--color-border);
-          border-radius: 10px;
+          border-radius: 6px;
           font-size: 10px;
           font-weight: 500;
           color: var(--color-text-muted);
