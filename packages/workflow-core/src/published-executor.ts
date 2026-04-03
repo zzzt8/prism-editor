@@ -126,8 +126,11 @@ export class PublishedWorkflowExecutor {
       // Inject user-supplied URL for load-image and load-mask nodes.
       if (nodeType === 'load-image' || nodeType === 'load-mask') {
         // Legacy format: pw.inputs[].id is "{nodeId}:{portId}"
+        // Use exact match with ":" separator to avoid partial ID collisions
+        // (e.g., "abc" should NOT match "abcd:out")
+        const prefix = `${nodeId}:`;
         for (const inp of pw.inputs) {
-          if (inp.id.startsWith(`${nodeId}:`)) {
+          if (inp.id.startsWith(prefix) && inp.id.length > prefix.length) {
             const userValue = userInputs[inp.id];
             if (userValue !== undefined && userValue !== null) {
               mergedParams.url = userValue;

@@ -62,3 +62,12 @@ export function listByCategory(
 export function listAll(registry: NodeDefinitionRegistry): NodeDefinition[] {
   return [...registry.values()];
 }
+
+/**
+ * Get all built-in node definitions as an array.
+ * Convenience function for external consumers (e.g., globalRegistry).
+ */
+export function getAllDefinitions(): NodeDefinition[] {
+  const registry = createRegistry();
+  return listAll(registry);
+}

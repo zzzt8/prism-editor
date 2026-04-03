@@ -4,7 +4,6 @@
 //   useCanvasDragDrop.ts      — file drag & drop
 //   useCanvasKeyboard.ts     — keyboard shortcuts
 //   useCanvasSelectionSync.ts — selection state sync
-//   useCanvasDebugLog.ts     — debug logging
 
 import React, { useCallback, useEffect, useState, useRef, useMemo } from 'react';
 import {
@@ -34,7 +33,6 @@ import { NodeContextMenu } from './NodeContextMenu';
 import { useCanvasDragDrop } from './useCanvasDragDrop';
 import { useCanvasKeyboard } from './useCanvasKeyboard';
 import { useCanvasSelectionSync } from './useCanvasSelectionSync';
-import { useCanvasDebugLog } from './useCanvasDebugLog';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nodeTypes: Record<string, any> = {
@@ -92,7 +90,6 @@ export const WorkflowCanvas: React.FC = () => {
   const { handleDragOver, handleDrop } = useCanvasDragDrop(reactFlowInstance);
   useCanvasKeyboard();
   useCanvasSelectionSync();
-  useCanvasDebugLog();
 
   // React Flow change handlers
   const onNodesChange = useCallback(

@@ -285,7 +285,6 @@ export const LoadImageBody: FC<{
         <div
           className={`dcn-preview ${isDragOver ? 'dcn-preview-drag-over' : ''}`}
           data-preview
-          onClick={onShowPreview}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}
@@ -403,7 +402,6 @@ export const LoadMaskBody: FC<{
         <div
           className={`dcn-preview ${isDragOver ? 'dcn-preview-drag-over' : ''}`}
           data-preview
-          onClick={onShowPreview}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}

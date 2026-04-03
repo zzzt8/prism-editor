@@ -21,7 +21,6 @@ import type {
 import { Check, Copy, Download, Upload, X, Plus, ChevronDown, ChevronRight, Pencil, CircleDot } from 'lucide-react';
 import { copyWorkflowToClipboard, downloadWorkflowAsFile } from '../../utils/workflowExport';
 
-const PREFIX = 'prism:published:';
 const CHANNEL_NAME = 'prism-publish-channel';
 
 /** Nodes with no incoming edges are potential user-input sources */
@@ -181,16 +180,6 @@ function buildPublishedConfig(opts: {
     exposedParams: whitelist,
     outputs,
   };
-}
-
-function savePublishedWorkflow(pw: PublishedWorkflow): void {
-  localStorage.setItem(`${PREFIX}${pw.sourceId}`, JSON.stringify(pw));
-  const indexKey = `${PREFIX}index`;
-  const ids: string[] = JSON.parse(localStorage.getItem(indexKey) ?? '[]');
-  if (!ids.includes(pw.sourceId)) {
-    ids.push(pw.sourceId);
-    localStorage.setItem(indexKey, JSON.stringify(ids));
-  }
 }
 
 function broadcastPublish(pw: PublishedWorkflow) {
@@ -410,7 +399,6 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     publishedAt: new Date().toISOString(),
   };
 
-      savePublishedWorkflow(pw);
       broadcastPublish(pw);
       setLastPublished(pw);
       setPublished(true);
@@ -440,7 +428,7 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                 发布版本 {workflowMeta.version} · {nodes.length} 个节点 · {selectedInputNodes.length} 个用户输入 · {outputNodes.length} 个输出
               </div>
               <div className="publish-success-primary">
-                <button className="dialog-btn dialog-btn-primary" onClick={() => window.open('http://localhost:3001', '_blank')}>
+                <button className="dialog-btn dialog-btn-primary" onClick={() => window.open('http://localhost:3002', '_blank')}>
                   在运行端测试
                 </button>
               </div>

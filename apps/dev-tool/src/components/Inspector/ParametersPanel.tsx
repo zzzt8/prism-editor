@@ -49,7 +49,7 @@ function ParamField({
     const min = param.min ?? 0;
     const max = param.max ?? 100;
     const step = param.step ?? 1;
-    // Only show slider when the param explicitly defines both min and max bounds
+    // Always show number input; slider appears alongside when both min and max are defined
     const hasRange = param.min !== undefined && param.max !== undefined;
 
     return (
@@ -61,23 +61,19 @@ function ParamField({
         {param.description && (
           <span className="param-description">{param.description}</span>
         )}
-        {hasRange ? (
-          <div className="param-slider-row">
-            <input
-              className="param-slider"
-              type="range"
-              min={min}
-              max={max}
-              step={step}
-              value={numVal}
-              onChange={(e) => handleChange(Number(e.target.value))}
-            />
-            <span className="param-slider-value">{numVal}</span>
-          </div>
-        ) : (
+        <input
+          className="param-number-input"
+          type="number"
+          min={min}
+          max={max}
+          step={step}
+          value={numVal}
+          onChange={(e) => handleChange(Number(e.target.value))}
+        />
+        {hasRange && (
           <input
-            className="param-number-input"
-            type="number"
+            className="param-slider"
+            type="range"
             min={min}
             max={max}
             step={step}

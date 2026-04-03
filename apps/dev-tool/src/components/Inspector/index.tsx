@@ -127,7 +127,7 @@ export const Inspector: React.FC = () => {
           {label}
         </span>
         <span className="param-panel-badge">
-          {CATEGORY_LABELS[category] ?? category}
+          {category ? CATEGORY_LABELS[category] ?? category : ''}
         </span>
       </div>
 

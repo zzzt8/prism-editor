@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   X, PlusCircle, CheckCircle2, Copy, Info, ChevronDown,
 } from 'lucide-react';
-import { localStorageAdapter } from '../storage';
+import { indexedDBStorageAdapter } from '../storage';
 import { useAppStore } from '../store/appStore';
 import { useCanvasStore } from '../store/canvasStore';
 
@@ -65,7 +65,7 @@ export function NewWorkflowModal({ isOpen, onClose, onCreated }: NewWorkflowModa
     if (!name.trim() || isCreating) return;
     setIsCreating(true);
     try {
-      const { meta, content } = await localStorageAdapter.createWorkflow(
+      const { meta, content } = await indexedDBStorageAdapter.createWorkflow(
         name.trim(),
         description.trim() || undefined,
         category === 'Uncategorized' ? undefined : category

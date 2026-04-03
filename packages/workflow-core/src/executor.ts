@@ -161,7 +161,7 @@ export class WorkflowExecutor {
       // Type validation and auto-conversion
       if (this.typeValidator) {
         try {
-          const validated = this.typeValidator.validateInputs(nodeId, node.type, nodeInputs);
+          const validated = await this.typeValidator.validateInputs(nodeId, node.type, nodeInputs);
           // Replace with validated (potentially converted) inputs
           Object.assign(nodeInputs, validated);
         } catch (err) {

@@ -21,3 +21,4 @@ export { Tooltip, type TooltipProps, type TooltipPosition } from './Tooltip/Tool
 export { Stack, VStack, HStack, type StackProps, type StackJustify, type StackAlign, type StackWrap, type StackSize } from './Stack/Stack';
 export { Divider, type DividerProps, type DividerVariant, type DividerSpacing } from './Divider/Divider';
 export { Panel, type PanelProps, type PanelSize } from './Panel/Panel';
+export { ErrorBoundary } from './ErrorBoundary/ErrorBoundary';

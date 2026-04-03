@@ -15,6 +15,11 @@ A visual low-code workflow editor for composable image processing pipelines. Bui
 │  ├── dev-tool/          Developer UI — build & publish      │
 │  └── user-app/          End-user UI — run published flows   │
 ├─────────────────────────────────────────────────────────────┤
+│  server/                                                    │
+│  ├── Fastify API server — Workflow CRUD + publishing        │
+│  ├── Prisma ORM — SQLite database                           │
+│  └── Migration scripts — localStorage → API                 │
+├─────────────────────────────────────────────────────────────┤
 │  packages/                                                    │
 │  ├── shared-types/      Workflow, PublishedWorkflow, types  │
 │  ├── shared-ui/         Design tokens + shared components   │
@@ -34,10 +39,10 @@ Developer (dev-tool)
   2. Wire them together
   3. Configure parameters
   4. Preview live output
-  5. Publish → localStorage + BroadcastChannel
+  5. Save/Publish → API Server (Fastify + Prisma/SQLite)
          ↓
 End User (user-app)
-  6. Browse workflows
+  6. Browse workflows from API
   7. Fill inputs / adjust params
   8. Run → PublishedWorkflowExecutor → HTML img
 ```
@@ -62,7 +67,7 @@ End User (user-app)
 # Install dependencies
 pnpm install
 
-# Start both apps in development mode
+# Start all apps (dev-tool, user-app, and server)
 pnpm dev
 
 # Start dev-tool only
@@ -70,6 +75,9 @@ pnpm dev:dev-tool
 
 # Start user-app only
 pnpm dev:user-app
+
+# Start backend API server only
+pnpm server:dev
 
 # Build for production
 pnpm build
@@ -102,7 +110,20 @@ The developer's workspace. Powered by React Flow for the node canvas and Zustand
 
 ### user-app (`apps/user-app`)
 
-The end-user runtime. Loads published workflows from localStorage and runs them entirely client-side via `PublishedWorkflowExecutor`.
+The end-user runtime. Loads published workflows from the API server and runs them entirely client-side via `PublishedWorkflowExecutor`.
+
+---
+
+## Server (`server/`)
+
+Backend API powered by Fastify + Prisma + SQLite.
+
+| Script | Description |
+|--------|-------------|
+| `pnpm server:dev` | Start dev server with hot reload (port 3001) |
+| `pnpm server:migrate` | Migrate workflows from localStorage to API |
+
+See `server/README.md` for full API documentation.
 
 ---
 
@@ -168,6 +189,7 @@ Tests live next to the code they test (`.test.ts`). The `canvas` npm package pro
 
 See `git log` for full history. Highlights:
 
+- **Backend storage migration**: Fastify API server with Prisma ORM + SQLite for workflow CRUD and publishing; migration scripts to import existing localStorage data
 - **Composite node**: multi-overlay support (overlay, overlay2 … overlayN); overlay ports render correctly below the static overlay image
 - **Published workflow storage**: `dataUrl` stripping prevents `QuotaExceededError` in localStorage while preserving developer-provided images
 - **Output resolution**: v2 publish format uses `{nodeId}:image` output IDs; executor results are keyed by canvas node ID

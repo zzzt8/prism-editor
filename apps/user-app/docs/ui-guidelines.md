@@ -107,6 +107,13 @@
 | `--ua-success` | — | #22C55E | 成功状态 |
 | `--ua-error` | — | #EF4444 | 错误状态 |
 | `--ua-warning` | — | #F59E0B | 警告状态 |
+| `--ua-type-image` | — | #8B5CF6 | IMAGE 类型 badge（与 dev-tool 端口色对齐） |
+| `--ua-type-mask` | — | #22C55E | MASK 类型 badge（与 dev-tool 端口色对齐） |
+| `--ua-type-text` | — | #94A3B8 | TEXT 类型 badge（与 dev-tool 端口色对齐） |
+| `--ua-status-idle` | — | #71717A | 就绪/空闲状态 |
+| `--ua-status-running` | — | #818CF8 | 执行中状态 |
+| `--ua-status-done` | — | #22C55E | 执行完成状态（同 `--ua-success`） |
+| `--ua-status-error` | — | #EF4444 | 执行错误状态（同 `--ua-error`） |
 
 ### 字体规范
 
@@ -137,6 +144,7 @@
 - ❌ 使用技术术语（如"节点"、"端口"、"参数值"）
 - ❌ 复杂的导航或设置面板
 - ❌ 过多的参数控件（控制在 3-5 个）
+- ❌ 使用 node/port 等开发工具视觉元素（节点圆角、端口类型色标、节点状态指示器等专属设计资产仅限 dev-tool 使用）
 
 ## 组件规范
 
@@ -159,9 +167,9 @@
 ### 参数控件 (ParamsSection)
 
 参数区使用的控件：
-- **Slider**：用于数值参数，带当前值显示
-- **Select**：用于选择类参数
-- **输入框**：用于文本参数
+- **Slider**：用于数值参数，带当前值显示。自定义 thumb（14px 圆形，accent 色），hover 时 scale + glow，Firefox 通过 `-moz-range-thumb` 兼容
+- **Select**：用于选择类参数。内置 SVG chevron-down 箭头，hover 时边框变 accent，focus 时 accent 边框 + glow
+- **输入框**：用于文本参数。focus 时边框变 accent + box-shadow glow（2px accent 色，0.15s 过渡）
 
 所有控件样式统一，与卡片风格保持一致。
 

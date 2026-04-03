@@ -265,10 +265,14 @@ export interface TypeConverterFn<TFrom, TTo> {
 export interface ITypeConverterRegistry {
   register<TFrom, TTo>(converter: TypeConverterFn<TFrom, TTo>): void;
   canConvert(from: PortDataType, to: PortDataType): boolean;
+  /**
+   * Convert data from one type to another.
+   * Returns a Promise only if the converter is async, otherwise returns synchronously.
+   */
   convert<TFrom, TTo>(
     data: PipelineData<TFrom>,
     to: PortDataType
-  ): PipelineData<TTo> | null;
+  ): PipelineData<TTo> | Promise<PipelineData<TTo> | null> | null;
   getConverter(
     from: PortDataType,
     to: PortDataType

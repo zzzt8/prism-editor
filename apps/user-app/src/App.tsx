@@ -9,7 +9,7 @@ import { useUserAppStore } from './store/publishedStore';
 import { parseRoute, navigateToList } from './router';
 import { WorkflowListPage } from './pages/WorkflowListPage';
 import { WorkflowRunPage } from './pages/WorkflowRunPage';
-import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { ErrorBoundary } from '@prism/shared-ui';
 
 function App() {
   const { selectWorkflow, clearSelection, selectedWorkflow } = useUserAppStore();

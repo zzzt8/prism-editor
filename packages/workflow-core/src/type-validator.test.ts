@@ -44,26 +44,25 @@ const numNodeDef = makeNodeDef(
 
 describe('TypeValidator', () => {
   describe('type checking disabled', () => {
-    it('passes all inputs through when enabled=false', () => {
+    it('passes all inputs through when enabled=false', async () => {
       const validator = new TypeValidator([imageNodeDef], { enabled: false });
       const raw = { img: { foo: 'bar' } };
-      const result = validator.validateInputs('n1', 'image-processor', raw);
+      const result = await validator.validateInputs('n1', 'image-processor', raw);
       expect(result).toBe(raw);
     });
   });
 
   describe('required inputs', () => {
-    it('throws when a required input is missing', () => {
+    it('throws when a required input is missing', async () => {
       const validator = new TypeValidator([imageNodeDef]);
-      expect(() =>
-        validator.validateInputs('n1', 'image-processor', {})
-      ).toThrow(TypeMismatchError);
+      await expect(validator.validateInputs('n1', 'image-processor', {}))
+        .rejects.toThrow(TypeMismatchError);
     });
 
-    it('throws with correct type info in error', () => {
+    it('throws with correct type info in error', async () => {
       const validator = new TypeValidator([imageNodeDef]);
       try {
-        validator.validateInputs('n1', 'image-processor', {});
+        await validator.validateInputs('n1', 'image-processor', {});
         expect.fail('should have thrown');
       } catch (err) {
         expect(err).toBeInstanceOf(TypeMismatchError);
@@ -77,35 +76,35 @@ describe('TypeValidator', () => {
       }
     });
 
-    it('does not throw for optional missing inputs', () => {
+    it('does not throw for optional missing inputs', async () => {
       const optDef = makeNodeDef(
         'opt-node',
         [{ id: 'opt', name: 'opt', dataType: PortDataType.IMAGE, required: false }],
         [{ id: 'out', name: 'out', dataType: PortDataType.IMAGE, required: true }]
       );
       const validator = new TypeValidator([optDef]);
-      const result = validator.validateInputs('n1', 'opt-node', {});
+      const result = await validator.validateInputs('n1', 'opt-node', {});
       expect(result['opt']).toBeUndefined();
     });
   });
 
   describe('type matching', () => {
-    it('passes through when input type matches port dataType', () => {
+    it('passes through when input type matches port dataType', async () => {
       const validator = new TypeValidator([imageNodeDef]);
       const input = pipeline({ width: 100, height: 100 }, PortDataType.IMAGE);
-      const result = validator.validateInputs('n1', 'image-processor', { img: input });
+      const result = await validator.validateInputs('n1', 'image-processor', { img: input });
       expect(result['img']).toBe(input);
     });
 
-    it('passes through non-PipelineData values unchanged', () => {
+    it('passes through non-PipelineData values unchanged', async () => {
       const validator = new TypeValidator([imageNodeDef]);
-      const result = validator.validateInputs('n1', 'image-processor', { img: 'just-a-string' });
+      const result = await validator.validateInputs('n1', 'image-processor', { img: 'just-a-string' });
       expect(result['img']).toBe('just-a-string');
     });
   });
 
   describe('type compatibility', () => {
-    it('throws when source type is incompatible with target', () => {
+    it('throws when source type is incompatible with target', async () => {
       const validator = new TypeValidator([numNodeDef]);
       const input = pipeline(42, PortDataType.NUMBER);
       // Try to connect NUMBER to IMAGE (which doesn't accept NUMBER)
@@ -115,44 +114,42 @@ describe('TypeValidator', () => {
         [{ id: 'out', name: 'out', dataType: PortDataType.IMAGE, required: true }]
       );
       const validator2 = new TypeValidator([imgWithNumberDef]);
-      expect(() =>
-        validator2.validateInputs('n1', 'img-node', { img: input })
-      ).toThrow(TypeMismatchError);
+      await expect(validator2.validateInputs('n1', 'img-node', { img: input }))
+        .rejects.toThrow(TypeMismatchError);
     });
 
-    it('warns when no node definition exists for the type', () => {
+    it('warns when no node definition exists for the type', async () => {
       const warnings: string[] = [];
       const validator = new TypeValidator([], {
         onDiagnostic: (msg) => warnings.push(msg),
       });
-      validator.validateInputs('n1', 'unknown-node', { img: 'value' });
+      await validator.validateInputs('n1', 'unknown-node', { img: 'value' });
       expect(warnings.some((w) => w.includes('unknown-node'))).toBe(true);
     });
   });
 
   describe('auto-conversion', () => {
-    it('auto-converts compatible types when autoConvert=true', () => {
+    it('auto-converts compatible types when autoConvert=true', async () => {
       const validator = new TypeValidator([maskNodeDef]);
       // IMAGE connected to MASK port — should auto-convert
       const imageInput = pipeline(
         { width: 100, height: 100, data: new Uint8ClampedArray(100 * 100 * 4) } as unknown as ImageData,
         PortDataType.IMAGE
       );
-      const result = validator.validateInputs('n1', 'mask-processor', { msk: imageInput });
+      const result = await validator.validateInputs('n1', 'mask-processor', { msk: imageInput });
       // The auto-converter should be applied (result may differ from input)
       expect(result).toBeDefined();
       expect(result['msk']).toBeDefined();
     });
 
-    it('throws when autoConvert=false and types differ', () => {
+    it('throws when autoConvert=false and types differ', async () => {
       const validator = new TypeValidator([maskNodeDef], { autoConvert: false });
       const imageInput = pipeline(
         { width: 100, height: 100 } as unknown as ImageData,
         PortDataType.IMAGE
       );
-      expect(() =>
-        validator.validateInputs('n1', 'mask-processor', { msk: imageInput })
-      ).toThrow(TypeMismatchError);
+      await expect(validator.validateInputs('n1', 'mask-processor', { msk: imageInput }))
+        .rejects.toThrow(TypeMismatchError);
     });
   });
 

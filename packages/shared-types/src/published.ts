@@ -94,6 +94,16 @@ export interface PublishedConfig {
   exposedParams: PublishedParamConfig[];
   /** Auto-detected output nodes that produce the final result */
   outputs: PublishedOutputConfig[];
+
+  // ── Custom node packages ─────────────────────────────────────────────────
+
+  /**
+   * Node packages required by this workflow.
+   * Maps package name → { version, url? }
+   * If url is provided, the package can be loaded from that URL.
+   * Otherwise, the user app should prompt the user to import the package.
+   */
+  requiredNodes?: Record<string, { version: string; url?: string }>;
 }
 
 export interface PublishedWorkflow {

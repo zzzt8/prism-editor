@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  workflows Workflow[]
+  nodePackages NodePackage[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model NodePackage {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  description  String?
+  category     String   @default("custom")
+  latestVersion String
+  latestManifest String // JSON
+
+  // Storage
+  storageType  String   @default("database") // "database" | "oss"
+  ossKey       String?
+
+  authorId     String
+  author       User     @relation(fields: [authorId], references: [id])
+  versions     NodePackageVersion[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([authorId])
+  @@index([category])
+}
+
+model NodePackageVersion {
+  id          String      @id @default(cuid())
+  packageId   String
+  package     NodePackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  version     String
+  manifest    String      // JSON
+  storageType String      @default("database")
+  ossKey      String?
+  createdAt   DateTime   @default(now())
+
+  @@index([packageId])
+}
+
+model Workflow {
+  id          String         @id @default(cuid())
+  name        String
+  description String?
+  version     String         @default("1.0.0")
+  status      WorkflowStatus @default(DRAFT)
+  category    String?
+  content     String
+  userId      String
+  user        User           @relation(fields: [userId], references: [id])
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  publishedAt DateTime?
+  published   PublishedWorkflow?
+  versions    WorkflowVersion[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model WorkflowVersion {
+  id          String   @id @default(cuid())
+  workflowId  String
+  workflow    Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  version     String   // Semantic version label, e.g. "1.0.0"
+  content     String   // Full workflow JSON
+  createdBy   String?
+  createdAt   DateTime @default(now())
+
+  @@index([workflowId])
+  @@index([createdAt])
+}
+
+model PublishedWorkflow {
+  id         String   @id @default(cuid())
+  workflowId String   @unique
+  workflow   Workflow @relation(fields: [workflowId], references: [id])
+  content    String
+  publishedBy String?
+  publishedAt DateTime @default(now())
+}
+
+enum WorkflowStatus {
+  DRAFT
+  PUBLISHED
+}

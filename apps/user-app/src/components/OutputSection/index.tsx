@@ -64,8 +64,8 @@ function ProgressDisplay({ progress }: { progress?: ExecutionProgress }) {
   if (!progress) {
     return (
       <div className="ua-result-running">
-        <div className="ua-spinner" />
-        <span>正在执行…</span>
+        <div className="ua-spinner ua-spinner--accent" />
+        <span className="ua-running-indicator">正在执行…</span>
       </div>
     );
   }
@@ -77,7 +77,7 @@ function ProgressDisplay({ progress }: { progress?: ExecutionProgress }) {
     <div className="ua-progress">
       <div className="ua-progress-header">
         <div className="ua-spinner ua-spinner--accent" />
-        <span className="ua-progress-label">正在执行</span>
+        <span className="ua-progress-label ua-running-indicator">正在执行</span>
         <span className="ua-progress-count">{completedNodes}/{totalNodes} 节点</span>
       </div>
       <div className="ua-progress-bar">

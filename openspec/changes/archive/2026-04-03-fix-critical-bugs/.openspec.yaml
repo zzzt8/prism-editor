@@ -1,0 +1,23 @@
+name: fix-critical-bugs
+description: 修复项目中的 Critical 和 High 级别 Bug（数据流、性能、稳定性）
+status: implemented
+created: 2026-04-02
+author: Claude
+
+artifacts:
+  - id: proposal
+    status: done
+    path: proposal.md
+  - id: design
+    status: done
+    path: design.md
+  - id: tasks
+    status: done
+    path: tasks.md
+
+apply:
+  requires:
+    - tasks
+  ready: true
+  completed: true
+  completedAt: 2026-04-02

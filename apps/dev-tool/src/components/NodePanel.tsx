@@ -1,12 +1,12 @@
 // NodePanel — sidebar listing all available node types with collapsible categories
 
 import React, { useState, useMemo } from 'react';
-import { createRegistry, listAll } from '@prism/node-definitions';
-import type { NodeDefinition } from '@prism/shared-types';
-import { Download, RefreshCw, VenetianMask, Image, Upload, Search, X, Hexagon, CircleDot, ChevronDown, Plus, Settings, ExternalLink } from 'lucide-react';
+import { globalRegistry } from '@prism/core';
+import type { NodeDefinition, NodePackageManifest } from '@prism/shared-types';
+import { Download, RefreshCw, VenetianMask, Image, Upload, Search, X, Hexagon, CircleDot, ChevronDown, Plus, Settings, ExternalLink, Package } from 'lucide-react';
 import './NodePanel.css';
-
-const registry = createRegistry();
+import { ImportModal } from './NodePackageManager/ImportModal';
+import { MarketplaceList } from './NodeMarketplace';
 
 const CATEGORY_LABELS: Record<string, string> = {
   input:     '输入',
@@ -115,8 +115,35 @@ export const NodePanel: React.FC = () => {
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [toast, setToast] = useState<string | null>(null);
+  const [showImport, setShowImport] = useState(false);
+  const [showMarketplace, setShowMarketplace] = useState(false);
+  const [nodeVersion, setNodeVersion] = useState(0); // 用于触发节点列表刷新
+  const [initError, setInitError] = useState<string | null>(null);
 
-  const allDefinitions = useMemo(() => listAll(registry), []);
+  const allDefinitions = useMemo(() => {
+    try {
+      globalRegistry.initialize();
+      setInitError(null);
+      return globalRegistry.listNodes();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to initialize node registry';
+      setInitError(message);
+      console.error('[NodePanel] globalRegistry.initialize() failed:', err);
+      return [];
+    }
+  }, [nodeVersion]); // 添加 nodeVersion 作为依赖
+
+  const handleImportSuccess = (manifest: NodePackageManifest, nodeTypes: string[]) => {
+    setToast(`节点包 "${manifest.name}" 导入成功！`);
+    setShowImport(false);
+    setNodeVersion((v) => v + 1); // 触发节点列表刷新
+  };
+
+  const handleMarketplaceInstall = (manifest: NodePackageManifest) => {
+    // Marketplace uses the same import flow
+    const nodeTypes = manifest.definitions.map((d) => d.type);
+    handleImportSuccess(manifest, nodeTypes);
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -146,7 +173,7 @@ export const NodePanel: React.FC = () => {
   };
 
   const handleAddCustomNode = () => {
-    setToast('自定义节点功能即将推出');
+    setShowImport(true);
   };
 
   const hasResults = filtered.length > 0;
@@ -211,6 +238,10 @@ export const NodePanel: React.FC = () => {
 
       {/* Footer — always visible */}
       <div className="node-panel-footer">
+        <button className="node-add-custom-btn" onClick={() => setShowMarketplace(true)} type="button">
+          <Package size={13} />
+          Browse Market
+        </button>
         <button className="node-add-custom-btn" onClick={handleAddCustomNode} type="button">
           <Plus size={13} />
           Add Custom Node
@@ -231,6 +262,24 @@ export const NodePanel: React.FC = () => {
           className="node-toast-auto-dismiss"
           onAnimationEnd={() => setToast(null)}
         />
+      )}
+
+      {/* Import Modal */}
+      {showImport && (
+        <ImportModal
+          onClose={() => setShowImport(false)}
+          onSuccess={handleImportSuccess}
+        />
+      )}
+
+      {/* Marketplace Panel */}
+      {showMarketplace && (
+        <div className="node-marketplace-panel">
+          <MarketplaceList
+            onInstallPackage={handleMarketplaceInstall}
+            onClose={() => setShowMarketplace(false)}
+          />
+        </div>
       )}
     </aside>
   );

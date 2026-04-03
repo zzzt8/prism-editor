@@ -2,9 +2,9 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useUserAppStore, type PublishedWorkflowMeta } from '../store/publishedStore';
-import { syncWorkflowToLocal } from '../store/publishedStore';
 import { navigateToWorkflow } from '../router';
 import { importWorkflowFromFile, importWorkflowFromClipboard } from '../utils/workflowImport';
+import { syncWorkflowToLocal } from '../store/publishedStore';
 
 // ─── Toast ───────────────────────────────────────────────────────────────────
 
@@ -129,9 +129,13 @@ export const WorkflowListPage: React.FC = () => {
   const handleFileImport = useCallback(async (file: File) => {
     const result = await importWorkflowFromFile(file);
     if (result.success) {
-      syncWorkflowToLocal(result.workflow as any);
-      loadWorkflows();
-      showToast(`已导入「${result.workflow.name}」`, 'success');
+      try {
+        await syncWorkflowToLocal(result.workflow);
+        loadWorkflows();
+        showToast(`已导入「${result.workflow.name}」`, 'success');
+      } catch (err) {
+        showToast(`保存失败：${err instanceof Error ? err.message : String(err)}`, 'error');
+      }
     } else {
       showToast(`导入失败：${result.reason}`, 'error');
     }
@@ -154,10 +158,14 @@ export const WorkflowListPage: React.FC = () => {
 
         const result = await importWorkflowFromClipboard();
         if (result.success) {
-          syncWorkflowToLocal(result.workflow as any);
-          loadWorkflows();
-          setPasteHint(false);
-          showToast(`已从剪贴板导入「${result.workflow.name}」`, 'success');
+          try {
+            await syncWorkflowToLocal(result.workflow);
+            loadWorkflows();
+            setPasteHint(false);
+            showToast(`已从剪贴板导入「${result.workflow.name}」`, 'success');
+          } catch (err) {
+            showToast(`保存失败：${err instanceof Error ? err.message : String(err)}`, 'error');
+          }
         } else {
           showToast(`剪贴板内容无效：${result.reason}`, 'error');
         }

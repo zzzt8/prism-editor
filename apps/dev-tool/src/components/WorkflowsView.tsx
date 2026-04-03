@@ -3,12 +3,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box, Search, ChevronDown, List, LayoutGrid, Plus,
-  Layers, MoreHorizontal, Trash2, FolderOpen, Info, X,
+  Layers, MoreHorizontal, Trash2, FolderOpen, Info, X, AlertCircle,
 } from 'lucide-react';
 import type { WorkflowMeta } from '@prism/shared-types';
-import { localStorageAdapter } from '../storage';
+import { indexedDBStorageAdapter } from '../storage';
 import { useAppStore } from '../store/appStore';
 import { useCanvasStore } from '../store/canvasStore';
+
+const fileInputStyle: React.CSSProperties = { display: 'none' };
 
 type SortKey = 'Recent' | 'Name' | 'Status';
 type StatusFilter = 'All' | 'Draft' | 'Published';
@@ -66,6 +68,7 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
   const navigateToEditor = useAppStore((s) => s.navigateToEditor);
   const loadWorkflow = useCanvasStore((s) => s.loadWorkflow);
   const newWorkflow = useCanvasStore((s) => s.newWorkflow);
+  const importWorkflowFromFile = useCanvasStore((s) => s.importWorkflowFromFile);
 
   const [allWorkflows, setAllWorkflows] = useState<WorkflowMeta[]>([]);
   const [search, setSearch] = useState('');
@@ -79,9 +82,23 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
   const [editValue, setEditValue] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      await importWorkflowFromFile(file);
+      navigateToEditor('imported');
+    } catch (err) {
+      console.error('Import failed:', err);
+    } finally {
+      e.target.value = '';
+    }
+  };
 
   const load = useCallback(async () => {
-    const list = await localStorageAdapter.list();
+    const list = await indexedDBStorageAdapter.list();
     setAllWorkflows(list);
   }, []);
 
@@ -120,21 +137,24 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const paginated = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const handleOpen = async (wf: WorkflowMeta) => {
     setOpenMenuId(null);
+    setLoadError(null);
     try {
-      const content = await localStorageAdapter.load(wf.id);
+      const content = await indexedDBStorageAdapter.load(wf.id);
       loadWorkflow(content);
       navigateToEditor(wf.id);
-    } catch {
-      // if load fails, still navigate
-      navigateToEditor(wf.id);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load workflow';
+      setLoadError(message);
     }
   };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    await localStorageAdapter.delete(deleteTarget.id);
+    await indexedDBStorageAdapter.delete(deleteTarget.id);
     setAllWorkflows((prev) => prev.filter((w) => w.id !== deleteTarget.id));
     setDeleteTarget(null);
     setOpenMenuId(null);
@@ -152,7 +172,7 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
     if (!editingId) return;
     const trimmed = editValue.trim();
     if (trimmed) {
-      await localStorageAdapter.updateWorkflowMeta(editingId, { name: trimmed });
+      await indexedDBStorageAdapter.updateWorkflowMeta(editingId, { name: trimmed });
       setAllWorkflows((prev) =>
         prev.map((w) => w.id === editingId ? { ...w, name: trimmed } : w)
       );
@@ -179,7 +199,8 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
           </div>
         </div>
         <div className="home-header-actions">
-          <button className="home-import-btn">Import</button>
+          <button className="home-import-btn" onClick={() => fileInputRef.current?.click()}>Import</button>
+          <input ref={fileInputRef} type="file" accept=".json" style={fileInputStyle} onChange={handleImport} />
           <button className="home-new-btn" onClick={onNewWorkflow}>
             <Plus size={16} />
             New Workflow
@@ -188,12 +209,22 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
             className="home-avatar"
             title="User"
           >
-            <img
-              src="https://lh3.googleusercontent.com/a/placeholder"
-              alt="User"
-              className="home-avatar"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
+            <div
+              className="home-avatar-placeholder"
+              style={{
+                width: '100%',
+                height: '100%',
+                background: 'var(--accent-muted)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--accent)',
+                fontSize: '14px',
+                fontWeight: 600,
+              }}
+            >
+              U
+            </div>
           </div>
         </div>
       </header>
@@ -263,6 +294,17 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
             </div>
           </div>
         </section>
+
+        {/* Error display */}
+        {loadError && (
+          <section className="home-error-banner">
+            <AlertCircle size={16} />
+            <span>{loadError}</span>
+            <button onClick={() => setLoadError(null)} title="Dismiss">
+              <X size={14} />
+            </button>
+          </section>
+        )}
 
         {/* Workflow List / Empty State */}
         {paginated.length === 0 ? (

@@ -99,14 +99,16 @@ export class TypeValidator {
    * 1. If the input is missing and the port is required → throws TypeMismatchError
    * 2. If the input type matches the port's dataType → passes through unchanged
    * 3. If the input type differs but is compatible (in TYPE_COMPATIBILITY) and
-   *    autoConvert is enabled → applies the registered converter
+   *    autoConvert is enabled → applies the registered converter (sync or async)
    * 4. If the input type differs and is incompatible → throws TypeMismatchError
+   *
+   * @returns Promise that resolves to the validated/converted inputs record
    */
-  validateInputs(
+  async validateInputs(
     nodeId: string,
     nodeType: string,
     inputs: Record<string, unknown>
-  ): Record<string, unknown> {
+  ): Promise<Record<string, unknown>> {
     if (!this.options.enabled) return inputs;
 
     const nodeDef = this.nodeDefs.get(nodeType);
@@ -170,14 +172,8 @@ export class TypeValidator {
         if (converted !== null) {
           // Handle both sync and async converters
           if (converted instanceof Promise) {
-            // For async converters, we need to handle this specially
-            // Since validateInputs is sync, we store a promise and resolve it later
-            // For now, warn and pass through (full async support in executor layer)
-            this.options.onDiagnostic(
-              `Auto-conversion for '${pipelineValue.type}'→'${port.dataType}' on ` +
-              `node '${nodeId}' port '${port.id}' is async — deferring`
-            );
-            result[port.id] = value;
+            const awaited = await converted;
+            result[port.id] = awaited;
           } else {
             result[port.id] = converted;
           }

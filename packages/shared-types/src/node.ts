@@ -46,6 +46,8 @@ export interface NodeDefinition {
   outputs: PortDefinition[];
   params: ParamDefinition[];
   version?: string;
+  /** Optional executor ID override. Defaults to node type if not specified. */
+  executor?: string;
 }
 
 export const NODE_CATEGORIES = {

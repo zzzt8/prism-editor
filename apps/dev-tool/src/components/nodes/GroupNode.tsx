@@ -7,7 +7,7 @@
 // GroupNode is rendered as a React Flow custom Node, positioned at group.bounds.
 // The header area is draggable — dragging it moves ALL child nodes simultaneously.
 
-import React, { type FC, useCallback, useRef, useState } from 'react';
+import React, { type FC, useCallback, useRef, useState, useEffect } from 'react';
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { useCanvasStore, type NodeGroup } from '../../store/canvasStore';
 
@@ -24,6 +24,9 @@ export const GroupNode: FC<NodeProps<GroupNodeType>> = ({ id, data }) => {
 
   const [dragging, setDragging] = useState(false);
   const dragStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
+
+  // Stable refs to hold listener functions so they can be removed on unmount
+  const listenersAttachedRef = useRef<{ move?: (e: MouseEvent) => void; up?: (e: MouseEvent) => void } | null>(null);
 
   // When the group node position changes (via React Flow drag), sync to all child nodes
   // The header is the drag handle — we track mousedown/mouseup to sync child positions
@@ -49,15 +52,30 @@ export const GroupNode: FC<NodeProps<GroupNodeType>> = ({ id, data }) => {
       const handleMouseUp = () => {
         dragStartRef.current = null;
         setDragging(false);
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        if (listenersAttachedRef.current) {
+          document.removeEventListener('mousemove', listenersAttachedRef.current.move!);
+          document.removeEventListener('mouseup', listenersAttachedRef.current.up!);
+          listenersAttachedRef.current = null;
+        }
       };
 
+      listenersAttachedRef.current = { move: handleMouseMove, up: handleMouseUp };
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     },
     [group.id, moveGroup]
   );
+
+  // Cleanup on unmount: remove any lingering listeners
+  useEffect(() => {
+    return () => {
+      if (listenersAttachedRef.current) {
+        document.removeEventListener('mousemove', listenersAttachedRef.current.move!);
+        document.removeEventListener('mouseup', listenersAttachedRef.current.up!);
+        listenersAttachedRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <div

@@ -39,25 +39,23 @@ interface PrismNodeProps extends Omit<NodeProps, 'data'> {
   data: CanvasNodeData;
 }
 
-type PrismNodeType = Node<CanvasNodeData, 'prismNode'>;
-
 // ---------------------------------------------------------------------------
 // Main PrismNode component
 // ---------------------------------------------------------------------------
 
-export const PrismNode: FC<NodeProps<PrismNodeType>> = ({ id, data, selected }) => {
+export const PrismNode: FC<PrismNodeProps> = ({ id, data, selected }) => {
   const params = data.params ?? {};
   const definition = data.definition;
   const label = data.label ?? data.nodeType ?? 'Unknown';
-  const currentNodeId = useCanvasStore((s) => s._currentNodeId);
   const updateNodeParams = useCanvasStore((s) => s.updateNodeParams);
 
-  // Execution status derived from canvas state
+  // Execution status derived from node data (not global store)
+  // This prevents unnecessary re-renders of all nodes when any node executes
   const execStatus: 'idle' | 'running' | 'done' | 'error' = data.executionError
     ? 'error'
     : data.executionResult
     ? 'done'
-    : currentNodeId === id
+    : data._executingNodeId === id
     ? 'running'
     : 'idle';
 

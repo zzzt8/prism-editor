@@ -253,6 +253,5 @@ export const useUserAppStore = create<UserAppState>((set, get) => {
  */
 export async function syncWorkflowToLocal(workflow: ValidatedPublishedWorkflow): Promise<string> {
   const result = await userAppStorage.importWorkflow(workflow);
-  console.log('[publishedStore] Workflow synced to server:', result.id);
   return result.id;
 }

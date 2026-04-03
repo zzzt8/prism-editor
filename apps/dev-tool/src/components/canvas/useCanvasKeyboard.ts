@@ -1,6 +1,6 @@
 // useCanvasKeyboard — keyboard shortcuts for canvas operations
 // Handles: Delete/Backspace (remove), Escape (clear selection), Ctrl+G (group),
-// Ctrl+C/X/V (copy/cut/paste)
+// Ctrl+C/X/V (copy/cut/paste), Ctrl+S (save)
 
 import { useEffect } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
@@ -10,6 +10,13 @@ export function useCanvasKeyboard() {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+      // Ctrl+S - Save workflow
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        useCanvasStore.getState().saveWorkflow();
+        return;
+      }
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
         const selectedEdgeIds = useCanvasStore.getState().selectedEdgeIds;

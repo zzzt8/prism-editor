@@ -1,14 +1,11 @@
 // Storage adapters barrel export
 
-export { LocalStorageAdapter, localStorageAdapter } from './LocalStorageAdapter';
 export { JsonFileAdapterImpl, jsonFileAdapter } from './JsonFileAdapter';
 export { ApiStorageAdapter } from './ApiStorageAdapter';
-export { MigrationStorageAdapter } from './MigrationStorageAdapter';
 export { IndexedDBStorageAdapter, indexedDBStorageAdapter } from './IndexedDBStorageAdapter';
 
 // Environment-based adapter selection
 import { ApiStorageAdapter } from './ApiStorageAdapter';
-import { MigrationStorageAdapter } from './MigrationStorageAdapter';
 import { IndexedDBStorageAdapter, indexedDBStorageAdapter } from './IndexedDBStorageAdapter';
 import { useAuthStore } from '../store/authStore';
 
@@ -17,7 +14,6 @@ const strictApi = import.meta.env.VITE_STRICT_API === 'true';
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // Single shared instance - avoid creating multiple instances with setInterval leaks
-let _migrationAdapterInstance: MigrationStorageAdapter | null = null;
 let _apiAdapterInstance: ApiStorageAdapter | null = null;
 let _indexedDbAdapterInstance: IndexedDBStorageAdapter | null = null;
 
@@ -26,17 +22,6 @@ function getOrCreateApiAdapter(): ApiStorageAdapter {
     _apiAdapterInstance = new ApiStorageAdapter(apiBaseUrl);
   }
   return _apiAdapterInstance;
-}
-
-function getOrCreateMigrationAdapter(): MigrationStorageAdapter {
-  if (!_migrationAdapterInstance) {
-    _migrationAdapterInstance = new MigrationStorageAdapter(apiBaseUrl);
-    // Initialize immediately to start the health check interval
-    _migrationAdapterInstance.init().catch((err) => {
-      console.warn('[Storage] MigrationStorageAdapter init failed:', err);
-    });
-  }
-  return _migrationAdapterInstance;
 }
 
 function getOrCreateIndexedDbAdapter(): IndexedDBStorageAdapter {
@@ -65,23 +50,12 @@ export function syncStorageTokens() {
     } else {
       activeStorageAdapter.clearTokens();
     }
-  } else if (activeStorageAdapter instanceof MigrationStorageAdapter) {
-    // MigrationStorageAdapter wraps ApiStorageAdapter internally
-    const innerAdapter = (activeStorageAdapter as MigrationStorageAdapter)['apiAdapter'];
-    if (state.accessToken && state.isAuthenticated) {
-      innerAdapter.setTokens(state.accessToken, '');
-    } else {
-      innerAdapter.clearTokens();
-    }
   }
 }
 
 // Cleanup function - call this on app unmount to prevent timer leaks
 export function cleanupStorage(): void {
-  if (_migrationAdapterInstance) {
-    _migrationAdapterInstance.destroy();
-    _migrationAdapterInstance = null;
-  }
+  // No-op: adapters no longer have cleanup requirements
 }
 
 export { activeStorageAdapter };

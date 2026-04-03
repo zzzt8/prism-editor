@@ -35,13 +35,13 @@ export class TypeConverterRegistry {
 
   /**
    * Convert data from one type to another.
+   * Returns a Promise only if the converter is async, otherwise returns synchronously.
    * Returns null if no converter is registered for this type pair.
-   * The returned promise resolves to the converted data (or null).
    */
   convert<TFrom, TTo>(
     data: PipelineData<TFrom>,
     to: PortDataType
-  ): Promise<PipelineData<TTo> | null> | PipelineData<TTo> | null {
+  ): PipelineData<TTo> | Promise<PipelineData<TTo> | null> | null {
     if (data.type === to) return data as unknown as PipelineData<TTo>;
 
     const key = this.makeKey(data.type, to);
@@ -49,7 +49,9 @@ export class TypeConverterRegistry {
     if (!converter) return null;
 
     const result = (converter as TypeConverterFn<TFrom, TTo>).convert(data);
-    return Promise.resolve(result) as Promise<PipelineData<TTo> | null>;
+    // If the converter returns a Promise, return it as-is
+    // Otherwise wrap in Promise.resolve for consistent async handling
+    return result instanceof Promise ? result : Promise.resolve(result);
   }
 
   /**

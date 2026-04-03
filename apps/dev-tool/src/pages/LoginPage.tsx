@@ -1,0 +1,91 @@
+// LoginPage component
+import React, { useState } from 'react';
+import { useAuthStore } from '../store/authStore';
+import './AuthPage.css';
+
+interface LoginPageProps {
+  onSwitchToRegister: () => void;
+}
+
+export const LoginPage: React.FC<LoginPageProps> = ({ onSwitchToRegister }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const login = useAuthStore((s) => s.login);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    try {
+      await login(email, password);
+    } catch (err: any) {
+      setError(err.message || 'Login failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="auth-page">
+      <div className="auth-container">
+        <div className="auth-header">
+          <div className="auth-logo">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+              <rect width="40" height="40" rx="10" fill="#a855f7" />
+              <path d="M20 8L32 28H8L20 8Z" fill="white" />
+            </svg>
+          </div>
+          <h1 className="auth-title">Welcome back</h1>
+          <p className="auth-subtitle">Sign in to your account</p>
+        </div>
+
+        <form className="auth-form" onSubmit={handleSubmit}>
+          {error && <div className="auth-error">{error}</div>}
+
+          <div className="auth-field">
+            <label className="auth-label" htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              className="auth-input"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+              autoComplete="email"
+            />
+          </div>
+
+          <div className="auth-field">
+            <label className="auth-label" htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              className="auth-input"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Your password"
+              required
+              autoComplete="current-password"
+            />
+          </div>
+
+          <button type="submit" className="auth-btn-primary" disabled={isLoading}>
+            {isLoading ? 'Signing in...' : 'Sign in'}
+          </button>
+        </form>
+
+        <div className="auth-footer">
+          <span>Don't have an account?</span>
+          <button type="button" className="auth-link" onClick={onSwitchToRegister}>
+            Create account
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};

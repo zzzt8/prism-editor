@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "composite": true
+  },
+  "references": [
+    { "path": "../shared-types" },
+    { "path": "../node-definitions" },
+    { "path": "../image-ops" }
+  ],
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

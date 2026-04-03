@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Box, Play, Square, CheckCircle2,
-  Loader2, FileUp, Settings, User,
+  Loader2, FileUp, Settings, User, Save,
 } from 'lucide-react';
 import { useCanvasStore } from '../../store/canvasStore';
 import { useAppStore } from '../../store/appStore';
@@ -23,6 +23,7 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({ onPublishClick, 
   const cancelExecution = useCanvasStore((s) => s.cancelExecution);
   const importWorkflowFromFile = useCanvasStore((s) => s.importWorkflowFromFile);
   const renameWorkflow = useCanvasStore((s) => s.renameWorkflow);
+  const saveWorkflow = useCanvasStore((s) => s.saveWorkflow);
   const leftPanelOpen = useAppStore((s) => s.leftPanelOpen);
   const rightPanelOpen = useAppStore((s) => s.rightPanelOpen);
 
@@ -31,13 +32,30 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({ onPublishClick, 
   const [titleValue, setTitleValue] = useState(workflowMeta.name);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const statusMsgTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isRunning = executionStatus === 'running';
 
   const showMsg = (msg: string) => {
+    // Clear any existing timer before setting new one
+    if (statusMsgTimerRef.current) {
+      clearTimeout(statusMsgTimerRef.current);
+    }
     setStatusMsg(msg);
-    setTimeout(() => setStatusMsg(null), 2500);
+    statusMsgTimerRef.current = setTimeout(() => {
+      setStatusMsg(null);
+      statusMsgTimerRef.current = null;
+    }, 2500);
   };
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (statusMsgTimerRef.current) {
+        clearTimeout(statusMsgTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleImportJson = () => {
     fileInputRef.current?.click();
@@ -71,6 +89,16 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({ onPublishClick, 
       else showMsg(`执行出错: ${result.error}`);
     } catch (err) {
       showMsg(`执行出错: ${String(err)}`);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      await saveWorkflow();
+      showMsg('已保存');
+    } catch (err) {
+      console.error('保存失败:', err);
+      showMsg('保存失败，请检查控制台');
     }
   };
 
@@ -150,6 +178,16 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({ onPublishClick, 
 
         {/* ── Right Zone ──────────────────────────── */}
         <div className="wf-header-right">
+          {/* Save */}
+          <button
+            className="wf-save-btn"
+            onClick={handleSave}
+            title="保存 (Ctrl+S)"
+          >
+            <Save size={14} />
+            保存
+          </button>
+
           {/* Execute — purple, like homepage */}
           <button
             className={`wf-execute-btn ${isRunning ? 'wf-execute-btn--running' : 'wf-execute-btn--ready'}`}
@@ -398,6 +436,30 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({ onPublishClick, 
           opacity: 0.4;
           cursor: not-allowed;
         }
+        .wf-save-btn {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          padding: 5px 12px;
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: transparent;
+          color: #a1a1aa;
+          font-family: inherit;
+          transition: background 0.12s, color 0.12s, border-color 0.12s;
+        }
+        .wf-save-btn:hover {
+          background: #27272a;
+          color: #f4f4f5;
+          border-color: rgba(255, 255, 255, 0.15);
+        }
+        .wf-save-btn:active {
+          transform: scale(0.97);
+        }
+
         /* Purple — matches homepage accent */
         .wf-execute-btn--ready {
           color: #ffffff;
