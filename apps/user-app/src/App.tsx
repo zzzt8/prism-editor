@@ -9,6 +9,7 @@ import { useUserAppStore } from './store/publishedStore';
 import { parseRoute, navigateToList } from './router';
 import { WorkflowListPage } from './pages/WorkflowListPage';
 import { WorkflowRunPage } from './pages/WorkflowRunPage';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 function App() {
   const { selectWorkflow, clearSelection, selectedWorkflow } = useUserAppStore();
@@ -30,8 +31,7 @@ function App() {
     // Listen to hash changes
     window.addEventListener('hashchange', syncFromRoute);
     return () => window.removeEventListener('hashchange', syncFromRoute);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [selectedWorkflow, selectWorkflow, clearSelection]);
 
   // Also sync store → route when selection changes programmatically
   useEffect(() => {
@@ -42,10 +42,12 @@ function App() {
   }, [selectedWorkflow]);
 
   const route = parseRoute();
-  if (route.kind === 'run') {
-    return <WorkflowRunPage />;
-  }
-  return <WorkflowListPage />;
+  return (
+    <ErrorBoundary>
+      {route.kind === 'run' ? <WorkflowRunPage /> : <WorkflowListPage />}
+    </ErrorBoundary>
+  );
 }
 
 export default App;
+

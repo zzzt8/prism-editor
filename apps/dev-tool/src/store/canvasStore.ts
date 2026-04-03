@@ -1,33 +1,73 @@
 // Canvas store - manages workflow canvas state using Zustand
 
 import { create } from 'zustand';
-import type { NodeChange, EdgeChange, Connection } from '@xyflow/react';
-import type { Workflow, WorkflowNode, ExecutionProgress, NodeDefinition, PortDataType } from '@prism/shared-types';
-import { canConnectByDataType } from '@prism/shared-types';
-import { createRegistry } from '@prism/node-definitions';
-import { localStorageAdapter } from '../storage';
+import type { NodeChange, EdgeChange, Connection as RfConnection } from '@xyflow/react';
+import type { Workflow, WorkflowNode, ExecutionProgress, NodeDefinition, Connection } from '@prism/shared-types';
+import { canConnectByDataType, PortDataType } from '@prism/shared-types';
+import { globalRegistry } from '@prism/core';
+import { activeStorageAdapter } from '../storage';
 import { PORT_TYPE_COLORS } from '../utils/portTypeStyles';
 
-const AUTO_SAVE_DELAY_MS = 1500;
+// React Flow's Connection type (source/target based)
+type ReactFlowConnection = RfConnection;
+
+// ─── Port lookup helper ────────────────────────────────────────────────────────
+
+/**
+ * Match a port by id, name, or label (some test JSON uses label instead of name).
+ */
+function findPort<T extends { id: string; name: string; label?: string; dataType?: string }>(
+  ports: T[],
+  portId: string
+): T | undefined {
+  return ports.find((p) => p.id === portId || p.name === portId || p.label === portId);
+}
+
+/**
+ * Infer PortDataType from common port names when dataType is missing.
+ */
+function inferPortDataType(portName: string): PortDataType | undefined {
+  const lower = portName.toLowerCase();
+  if (lower === 'image' || lower === 'img' || lower === 'result') return PortDataType.IMAGE;
+  if (lower === 'mask' || lower === 'msk' || lower === 'alpha') return PortDataType.MASK;
+  if (lower === 'number' || lower === 'num') return PortDataType.NUMBER;
+  if (lower === 'string' || lower === 'str' || lower === 'text') return PortDataType.STRING;
+  if (lower === 'boolean' || lower === 'bool') return PortDataType.BOOLEAN;
+  return undefined;
+}
+
+const AUTO_SAVE_DELAY_MS = 5 * 60 * 1000; // 5 minutes
 
 let nodeCounter = 0;
+let edgeCounter = 0;
 let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
+let autoSaveWorkflowId: string | null = null; // Track which workflow is being saved
 
 function cancelAutoSave(): void {
   if (autoSaveTimer !== null) {
     clearTimeout(autoSaveTimer);
     autoSaveTimer = null;
+    autoSaveWorkflowId = null;
   }
 }
 
-function scheduleAutoSave(saveFn: () => Promise<void>, onDone: () => void): void {
+function scheduleAutoSave(
+  workflowId: string,
+  saveFn: () => Promise<void>,
+  onDone: () => void
+): void {
   cancelAutoSave();
+  autoSaveWorkflowId = workflowId;
   autoSaveTimer = setTimeout(async () => {
     autoSaveTimer = null;
+    autoSaveWorkflowId = null;
     try {
       await saveFn();
-    } finally {
+      // Only call onDone if we're still saving the same workflow
+      // (user may have switched workflows during the delay)
       onDone();
+    } catch {
+      // Errors are already logged by the storage adapter
     }
   }, AUTO_SAVE_DELAY_MS);
 }
@@ -49,6 +89,8 @@ export interface CanvasNodeData extends Record<string, unknown> {
   executionResult?: Record<string, unknown>;
   /** Node execution error (populated when execution fails) */
   executionError?: string;
+  /** ID of the currently executing node (used to show running state without global store subscription) */
+  _executingNodeId?: string;
   /**
    * Dynamically added input ports (beyond static NodeDefinition.inputs).
    * Used for Composite and similar nodes to support dynamic port counts.
@@ -131,7 +173,7 @@ interface CanvasState {
   setEdges: (edges: CanvasEdge[]) => void;
   onNodesChange: (changes: NodeChange[]) => void;
   onEdgesChange: (changes: EdgeChange[]) => void;
-  onConnect: (connection: Connection) => ConnectionValidation;
+  onConnect: (connection: ReactFlowConnection) => ConnectionValidation;
   selectNode: (id: string, multi?: boolean) => void;
   clearSelection: () => void;
   setViewport: (viewport: { x: number; y: number; zoom: number }) => void;
@@ -192,8 +234,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   _executionAbort: null,
 
   addNode(type, position) {
-    const registry = createRegistry();
-    const definition = registry.get(type);
+    const definition = globalRegistry.getNode(type);
     if (!definition) return;
 
     const reactFlowType = 'prismNode';
@@ -259,7 +300,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     for (const change of changes) {
       if (change.type === 'position' && change.position) {
         updatedNodes = updatedNodes.map((n) =>
-          n.id === change.id ? { ...n, position: change.position } : n
+          n.id === change.id ? { ...n, position: change.position! } : n
         );
       }
       if (change.type === 'remove') {
@@ -288,8 +329,14 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   onConnect(connection): ConnectionValidation {
     const { edges, nodes } = get();
 
-    const sourceNode = nodes.find((n) => n.id === connection.from.nodeId);
-    const targetNode = nodes.find((n) => n.id === connection.to.nodeId);
+    // React Flow Connection uses source/target; normalize to shared-types format
+    const sourceId = (connection as unknown as { from?: { nodeId: string } }).from?.nodeId ?? connection.source!;
+    const targetId = (connection as unknown as { to?: { nodeId: string } }).to?.nodeId ?? connection.target!;
+    const sourcePortId = (connection as unknown as { from?: { port: string } }).from?.port ?? connection.sourceHandle!;
+    const targetPortId = (connection as unknown as { to?: { port: string } }).to?.port ?? connection.targetHandle!;
+
+    const sourceNode = nodes.find((n) => n.id === sourceId);
+    const targetNode = nodes.find((n) => n.id === targetId);
 
     if (!sourceNode || !targetNode) {
       return { valid: false, reason: 'Source or target node not found' };
@@ -302,34 +349,45 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       return { valid: false, reason: 'Node definition not found' };
     }
 
-    const sourcePort = sourceDef.outputs.find(
-      (p) => p.id === connection.from.port || p.name === connection.from.port
-    );
+    const sourcePort = findPort(sourceDef.outputs, sourcePortId);
 
     // Check both static definition inputs and dynamic extraInputs
     const staticInputs = targetDef.inputs;
     const extraInputs = targetNode.data.extraInputs ?? [];
-    const targetPort = staticInputs.find(
-      (p) => p.id === connection.to.port || p.name === connection.to.port
-    ) ?? extraInputs.find(
-      (p) => p.id === connection.to.port || p.name === connection.to.port
-    );
+    const targetPort = findPort(staticInputs, targetPortId) ?? findPort(extraInputs, targetPortId);
 
     if (!sourcePort) {
       return {
         valid: false,
-        reason: `Port '${connection.from.port}' not found on source node '${sourceDef.label}'`,
+        reason: `Port '${sourcePortId}' not found on source node '${sourceDef.label}'`,
       };
     }
     if (!targetPort) {
       return {
         valid: false,
-        reason: `Port '${connection.to.port}' not found on target node '${targetDef.label}'`,
+        reason: `Port '${targetPortId}' not found on target node '${targetDef.label}'`,
       };
     }
 
-    const sourceType = sourcePort.dataType;
-    const targetType = targetPort.dataType;
+    // Resolve dataType — use explicit field, or infer from port name/id
+    const rawSourceType = sourcePort.dataType ?? inferPortDataType(sourcePort.name);
+    const rawTargetType = targetPort.dataType ?? inferPortDataType(targetPort.name);
+
+    if (!rawSourceType) {
+      return {
+        valid: false,
+        reason: `Cannot determine dataType for source port '${sourcePortId}'`,
+      };
+    }
+    if (!rawTargetType) {
+      return {
+        valid: false,
+        reason: `Cannot determine dataType for target port '${targetPortId}'`,
+      };
+    }
+
+    const sourceType = rawSourceType as PortDataType;
+    const targetType = rawTargetType as PortDataType;
 
     const compatibilityResult = canConnectByDataType(
       { dataType: sourceType },
@@ -347,10 +405,10 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
     const exists = edges.some(
       (e) =>
-        e.source === connection.from.nodeId &&
-        e.target === connection.to.nodeId &&
-        e.sourceHandle === connection.from.port &&
-        e.targetHandle === connection.to.port
+        e.source === sourceId &&
+        e.target === targetId &&
+        e.sourceHandle === sourcePortId &&
+        e.targetHandle === targetPortId
     );
     if (exists) {
       return { valid: false, reason: 'Connection already exists' };
@@ -361,10 +419,10 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
     const newEdge: CanvasEdge = {
       id: `edge-${crypto.randomUUID()}`,
-      source: connection.from.nodeId,
-      sourceHandle: connection.from.port,
-      target: connection.to.nodeId,
-      targetHandle: connection.to.port,
+      source: sourceId,
+      sourceHandle: sourcePortId,
+      target: targetId,
+      targetHandle: targetPortId,
       type: 'default',
       data: { color: edgeColor },
     };
@@ -454,6 +512,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     }
     cancelAutoSave();
     nodeCounter = 0;
+    edgeCounter = 0;
     set({
       nodes: [],
       edges: [],
@@ -487,6 +546,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     if (!workflowMeta.id) return;
 
     scheduleAutoSave(
+      workflowMeta.id,
       async () => {
         const { workflowMeta: meta, nodes, edges } = get();
         const workflow: Workflow = {
@@ -514,7 +574,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
           outputs: [],
           metadata: { createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
         };
-        await localStorageAdapter.save(workflow);
+        await activeStorageAdapter.save(workflow);
       },
       () => {
         set({ isDirty: false });
@@ -558,9 +618,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   loadWorkflow(workflow) {
     cancelAutoSave();
 
-    const registry = createRegistry();
     const canvasNodes: CanvasNode[] = workflow.nodes.map((n) => {
-      const def = registry.get(n.type);
+      const def = globalRegistry.getNode(n.type);
       return {
         id: n.id,
         type: 'prismNode',
@@ -592,13 +651,22 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     );
     nodeCounter = maxNum;
 
+    const maxEdgeNum = Math.max(
+      0,
+      ...workflow.connections.map((e) => {
+        const match = e.id.match(/^edge-(\d+)$/);
+        return match ? parseInt(match[1], 10) : 0;
+      })
+    );
+    edgeCounter = maxEdgeNum;
+
     set({
       nodes: canvasNodes,
       edges: canvasEdges,
       groups: [],
       workflowMeta: { id: workflow.id, name: workflow.name, version: workflow.version },
       selectedNodeIds: [],
-      isDirty: false,
+      isDirty: true,
       isDraggingFromPanel: false,
       _executionStatus: 'idle',
       _currentNodeId: null,
@@ -609,7 +677,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     cancelAutoSave();
     const { workflowMeta } = get();
 
-    const existing = await localStorageAdapter.load(workflowMeta.id).catch(() => null);
+    const existing = await activeStorageAdapter.load(workflowMeta.id).catch(() => null);
     const createdAt = existing?.metadata?.createdAt ?? new Date().toISOString();
 
     const workflow: Workflow = {
@@ -622,17 +690,19 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         position: n.position,
         params: n.data.params,
       })),
-      connections: get().edges.map((e): Connection => ({
-        id: e.id,
-        from: {
-          nodeId: e.source,
-          port: e.sourceHandle ?? (() => { throw new Error('sourceHandle is required'); })(),
-        },
-        to: {
-          nodeId: e.target,
-          port: e.targetHandle ?? (() => { throw new Error('targetHandle is required'); })(),
-        },
-      })),
+      connections: get().edges
+        .filter((e) => e.sourceHandle && e.targetHandle)
+        .map((e): Connection => ({
+          id: e.id,
+          from: {
+            nodeId: e.source,
+            port: e.sourceHandle!,
+          },
+          to: {
+            nodeId: e.target,
+            port: e.targetHandle!,
+          },
+        })),
       inputs: [],
       outputs: [],
       metadata: {
@@ -641,7 +711,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       },
     };
 
-    await localStorageAdapter.save(workflow);
+    await activeStorageAdapter.save(workflow);
     set({
       workflowMeta: { ...workflowMeta, name: workflow.name },
       isDirty: false,
@@ -650,7 +720,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   },
 
   async loadWorkflowFromStore(id: string): Promise<void> {
-    const workflow = await localStorageAdapter.load(id);
+    const workflow = await activeStorageAdapter.load(id);
     get().loadWorkflow(workflow);
   },
 
@@ -666,9 +736,10 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   },
 
   async importWorkflowFromFile(file: File): Promise<void> {
-    const { jsonFileAdapter } = await import('../storage');
+    const { jsonFileAdapter, activeStorageAdapter } = await import('../storage');
     const workflow = await jsonFileAdapter.importFromFile(file);
     get().loadWorkflow(workflow);
+    await activeStorageAdapter.save(workflow);
   },
 
   async executeWorkflow() {
@@ -689,10 +760,37 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const controller = new AbortController();
     set({ _executionAbort: () => controller.abort() });
 
-    const { nodeExecutors } = await import('@prism/image-ops');
+    // Initialize globalRegistry and get executors
+    try {
+      globalRegistry.initialize();
+    } catch (initError) {
+      set({
+        _executionStatus: 'error' as const,
+        _executionAbort: null,
+      });
+      return {
+        status: 'error' as const,
+        error: initError instanceof Error ? initError.message : 'Failed to initialize node registry',
+      };
+    }
+
+    let executors: ReturnType<typeof globalRegistry.getExecutors>;
+    try {
+      executors = globalRegistry.getExecutors();
+    } catch (execError) {
+      set({
+        _executionStatus: 'error' as const,
+        _executionAbort: null,
+      });
+      return {
+        status: 'error' as const,
+        error: execError instanceof Error ? execError.message : 'Failed to get executors',
+      };
+    }
+
     const { WorkflowExecutor } = await import('@prism/workflow-core');
 
-    const executor = new WorkflowExecutor(nodeExecutors);
+    const executor = new WorkflowExecutor(executors);
     const workflow = {
       id: workflowMeta.id,
       name: workflowMeta.name,
@@ -730,10 +828,10 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
               ...n.data,
               executionResult: nodeResult.status === 'done' ? nodeResult.outputs : undefined,
               executionError: nodeResult.status === 'error' ? nodeResult.error : undefined,
+              _executingNodeId: progress.currentNodeId,
             },
           };
         }),
-        _currentNodeId: progress.currentNodeId ?? null,
       }));
     };
 
@@ -756,7 +854,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     set((state) => ({
       nodes: state.nodes.map((n) => ({
         ...n,
-        data: { ...n.data, executionResult: undefined, executionError: undefined },
+        data: { ...n.data, executionResult: undefined, executionError: undefined, _executingNodeId: undefined },
       })),
       _executionStatus: 'idle' as const,
       _currentNodeId: null,
@@ -876,8 +974,11 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     if (!state.clipboard || state.clipboard.length === 0) return;
 
     const pasteOffset = 40;
+    const oldToNewIdMap = new Map<string, string>();
+
     const newNodes = state.clipboard.map((origNode) => {
       const newId = `node-${++nodeCounter}`;
+      oldToNewIdMap.set(origNode.id, newId);
       return {
         ...origNode,
         id: newId,
@@ -896,8 +997,20 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       };
     });
 
+    // Also copy edges between pasted nodes
+    const clipboardNodeIds = new Set(state.clipboard.map((n) => n.id));
+    const newEdges = state.edges
+      .filter((edge) => clipboardNodeIds.has(edge.source) && clipboardNodeIds.has(edge.target))
+      .map((edge) => ({
+        ...edge,
+        id: `edge-${++edgeCounter}`,
+        source: oldToNewIdMap.get(edge.source) ?? edge.source,
+        target: oldToNewIdMap.get(edge.target) ?? edge.target,
+      }));
+
     set((s) => ({
       nodes: [...s.nodes, ...newNodes],
+      edges: [...s.edges, ...newEdges],
       clipboard: newNodes,
     }));
     get()._triggerAutoSave();

@@ -19,6 +19,8 @@ import {
   MarkerType,
   applyNodeChanges,
   applyEdgeChanges,
+  type NodeChange,
+  type EdgeChange,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useCanvasStore, type ConnectionValidation, type CanvasNode, type CanvasEdge } from '../../store/canvasStore';
@@ -84,6 +86,7 @@ export const WorkflowCanvas: React.FC = () => {
 
   const [validationError, setValidationError] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const validationErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Apply focused hooks
   const { handleDragOver, handleDrop } = useCanvasDragDrop(reactFlowInstance);
@@ -93,8 +96,7 @@ export const WorkflowCanvas: React.FC = () => {
 
   // React Flow change handlers
   const onNodesChange = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (changes: any[]) => {
+    (changes: NodeChange[]) => {
       useCanvasStore.setState((state) => ({
         nodes: applyNodeChanges(changes, state.nodes) as CanvasNode[],
         isDirty: true,
@@ -104,8 +106,7 @@ export const WorkflowCanvas: React.FC = () => {
   );
 
   const onEdgesChange = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (changes: any[]) => {
+    (changes: EdgeChange[]) => {
       useCanvasStore.setState((state) => ({
         edges: applyEdgeChanges(changes, state.edges) as CanvasEdge[],
         isDirty: true,
@@ -123,15 +124,18 @@ export const WorkflowCanvas: React.FC = () => {
 
   const handleConnect = useCallback(
     (params: Connection) => {
-      const validation: ConnectionValidation = onConnectStore({
-        id: '',
-        from: { nodeId: params.source, port: params.sourceHandle ?? 'out' },
-        to: { nodeId: params.target, port: params.targetHandle ?? 'in' },
-      });
+      const validation: ConnectionValidation = onConnectStore(params);
 
       if (!validation.valid) {
+        // Clear any existing timer before setting new one
+        if (validationErrorTimerRef.current) {
+          clearTimeout(validationErrorTimerRef.current);
+        }
         setValidationError(validation.reason ?? 'Connection rejected');
-        setTimeout(() => setValidationError(null), 3000);
+        validationErrorTimerRef.current = setTimeout(() => {
+          setValidationError(null);
+          validationErrorTimerRef.current = null;
+        }, 3000);
       }
     },
     [onConnectStore]
@@ -192,6 +196,15 @@ export const WorkflowCanvas: React.FC = () => {
 
     container.addEventListener('dblclick', handleDoubleClick);
     return () => container.removeEventListener('dblclick', handleDoubleClick);
+  }, []);
+
+  // Cleanup setTimeout on unmount
+  useEffect(() => {
+    return () => {
+      if (validationErrorTimerRef.current) {
+        clearTimeout(validationErrorTimerRef.current);
+      }
+    };
   }, []);
 
   return (

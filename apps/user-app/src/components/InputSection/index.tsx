@@ -38,19 +38,24 @@ function ImageInputField({ inp, value, onChange }: ImageInputFieldProps) {
     if (url.startsWith('blob:')) URL.revokeObjectURL(url);
   }, []);
 
-  // Track previous value to revoke stale blob URLs (avoids memory leaks)
-  const prevValueRef = useRef<string>('');
+  // Track current blob URL in ref to ensure cleanup revokes the correct value
+  const blobUrlRef = useRef<string>('');
   useEffect(() => {
-    const prev = prevValueRef.current;
+    const prev = blobUrlRef.current;
     if (prev && prev !== value) {
       revoke(prev);
     }
-    prevValueRef.current = value;
-    return () => {
-      // Revoke on unmount
-      if (value) revoke(value);
-    };
+    blobUrlRef.current = value;
   }, [value, revoke]);
+
+  useEffect(() => {
+    return () => {
+      // Revoke the value stored in ref at unmount time
+      if (blobUrlRef.current) {
+        revoke(blobUrlRef.current);
+      }
+    };
+  }, [revoke]);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -85,6 +90,9 @@ function ImageInputField({ inp, value, onChange }: ImageInputFieldProps) {
       <label className="ua-input-label">
         {inp.name}
         {inp.required && <span className="ua-input-required">*</span>}
+        {inp.type === 'image' && (
+          <span className={`ua-input-type-badge ua-input-type-badge--${inp.type || 'default'}`}>图片</span>
+        )}
       </label>
       {inp.description && (
         <p className="ua-input-desc">{inp.description}</p>
@@ -170,6 +178,9 @@ function TextInputField({ inp, value, onChange }: TextInputFieldProps) {
       <label className="ua-input-label">
         {inp.name}
         {inp.required && <span className="ua-input-required">*</span>}
+        {inp.type === 'string' && (
+          <span className={`ua-input-type-badge ua-input-type-badge--${inp.type || 'default'}`}>文本</span>
+        )}
       </label>
       {inp.description && (
         <p className="ua-input-desc">{inp.description}</p>
@@ -197,18 +208,23 @@ function MaskInputField({ inp, value, onChange }: MaskInputFieldProps) {
   const [dragging, setDragging] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [previewError, setPreviewError] = useState(false);
-  const prevValueRef = useRef<string>('');
+  const blobUrlRef = useRef<string>('');
 
   useEffect(() => {
-    const prev = prevValueRef.current;
+    const prev = blobUrlRef.current;
     if (prev && prev !== value && prev.startsWith('blob:')) {
       URL.revokeObjectURL(prev);
     }
-    prevValueRef.current = value;
-    return () => {
-      if (value && value.startsWith('blob:')) URL.revokeObjectURL(value);
-    };
+    blobUrlRef.current = value;
   }, [value]);
+
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current && blobUrlRef.current.startsWith('blob:')) {
+        URL.revokeObjectURL(blobUrlRef.current);
+      }
+    };
+  }, []);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -234,7 +250,7 @@ function MaskInputField({ inp, value, onChange }: MaskInputFieldProps) {
       <label className="ua-input-label">
         {inp.name}
         {inp.required && <span className="ua-input-required">*</span>}
-        <span className="ua-input-type-badge">蒙版</span>
+        <span className={`ua-input-type-badge ua-input-type-badge--${inp.type || 'default'}`}>蒙版</span>
       </label>
       {inp.description && <p className="ua-input-desc">{inp.description}</p>}
 

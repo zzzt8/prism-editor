@@ -12,7 +12,12 @@ export function parseRoute(): Route {
   const hash = window.location.hash;
   const match = hash.match(/^#\/workflow\/(.+)$/);
   if (match) {
-    return { kind: 'run', sourceId: decodeURIComponent(match[1]) };
+    try {
+      return { kind: 'run', sourceId: decodeURIComponent(match[1]) };
+    } catch {
+      // Invalid URL encoding, treat as literal string
+      return { kind: 'run', sourceId: match[1] };
+    }
   }
   return { kind: 'list' };
 }
