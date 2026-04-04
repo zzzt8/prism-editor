@@ -135,11 +135,25 @@ export const WorkflowRunPage: React.FC = () => {
 
     setRunState({ status: 'running' });
 
+    // Debug logging
+    console.log('[UserApp] handleRun called');
+    console.log('[UserApp] selectedWorkflow.config.inputs:', selectedWorkflow.config.inputs);
+    console.log('[UserApp] selectedWorkflow.outputs:', selectedWorkflow.outputs);
+    console.log('[UserApp] inputValues:', inputValues);
+
     try {
       const { nodeExecutors } = await import('@prism/image-ops');
       const { PublishedWorkflowExecutor } = await import('@prism/workflow-core');
 
       const executor = new PublishedWorkflowExecutor(nodeExecutors);
+
+      // Debug: check what inputs are being passed
+      const inputKeys = Object.keys(inputValues);
+      console.log('[UserApp] inputValues keys:', inputKeys);
+      for (const key of inputKeys) {
+        console.log(`[UserApp] inputValues['${key}']:`, inputValues[key]);
+      }
+
       const result = await executor.execute(selectedWorkflow, {
         inputs: inputValues,
         exposedParams: paramValues,
@@ -148,21 +162,26 @@ export const WorkflowRunPage: React.FC = () => {
         },
       });
 
+      console.log('[UserApp] executor result:', result);
+      console.log('[UserApp] executor result.results:', result.results);
+
       if (result.status === 'done') {
         const outputs: Record<string, unknown> = {};
         const executorResults = result.results;
+        
+        console.log('[UserApp] processing outputs, effectiveOutputs:', effectiveOutputs);
 
-        for (const output of selectedWorkflow.outputs) {
+        for (const output of effectiveOutputs) {
+          console.log(`[UserApp] processing output:`, output);
           // v2 output.id format: '{nodeId}:{portId}' (e.g. 'node-4:image')
           const colonIdx = output.id.indexOf(':');
           if (colonIdx > 0) {
             const nodeId = output.id.slice(0, colonIdx);   // e.g. 'node-4'
             const portId = output.id.slice(colonIdx + 1);   // e.g. 'image' (ignored for IMAGE type)
+            console.log(`[UserApp] looking for nodeId: ${nodeId}, in executorResults:`, Object.keys(executorResults));
             const nodeOutputs = executorResults[nodeId] as Record<string, unknown> | undefined;
             if (nodeOutputs && Object.keys(nodeOutputs).length > 0) {
-              // Executor outputs (both composite and export) have previewUrl/dataUrl at the
-              // top level. Use the node result directly — the OutputPreview component
-              // knows how to extract previewUrl from any valid image executor output.
+              console.log(`[UserApp] found nodeOutputs for ${nodeId}:`, nodeOutputs);
               outputs[output.id] = nodeOutputs;
               continue;
             }
@@ -180,11 +199,14 @@ export const WorkflowRunPage: React.FC = () => {
             }
           }
         }
+        console.log('[UserApp] final outputs:', outputs);
         setRunState((prev) => ({ ...prev, status: 'done', result: outputs }));
       } else {
+        console.log('[UserApp] executor error:', result.error);
         setRunState((prev) => ({ ...prev, status: 'error', error: result.error ?? '执行失败' }));
       }
     } catch (err) {
+      console.error('[UserApp] exception:', err);
       setRunState((prev) => ({ ...prev, status: 'error', error: String(err) }));
     }
   }, [selectedWorkflow, inputValues, paramValues, setRunState]);
