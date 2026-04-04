@@ -680,6 +680,12 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const existing = await activeStorageAdapter.load(workflowMeta.id).catch(() => null);
     const createdAt = existing?.metadata?.createdAt ?? new Date().toISOString();
 
+    // Increment version number on each save
+    const currentVersionParts = workflowMeta.version.split('.');
+    const major = parseInt(currentVersionParts[0] || '1', 10);
+    const minor = parseInt(currentVersionParts[1] || '0', 10) + 1;
+    const newVersion = `${major}.${minor}.0`;
+
     const workflow: Workflow = {
       id: workflowMeta.id,
       name: workflowName ?? workflowMeta.name,
@@ -713,7 +719,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
     await activeStorageAdapter.save(workflow);
     set({
-      workflowMeta: { ...workflowMeta, name: workflow.name },
+      workflowMeta: { ...workflowMeta, name: workflow.name, version: newVersion },
       isDirty: false,
       isDraggingFromPanel: false,
     });

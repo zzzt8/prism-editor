@@ -120,6 +120,7 @@ export function VersionList({
                   </div>
                 </label>
 
+                                {/* Hide rollback button for current version only */}
                 {version.version !== currentVersion && (
                   <button
                     className="version-rollback-btn"
