@@ -18,10 +18,14 @@ function App() {
   useEffect(() => {
     const syncFromRoute = () => {
       const route = parseRoute();
+      console.log('[App] hashchange, route:', route.kind, route.kind === 'run' ? route.sourceId : '');
       if (route.kind === 'run') {
         selectWorkflow(route.sourceId);
       } else {
-        if (selectedWorkflow) clearSelection();
+        if (selectedWorkflow) {
+          console.log('[App] clearing selection');
+          clearSelection();
+        }
       }
     };
 

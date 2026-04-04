@@ -85,9 +85,11 @@ export const useUserAppStore = create<UserAppState>((set, get) => {
   globalRegistry.initialize();
 
   store.loadWorkflows = async function loadWorkflows() {
+    console.log('[publishedStore] loadWorkflows called');
     set({ isLoading: true, loadError: undefined });
     try {
       const metas = await userAppStorage.listPublished();
+      console.log('[publishedStore] loadWorkflows got metas:', metas.length);
       // Use the metas directly from the adapter (already parsed with inputCount/outputCount)
       const workflowMetas: PublishedWorkflowMeta[] = metas.map((m) => ({
         sourceId: m.sourceId,
@@ -107,9 +109,11 @@ export const useUserAppStore = create<UserAppState>((set, get) => {
   };
 
   store.selectWorkflow = async function selectWorkflow(sourceId: string) {
+    console.log('[publishedStore] selectWorkflow sourceId:', sourceId);
     try {
       // Load the complete PublishedWorkflow from the API
       const workflow = await userAppStorage.loadPublished(sourceId);
+      console.log('[publishedStore] selectWorkflow loaded:', workflow?.name, 'inputs:', workflow?.config?.inputs?.length ?? workflow?.inputs?.length);
 
       set((state) => ({
         selectedWorkflow: workflow,
@@ -119,9 +123,11 @@ export const useUserAppStore = create<UserAppState>((set, get) => {
       // Load required nodes
       const errors = await loadRequiredNodes(workflow);
       if (errors.length > 0) {
+        console.warn('[publishedStore] selectWorkflow node errors:', errors);
         set({ nodeLoadErrors: errors });
       }
     } catch (err) {
+      console.error('[publishedStore] selectWorkflow error:', err);
       set({ loadError: String(err) });
     }
   };

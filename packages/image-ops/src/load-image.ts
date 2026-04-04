@@ -309,11 +309,17 @@ export const loadImageExecutor: NodeExecutor = async (
     imageData = result.imageData;
     imageRef = result.imageRef;
   }
-  // ── Source 2: url (legacy URL string, including blob URLs from user uploads) ─
+  // ── Source 2: url (legacy URL string, including blob URLs and data URLs from user uploads) ─
   else if (params['url'] !== undefined) {
     const url = requireParam<string>(params, 'url', 'LoadImage');
-    // Handle blob URLs from user uploads (e.g., from InputSection file picker)
-    if (url.startsWith('blob:')) {
+    // Handle data: URLs from user uploads (base64 encoded via FileReader.readAsDataURL)
+    if (url.startsWith('data:')) {
+      const result = await loadImageFromDataUrl(url);
+      imageData = result.imageData;
+      imageRef = result.imageRef;
+    }
+    // Handle blob: URLs from user uploads (e.g., legacy from InputSection file picker)
+    else if (url.startsWith('blob:')) {
       const result = await loadImageFromBlob(url);
       imageData = result.imageData;
       imageRef = result.imageRef;

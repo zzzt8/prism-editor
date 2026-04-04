@@ -51,6 +51,7 @@ export const WorkflowRunPage: React.FC = () => {
 
   // Reset input values when workflow changes
   useEffect(() => {
+    console.log('[WorkflowRunPage] useEffect triggered, selectedWorkflow:', selectedWorkflow?.name, selectedWorkflow ? 'loaded' : 'NULL');
     if (selectedWorkflow) {
       const defaults: Record<string, string> = {};
 
@@ -59,11 +60,13 @@ export const WorkflowRunPage: React.FC = () => {
       if (configInputs && configInputs.length > 0) {
         for (const ci of configInputs) {
           defaults[`${ci.nodeId}:out`] = '';
+          console.log('[WorkflowRunPage] useEffect: registering v2 input', `${ci.nodeId}:out`, ci.label, ci.type);
         }
       } else {
         // Legacy format: inputs are in workflow.inputs (PublishedInput[])
         for (const inp of selectedWorkflow.inputs) {
           defaults[inp.id] = inp.defaultValue != null ? String(inp.defaultValue) : '';
+          console.log('[WorkflowRunPage] useEffect: registering legacy input', inp.id, inp.name, inp.type);
         }
       }
       setInputValues(defaults);
@@ -93,9 +96,12 @@ export const WorkflowRunPage: React.FC = () => {
       setParamValues(pvs);
     }
     setRunState({ status: 'idle', progress: undefined });
-  }, [selectedWorkflow, setRunState]);
+    // Use sourceId instead of selectedWorkflow object to avoid re-initialization
+    // when IndexedDB reload creates a new object reference for the same workflow.
+  }, [selectedWorkflow?.sourceId, setRunState]);
 
   const updateInput = useCallback((id: string, value: string) => {
+    console.log('[WorkflowRunPage] updateInput', { id, valueLen: value.length, valuePrefix: value.slice(0, 60) });
     setInputValues((prev) => ({ ...prev, [id]: value }));
   }, []);
 
@@ -106,13 +112,24 @@ export const WorkflowRunPage: React.FC = () => {
     }));
   }, []);
 
+  // Derive outputs BEFORE handleRun to avoid TDZ (const declarations below are hoisted
+  // as uninitialized, but handleRun's body is evaluated at call-time, so effectiveOutputs
+  // must be defined before handleRun's function definition in the closure scope).
+  const configOutputs = selectedWorkflow?.config.outputs;
+  const effectiveOutputs = configOutputs && configOutputs.length > 0
+    ? configOutputs.map((co) => ({
+        id: `${co.nodeId}:image`,
+        name: co.label,
+        type: 'image' as const,
+      }))
+    : selectedWorkflow?.outputs ?? [];
+
   const handleRun = useCallback(async () => {
     if (!selectedWorkflow) return;
 
     // Validate required visible inputs
     const configInputs = selectedWorkflow.config.inputs;
     if (configInputs && configInputs.length > 0) {
-      // v2 format: validate config.inputs
       for (const ci of configInputs) {
         const effectiveValue = inputValues[`${ci.nodeId}:out`] ?? '';
         if (!effectiveValue.trim()) {
@@ -121,7 +138,6 @@ export const WorkflowRunPage: React.FC = () => {
         }
       }
     } else {
-      // Legacy format: validate workflow.inputs
       for (const inp of selectedWorkflow.inputs) {
         if (inp.required && inp.visible) {
           const effectiveValue = inputValues[inp.id] ?? (inp.defaultValue != null ? String(inp.defaultValue) : '');
@@ -135,24 +151,13 @@ export const WorkflowRunPage: React.FC = () => {
 
     setRunState({ status: 'running' });
 
-    // Debug logging
-    console.log('[UserApp] handleRun called');
-    console.log('[UserApp] selectedWorkflow.config.inputs:', selectedWorkflow.config.inputs);
-    console.log('[UserApp] selectedWorkflow.outputs:', selectedWorkflow.outputs);
-    console.log('[UserApp] inputValues:', inputValues);
+    console.log('[UserApp] handleRun', { inputValues, paramValues });
 
     try {
       const { nodeExecutors } = await import('@prism/image-ops');
       const { PublishedWorkflowExecutor } = await import('@prism/workflow-core');
 
       const executor = new PublishedWorkflowExecutor(nodeExecutors);
-
-      // Debug: check what inputs are being passed
-      const inputKeys = Object.keys(inputValues);
-      console.log('[UserApp] inputValues keys:', inputKeys);
-      for (const key of inputKeys) {
-        console.log(`[UserApp] inputValues['${key}']:`, inputValues[key]);
-      }
 
       const result = await executor.execute(selectedWorkflow, {
         inputs: inputValues,
@@ -162,32 +167,23 @@ export const WorkflowRunPage: React.FC = () => {
         },
       });
 
-      console.log('[UserApp] executor result:', result);
-      console.log('[UserApp] executor result.results:', result.results);
-
       if (result.status === 'done') {
         const outputs: Record<string, unknown> = {};
         const executorResults = result.results;
-        
-        console.log('[UserApp] processing outputs, effectiveOutputs:', effectiveOutputs);
 
         for (const output of effectiveOutputs) {
-          console.log(`[UserApp] processing output:`, output);
           // v2 output.id format: '{nodeId}:{portId}' (e.g. 'node-4:image')
           const colonIdx = output.id.indexOf(':');
           if (colonIdx > 0) {
-            const nodeId = output.id.slice(0, colonIdx);   // e.g. 'node-4'
-            const portId = output.id.slice(colonIdx + 1);   // e.g. 'image' (ignored for IMAGE type)
-            console.log(`[UserApp] looking for nodeId: ${nodeId}, in executorResults:`, Object.keys(executorResults));
+            const nodeId = output.id.slice(0, colonIdx);
             const nodeOutputs = executorResults[nodeId] as Record<string, unknown> | undefined;
             if (nodeOutputs && Object.keys(nodeOutputs).length > 0) {
-              console.log(`[UserApp] found nodeOutputs for ${nodeId}:`, nodeOutputs);
               outputs[output.id] = nodeOutputs;
               continue;
             }
           }
 
-          // Fallback: scan all node results for the first one with a valid image output
+          // Fallback: scan all node results for a valid image output
           for (const nodeResult of Object.values(executorResults) as Record<string, unknown>[]) {
             if (nodeResult?.previewUrl !== undefined || nodeResult?.dataUrl !== undefined) {
               outputs[output.id] = nodeResult;
@@ -199,33 +195,21 @@ export const WorkflowRunPage: React.FC = () => {
             }
           }
         }
-        console.log('[UserApp] final outputs:', outputs);
+
         setRunState((prev) => ({ ...prev, status: 'done', result: outputs }));
       } else {
-        console.log('[UserApp] executor error:', result.error);
         setRunState((prev) => ({ ...prev, status: 'error', error: result.error ?? '执行失败' }));
       }
     } catch (err) {
-      console.error('[UserApp] exception:', err);
+      console.error('[UserApp] handleRun exception:', err);
       setRunState((prev) => ({ ...prev, status: 'error', error: String(err) }));
     }
-  }, [selectedWorkflow, inputValues, paramValues, setRunState]);
+  }, [selectedWorkflow, inputValues, paramValues, effectiveOutputs, setRunState]);
 
   // Guard: no workflow loaded
   if (!selectedWorkflow) {
     return <WorkflowErrorState />;
   }
-
-  // New v2: derive outputs from config.outputs; fall back to legacy outputs[]
-  const configOutputs = selectedWorkflow.config.outputs;
-  const effectiveOutputs = configOutputs && configOutputs.length > 0
-    ? configOutputs.map((co) => ({
-        // v2 format: id must be {nodeId}:{portId} to match handleRun's indexOf(':') parsing
-        id: `${co.nodeId}:image`,
-        name: co.label,
-        type: 'image' as const,
-      }))
-    : selectedWorkflow.outputs;
 
   return (
     <UserLayout

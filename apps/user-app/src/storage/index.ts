@@ -1,8 +1,8 @@
 // User app storage adapters barrel export
 
-export { UserAppStorageAdapter } from './ApiStorageAdapter';
+export { IndexedDBStorageAdapter } from './IndexedDBStorageAdapter';
+export { type PublishedWorkflowMeta } from './IndexedDBStorageAdapter';
 
-import { UserAppStorageAdapter } from './ApiStorageAdapter';
+import { IndexedDBStorageAdapter } from './IndexedDBStorageAdapter';
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
-export const userAppStorage = new UserAppStorageAdapter(apiBaseUrl);
+export const userAppStorage = new IndexedDBStorageAdapter();

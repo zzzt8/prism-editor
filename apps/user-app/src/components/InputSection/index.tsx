@@ -19,7 +19,7 @@
  * Input fields are rendered sequentially in a flex column (gap: 16px).
  */
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import type { PublishedInput, PublishedInputConfig } from '@prism/shared-types';
 
 // ── Image input field ────────────────────────────────────────────────────────
@@ -34,29 +34,6 @@ function ImageInputField({ inp, value, onChange }: ImageInputFieldProps) {
   const [dragging, setDragging] = useState(false);
   const [imgError, setImgError] = useState(false);
 
-  const revoke = useCallback((url: string) => {
-    if (url.startsWith('blob:')) URL.revokeObjectURL(url);
-  }, []);
-
-  // Track current blob URL in ref to ensure cleanup revokes the correct value
-  const blobUrlRef = useRef<string>('');
-  useEffect(() => {
-    const prev = blobUrlRef.current;
-    if (prev && prev !== value) {
-      revoke(prev);
-    }
-    blobUrlRef.current = value;
-  }, [value, revoke]);
-
-  useEffect(() => {
-    return () => {
-      // Revoke the value stored in ref at unmount time
-      if (blobUrlRef.current) {
-        revoke(blobUrlRef.current);
-      }
-    };
-  }, [revoke]);
-
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -64,8 +41,18 @@ function ImageInputField({ inp, value, onChange }: ImageInputFieldProps) {
       setImgError(false);
       const file = e.dataTransfer.files[0];
       if (file && file.type.startsWith('image/')) {
-        const url = URL.createObjectURL(file);
-        onChange(url);
+        console.log('[InputSection] handleDrop: file=', file.name, file.size);
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          if (typeof ev.target?.result === 'string') {
+            console.log('[InputSection] handleDrop: loaded, len=', ev.target.result.length);
+            onChange(ev.target.result);
+          }
+        };
+        reader.onerror = () => { console.error('[InputSection] handleDrop: error'); setImgError(true); };
+        reader.readAsDataURL(file);
+      } else {
+        console.log('[InputSection] handleDrop: no file or not image');
       }
     },
     [onChange]
@@ -74,9 +61,17 @@ function ImageInputField({ inp, value, onChange }: ImageInputFieldProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setImgError(false);
     const file = e.target.files?.[0];
+    console.log('[InputSection] handleFileChange: file=', file?.name, file?.size);
     if (file) {
-      const url = URL.createObjectURL(file);
-      onChange(url);
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        if (typeof ev.target?.result === 'string') {
+          console.log('[InputSection] handleFileChange: loaded, len=', ev.target.result.length);
+          onChange(ev.target.result);
+        }
+      };
+      reader.onerror = () => { console.error('[InputSection] handleFileChange: error'); setImgError(true); };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -207,24 +202,6 @@ interface MaskInputFieldProps {
 function MaskInputField({ inp, value, onChange }: MaskInputFieldProps) {
   const [dragging, setDragging] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const [previewError, setPreviewError] = useState(false);
-  const blobUrlRef = useRef<string>('');
-
-  useEffect(() => {
-    const prev = blobUrlRef.current;
-    if (prev && prev !== value && prev.startsWith('blob:')) {
-      URL.revokeObjectURL(prev);
-    }
-    blobUrlRef.current = value;
-  }, [value]);
-
-  useEffect(() => {
-    return () => {
-      if (blobUrlRef.current && blobUrlRef.current.startsWith('blob:')) {
-        URL.revokeObjectURL(blobUrlRef.current);
-      }
-    };
-  }, []);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -233,7 +210,14 @@ function MaskInputField({ inp, value, onChange }: MaskInputFieldProps) {
       setImgError(false);
       const file = e.dataTransfer.files[0];
       if (file && file.type.startsWith('image/')) {
-        onChange(URL.createObjectURL(file));
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          if (typeof ev.target?.result === 'string') {
+            onChange(ev.target.result);
+          }
+        };
+        reader.onerror = () => setImgError(true);
+        reader.readAsDataURL(file);
       }
     },
     [onChange]
@@ -242,7 +226,16 @@ function MaskInputField({ inp, value, onChange }: MaskInputFieldProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setImgError(false);
     const file = e.target.files?.[0];
-    if (file) onChange(URL.createObjectURL(file));
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        if (typeof ev.target?.result === 'string') {
+          onChange(ev.target.result);
+        }
+      };
+      reader.onerror = () => setImgError(true);
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -277,7 +270,6 @@ function MaskInputField({ inp, value, onChange }: MaskInputFieldProps) {
               alt="Mask preview"
               className="ua-dropzone-preview ua-dropzone-preview--mask"
               onError={() => setImgError(true)}
-              onLoad={() => setPreviewError(false)}
             />
             {imgError && (
               <div className="ua-dropzone-error">
