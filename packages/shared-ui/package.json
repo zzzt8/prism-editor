@@ -18,7 +18,7 @@
     }
   },
   "scripts": {
-    "build": "tsc --build",
+    "build": "tsc --build && node scripts/copy-css.js",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
