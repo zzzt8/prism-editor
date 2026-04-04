@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Box, Play, Square, CheckCircle2,
   Loader2, FileUp, Settings, User, Save,
+  History,
 } from 'lucide-react';
 import { useCanvasStore } from '../../store/canvasStore';
 import { useAppStore } from '../../store/appStore';
@@ -12,9 +13,14 @@ import { PanelToggle } from './PanelToggle';
 interface WorkflowHeaderProps {
   onPublishClick: () => void;
   publishStatus: 'idle' | 'loading' | 'done';
+  onVersionHistoryClick?: () => void;
 }
 
-export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({ onPublishClick, publishStatus }) => {
+export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
+  onPublishClick,
+  publishStatus,
+  onVersionHistoryClick,
+}) => {
   const workflowMeta = useCanvasStore((s) => s.workflowMeta);
   const isDirty = useCanvasStore((s) => s.isDirty);
   const nodes = useCanvasStore((s) => s.nodes);
@@ -219,6 +225,17 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({ onPublishClick, 
             )}
             Publish
           </button>
+
+          {/* Version History */}
+          {onVersionHistoryClick && (
+            <button
+              className="wf-icon-btn"
+              onClick={onVersionHistoryClick}
+              title="版本历史"
+            >
+              <History size={14} />
+            </button>
+          )}
 
           {/* Import JSON */}
           <button className="wf-icon-btn" onClick={handleImportJson} title="导入 JSON">
