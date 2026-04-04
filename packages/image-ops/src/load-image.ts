@@ -137,7 +137,21 @@ export async function loadCrossOriginImage(
   });
 }
 
-export async function loadImageFromBlob(blob: Blob): Promise<ImageLoadResult> {
+export async function loadImageFromBlob(blobOrUrl: Blob | string): Promise<ImageLoadResult> {
+  // Handle blob URL string by fetching the blob first
+  if (typeof blobOrUrl === 'string') {
+    if (!blobOrUrl.startsWith('blob:')) {
+      throw new Error('loadImageFromBlob: string argument must be a blob: URL');
+    }
+    const response = await fetch(blobOrUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch blob URL: ${response.status}`);
+    }
+    const blob = await response.blob();
+    return loadImageFromBlob(blob);
+  }
+
+  const blob = blobOrUrl;
   const url = URL.createObjectURL(blob);
 
   return new Promise((resolve, reject) => {
@@ -295,16 +309,23 @@ export const loadImageExecutor: NodeExecutor = async (
     imageData = result.imageData;
     imageRef = result.imageRef;
   }
-  // ── Source 2: url (legacy URL string) ────────────────────────────────────
+  // ── Source 2: url (legacy URL string, including blob URLs from user uploads) ─
   else if (params['url'] !== undefined) {
     const url = requireParam<string>(params, 'url', 'LoadImage');
-    const crossOrigin = params['crossOrigin'] as string | undefined;
-    const loadOptions = crossOrigin && crossOrigin !== 'none'
-      ? { crossOrigin: crossOrigin as 'anonymous' | 'use-credentials' }
-      : {};
-    const result = await loadCrossOriginImage(url, loadOptions);
-    imageData = result.imageData;
-    imageRef = result.imageRef;
+    // Handle blob URLs from user uploads (e.g., from InputSection file picker)
+    if (url.startsWith('blob:')) {
+      const result = await loadImageFromBlob(url);
+      imageData = result.imageData;
+      imageRef = result.imageRef;
+    } else {
+      const crossOrigin = params['crossOrigin'] as string | undefined;
+      const loadOptions = crossOrigin && crossOrigin !== 'none'
+        ? { crossOrigin: crossOrigin as 'anonymous' | 'use-credentials' }
+        : {};
+      const result = await loadCrossOriginImage(url, loadOptions);
+      imageData = result.imageData;
+      imageRef = result.imageRef;
+    }
   }
   // ── Source 3: blob ──────────────────────────────────────────────────────
   else if (params['blob'] !== undefined) {
