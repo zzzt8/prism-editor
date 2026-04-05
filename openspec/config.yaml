@@ -1,20 +1,44 @@
-schema: spec-driven
+schema: prism-workflow
+profile: custom
 
-# Project context (optional)
+workflows:
+  enabled:
+    - explore
+    - propose
+    - apply
+    - verify
+    - archive
+
+# Project context
 # This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Prism Editor 是一个 pnpm monorepo：
+  - apps/dev-tool: 开发者 UI（React Flow 编辑器）
+  - apps/user-app: 用户运行时
+  - server/: Fastify + Prisma/SQLite API
+  - packages/workflow-core: 执行器和拓扑排序
+  - packages/image-ops: Canvas 图像操作
+  - packages/node-definitions: 节点元数据
+  - packages/shared-types: 共享类型定义
+  - packages/shared-ui: 设计系统和共享组件
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  影响层判定规则：
+  - 修改 workflow-core/image-ops/node-definitions → engine
+  - 修改 dev-tool → editor
+  - 修改 user-app → runtime
+  - 修改 server/prisma → backend
+  - 修改 shared-ui → ui-skin
+  - 跨 app 改动 → 必须 architecture-review
+  - 涉及协议/数据迁移 → architecture-review + test-plan
+
+# Per-artifact rules
+rules:
+  proposal:
+    - 必须包含 impact map
+    - 必须标注影响层
+  design:
+    - 影响 engine/backend/跨 app 时必须包含 Architecture Review 章节
+  tasks:
+    - 必须包含 layer/type/risk 元数据
+    - engine/backend 层任务必须包含 test-plan 章节
+    - 按 layer 优先级执行：engine > backend > editor > runtime > ui-skin

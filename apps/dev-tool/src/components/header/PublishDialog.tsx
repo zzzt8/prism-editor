@@ -23,9 +23,13 @@ import { copyWorkflowToClipboard, downloadWorkflowAsFile } from '../../utils/wor
 
 const CHANNEL_NAME = 'prism-publish-channel';
 
-/** Nodes with no incoming edges are potential user-input sources */
-function getInputCandidateNodes(nodes: CanvasNode[]): CanvasNode[] {
-  return nodes.filter((n) => n.data.definition != null);
+/** Source-only nodes (no incoming edges) — the only sensible user-upload entry points. */
+function getInputCandidateNodes(
+  nodes: CanvasNode[],
+  edges: ReturnType<typeof useCanvasStore.getState>['edges']
+): CanvasNode[] {
+  const withIncoming = nodesWithIncomingEdges(edges);
+  return nodes.filter((n) => n.data.definition != null && !withIncoming.has(n.id));
 }
 
 /** Build a set of node IDs that appear as a source (have at least one incoming edge) */
@@ -206,14 +210,35 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
   // ── Derived node lists ──────────────────────────────────────────────────
   const outputNodes = useMemo(() => inferOutputNodes(nodes, edges), [nodes, edges]);
 
-  // All defined nodes are input candidates; developer manually selects which to expose
-  const candidateNodes = useMemo(() => getInputCandidateNodes(nodes), [nodes]);
+  // Only source nodes (no incoming edges) can be exposed as user uploads
+  const candidateNodes = useMemo(() => getInputCandidateNodes(nodes, edges), [nodes, edges]);
 
   // ── User-input selection (manual toggle) ────────────────────────────────
   const [selectedInputIds, setSelectedInputIds] = useState<Set<string>>(new Set<string>());
 
   // ── Input labels: nodeId → developer-provided user-facing label ────────
   const [inputLabels, setInputLabels] = useState<Record<string, string>>({});
+
+  // Drop selections that are no longer valid source nodes (e.g. graph rewired).
+  React.useEffect(() => {
+    const allowed = new Set(candidateNodes.map((n) => n.id));
+    setSelectedInputIds((prev) => {
+      const kept = [...prev].filter((id) => allowed.has(id));
+      if (kept.length === prev.size && kept.every((id) => prev.has(id))) return prev;
+      return new Set(kept);
+    });
+    setInputLabels((l) => {
+      let changed = false;
+      const next = { ...l };
+      for (const k of Object.keys(next)) {
+        if (!allowed.has(k)) {
+          delete next[k];
+          changed = true;
+        }
+      }
+      return changed ? next : l;
+    });
+  }, [candidateNodes]);
 
   // ── Output labels & formats ────────────────────────────────────────────
   const [outputLabels, setOutputLabels] = useState<Record<string, string>>(() => {
@@ -494,7 +519,7 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
             <div className="publish-section-title">
               定义用户上传内容
               <span className="publish-section-hint">
-                勾选要开放给用户的节点 · 未勾选的节点使用内置测试数据
+                仅显示无上游连线的节点（如「加载图片」「加载蒙版」）· 未勾选则沿用画布上的测试数据
               </span>
             </div>
 

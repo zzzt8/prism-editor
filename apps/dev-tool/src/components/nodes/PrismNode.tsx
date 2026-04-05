@@ -282,7 +282,12 @@ export const PrismNode: FC<PrismNodeProps> = ({ id, data, selected }) => {
 
           {/* Generic fallback: param chips + thumbnail */}
           {![
-            'load-image','transform','apply-mask','composite','export'
+            'load-image',
+            'load-mask',
+            'transform',
+            'apply-mask',
+            'composite',
+            'export',
           ].includes(data.nodeType) && (
             <>
               {paramSummary.length > 0 && (

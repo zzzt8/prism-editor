@@ -14,28 +14,26 @@ import { ErrorBoundary } from '@prism/shared-ui';
 function App() {
   const { selectWorkflow, clearSelection, selectedWorkflow } = useUserAppStore();
 
-  // Sync route → store on mount and on every hash change
+  // Sync route → store on mount and on every hash change.
+  // Do NOT depend on selectedWorkflow: when route is #/workflow/:id, selectWorkflow()
+  // updates the store and would re-run this effect, calling selectWorkflow again in a loop.
   useEffect(() => {
     const syncFromRoute = () => {
       const route = parseRoute();
-      console.log('[App] hashchange, route:', route.kind, route.kind === 'run' ? route.sourceId : '');
       if (route.kind === 'run') {
         selectWorkflow(route.sourceId);
       } else {
-        if (selectedWorkflow) {
-          console.log('[App] clearing selection');
+        const hasSelection = useUserAppStore.getState().selectedWorkflow != null;
+        if (hasSelection) {
           clearSelection();
         }
       }
     };
 
-    // Run once on mount
     syncFromRoute();
-
-    // Listen to hash changes
     window.addEventListener('hashchange', syncFromRoute);
     return () => window.removeEventListener('hashchange', syncFromRoute);
-  }, [selectedWorkflow, selectWorkflow, clearSelection]);
+  }, [selectWorkflow, clearSelection]);
 
   // Also sync store → route when selection changes programmatically
   useEffect(() => {
