@@ -1,8 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { compositeImages } from '../src/composite';
+import { compositeImages, compositeExecutor, serialComposite, parallelComposite } from '../src/composite';
 import { ImageData as CanvasImageData } from 'canvas';
+import { WorkerRunner } from '../src/scheduler/workerRunner';
 
 type ImageData = globalThis.ImageData;
+
+function pixelsMatch(a: ImageData, b: ImageData): boolean {
+  if (a.width !== b.width || a.height !== b.height) return false;
+  for (let i = 0; i < a.data.length; i++) {
+    if (Math.abs(a.data[i] - b.data[i]) > 1) return false;
+  }
+  return true;
+}
 
 /** Create a 4x4 RGBA ImageData with all pixels = (r, g, b, a) */
 function makeImage(
@@ -208,5 +217,202 @@ describe('compositeImages — options defaults', () => {
 
     expect(result.data[0]).toBe(255);
     expect(result.data[3]).toBe(255);
+  });
+});
+
+// ─── Parallel composite correctness tests ───────────────────────────────────
+
+describe('parallelComposite correctness', () => {
+  const mockWorkerRunner = {
+    isWorkerAvailable: () => true,
+    getPoolSize: () => 4,
+    composite: async (base: ImageData, overlay: ImageData) => {
+      return { data: compositeImages(base, overlay, { blendMode: 'normal', opacity: 1 }), width: base.width, height: base.height };
+    },
+    createGroupComposite: async (base: ImageData, overlays: ImageData[]) => {
+      let result = base;
+      for (const overlay of overlays) {
+        result = compositeImages(result, overlay, { blendMode: 'normal', opacity: 1 });
+      }
+      return { data: result, width: base.width, height: base.height };
+    },
+  } as unknown as WorkerRunner;
+
+  it('produces identical results to serial composite - 3 overlays', async () => {
+    const base = makeImage(4, 4, 100, 100, 100, 255);
+    const overlays = [
+      makeImage(4, 4, 255, 0, 0, 255),
+      makeImage(4, 4, 0, 255, 0, 255),
+      makeImage(4, 4, 0, 0, 255, 255),
+    ];
+
+    const serialResult = await serialComposite(base, overlays, {
+      mode: 'normal',
+      opacity: 1,
+      workerRunner: mockWorkerRunner,
+    });
+
+    const parallelResult = await parallelComposite(base, overlays, {
+      mode: 'normal',
+      opacity: 1,
+      workerRunner: mockWorkerRunner,
+    });
+
+    expect(pixelsMatch(serialResult, parallelResult)).toBe(true);
+  });
+
+  it('produces identical results to serial composite - gradient overlays', async () => {
+    const base = makeGradient(8, 8);
+    const overlays = [
+      makeGradient(8, 8, false),
+      makeGradient(8, 8, true),
+    ];
+
+    const serialResult = await serialComposite(base, overlays, {
+      mode: 'normal',
+      opacity: 1,
+      workerRunner: mockWorkerRunner,
+    });
+
+    const parallelResult = await parallelComposite(base, overlays, {
+      mode: 'normal',
+      opacity: 1,
+      workerRunner: mockWorkerRunner,
+    });
+
+    expect(pixelsMatch(serialResult, parallelResult)).toBe(true);
+  });
+
+  it('handles 0 overlays - returns base', async () => {
+    const base = makeImage(4, 4, 100, 100, 100, 255);
+
+    const serialResult = await serialComposite(base, [], {
+      mode: 'normal',
+      opacity: 1,
+      workerRunner: mockWorkerRunner,
+    });
+
+    const parallelResult = await parallelComposite(base, [], {
+      mode: 'normal',
+      opacity: 1,
+      workerRunner: mockWorkerRunner,
+    });
+
+    expect(pixelsMatch(serialResult, parallelResult)).toBe(true);
+  });
+
+  it('handles 1 overlay - returns single composite', async () => {
+    const base = makeImage(4, 4, 100, 100, 100, 255);
+    const overlays = [makeImage(4, 4, 255, 0, 0, 255)];
+
+    const serialResult = await serialComposite(base, overlays, {
+      mode: 'normal',
+      opacity: 1,
+      workerRunner: mockWorkerRunner,
+    });
+
+    const parallelResult = await parallelComposite(base, overlays, {
+      mode: 'normal',
+      opacity: 1,
+      workerRunner: mockWorkerRunner,
+    });
+
+    expect(pixelsMatch(serialResult, parallelResult)).toBe(true);
+  });
+
+  it('handles different size overlays', async () => {
+    const base = makeImage(4, 4, 100, 100, 100, 255);
+    const overlays = [
+      makeImage(2, 2, 255, 0, 0, 255),
+      makeImage(4, 4, 0, 255, 0, 255),
+    ];
+
+    const serialResult = await serialComposite(base, overlays, {
+      mode: 'normal',
+      opacity: 1,
+      workerRunner: mockWorkerRunner,
+    });
+
+    const parallelResult = await parallelComposite(base, overlays, {
+      mode: 'normal',
+      opacity: 1,
+      workerRunner: mockWorkerRunner,
+    });
+
+    expect(pixelsMatch(serialResult, parallelResult)).toBe(true);
+  });
+
+  it('forceSerial option produces same result as serial', async () => {
+    const base = makeImage(4, 4, 100, 100, 100, 255);
+    const overlays = [
+      makeImage(4, 4, 255, 0, 0, 255),
+      makeImage(4, 4, 0, 255, 0, 255),
+      makeImage(4, 4, 0, 0, 255, 255),
+      makeImage(4, 4, 255, 255, 0, 255),
+    ];
+
+    const serialResult = await serialComposite(base, overlays, {
+      mode: 'normal',
+      opacity: 1,
+      workerRunner: mockWorkerRunner,
+    });
+
+    const parallelResult = await parallelComposite(base, overlays, {
+      mode: 'normal',
+      opacity: 1,
+      workerRunner: mockWorkerRunner,
+      forceSerial: true,
+    });
+
+    expect(pixelsMatch(serialResult, parallelResult)).toBe(true);
+  });
+});
+
+describe('parallelComposite performance', () => {
+  it('completes in reasonable time and produces correct results', async () => {
+    const size = 8;
+    const base = makeImage(size, size, 100, 100, 100, 255);
+    const overlays = [
+      makeImage(size, size, 255, 0, 0, 255),
+      makeImage(size, size, 0, 255, 0, 255),
+      makeImage(size, size, 0, 0, 255, 255),
+      makeImage(size, size, 255, 255, 0, 255),
+    ];
+
+    // Use real compositeImages for accurate simulation
+    const realComposite = (baseImg: ImageData, overlayImg: ImageData): ImageData =>
+      compositeImages(baseImg, overlayImg, { blendMode: 'normal', opacity: 1 });
+
+    const mockWorkerRunner = {
+      isWorkerAvailable: () => true,
+      getPoolSize: () => 4,
+      composite: async (b: ImageData, o: ImageData) => {
+        return { data: realComposite(b, o), width: b.width, height: b.height };
+      },
+      createGroupComposite: async (b: ImageData, os: ImageData[]) => {
+        let r = b;
+        for (const o of os) {
+          r = realComposite(r, o);
+        }
+        return { data: r, width: b.width, height: b.height };
+      },
+    } as unknown as WorkerRunner;
+
+    const start = performance.now();
+    const parallelResult = await parallelComposite(base, overlays, {
+      mode: 'normal',
+      opacity: 1,
+      workerRunner: mockWorkerRunner,
+    });
+    const parallelTime = performance.now() - start;
+
+    const serialResult = await serialComposite(base, overlays, {
+      mode: 'normal',
+      opacity: 1,
+      workerRunner: mockWorkerRunner,
+    });
+
+    expect(pixelsMatch(serialResult, parallelResult)).toBe(true);
+    expect(parallelTime).toBeLessThan(5000);
   });
 });

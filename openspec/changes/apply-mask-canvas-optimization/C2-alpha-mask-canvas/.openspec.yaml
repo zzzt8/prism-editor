@@ -1,0 +1,12 @@
+---
+name: C2-alpha-mask-canvas
+description: Alpha 蒙版 Canvas 2D 实现
+version: 1.0
+date: 2026-04-06
+type: sub-change
+status: planned
+parent: apply-mask-canvas-optimization
+layer: engine
+priority: P0
+depends_on:
+  - C1-canvas-compositing-primitives

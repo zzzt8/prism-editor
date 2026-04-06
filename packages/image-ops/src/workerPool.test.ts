@@ -85,13 +85,14 @@ function createMockWorkerProxy(id: string) {
 
 // ── Mock WorkerPool factory ───────────────────────────────────────────────────
 
-import { WorkerPool } from './scheduler/workerPool';
+import { WorkerPool, calculateWorkerCount, getEffectiveSize } from './scheduler/workerPool';
 import type { WorkerPoolConfig } from './scheduler/workerPool';
 
 /** Create a real WorkerPool whose workers are our mock proxies. */
 function createTestPool(config: Partial<WorkerPoolConfig> = {}): WorkerPool {
-  // Create pool with size=0 so initialize() creates zero real workers
-  const pool = new WorkerPool({ ...config, size: 0 });
+  // Create pool with dynamic=false and size=0 so initialize() creates zero real workers
+  // We manually push mock workers afterward
+  const pool = new WorkerPool({ ...config, dynamic: false, size: 0, maxErrors: 3, initTimeout: 5000 });
   const poolAny = pool as unknown as { workers: MockPooledWorker[] };
 
   // Directly push mock workers — give a dummy instance so executeOnWorker doesn't reject
@@ -269,5 +270,59 @@ describe('WorkerPool — terminate()', () => {
     await expect(
       pool.execute(async (w) => w.getStatus())
     ).rejects.toThrow('terminated');
+  });
+});
+
+// ── Dynamic Worker Count Tests ─────────────────────────────────────────────────
+
+describe('calculateWorkerCount', () => {
+  it('returns 1 for 2 cores', () => {
+    expect(calculateWorkerCount(2, 4, 1)).toBe(1);
+  });
+
+  it('returns 3 for 4 cores (cores - 1)', () => {
+    expect(calculateWorkerCount(4, 4, 1)).toBe(3);
+  });
+
+  it('caps at maxSize for high core counts', () => {
+    expect(calculateWorkerCount(16, 4, 1)).toBe(4);
+  });
+
+  it('respects minSize', () => {
+    expect(calculateWorkerCount(8, 4, 2)).toBe(4);
+  });
+
+  it('defaults to 1 when hardwareConcurrency is 0', () => {
+    expect(calculateWorkerCount(0, 4, 1)).toBe(1);
+  });
+});
+
+describe('getEffectiveSize', () => {
+  beforeEach(() => {
+    vi.stubGlobal('navigator', { hardwareConcurrency: 4 });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('uses fixed size when dynamic is false', () => {
+    const config: WorkerPoolConfig = { dynamic: false, baseSize: 3, maxErrors: 3, initTimeout: 5000 };
+    expect(getEffectiveSize(config)).toBe(3);
+  });
+
+  it('uses legacy size when baseSize is not set and dynamic is false', () => {
+    const config: WorkerPoolConfig = { size: 5, dynamic: false, maxErrors: 3, initTimeout: 5000 };
+    expect(getEffectiveSize(config)).toBe(5);
+  });
+
+  it('calculates dynamically when dynamic is true (default)', () => {
+    const config: WorkerPoolConfig = { dynamic: true, maxErrors: 3, initTimeout: 5000 };
+    expect(getEffectiveSize(config)).toBe(3); // 4 cores -> 4-1=3
+  });
+
+  it('respects custom maxSize in dynamic mode', () => {
+    const config: WorkerPoolConfig = { maxSize: 6, maxErrors: 3, initTimeout: 5000 };
+    expect(getEffectiveSize(config)).toBe(3); // 4 cores -> 4-1=3, min(6, 3)=3
   });
 });

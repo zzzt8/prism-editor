@@ -113,6 +113,8 @@ class FileReaderPolyfill {
   onload: ((this: FileReaderPolyfill, ev: ProgressEvent<FileReaderPolyfill>) => void) | null = null;
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   onerror: ((this: FileReaderPolyfill, ev: ProgressEvent<FileReaderPolyfill>) => void) | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  onloadend: ((this: FileReaderPolyfill, ev: ProgressEvent<FileReaderPolyfill>) => void) | null = null;
 
   get result() { return this._result; }
   get error() { return this._error as DOMException | null; }
@@ -142,10 +144,12 @@ class FileReaderPolyfill {
       this._result = `data:${blob.type};base64,`;
       this._readyState = 2; // DONE
       if (this.onload) this.onload.call(this, {} as ProgressEvent<FileReaderPolyfill>);
+      if (this.onloadend) this.onloadend.call(this, {} as ProgressEvent<FileReaderPolyfill>);
     } catch (e) {
       this._error = e as Error;
       this._readyState = 2; // DONE
       if (this.onerror) this.onerror.call(this, {} as ProgressEvent<FileReaderPolyfill>);
+      if (this.onloadend) this.onloadend.call(this, {} as ProgressEvent<FileReaderPolyfill>);
     }
   }
 }

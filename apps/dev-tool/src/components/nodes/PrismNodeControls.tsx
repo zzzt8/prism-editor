@@ -25,6 +25,13 @@ export function useExecutionThumbnail(
 ) {
   return useMemo(() => {
     if (!result || !execImageKey) return null;
+    const topPreview = result['previewUrl'];
+    const topW = result['width'] as number | undefined;
+    const topH = result['height'] as number | undefined;
+    if (typeof topPreview === 'string' && topPreview.length > 0 && topW && topH) {
+      return { dataUrl: topPreview, width: topW, height: topH };
+    }
+
     const imgData = result[execImageKey];
 
     if (imgData && typeof imgData === 'object' && !('data' in imgData) && 'url' in imgData) {
@@ -40,9 +47,13 @@ export function useExecutionThumbnail(
 
     const imgDataObj = imgData as Record<string, unknown>;
     if (imgData && typeof imgData === 'object' && 'data' in imgDataObj && 'width' in imgDataObj && 'height' in imgDataObj) {
-      const imageData = imgDataObj.data;
       const width = imgDataObj.width as number;
       const height = imgDataObj.height as number;
+      const pUrl = imgDataObj.previewUrl;
+      if (typeof pUrl === 'string' && pUrl.length > 0 && width && height) {
+        return { dataUrl: pUrl, width, height };
+      }
+      const imageData = imgDataObj.data;
       if (imageData instanceof ImageData && width && height) {
         try {
           const MAX = 400;
@@ -97,6 +108,9 @@ export function usePreviewImage(
   return useMemo(() => {
     if (imageFileValue?.dataUrl) return imageFileValue.dataUrl;
     if (!result || !execImageKey) return null;
+    const topPreview = result['previewUrl'];
+    if (typeof topPreview === 'string' && topPreview.length > 0) return topPreview;
+
     const imgData = result[execImageKey];
 
     if (imgData && typeof imgData === 'object' && !('data' in imgData) && 'url' in imgData) {
@@ -105,7 +119,10 @@ export function usePreviewImage(
     }
 
     if (imgData && typeof imgData === 'object' && 'data' in imgData) {
-      const runtimeObj = imgData as { data: unknown; width?: number; height?: number };
+      const runtimeObj = imgData as { data: unknown; width?: number; height?: number; previewUrl?: string };
+      if (typeof runtimeObj.previewUrl === 'string' && runtimeObj.previewUrl.length > 0) {
+        return runtimeObj.previewUrl;
+      }
       if (runtimeObj.data instanceof ImageData && runtimeObj.width && runtimeObj.height) {
         const MAX = 1200;
         const scale = Math.min(1, MAX / Math.max(runtimeObj.width, runtimeObj.height));
@@ -207,10 +224,20 @@ function makeThumbnail(data: ImageData, maxPx = 200): string | null {
 
 function getExecThumb(executionResult: CanvasNodeData['executionResult']): string | null {
   if (!executionResult) return null;
+  const topPreview = executionResult['previewUrl'];
+  if (typeof topPreview === 'string' && topPreview.length > 0) return topPreview;
+
   const rawImage = executionResult['image'];
+  const fromImage = unwrapPreviewUrl(rawImage as Parameters<typeof unwrapPreviewUrl>[0], undefined);
+  if (fromImage) return fromImage;
+
   const imageData = unwrapImageData(rawImage as Parameters<typeof unwrapImageData>[0]);
   if (!imageData?.width || !imageData?.height) return null;
-  return makeThumbnail(imageData);
+  try {
+    return makeThumbnail(imageData);
+  } catch {
+    return null;
+  }
 }
 
 // ─── Specialized body renderers ──────────────────────────────────────────────

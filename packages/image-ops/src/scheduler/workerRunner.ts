@@ -3,6 +3,8 @@
 
 import type { TransformOptions, MaskOptions, BlendMode } from '@prism/shared-types';
 import type { WorkerImageResult, WorkerLoadResult, WorkerExportResult } from '../worker/imageWorker.worker';
+import { ImageWorker } from '../worker/imageWorker.worker';
+import { getWorkerPool } from './workerPool';
 
 /**
  * Unified worker interface for image operations.
@@ -66,8 +68,6 @@ export class WorkerRunner implements ImageOperations {
     }
 
     if (!this.workerPool) {
-      // Dynamic import to avoid issues in non-browser environments
-      const { getWorkerPool } = require('./workerPool');
       this.workerPool = getWorkerPool();
     }
 
@@ -84,8 +84,7 @@ export class WorkerRunner implements ImageOperations {
       return pool.execute((worker) => worker.transform(imageData, options));
     }
 
-    // Fallback: use the worker image operations directly
-    const { ImageWorker } = require('../worker/imageWorker.worker');
+    // Fallback: use the worker image operations directly on main thread
     const worker = new ImageWorker('inline-' + Math.random().toString(36).slice(2, 8));
     return worker.transform(imageData, options);
   }
@@ -105,8 +104,6 @@ export class WorkerRunner implements ImageOperations {
       return pool.execute((worker) => worker.composite(base, overlay, mode, opacity));
     }
 
-    // Fallback
-    const { ImageWorker } = require('../worker/imageWorker.worker');
     const worker = new ImageWorker('inline-' + Math.random().toString(36).slice(2, 8));
     return worker.composite(base, overlay, mode, opacity);
   }
@@ -121,8 +118,6 @@ export class WorkerRunner implements ImageOperations {
       return pool.execute((worker) => worker.applyMask(image, mask, options));
     }
 
-    // Fallback
-    const { ImageWorker } = require('../worker/imageWorker.worker');
     const worker = new ImageWorker('inline-' + Math.random().toString(36).slice(2, 8));
     return worker.applyMask(image, mask, options);
   }
@@ -140,10 +135,35 @@ export class WorkerRunner implements ImageOperations {
       return pool.execute((worker) => worker.exportImage(data, options));
     }
 
-    // Fallback
-    const { ImageWorker } = require('../worker/imageWorker.worker');
     const worker = new ImageWorker('inline-' + Math.random().toString(36).slice(2, 8));
     return worker.exportImage(data, options);
+  }
+
+  /**
+   * Create group-level composite - runs on worker if available, otherwise main thread
+   */
+  async createGroupComposite(
+    base: ImageData,
+    overlays: ImageData[],
+    mode: BlendMode = 'normal',
+    opacity: number = 1
+  ): Promise<WorkerImageResult> {
+    const pool = this.getWorkerPool();
+
+    if (pool && pool.hasAvailableWorkers()) {
+      return pool.execute((worker) => worker.createGroupComposite(base, overlays, mode, opacity));
+    }
+
+    const worker = new ImageWorker('inline-' + Math.random().toString(36).slice(2, 8));
+    return worker.createGroupComposite(base, overlays, mode, opacity);
+  }
+
+  /**
+   * Get the current pool size (number of available workers)
+   */
+  getPoolSize(): number {
+    const pool = this.getWorkerPool();
+    return pool?.getPoolSize() ?? 1;
   }
 
   /**

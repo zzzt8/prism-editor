@@ -298,6 +298,7 @@ export function validateCorsHeaders(response: Response, origin: string): boolean
 
 import type { NodeExecutor, LoadImageExecutorOutput } from '@prism/shared-types';
 import { getImageMemoryManager } from './memory-manager';
+import { generatePreviewUrl } from './preview-strategy';
 
 // ImageFile param value shape (from UI file picker)
 interface ImageFileValue {
@@ -385,17 +386,8 @@ export const loadImageExecutor: NodeExecutor = async (
     getImageMemoryManager().registerRef(imageRef);
   }
 
-  // Create blob URL for preview
-  const canvas = new OffscreenCanvas(imageData.width, imageData.height);
-  const cctx = canvas.getContext('2d');
-  if (!cctx) throw new Error('Failed to get 2D context for preview canvas');
-  cctx.putImageData(imageData, 0, 0);
-  const blob = await canvas.convertToBlob({ type: 'image/png' });
-  const previewRef = getImageMemoryManager().createObjectURL(
-    blob,
-    imageData.width,
-    imageData.height
-  );
+  // Generate preview using lazy strategy (default) for performance
+  const previewRef = await generatePreviewUrl(imageData, imageData.width, imageData.height);
 
   return {
     type: 'load-image',
@@ -443,16 +435,8 @@ export const loadMaskExecutor: NodeExecutor = async (
     : await loadCrossOriginImage(sourceUrl);
   const imageData = result.imageData;
 
-  const canvas = new OffscreenCanvas(imageData.width, imageData.height);
-  const cctx = canvas.getContext('2d');
-  if (!cctx) throw new Error('Failed to get 2D context for preview canvas');
-  cctx.putImageData(imageData, 0, 0);
-  const blob = await canvas.convertToBlob({ type: 'image/png' });
-  const previewRef = getImageMemoryManager().createObjectURL(
-    blob,
-    imageData.width,
-    imageData.height
-  );
+  // Generate preview using lazy strategy (default) for performance
+  const previewRef = await generatePreviewUrl(imageData, imageData.width, imageData.height);
 
   return {
     type: 'load-mask',

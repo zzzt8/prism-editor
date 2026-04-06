@@ -6,6 +6,7 @@ import type { MaskOptions } from '@prism/shared-types';
 import { resizeImageData } from './transform';
 import { unwrapImageData } from '@prism/shared-types';
 import { getImageMemoryManager } from './memory-manager';
+import { generatePreviewUrl } from './preview-strategy';
 import { getWorkerRunner, type WorkerRunner } from './scheduler/workerRunner';
 import type { NodeExecutor, ApplyMaskExecutorOutput } from '@prism/shared-types';
 import type { ExecutionContext } from '@prism/shared-types';
@@ -155,6 +156,16 @@ function getApplyMaskWorkerRunner(): WorkerRunner {
   return _workerRunner;
 }
 
+/** Clone pixels so Comlink.transfer does not detach shared upstream ImageData buffers. */
+function cloneImageDataForWorker(src: ImageData): ImageData {
+  return new ImageData(
+    new Uint8ClampedArray(src.data),
+    src.width,
+    src.height,
+    { colorSpace: src.colorSpace }
+  );
+}
+
 export const applyMaskExecutor: NodeExecutor = async (
   inputs,
   params,
@@ -177,19 +188,18 @@ export const applyMaskExecutor: NodeExecutor = async (
   // Try worker lane first; fall back to main-thread applyMask if workers unavailable
   let result: ImageData;
   if (workerRunner.isWorkerAvailable()) {
-    const workerResult = await workerRunner.applyMask(image, mask, maskOptions);
+    const workerResult = await workerRunner.applyMask(
+      cloneImageDataForWorker(image),
+      cloneImageDataForWorker(mask),
+      maskOptions
+    );
     result = workerResult.data;
   } else {
     result = applyMask(image, mask, maskOptions);
   }
 
-  // Create preview
-  const canvas = new OffscreenCanvas(result.width, result.height);
-  const cctx = canvas.getContext('2d');
-  if (!cctx) throw new Error('Failed to get 2D context for preview canvas');
-  cctx.putImageData(result, 0, 0);
-  const blob = await canvas.convertToBlob({ type: 'image/png' });
-  const previewRef = getImageMemoryManager().createObjectURL(blob, result.width, result.height);
+  // Generate preview using lazy strategy (default) for performance
+  const previewRef = await generatePreviewUrl(result, result.width, result.height);
 
   return {
     type: 'apply-mask',

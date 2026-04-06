@@ -3,20 +3,45 @@
 
 import * as Comlink from 'comlink';
 import type { ImageWorker, WorkerStatus } from '../worker/imageWorker.worker';
+import { registerImageDataTransferHandler } from '../comlink-image-data-transfer';
 
-// Register ImageData transfer handler so ArrayBuffers are transferred (not copied)
-// between the main thread and workers, reducing memory pressure for large images.
-Comlink.transferHandlers.set('ID', {
-  canHandle(obj: unknown): obj is ImageData {
-    return obj instanceof ImageData;
-  },
-  serialize(obj: ImageData): [ImageData, ArrayBuffer[]] {
-    return [obj, [obj.data.buffer]];
-  },
-  deserialize(obj: ImageData): ImageData {
-    return obj;
-  },
-});
+registerImageDataTransferHandler();
+
+/**
+ * Calculate the optimal number of workers based on device capabilities.
+ * 
+ * Formula: min(maxSize, max(minSize, hardwareConcurrency - 1))
+ * Reserves 1 core for the main thread to avoid Worker and UI resource contention.
+ */
+export function calculateWorkerCount(
+  hardwareConcurrency: number,
+  maxSize: number = 4,
+  minSize: number = 1
+): number {
+  const cores = hardwareConcurrency || 2;
+  const calculated = Math.max(minSize, cores - 1);
+  return Math.min(maxSize, calculated);
+}
+
+/**
+ * Get the effective pool size based on config and device capabilities.
+ * 
+ * If dynamic is false, uses fixed size (size or baseSize).
+ * If dynamic is true (default), calculates based on hardwareConcurrency.
+ */
+export function getEffectiveSize(config: WorkerPoolConfig): number {
+  if (config.dynamic === false) {
+    return config.size ?? config.baseSize ?? 2;
+  }
+
+  const maxSize = config.maxSize ?? 4;
+  const minSize = config.minSize ?? 1;
+  const cores = typeof navigator !== 'undefined'
+    ? (navigator.hardwareConcurrency || 2)
+    : 2;
+
+  return calculateWorkerCount(cores, maxSize, minSize);
+}
 
 /**
  * Represents a single worker instance in the pool
@@ -44,8 +69,16 @@ export interface WorkerTask<T = unknown> {
  * Pool configuration
  */
 export interface WorkerPoolConfig {
-  /** Number of workers in the pool (default: 2) */
-  size: number;
+  /** @deprecated Use baseSize or dynamic sizing instead */
+  size?: number;
+  /** Base number of workers (used when dynamic is false) */
+  baseSize?: number;
+  /** Maximum number of workers in the pool (default: 4) */
+  maxSize?: number;
+  /** Minimum number of workers in the pool (default: 1) */
+  minSize?: number;
+  /** Enable dynamic worker count based on hardwareConcurrency (default: true) */
+  dynamic?: boolean;
   /** Maximum consecutive errors before worker is replaced */
   maxErrors: number;
   /** Timeout for worker initialization (ms) */
@@ -68,8 +101,12 @@ export interface WorkerPoolStats {
 /**
  * Default configuration
  */
-const DEFAULT_CONFIG: WorkerPoolConfig = {
-  size: 2,
+const DEFAULT_CONFIG: Required<WorkerPoolConfig> = {
+  size: undefined!,
+  baseSize: 2,
+  maxSize: 4,
+  minSize: 1,
+  dynamic: true,
   maxErrors: 3,
   initTimeout: 5000,
 };
@@ -110,9 +147,11 @@ export class WorkerPool {
    * Initialize the worker pool with configured number of workers
    */
   private initialize(): void {
-    for (let i = 0; i < this.config.size; i++) {
+    const size = getEffectiveSize(this.config);
+    for (let i = 0; i < size; i++) {
       this.createWorker(i);
     }
+    console.log(`[WorkerPool] Initialized with ${size} workers`);
   }
 
   /**
@@ -448,6 +487,13 @@ export class WorkerPool {
    */
   hasAvailableWorkers(): boolean {
     return this.workers.some((w) => w.status === 'idle' && w.proxy);
+  }
+
+  /**
+   * Get the pool size (number of initialized workers)
+   */
+  getPoolSize(): number {
+    return this.workers.filter((w) => w.proxy).length;
   }
 
   /**

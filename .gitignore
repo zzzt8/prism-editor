@@ -7,7 +7,7 @@ yarn-error.log*
 lerna-debug.log*
 
 # Cursor AI
-.cursor/
+# NOTE: .cursor/ folder is tracked - contains AI skills (opsx-*) for the project
 .amazonq/
 .augment/
 
@@ -162,3 +162,7 @@ vite.config.ts.timestamp-*
 
 # Test fixtures
 test/
+
+# SQLite databases
+**/prisma/*.db
+**/*.db

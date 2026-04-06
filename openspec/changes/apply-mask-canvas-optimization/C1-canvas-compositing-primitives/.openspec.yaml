@@ -1,0 +1,11 @@
+---
+name: C1-canvas-compositing-primitives
+description: Canvas 2D 蒙版合成基础设施
+version: 1.0
+date: 2026-04-06
+type: sub-change
+status: planned
+parent: apply-mask-canvas-optimization
+layer: engine
+priority: P0
+depends_on: []

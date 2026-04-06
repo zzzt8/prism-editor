@@ -1,0 +1,21 @@
+---
+name: apply-mask-canvas-optimization
+description: Apply Mask 性能优化 - 使用 Canvas 2D 替代 JavaScript 像素循环
+version: 1.0
+date: 2026-04-06
+type: meta-change
+status: planned
+layers:
+  - engine
+tags:
+  - performance
+  - image-processing
+  - canvas
+relatedChanges:
+  - C1-canvas-compositing-primitives
+  - C2-alpha-mask-canvas
+  - C3-brightness-luminance-mask-canvas
+  - C4-performance-benchmark
+docs:
+  - docs/apply-mask-optimization/DESIGN.md
+  - docs/apply-mask-optimization/SUMMARY.md

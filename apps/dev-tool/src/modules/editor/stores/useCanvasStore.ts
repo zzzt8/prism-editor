@@ -887,7 +887,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   },
 
   async executeWorkflow() {
-    const { nodes, workflowMeta, edges } = get();
+    let { nodes, workflowMeta, edges } = get();
     if (nodes.length === 0) return { status: 'done' as const };
 
     // Clear previous execution results and set running state
@@ -899,6 +899,9 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       _executionStatus: 'running' as const,
       _currentNodeId: null,
     }));
+
+    // Use node list after clear (avoid stale executionResult on references)
+    ({ nodes, workflowMeta, edges } = get());
 
     // Create abort controller for cancellation
     const controller = new AbortController();

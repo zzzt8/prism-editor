@@ -1,0 +1,13 @@
+---
+name: C4-performance-benchmark
+description: 性能基准测试套件
+version: 1.0
+date: 2026-04-06
+type: sub-change
+status: planned
+parent: apply-mask-canvas-optimization
+layer: engine
+priority: P1
+depends_on:
+  - C2-alpha-mask-canvas
+  - C3-brightness-luminance-mask-canvas

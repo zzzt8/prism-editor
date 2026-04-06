@@ -5,9 +5,19 @@ import type { BlendMode } from '@prism/shared-types';
 import { createCanvas, makeImageData } from './canvas-util';
 import { unwrapImageData, type ImageRuntimeObject } from '@prism/shared-types';
 import { getImageMemoryManager } from './memory-manager';
+import { generatePreviewUrl } from './preview-strategy';
 import { getWorkerRunner, type WorkerRunner } from './scheduler/workerRunner';
 import type { NodeExecutor, CompositeExecutorOutput } from '@prism/shared-types';
 import type { ExecutionContext } from '@prism/shared-types';
+
+/**
+ * Wrap raw pixel data into an ImageData object.
+ * Used when worker returns transferred Uint8ClampedArray that needs to be
+ * re-wrapped as a proper ImageData for downstream consumers.
+ */
+function wrapImageData(width: number, height: number): ImageData {
+  return makeImageData(width, height);
+}
 
 function clamp(value: number): number {
   return Math.max(0, Math.min(255, Math.round(value)));
@@ -199,6 +209,8 @@ export interface CompositeOptions {
   canvasHeight?: number;
   overlayX?: number;
   overlayY?: number;
+  /** Force serial composite (for debugging/comparison) */
+  forceSerial?: boolean;
 }
 
 /**
@@ -301,7 +313,91 @@ export function compositeImages(
   return resultPixels;
 }
 
-// ─── Composite executor ────────────────────────────────────────────────────────
+// ─── Serial composite ─────────────────────────────────────────────────────────
+
+export async function serialComposite(
+  base: ImageData,
+  overlays: ImageData[],
+  options: {
+    mode: BlendMode;
+    opacity: number;
+    workerRunner: WorkerRunner;
+    canvasWidth?: number;
+    canvasHeight?: number;
+  }
+): Promise<ImageData> {
+  const { mode, opacity, workerRunner, canvasWidth, canvasHeight } = options;
+
+  const executeComposite = async (currentBase: ImageData, overlay: ImageData): Promise<ImageData> => {
+    if (workerRunner.isWorkerAvailable()) {
+      const result = await workerRunner.composite(currentBase, overlay, mode, opacity);
+      return result.data;
+    }
+    return compositeImages(currentBase, overlay, { blendMode: mode, opacity, canvasWidth, canvasHeight });
+  };
+
+  let result = base;
+  for (const overlay of overlays) {
+    result = await executeComposite(result, overlay);
+  }
+  return result;
+}
+
+// ─── Parallel composite ───────────────────────────────────────────────────────
+
+/**
+ * Grouped parallel composite algorithm.
+ * Divides overlays into N groups (N = available workers), executes each group in parallel,
+ * then accumulates the results sequentially.
+ */
+export async function parallelComposite(
+  base: ImageData,
+  overlays: ImageData[],
+  options: {
+    mode: BlendMode;
+    opacity: number;
+    workerRunner: WorkerRunner;
+    canvasWidth?: number;
+    canvasHeight?: number;
+    forceSerial?: boolean;
+  }
+): Promise<ImageData> {
+  const { mode, opacity, workerRunner, canvasWidth, canvasHeight, forceSerial } = options;
+
+  // Fallback to serial if requested or workers unavailable
+  if (forceSerial || !workerRunner.isWorkerAvailable() || overlays.length <= 1) {
+    return serialComposite(base, overlays, { mode, opacity, workerRunner, canvasWidth, canvasHeight });
+  }
+
+  const workerCount = workerRunner.getPoolSize();
+  const groupSize = Math.min(workerCount, overlays.length);
+
+  // If only one group or few overlays, use serial for simplicity
+  if (overlays.length <= groupSize) {
+    return serialComposite(base, overlays, { mode, opacity, workerRunner, canvasWidth, canvasHeight });
+  }
+
+  // 1. Group overlays
+  const groups: ImageData[][] = [];
+  for (let i = 0; i < overlays.length; i += groupSize) {
+    groups.push(overlays.slice(i, i + groupSize));
+  }
+
+  // 2. Execute each group in parallel (creates intermediate results)
+  const groupPromises = groups.map(group =>
+    workerRunner.createGroupComposite(base, group, mode, opacity)
+  );
+  const groupResults = await Promise.all(groupPromises);
+
+  // 3. Accumulate merge results sequentially (maintain order dependency)
+  let result = base;
+  for (const groupResult of groupResults) {
+    const mergedResult = await workerRunner.composite(result, groupResult.data, mode, opacity);
+    result = mergedResult.data;
+  }
+
+  return result;
+}
 
 let _workerRunner: WorkerRunner | null = null;
 
@@ -336,6 +432,7 @@ export const compositeExecutor: NodeExecutor = async (
 
   const blendMode = (params['blendMode'] as BlendMode) ?? 'normal';
   const opacity   = (params['opacity']   as number)   ?? 1;
+  const forceSerial = (params['forceSerial'] as boolean) ?? false;
 
   const overlayKeys = Object.keys(inputs)
     .filter((k) => k !== 'base' && (k === 'overlay' || /^overlay\d+$/.test(k)))
@@ -346,50 +443,51 @@ export const compositeExecutor: NodeExecutor = async (
     });
 
   const workerRunner = getCompositeWorkerRunner();
-  let result = base;
 
+  // Collect all overlay images
+  const overlays: ImageData[] = [];
   for (const key of overlayKeys) {
     const raw = inputs[key] as Parameters<typeof unwrapImageData>[0];
     const img = unwrapImageData(raw);
-    if (!img) continue;
+    if (img) {
+      overlays.push(img);
+    }
+  }
 
-    const overlayIRO = (raw && typeof raw === 'object' && 'data' in raw)
-      ? raw as ImageRuntimeObject
-      : undefined;
+  let result: ImageData;
 
-    const overlayX =
-      (params[`${key}X`]         as number | undefined) ??
-      (params['overlayX']         as number | undefined) ??
-      overlayIRO?.position?.x ??
-      0;
-    const overlayY =
-      (params[`${key}Y`]         as number | undefined) ??
-      (params['overlayY']         as number | undefined) ??
-      overlayIRO?.position?.y ??
-      0;
-
-    // Try worker lane first; fall back to main-thread compositeImages if workers unavailable
+  if (overlays.length === 0) {
+    result = base;
+  } else if (overlays.length === 1) {
+    // Single overlay - use existing logic
     if (workerRunner.isWorkerAvailable()) {
-      const workerResult = await workerRunner.composite(result, img, blendMode, opacity);
+      const workerResult = await workerRunner.composite(base, overlays[0], blendMode, opacity);
       result = workerResult.data;
     } else {
-      result = compositeImages(result, img, {
+      result = compositeImages(base, overlays[0], {
         blendMode,
         opacity,
         canvasWidth,
         canvasHeight,
-        overlayX,
-        overlayY,
       });
     }
+  } else {
+    // Multiple overlays - use parallel composite
+    result = await parallelComposite(base, overlays, {
+      mode: blendMode,
+      opacity,
+      workerRunner,
+      canvasWidth,
+      canvasHeight,
+      forceSerial,
+    });
   }
 
   const previewCanvas = new OffscreenCanvas(result.width, result.height);
   const previewCtx = previewCanvas.getContext('2d');
   if (!previewCtx) throw new Error('Failed to get 2D context for preview canvas');
   previewCtx.putImageData(result, 0, 0);
-  const blob = await previewCanvas.convertToBlob({ type: 'image/png' });
-  const previewRef = getImageMemoryManager().createObjectURL(blob, result.width, result.height);
+  const previewRef = await generatePreviewUrl(result, result.width, result.height);
 
   return {
     type: 'composite',

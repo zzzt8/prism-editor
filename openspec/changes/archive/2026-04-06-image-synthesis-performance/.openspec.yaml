@@ -1,0 +1,18 @@
+---
+name: image-synthesis-performance
+type: meta
+created: 2026-04-06
+description: 图像合成性能优化 - 动态 Worker 池、并行多层合成、Canvas 缓存、预览延迟生成
+status: planned
+parent: null
+tags:
+  - performance
+  - image-ops
+  - worker
+layers:
+  - engine
+changes:
+  - C1-dynamic-worker-pool
+  - C2-parallel-composite
+  - C3-canvas-cache
+  - C4-lazy-preview

@@ -5,6 +5,7 @@ type ImageData = globalThis.ImageData;
 import type { TransformOptions } from '@prism/shared-types';
 import { unwrapImageData } from '@prism/shared-types';
 import { getImageMemoryManager } from './memory-manager';
+import { generatePreviewUrl } from './preview-strategy';
 import { getWorkerRunner, type WorkerRunner } from './scheduler/workerRunner';
 import type { NodeExecutor, TransformExecutorOutput } from '@prism/shared-types';
 import type { ExecutionContext } from '@prism/shared-types';
@@ -298,8 +299,7 @@ export const transformExecutor: NodeExecutor = async (
   const previewCtx = previewCanvas.getContext('2d');
   if (!previewCtx) throw new Error('Failed to get 2D context for preview canvas');
   previewCtx.putImageData(finalData, 0, 0);
-  const blob = await previewCanvas.convertToBlob({ type: 'image/png' });
-  const previewRef = getImageMemoryManager().createObjectURL(blob, finalW, finalH);
+  const previewRef = await generatePreviewUrl(finalData, finalW, finalH);
 
   return {
     type: 'transform',

@@ -10,5 +10,6 @@ export * from './memory-manager';
 export * from './executors';
 export * from './scheduler';
 export * from './task-scheduler';
+export * from './preview-strategy';
 // Note: './worker' exports are internal only — Worker is instantiated at runtime
 // via the WorkerPool and should not be imported directly in application code.
