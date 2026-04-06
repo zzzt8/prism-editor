@@ -36,8 +36,8 @@
 
 ### Backward Compatibility（向后兼容）
 
-- [ ] 已发布的不含 inline/URL executor 的 workflow 不受影响
-- [ ] package 节点加载流程不变
+- [x] 已发布的不含 inline/URL executor 的 workflow 不受影响
+- [x] package 节点加载流程不变
 
 ---
 
@@ -65,8 +65,9 @@ layer: runtime
 risk: medium
 verify:
   - unit-tests
+status: done
 -->
-- [ ] T1: 定义 SecurityConfig
+- [x] T1: 定义 SecurityConfig
   - layer: runtime
   - files: apps/user-app/src/modules/node-runtime/securityConfig.ts
   - **验收标准**：白名单和信任级别配置定义完成
@@ -77,8 +78,9 @@ layer: runtime
 risk: high
 verify:
   - unit-tests
+status: done
 -->
-- [ ] T2: 实现 manifest 校验
+- [x] T2: 实现 manifest 校验
   - layer: runtime
   - files: apps/user-app/src/modules/node-runtime/nodePackageLoader.ts
   - **验收标准**：package manifest 完整性和版本签名校验
@@ -89,8 +91,9 @@ layer: engine
 risk: high
 verify:
   - unit-tests
+status: done
 -->
-- [ ] T3: 实现 Worker 隔离
+- [x] T3: 实现 Worker 隔离
   - layer: engine
   - files: packages/core/src/executorUtils.ts
   - **验收标准**：inline executor 在 Worker 中执行
@@ -101,8 +104,9 @@ layer: runtime
 risk: medium
 verify:
   - unit-tests
+status: done
 -->
-- [ ] T4: 实现 URL 白名单
+- [x] T4: 实现 URL 白名单
   - layer: runtime
   - files: apps/user-app/src/modules/node-runtime/nodePackageLoader.ts
   - **验收标准**：URL executor 目标地址校验
@@ -111,6 +115,6 @@ verify:
 
 ## 手工验收清单
 
-- [ ] 含 inline executor 的 workflow 在 Worker 中执行，UI 不卡顿
-- [ ] 不在白名单的 URL executor 加载时被拒绝
-- [ ] 已签名的 package 节点正常加载
+- [x] 含 inline executor 的 workflow 在 Worker 中执行，UI 不卡顿
+- [x] 不在白名单的 URL executor 加载时被拒绝
+- [x] 已签名的 package 节点正常加载

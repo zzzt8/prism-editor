@@ -5,6 +5,7 @@ type ImageData = globalThis.ImageData;
 import type { TransformOptions } from '@prism/shared-types';
 import { unwrapImageData } from '@prism/shared-types';
 import { getImageMemoryManager } from './memory-manager';
+import { getWorkerRunner, type WorkerRunner } from './scheduler/workerRunner';
 import type { NodeExecutor, TransformExecutorOutput } from '@prism/shared-types';
 import type { ExecutionContext } from '@prism/shared-types';
 
@@ -225,6 +226,15 @@ export function flipVertical(imageData: ImageData): ImageData {
 
 // ─── Transform executor ────────────────────────────────────────────────────────
 
+let _workerRunner: WorkerRunner | null = null;
+
+function getTransformWorkerRunner(): WorkerRunner {
+  if (!_workerRunner) {
+    _workerRunner = getWorkerRunner();
+  }
+  return _workerRunner;
+}
+
 export const transformExecutor: NodeExecutor = async (
   inputs,
   params,
@@ -244,9 +254,8 @@ export const transformExecutor: NodeExecutor = async (
   const cropWidth = (params['cropWidth'] as number) ?? 0;
   const cropHeight = (params['cropHeight'] as number) ?? 0;
 
-  const transformed = transformImage(image, {
-    translateX: 0,
-    translateY: 0,
+  const workerRunner = getTransformWorkerRunner();
+  const transformOptions: TransformOptions = {
     scaleX,
     scaleY,
     rotation,
@@ -254,7 +263,16 @@ export const transformExecutor: NodeExecutor = async (
     cropY,
     cropWidth,
     cropHeight,
-  });
+  };
+
+  // Try worker lane first; fall back to main-thread transformImage if workers unavailable
+  let transformed: ImageData;
+  if (workerRunner.isWorkerAvailable()) {
+    const workerResult = await workerRunner.transform(image, transformOptions);
+    transformed = workerResult.data;
+  } else {
+    transformed = transformImage(image, transformOptions);
+  }
 
   const finalX = Math.floor(translateX);
   const finalY = Math.floor(translateY);

@@ -33,7 +33,7 @@
 
 ### Backward Compatibility（向后兼容）
 
-- [ ] 无代码改动，不涉及兼容性
+- [x] 无代码改动，不涉及兼容性
 
 ---
 
@@ -62,7 +62,7 @@ risk: low
 verify:
   - visual-check
 -->
-- [ ] T1: 修复 README.md
+- [x] T1: 修复 README.md
   - layer: ui-skin
   - files: README.md
   - **验收标准**：移除 license 冲突；保留或明确 MIT license
@@ -74,7 +74,7 @@ risk: low
 verify:
   - visual-check
 -->
-- [ ] T2: 修复 server/README.md
+- [x] T2: 修复 server/README.md
   - layer: ui-skin
   - files: server/README.md
   - **验收标准**：DATABASE_URL 示例为 SQLite 路径；补充 Prisma migration 说明
@@ -83,7 +83,7 @@ verify:
 
 ## 手工验收清单
 
-- [ ] README.md 末尾无 "Private. All rights reserved." 冲突
-- [ ] README.md 明确 MIT license
-- [ ] server/README.md 的 DATABASE_URL 示例为 `file:./prisma/dev.db`
-- [ ] server/README.md 包含 Prisma migrate 命令说明
+- [x] README.md 末尾无 "Private. All rights reserved." 冲突
+- [x] README.md 明确 MIT license
+- [x] server/README.md 的 DATABASE_URL 示例为 `file:./prisma/dev.db`
+- [x] server/README.md 包含 Prisma migrate 命令说明

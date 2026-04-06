@@ -5,6 +5,7 @@ import type { BlendMode } from '@prism/shared-types';
 import { createCanvas, makeImageData } from './canvas-util';
 import { unwrapImageData, type ImageRuntimeObject } from '@prism/shared-types';
 import { getImageMemoryManager } from './memory-manager';
+import { getWorkerRunner, type WorkerRunner } from './scheduler/workerRunner';
 import type { NodeExecutor, CompositeExecutorOutput } from '@prism/shared-types';
 import type { ExecutionContext } from '@prism/shared-types';
 
@@ -302,6 +303,15 @@ export function compositeImages(
 
 // ─── Composite executor ────────────────────────────────────────────────────────
 
+let _workerRunner: WorkerRunner | null = null;
+
+function getCompositeWorkerRunner(): WorkerRunner {
+  if (!_workerRunner) {
+    _workerRunner = getWorkerRunner();
+  }
+  return _workerRunner;
+}
+
 export const compositeExecutor: NodeExecutor = async (
   inputs,
   params,
@@ -335,6 +345,7 @@ export const compositeExecutor: NodeExecutor = async (
       return parseInt(a.slice(7), 10) - parseInt(b.slice(7), 10);
     });
 
+  const workerRunner = getCompositeWorkerRunner();
   let result = base;
 
   for (const key of overlayKeys) {
@@ -357,14 +368,20 @@ export const compositeExecutor: NodeExecutor = async (
       overlayIRO?.position?.y ??
       0;
 
-    result = compositeImages(result, img, {
-      blendMode,
-      opacity,
-      canvasWidth,
-      canvasHeight,
-      overlayX,
-      overlayY,
-    });
+    // Try worker lane first; fall back to main-thread compositeImages if workers unavailable
+    if (workerRunner.isWorkerAvailable()) {
+      const workerResult = await workerRunner.composite(result, img, blendMode, opacity);
+      result = workerResult.data;
+    } else {
+      result = compositeImages(result, img, {
+        blendMode,
+        opacity,
+        canvasWidth,
+        canvasHeight,
+        overlayX,
+        overlayY,
+      });
+    }
   }
 
   const previewCanvas = new OffscreenCanvas(result.width, result.height);

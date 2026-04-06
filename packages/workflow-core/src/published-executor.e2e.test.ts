@@ -707,8 +707,11 @@ describe('14.3 PublishedWorkflowExecutor publish-run end-to-end', () => {
     expect(usedFormat).toBe('jpeg');
   });
 
-  it('throws PublishedWorkflowExecutorVersionError for old data without nodeTypes', async () => {
-    const pwEx = new PublishedWorkflowExecutor({});
+  it('legacy workflow without nodeTypes emits warning and still runs with empty nodes', async () => {
+    const pwEx = new PublishedWorkflowExecutor({
+      'load-image': mockLoadImage('blue'),
+      'export':     mockExport('png'),
+    });
 
     const oldPw = {
       id: 'old-pw',
@@ -730,7 +733,11 @@ describe('14.3 PublishedWorkflowExecutor publish-run end-to-end', () => {
       },
     } as unknown as PublishedWorkflow;
 
-    await expect(pwEx.execute(oldPw, { inputs: {} })).rejects.toThrow('此工作流数据格式过旧');
+    // No longer throws — emits warning and returns 'done' with empty workflow
+    // (no nodes to execute, so nothing runs)
+    const result = await pwEx.execute(oldPw, { inputs: {} });
+    expect(result.status).toBe('done');
+    expect(result.results).toEqual({});
   });
 
   it('reports progress via onProgress callback', async () => {

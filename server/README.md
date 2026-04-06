@@ -20,14 +20,21 @@ cp .env.example .env
 
 | 变量 | 描述 | 默认值 |
 |------|------|--------|
-| `DATABASE_URL` | PostgreSQL 数据库连接字符串 | `postgresql://user:password@localhost:5432/prism` |
+| `DATABASE_URL` | SQLite 数据库连接字符串 | `file:./prisma/dev.db` |
 | `PORT` | 服务端口 | `3001` |
 | `CORS_ORIGIN` | 允许的 CORS 源 | `http://localhost:5173` |
 
 ### 3. 数据库迁移
 
 ```bash
-pnpm migrate
+# 生成 Prisma Client（如需更新类型）
+pnpm prisma generate
+
+# 运行数据库迁移（首次或 schema 变更时）
+pnpm prisma migrate dev
+
+# 生产环境迁移
+pnpm prisma migrate deploy
 ```
 
 ### 4. 启动开发服务器
@@ -85,7 +92,7 @@ pnpm migrate:local ./path/to/export.json
 
 | 变量 | 描述 | 默认值 |
 |------|------|--------|
-| `DATABASE_URL` | PostgreSQL 数据库连接字符串 | `postgresql://user:password@localhost:5432/prism` |
+| `DATABASE_URL` | SQLite 数据库连接字符串 | `file:./prisma/dev.db` |
 | `PORT` | 服务端口 | `3001` |
 | `CORS_ORIGIN` | 允许的 CORS 源 | `http://localhost:5173` |
 | `NODE_ENV` | 运行环境 | `development` |

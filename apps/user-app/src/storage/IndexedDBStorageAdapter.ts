@@ -5,21 +5,11 @@
 
 import type { PublishedWorkflow } from '@prism/shared-types';
 import type { ValidatedPublishedWorkflow } from '../utils/workflowImport';
+import type { PublishedWorkflowMeta } from '../modules/repositories/interfaces';
 
 const DB_NAME = 'prism-user-app';
 const DB_VERSION = 1;
 const STORE_NAME = 'published-workflows';
-
-export interface PublishedWorkflowMeta {
-  sourceId: string;
-  name: string;
-  description?: string;
-  sourceName: string;
-  version: string;
-  publishedAt: string;
-  inputCount: number;
-  outputCount: number;
-}
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {

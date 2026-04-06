@@ -4,7 +4,8 @@
 // from the UI Design System (Chapter 10).
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { useUserAppStore } from '../store/publishedStore';
+import { useSelectedWorkflowStore } from '../modules/selection/selectedWorkflowStore';
+import { useRunStore } from '../modules/runner/runStore';
 import { navigateToList } from '../router';
 import { UserLayout } from '../layouts/UserLayout';
 import { WorkflowHeader } from '../components/WorkflowHeader';
@@ -42,7 +43,8 @@ function WorkflowErrorState() {
 
 // ── Main Run Page ────────────────────────────────────────────────────────────
 export const WorkflowRunPage: React.FC = () => {
-  const { selectedWorkflow, runState, setRunState } = useUserAppStore();
+  const { selectedWorkflow } = useSelectedWorkflowStore();
+  const { runState, setRunState } = useRunStore();
 
   // User input values: keyed by PublishedInput.id
   const [inputValues, setInputValues] = useState<Record<string, string>>({});

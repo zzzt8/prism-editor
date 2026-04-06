@@ -36,8 +36,8 @@
 
 ### Backward Compatibility（向后兼容）
 
-- [ ] 前端保存 workflow 行为不变
-- [ ] 现有 workflow 的版本历史不受影响
+- [x] 前端保存 workflow 行为不变
+- [x] 现有 workflow 的版本历史不受影响
 
 ---
 
@@ -66,9 +66,9 @@ risk: medium
 verify:
   - smoke-test
 -->
-- [ ] T1: 移除前端版本号自增
+- [x] T1: 移除前端版本号自增
   - layer: editor
-  - files: apps/dev-tool/src/store/canvasStore.ts
+  - files: apps/dev-tool/src/modules/editor/stores/useCanvasStore.ts
   - **验收标准**：保存后 version 不再自增；保存只传 content
 
 <!-- opsx-meta
@@ -78,9 +78,9 @@ risk: high
 verify:
   - api-tests
 -->
-- [ ] T2: 更新服务端 WorkflowVersion 生成
+- [x] T2: 更新服务端 WorkflowVersion 生成
   - layer: backend
-  - files: server/src/routes/workflow.ts
+  - files: server/src/routes/workflow.ts, server/src/schemas/workflow.ts
   - **验收标准**：服务端生成 semantic version；返回新 version
 
 <!-- opsx-meta
@@ -90,7 +90,7 @@ risk: medium
 verify:
   - api-tests
 -->
-- [ ] T3: 实现 rollback
+- [x] T3: 实现 rollback
   - layer: backend
   - files: server/src/routes/versions.ts
   - **验收标准**：rollback 端点返回指定版本内容，生成新 snapshot
@@ -102,7 +102,7 @@ risk: high
 verify:
   - api-tests
 -->
-- [ ] T4: 添加 Migration Script
+- [x] T4: 添加 Migration Script
   - layer: backend
   - files: server/src/scripts/migrate-versions.ts
   - **验收标准**：现有 workflow 的 content 存入 WorkflowVersion
@@ -111,6 +111,6 @@ verify:
 
 ## 手工验收清单
 
-- [ ] 保存 workflow 后版本号由服务端生成
-- [ ] 查看版本历史能看到所有 snapshot
-- [ ] 回滚到指定版本后，workflow 内容正确
+- [x] 保存 workflow 后版本号由服务端生成
+- [x] 查看版本历史能看到所有 snapshot
+- [x] 回滚到指定版本后，workflow 内容正确

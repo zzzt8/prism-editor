@@ -5,14 +5,14 @@
 //   #/workflow/:id   → run page
 
 import React, { useEffect } from 'react';
-import { useUserAppStore } from './store/publishedStore';
+import { useSelectedWorkflowStore } from './modules/selection/selectedWorkflowStore';
 import { parseRoute, navigateToList } from './router';
 import { WorkflowListPage } from './pages/WorkflowListPage';
 import { WorkflowRunPage } from './pages/WorkflowRunPage';
 import { ErrorBoundary } from '@prism/shared-ui';
 
 function App() {
-  const { selectWorkflow, clearSelection, selectedWorkflow } = useUserAppStore();
+  const { selectWorkflow, clearSelection, selectedWorkflow } = useSelectedWorkflowStore();
 
   // Sync route → store on mount and on every hash change.
   // Do NOT depend on selectedWorkflow: when route is #/workflow/:id, selectWorkflow()
@@ -23,7 +23,7 @@ function App() {
       if (route.kind === 'run') {
         selectWorkflow(route.sourceId);
       } else {
-        const hasSelection = useUserAppStore.getState().selectedWorkflow != null;
+        const hasSelection = useSelectedWorkflowStore.getState().selectedWorkflow != null;
         if (hasSelection) {
           clearSelection();
         }

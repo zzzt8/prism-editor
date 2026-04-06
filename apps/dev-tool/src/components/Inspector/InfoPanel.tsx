@@ -213,10 +213,10 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ nodeId }) => {
               <span className="info-mono">{lastExecutionTime}</span>
             </div>
           )}
-          {node.data.executionError && (
+          {!!node.data.executionError && (
             <div className="info-error">
               <span className="info-error-label">错误</span>
-              <span className="info-error-msg">{node.data.executionError}</span>
+              <span className="info-error-msg">{String(node.data.executionError)}</span>
             </div>
           )}
         </div>

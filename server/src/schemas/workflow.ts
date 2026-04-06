@@ -43,6 +43,12 @@ export const ImportWorkflowSchema = z.object({
   overwrite: z.boolean().default(false),
 });
 
+// Version creation schema - server-side version generation
+export const CreateVersionSchema = z.object({
+  content: z.string().min(1).max(1024 * 1024),
+  baseRevision: z.string().optional(), // For conflict detection
+});
+
 export type CreateWorkflowInput = z.infer<typeof CreateWorkflowSchema>;
 export type UpdateWorkflowInput = z.infer<typeof UpdateWorkflowSchema>;
 export type UpdateWorkflowMetaInput = z.infer<typeof UpdateWorkflowMetaSchema>;

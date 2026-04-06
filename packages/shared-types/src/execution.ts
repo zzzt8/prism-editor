@@ -99,6 +99,27 @@ export type ProgressCallback = (progress: ExecutionProgress) => void;
 export interface ExecutorOptions {
   onProgress?: ProgressCallback;
   signal?: AbortSignal;
+  /**
+   * Lane configuration for worker offloading.
+   * When provided, controls which execution lane nodes use.
+   */
+  laneConfig?: LaneConfig;
+}
+
+/**
+ * Execution lane configuration — controls worker offloading behavior.
+ */
+export interface LaneConfig {
+  /**
+   * Override to force all nodes to a specific lane.
+   * Useful for testing or when workers are unavailable.
+   */
+  overrideLane?: 'main-thread' | 'worker';
+  /**
+   * Whether to allow worker lane execution.
+   * Set to false to disable offloading (e.g., no Web Worker support).
+   */
+  enableWorkerLane: boolean;
 }
 
 // NodeExecutor is the contract that all node executors must implement.

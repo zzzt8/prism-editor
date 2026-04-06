@@ -17,7 +17,7 @@ import { PublicRoute } from './components/AuthGuard';
 import { useAuthStore } from './store/authStore';
 import { useAppStore } from './store/appStore';
 import { useCanvasStore } from './store/canvasStore';
-import { activeStorageAdapter, IndexedDBStorageAdapter, ApiStorageAdapter, cleanupStorage } from './storage';
+import { activeStorageAdapter, indexedDBStorageAdapter, IndexedDBStorageAdapter, ApiStorageAdapter, cleanupStorage } from './storage';
 import { ErrorBoundary } from '@prism/shared-ui';
 
 type AuthView = 'login' | 'register' | 'authenticated';
@@ -117,6 +117,23 @@ function App() {
       }
     });
   }, []);
+
+  // Restore last workflow when authenticated
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const lastWorkflowId = localStorage.getItem('prism:lastWorkflowId');
+    if (lastWorkflowId) {
+      // Try to load the last opened workflow
+      indexedDBStorageAdapter.load(lastWorkflowId).then((workflow) => {
+        useCanvasStore.getState().loadWorkflow(workflow);
+        useAppStore.getState().navigateToEditor(lastWorkflowId);
+      }).catch(() => {
+        // Workflow no longer exists, clear the reference
+        localStorage.removeItem('prism:lastWorkflowId');
+      });
+    }
+  }, [isAuthenticated]);
 
   const handlePublishClick = () => {
     setPublishStatus('loading');

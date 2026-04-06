@@ -7,6 +7,7 @@ import {
   WorkflowParamsSchema,
   WorkflowQuerySchema,
   ImportWorkflowSchema,
+  CreateVersionSchema,
 } from '../schemas/workflow.js';
 
 interface AuthUser {
@@ -25,6 +26,81 @@ const workflowRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   const getCurrentUserId = (request: FastifyRequest): string => {
     return request.user.userId;
   };
+
+  // Semantic version generator
+  function generateNextVersion(currentVersion: string): string {
+    const parts = currentVersion.split('.');
+    const major = parseInt(parts[0] || '1', 10);
+    const minor = parseInt(parts[1] || '0', 10);
+    const patch = parseInt(parts[2] || '0', 10);
+
+    // Increment minor, reset patch
+    return `${major}.${minor + 1}.0`;
+  }
+
+  // POST /api/workflows/:id/versions - Create new version (server-side version generation)
+  fastify.post('/workflows/:id/versions', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+    } catch {
+      return reply.status(401).send({ error: 'Unauthorized' });
+    }
+
+    const userId = getCurrentUserId(request);
+    const { id } = WorkflowParamsSchema.parse(request.params);
+    const input = CreateVersionSchema.parse(request.body);
+
+    const existing = await prisma.workflow.findUnique({ where: { id } });
+    if (!existing) {
+      return reply.status(404).send({ error: 'Workflow not found' });
+    }
+    if (existing.userId !== userId) {
+      return reply.status(403).send({ error: 'Access denied' });
+    }
+
+    // Conflict detection (optional baseRevision)
+    if (input.baseRevision && existing.version !== input.baseRevision) {
+      return reply.status(409).send({
+        error: 'Conflict: baseRevision mismatch',
+        currentVersion: existing.version,
+        expectedVersion: input.baseRevision,
+      });
+    }
+
+    // Generate new version on server
+    const newVersion = generateNextVersion(existing.version);
+
+    // Create version snapshot and update workflow in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Create new version record
+      const workflowVersion = await tx.workflowVersion.create({
+        data: {
+          workflowId: id,
+          version: newVersion,
+          content: input.content,
+          createdBy: userId,
+        },
+      });
+
+      // Update workflow with new content and version
+      const updatedWorkflow = await tx.workflow.update({
+        where: { id },
+        data: {
+          content: input.content,
+          version: newVersion,
+        },
+      });
+
+      return { workflowVersion, workflow: updatedWorkflow };
+    });
+
+    return {
+      data: {
+        version: result.workflowVersion,
+        workflow: result.workflow,
+      },
+    };
+  });
 
   // GET /api/workflows - List workflows with pagination and search (user's own workflows)
   fastify.get('/workflows', async (request, reply) => {

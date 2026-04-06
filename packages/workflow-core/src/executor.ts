@@ -7,6 +7,7 @@ import type {
   NodeResult,
   NodeDefinition,
 } from '@prism/shared-types';
+import type { LaneConfig } from '@prism/shared-types';
 import { topologicalSort } from './topo-sort';
 import { createExecutionContext, recordNodeResult, checkAborted } from './context';
 import type { ExecutionContext } from './context';
@@ -38,6 +39,11 @@ export interface WorkflowExecutorOptions extends ExecutorOptions {
    * @default { enabled: true, autoConvert: true }
    */
   typeChecking?: TypeCheckingOptions;
+  /**
+   * Lane configuration for execution strategy.
+   * Controls whether nodes run on main-thread or worker lane.
+   */
+  laneConfig?: LaneConfig;
 }
 
 function hashInputs(inputs: Record<string, unknown>): string {

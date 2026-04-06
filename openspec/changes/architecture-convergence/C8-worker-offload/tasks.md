@@ -36,8 +36,8 @@
 
 ### Backward Compatibility（向后兼容）
 
-- [ ] 所有节点执行结果与 Worker 化前一致
-- [ ] UI 不因图像处理而卡顿
+- [x] 所有节点执行结果与 Worker 化前一致
+- [x] UI 不因图像处理而卡顿
 
 ---
 
@@ -66,9 +66,9 @@ risk: medium
 verify:
   - unit-tests
 -->
-- [ ] T1: 定义 Lane 选择策略
+- [x] T1: 定义 Lane 选择策略
   - layer: engine
-  - files: packages/image-ops/src/scheduler/taskQueue.ts
+  - files: packages/image-ops/src/scheduler/laneSelector.ts
   - **验收标准**：节点类型 → lane 的映射定义完成
 
 <!-- opsx-meta
@@ -78,7 +78,7 @@ risk: high
 verify:
   - smoke-test
 -->
-- [ ] T2: 更新 executionService
+- [x] T2: 更新 executionService
   - layer: editor
   - files: apps/dev-tool/src/modules/editor/services/executionService.ts
   - **验收标准**：支持 main-thread / worker 两种 lane
@@ -90,9 +90,9 @@ risk: medium
 verify:
   - unit-tests
 -->
-- [ ] T3: 迁移 Transform 到 Worker
+- [x] T3: 迁移 Transform 到 Worker
   - layer: engine
-  - files: packages/image-ops/src/executors.ts
+  - files: packages/image-ops/src/transform.ts, packages/image-ops/src/scheduler/workerRunner.ts
   - **验收标准**：transform 节点在 Worker lane 执行
 
 <!-- opsx-meta
@@ -102,9 +102,9 @@ risk: medium
 verify:
   - unit-tests
 -->
-- [ ] T4: 迁移 Composite / ApplyMask 到 Worker
+- [x] T4: 迁移 Composite / ApplyMask 到 Worker
   - layer: engine
-  - files: packages/image-ops/src/executors.ts
+  - files: packages/image-ops/src/composite.ts, packages/image-ops/src/apply-mask.ts
   - **验收标准**：Composite 和 ApplyMask 节点在 Worker lane 执行
 
 <!-- opsx-meta
@@ -114,15 +114,15 @@ risk: low
 verify:
   - performance-test
 -->
-- [ ] T5: 性能测试
+- [x] T5: 性能测试
   - layer: engine
-  - files: packages/image-ops/src/
+  - files: packages/image-ops/src/scheduler/workerRunner.ts
   - **验收标准**：Worker lane 性能优于 main-thread lane
 
 ---
 
 ## 手工验收清单
 
-- [ ] 含图像处理节点的 workflow 正常执行
-- [ ] UI 在图像处理时保持流畅
-- [ ] 执行结果与 Worker 化前一致
+- [x] 含图像处理节点的 workflow 正常执行
+- [x] UI 在图像处理时保持流畅
+- [x] 执行结果与 Worker 化前一致

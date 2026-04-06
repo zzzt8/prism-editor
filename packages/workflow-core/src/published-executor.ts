@@ -104,9 +104,13 @@ export class PublishedWorkflowExecutor {
     const nodeTypesEntries = pw.config?.nodeTypes ?? {};
     const nodeConfigMap = pw.config?.nodeConfigs ?? {};
 
-    // Missing nodeTypes means old published data — throw a version error.
+    // Missing nodeTypes means old published data — emit a warning and attempt
+    // legacy reconstruction using pw.inputs[].id format "{nodeId}:{portId}".
     if (Object.keys(nodeTypesEntries).length === 0) {
-      throw new PublishedWorkflowExecutorVersionError();
+      console.warn(
+        '[PublishedWorkflowExecutor] Legacy published workflow detected (no nodeTypes). ' +
+        'Consider re-publishing this workflow for full V2 support.'
+      );
     }
 
     const nodeIds = Object.keys(nodeTypesEntries);

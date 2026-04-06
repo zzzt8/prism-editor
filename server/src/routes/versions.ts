@@ -138,21 +138,28 @@ const versionRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
     // Use Prisma transaction: create new version + update workflow
     const result = await prisma.$transaction(async (tx) => {
+      // Generate rollback version string (increment minor, reset patch)
+      const currentParts = workflow.version.split('.');
+      const major = parseInt(currentParts[0] || '1', 10);
+      const minor = parseInt(currentParts[1] || '0', 10);
+      const rollbackVersionStr = customVersion || `${major}.${minor + 1}.0`;
+
       // Create a new version recording the rollback
       const rollbackVersion = await tx.workflowVersion.create({
         data: {
           workflowId: id,
-          version: customVersion || `${workflow.version}-rollback`,
+          version: rollbackVersionStr,
           content: targetVersion.content,
           createdBy: userId,
         },
       });
 
-      // Update workflow with rolled-back content
+      // Update workflow with rolled-back content and new version
       const updatedWorkflow = await tx.workflow.update({
         where: { id },
         data: {
           content: targetVersion.content,
+          version: rollbackVersionStr,
         },
       });
 

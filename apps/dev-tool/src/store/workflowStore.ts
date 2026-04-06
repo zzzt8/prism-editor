@@ -1,8 +1,12 @@
-// Workflow store - manages saved workflow list using LocalStorageAdapter
+// Workflow store - manages saved workflow list using Repository pattern
+// Phase 1: Delegates to WorkflowRepository which wraps IndexedDBStorageAdapter
 
 import { create } from 'zustand';
 import type { WorkflowMeta } from '@prism/shared-types';
-import { indexedDBStorageAdapter } from '../storage';
+import { activeStorageAdapter } from '../storage';
+import { WorkflowRepository } from '../modules/repositories';
+
+const workflowRepository = new WorkflowRepository(activeStorageAdapter);
 
 interface WorkflowState {
   savedWorkflows: WorkflowMeta[];
@@ -22,7 +26,7 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
   loadSavedWorkflows: async () => {
     set({ isLoading: true, error: null });
     try {
-      const workflows = await indexedDBStorageAdapter.list();
+      const workflows = await workflowRepository.list();
       set({ savedWorkflows: workflows, isLoading: false });
     } catch (err) {
       set({ error: String(err), isLoading: false });
@@ -31,7 +35,7 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
 
   deleteSavedWorkflow: async (id: string) => {
     try {
-      await indexedDBStorageAdapter.delete(id);
+      await workflowRepository.delete(id);
       set((state) => ({
         savedWorkflows: state.savedWorkflows.filter((w) => w.id !== id),
       }));

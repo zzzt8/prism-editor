@@ -1,0 +1,31 @@
+// PublishedWorkflowRepository - implements IPublishedWorkflowRepository using IndexedDBStorageAdapter
+// Phase 1: Wraps existing IndexedDBStorageAdapter, no behavior change
+
+import type { PublishedWorkflow } from '@prism/shared-types';
+import { userAppStorage } from '../../storage';
+import type { IPublishedWorkflowRepository, PublishedWorkflowMeta } from './interfaces';
+import type { ValidatedPublishedWorkflow } from '../../utils/workflowImport';
+
+export class PublishedWorkflowRepository implements IPublishedWorkflowRepository {
+  async listPublished(): Promise<PublishedWorkflowMeta[]> {
+    return userAppStorage.listPublished();
+  }
+
+  async getPublished(sourceId: string): Promise<PublishedWorkflow> {
+    return userAppStorage.loadPublished(sourceId);
+  }
+
+  async savePublished(published: PublishedWorkflow): Promise<void> {
+    await userAppStorage.importWorkflow(published);
+  }
+
+  async deletePublished(sourceId: string): Promise<void> {
+    await userAppStorage.deletePublished(sourceId);
+  }
+}
+
+export async function syncWorkflowToLocal(workflow: ValidatedPublishedWorkflow): Promise<string> {
+  const result = await userAppStorage.importWorkflow(workflow);
+  return result.id;
+}
+

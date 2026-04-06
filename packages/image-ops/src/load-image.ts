@@ -24,8 +24,26 @@ function inferMimeType(url: string): string {
   }
 }
 
-export interface LoadCrossOriginImageOptions extends ImageLoadOptions {
+export interface LoadCrossOriginImageOptions extends Omit<ImageLoadOptions, 'crossOrigin'> {
   timeout?: number;
+  /** 'none' = load like a normal <img> (cross-origin pixels will throw at getImageData). */
+  crossOrigin?: 'anonymous' | 'use-credentials' | 'none';
+}
+
+/**
+ * True when url is http(s) and targets a different origin than the current page (browser only).
+ */
+export function isCrossOriginHttpUrl(urlString: string): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const parsed = new URL(urlString, window.location.href);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return false;
+    }
+    return parsed.origin !== window.location.origin;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -36,21 +54,32 @@ export interface LoadCrossOriginImageOptions extends ImageLoadOptions {
  * 2. Check Access-Control-Allow-Origin against the current origin
  * 3. If invalid, reject with a clear CORS error (before touching the canvas)
  * 4. If valid, create an Object URL and draw into a canvas
+ *
+ * For cross-origin http(s) URLs, CORS mode is used by default so getImageData() does not throw.
+ * Same-origin responses often omit ACAO; header check is skipped in that case.
  */
 export async function loadCrossOriginImage(
   url: string,
   options: LoadCrossOriginImageOptions = {}
 ): Promise<ImageLoadResult> {
-  const crossOrigin = options.crossOrigin;
+  const explicit = options.crossOrigin;
+  const optOut = explicit === 'none';
+  const credentialMode = explicit === 'use-credentials';
+  const anonymousByParam = explicit === 'anonymous';
+  const isCrossOrigin = isCrossOriginHttpUrl(url);
+  const useAnonymous =
+    !optOut && !credentialMode && (anonymousByParam || isCrossOrigin);
 
-  // Only attempt CORS validation when the user opted in (anonymous / use-credentials).
-  const validateCors = crossOrigin === 'anonymous' || crossOrigin === 'use-credentials';
+  const validateCors = credentialMode || useAnonymous;
 
-  // Phase 1: fetch so we can inspect response headers.
+  // Phase 1: fetch so we can inspect response headers when we need CORS-safe pixels.
   if (validateCors) {
     let response: Response;
     try {
-      response = await fetch(url, { mode: 'cors' });
+      response = await fetch(url, {
+        mode: 'cors',
+        credentials: credentialMode ? 'include' : 'omit',
+      });
     } catch {
       throw new Error(`Failed to fetch image (network error or CORS blocked): ${url}`);
     }
@@ -59,20 +88,23 @@ export async function loadCrossOriginImage(
       throw new Error(`Image fetch returned ${response.status}: ${url}`);
     }
 
-    // Check CORS headers before touching the canvas — fail fast.
     const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '<unknown>';
-    if (!validateCorsHeaders(response, currentOrigin)) {
-      throw new Error(
-        `CORS policy denied: server must include 'Access-Control-Allow-Origin: *' ` +
-        `or 'Access-Control-Allow-Origin: ${currentOrigin}' for ${url}`
-      );
+    if (isCrossOrigin) {
+      if (!validateCorsHeaders(response, currentOrigin)) {
+        throw new Error(
+          `CORS policy denied: server must include 'Access-Control-Allow-Origin: *' ` +
+            `or 'Access-Control-Allow-Origin: ${currentOrigin}' for ${url}`
+        );
+      }
     }
   }
 
   // Phase 2: load into an Image element so we get width/height cheaply.
   const img = new Image();
-  if (crossOrigin) {
-    img.crossOrigin = crossOrigin;
+  if (credentialMode) {
+    img.crossOrigin = 'use-credentials';
+  } else if (useAnonymous) {
+    img.crossOrigin = 'anonymous';
   }
 
   return new Promise((resolve, reject) => {
@@ -124,7 +156,7 @@ export async function loadCrossOriginImage(
       resolve({
         imageData,
         imageRef,
-        crossOriginUsed: crossOrigin === 'anonymous',
+        crossOriginUsed: useAnonymous || credentialMode,
       });
     };
 
@@ -325,9 +357,12 @@ export const loadImageExecutor: NodeExecutor = async (
       imageRef = result.imageRef;
     } else {
       const crossOrigin = params['crossOrigin'] as string | undefined;
-      const loadOptions = crossOrigin && crossOrigin !== 'none'
-        ? { crossOrigin: crossOrigin as 'anonymous' | 'use-credentials' }
-        : {};
+      const loadOptions: LoadCrossOriginImageOptions =
+        crossOrigin === 'none'
+          ? { crossOrigin: 'none' }
+          : crossOrigin && crossOrigin !== 'none'
+            ? { crossOrigin: crossOrigin as 'anonymous' | 'use-credentials' }
+            : {};
       const result = await loadCrossOriginImage(url, loadOptions);
       imageData = result.imageData;
       imageRef = result.imageRef;

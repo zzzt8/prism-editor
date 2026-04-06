@@ -30,8 +30,17 @@
 
 ### Backward Compatibility（向后兼容）
 
-- [ ] user-app 启动流程不变
-- [ ] 节点包加载行为不变（C7 才有安全边界）
+> C5 拆分后，所有 store/service 均通过 App.tsx 初始化，无新增外部依赖。验证如下：
+
+- [x] **user-app 启动流程不变**
+  - 启动入口仍是 `main.tsx` → `globalRegistry.initialize()` → `App` → 路由解析
+  - store 初始化分散到各组件（WorkflowListPage 触发 `loadWorkflows`，WorkflowRunPage 依赖 `selectedWorkflow`）
+  - 无破坏性变更
+
+- [x] **节点包加载行为不变（C7 才有安全边界）**
+  - `nodePackageLoader.loadRequiredNodes` 逻辑与原 `loadRequiredNodes` 完全一致
+  - 缓存策略、校验流程、错误收集方式保持不变
+  - C7 只需在 `nodePackageLoader.ts` 中添加安全边界逻辑，无需修改调用方
 
 ---
 
@@ -60,7 +69,7 @@ risk: low
 verify:
   - typecheck
 -->
-- [ ] T1: 创建目录结构
+- [x] T1: 创建目录结构
   - layer: runtime
   - files: apps/user-app/src/modules/
   - **验收标准**：`apps/user-app/src/modules/` 子目录创建完成
@@ -72,7 +81,7 @@ risk: low
 verify:
   - smoke-test
 -->
-- [ ] T2: 实现 workflowCatalogStore
+- [x] T2: 实现 workflowCatalogStore
   - layer: runtime
   - files: apps/user-app/src/modules/catalog/workflowCatalogStore.ts
   - **验收标准**：列表加载、排序功能正常
@@ -84,7 +93,7 @@ risk: low
 verify:
   - smoke-test
 -->
-- [ ] T3: 实现 selectedWorkflowStore
+- [x] T3: 实现 selectedWorkflowStore
   - layer: runtime
   - files: apps/user-app/src/modules/selection/selectedWorkflowStore.ts
   - **验收标准**：select / clear / 当前 workflow 功能正常
@@ -96,7 +105,7 @@ risk: medium
 verify:
   - unit-tests
 -->
-- [ ] T4: 拆分 nodePackageLoader
+- [x] T4: 拆分 nodePackageLoader
   - layer: runtime
   - files: apps/user-app/src/modules/node-runtime/nodePackageLoader.ts
   - **验收标准**：节点包加载逻辑为独立 service
@@ -108,7 +117,7 @@ risk: medium
 verify:
   - smoke-test
 -->
-- [ ] T5: 实现 runStore / runWorkflow
+- [x] T5: 实现 runStore / runWorkflow
   - layer: runtime
   - files: apps/user-app/src/modules/runner/runStore.ts | runWorkflow.ts
   - **验收标准**：runState 和执行入口功能正常
@@ -120,15 +129,29 @@ risk: low
 verify:
   - smoke-test
 -->
-- [ ] T6: 更新 App.tsx
+- [x] T6: 更新 App.tsx
   - layer: runtime
   - files: apps/user-app/src/App.tsx
   - **验收标准**：store 初始化正确
+
+<!-- opsx-meta
+id: T7
+layer: runtime
+risk: low
+verify:
+  - typecheck
+-->
+- [x] T7: 实现 runtimeRegistry
+  - layer: runtime
+  - files: apps/user-app/src/modules/runtime/runtimeRegistry.ts
+  - **验收标准**：registry 组装逻辑为独立 service
 
 ---
 
 ## 手工验收清单
 
-- [ ] user-app 启动后显示已发布 workflow 列表
-- [ ] 点击选择 workflow 后详情正确加载
-- [ ] 运行 workflow 正常
+> 手动验证通过于 2026-04-06
+
+- [x] user-app 启动后显示已发布 workflow 列表
+- [x] 点击选择 workflow 后详情正确加载
+- [x] 运行 workflow 正常

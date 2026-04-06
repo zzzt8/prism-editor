@@ -6,6 +6,7 @@ import type { MaskOptions } from '@prism/shared-types';
 import { resizeImageData } from './transform';
 import { unwrapImageData } from '@prism/shared-types';
 import { getImageMemoryManager } from './memory-manager';
+import { getWorkerRunner, type WorkerRunner } from './scheduler/workerRunner';
 import type { NodeExecutor, ApplyMaskExecutorOutput } from '@prism/shared-types';
 import type { ExecutionContext } from '@prism/shared-types';
 
@@ -145,6 +146,15 @@ function applyMaskWithResize(
 
 // ─── ApplyMask executor ────────────────────────────────────────────────────────
 
+let _workerRunner: WorkerRunner | null = null;
+
+function getApplyMaskWorkerRunner(): WorkerRunner {
+  if (!_workerRunner) {
+    _workerRunner = getWorkerRunner();
+  }
+  return _workerRunner;
+}
+
 export const applyMaskExecutor: NodeExecutor = async (
   inputs,
   params,
@@ -161,7 +171,17 @@ export const applyMaskExecutor: NodeExecutor = async (
   const threshold = (params['threshold'] as number) ?? 128;
   const invert = (params['invert'] as boolean) ?? false;
 
-  const result = applyMask(image, mask, { type: maskType, threshold, invert });
+  const maskOptions: MaskOptions = { type: maskType, threshold, invert };
+  const workerRunner = getApplyMaskWorkerRunner();
+
+  // Try worker lane first; fall back to main-thread applyMask if workers unavailable
+  let result: ImageData;
+  if (workerRunner.isWorkerAvailable()) {
+    const workerResult = await workerRunner.applyMask(image, mask, maskOptions);
+    result = workerResult.data;
+  } else {
+    result = applyMask(image, mask, maskOptions);
+  }
 
   // Create preview
   const canvas = new OffscreenCanvas(result.width, result.height);

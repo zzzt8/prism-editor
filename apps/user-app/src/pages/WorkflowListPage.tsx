@@ -1,10 +1,11 @@
 // WorkflowListPage - displays all published workflows available to the user
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { useUserAppStore, type PublishedWorkflowMeta } from '../store/publishedStore';
+import { useWorkflowCatalogStore } from '../modules/catalog/workflowCatalogStore';
+import { type PublishedWorkflowMeta } from '../modules/repositories/interfaces';
 import { navigateToWorkflow } from '../router';
 import { importWorkflowFromFile, importWorkflowFromClipboard } from '../utils/workflowImport';
-import { syncWorkflowToLocal } from '../store/publishedStore';
+import { syncWorkflowToLocal } from '../modules/repositories';
 
 // ─── Toast ───────────────────────────────────────────────────────────────────
 
@@ -101,7 +102,7 @@ function FileInputTrigger({ inputRef, onFile }: FileInputProps) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export const WorkflowListPage: React.FC = () => {
-  const { workflows, isLoading, loadError, loadWorkflows } = useUserAppStore();
+  const { workflows, isLoading, loadError, loadWorkflows } = useWorkflowCatalogStore();
 
   const [toast, setToast] = useState<ToastState | null>(null);
   const [pasteHint, setPasteHint] = useState(false);

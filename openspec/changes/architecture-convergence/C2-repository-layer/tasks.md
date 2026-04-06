@@ -36,8 +36,8 @@
 
 ### Backward Compatibility（向后兼容）
 
-- [ ] dev-tool 保存/加载 workflow 行为不变
-- [ ] user-app 发布流程不受影响
+- [x] dev-tool 保存/加载 workflow 行为不变
+- [x] user-app 发布流程不受影响
 
 ---
 
@@ -65,8 +65,11 @@ layer: editor
 risk: low
 verify:
   - unit-tests
+files:
+  - apps/dev-tool/src/modules/repositories/
+status: done
 -->
-- [ ] T1: 创建 dev-tool repositories 目录结构
+- [x] T1: 创建 dev-tool repositories 目录结构
   - layer: editor
   - files: apps/dev-tool/src/modules/repositories/
   - **验收标准**：`apps/dev-tool/src/modules/repositories/` 目录创建完成
@@ -77,8 +80,11 @@ layer: editor
 risk: medium
 verify:
   - unit-tests
+files:
+  - apps/dev-tool/src/modules/repositories/workflowRepository.ts
+status: done
 -->
-- [ ] T2: 实现 WorkflowRepository
+- [x] T2: 实现 WorkflowRepository
   - layer: editor
   - files: apps/dev-tool/src/modules/repositories/workflowRepository.ts
   - **验收标准**：`list()` 返回 WorkflowMeta[]；`save()` 正确序列化；`delete()` 正确移除
@@ -89,8 +95,11 @@ layer: editor
 risk: medium
 verify:
   - unit-tests
+files:
+  - apps/dev-tool/src/modules/repositories/versionRepository.ts
+status: done
 -->
-- [ ] T3: 实现 VersionRepository
+- [x] T3: 实现 VersionRepository
   - layer: editor
   - files: apps/dev-tool/src/modules/repositories/versionRepository.ts
   - **验收标准**：`list()` 返回 WorkflowVersion[]；`create()` 生成快照；`rollback()` 返回指定版本
@@ -101,8 +110,11 @@ layer: editor
 risk: medium
 verify:
   - unit-tests
+files:
+  - apps/dev-tool/src/modules/repositories/publishRepository.ts
+status: done
 -->
-- [ ] T4: 实现 PublishRepository
+- [x] T4: 实现 PublishRepository
   - layer: editor
   - files: apps/dev-tool/src/modules/repositories/publishRepository.ts
   - **验收标准**：`publish()` 保存 PublishedWorkflow JSON；`listPublished()` 返回元数据列表
@@ -113,8 +125,11 @@ layer: editor
 risk: low
 verify:
   - smoke-test
+files:
+  - apps/dev-tool/src/store/workflowStore.ts
+status: done
 -->
-- [ ] T5: 更新 workflowStore.ts
+- [x] T5: 更新 workflowStore.ts
   - layer: editor
   - files: apps/dev-tool/src/store/workflowStore.ts
   - **验收标准**：loadSavedWorkflows 改调 repository.list()；deleteSavedWorkflow 改调 repository.delete()
@@ -125,8 +140,11 @@ layer: runtime
 risk: low
 verify:
   - unit-tests
+files:
+  - apps/user-app/src/modules/repositories/
+status: done
 -->
-- [ ] T6: 创建 user-app repositories
+- [x] T6: 创建 user-app repositories
   - layer: runtime
   - files: apps/user-app/src/modules/repositories/
   - **验收标准**：PublishedWorkflowRepository 实现 IPublishRepository；NodePackageRepository 处理节点包存储
@@ -135,6 +153,6 @@ verify:
 
 ## 手工验收清单
 
-- [ ] dev-tool 打开后能加载已有 workflow 列表
-- [ ] 保存 workflow 后刷新页面能加载
-- [ ] user-app 能正确显示已发布 workflow
+- [x] dev-tool 打开后能加载已有 workflow 列表
+- [x] 保存 workflow 后刷新页面能加载
+- [x] user-app 能正确显示已发布 workflow

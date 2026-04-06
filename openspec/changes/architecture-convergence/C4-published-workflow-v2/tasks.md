@@ -36,8 +36,8 @@
 
 ### Backward Compatibility（向后兼容）
 
-- [ ] 已发布的旧 workflow 仍可运行
-- [ ] 新发布统一为 V2 格式
+- [x] 已发布的旧 workflow 仍可运行
+- [x] 新发布统一为 V2 格式
 
 ---
 
@@ -66,7 +66,7 @@ risk: low
 verify:
   - unit-tests
 -->
-- [ ] T1: 添加 version 字段
+- [x] T1: 添加 version 字段
   - layer: engine
   - files: packages/shared-types/src/published.ts
   - **验收标准**：PublishedWorkflow 类型添加 version 字段标记 V2
@@ -78,7 +78,7 @@ risk: medium
 verify:
   - unit-tests
 -->
-- [ ] T2: 更新 PublishedWorkflowExecutor
+- [x] T2: 更新 PublishedWorkflowExecutor
   - layer: engine
   - files: packages/workflow-core/src/published-executor.ts
   - **验收标准**：无 nodeTypes 时不再抛错误，改为可选警告；legacy pw.inputs[] 仍可读取
@@ -90,7 +90,7 @@ risk: medium
 verify:
   - smoke-test
 -->
-- [ ] T3: 更新 PublishDialog
+- [x] T3: 更新 PublishDialog
   - layer: editor
   - files: apps/dev-tool/src/components/header/PublishDialog.tsx
   - **验收标准**：统一输出 V2 格式
@@ -102,7 +102,7 @@ risk: high
 verify:
   - api-tests
 -->
-- [ ] T4: 添加 Migration Script
+- [x] T4: 添加 Migration Script
   - layer: backend
   - files: server/src/scripts/migrate-published-v2.ts
   - **验收标准**：旧 published 数据补齐 V2 字段
@@ -111,6 +111,6 @@ verify:
 
 ## 手工验收清单
 
-- [ ] 发布新 workflow，PublishedWorkflow 包含 config.nodeTypes
-- [ ] 加载旧 published workflow（无 config），runtime 给出警告但仍可执行
-- [ ] migration script 正确补齐旧数据
+- [x] 发布新 workflow，PublishedWorkflow 包含 config.nodeTypes
+- [x] 加载旧 published workflow（无 config），runtime 给出警告但仍可执行
+- [x] migration script 正确补齐旧数据

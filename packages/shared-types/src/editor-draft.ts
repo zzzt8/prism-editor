@@ -1,11 +1,14 @@
 // EditorDraft - 编辑器持久化状态的类型定义
 // 包含编辑器状态但不含运行时状态 (executionResult, executionError 等)
+// 注：EditorNodeData 和 EditorCanvasNode 在 store 中包含运行时状态，
+// 通过 index signature 支持扩展字段。
 
 import type { PortDataType } from './port-data-types';
 import type { NodeDefinition } from './node';
 
 /**
  * CanvasNode 数据的持久化子集（不含运行时状态）
+ * 注意：此类型在运行时 store 中会扩展包含 executionResult, executionError 等字段
  */
 export interface EditorNodeData {
   label: string;
@@ -22,6 +25,8 @@ export interface EditorNodeData {
   minimized?: boolean;
   /** 是否锁定 */
   pinned?: boolean;
+  /** 索引签名支持扩展字段（executionResult, executionError 等） */
+  [key: string]: unknown;
 }
 
 /**

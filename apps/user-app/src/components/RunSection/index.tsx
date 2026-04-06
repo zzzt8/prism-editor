@@ -16,7 +16,7 @@
  */
 
 import React from 'react';
-import type { RunState } from '../../store/publishedStore';
+import type { RunState } from '../../modules/runner/runStore';
 
 export interface RunSectionProps {
   runState: RunState;
