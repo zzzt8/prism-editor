@@ -1,0 +1,11 @@
+---
+name: empty-input-alpha-transparency
+description: Empty Image 节点支持透明背景
+version: 1.0
+date: 2026-04-15
+type: change
+status: planned
+layer: engine
+priority: P1
+depends_on: []
+---

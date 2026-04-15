@@ -632,3 +632,78 @@ export const ExportBody: FC<{
     </div>
   );
 };
+
+const emptyInputStyle: React.CSSProperties = {
+  fontSize: 9,
+  background: 'rgba(0,0,0,0.3)',
+  border: '1px solid rgba(255,255,255,0.15)',
+  borderRadius: 6,
+  color: '#fff',
+  padding: '1px 4px',
+  cursor: 'pointer',
+  outline: 'none',
+};
+
+/** Empty Input body — inline width / height / backgroundColor controls, ref ComfyUI EmptyImage */
+export const EmptyInputBody: FC<{
+  params: Record<string, unknown>;
+  updateNodeParams: (id: string, params: Record<string, unknown>) => void;
+  nodeId: string;
+}> = ({ params, updateNodeParams, nodeId }) => {
+  const width = (params['width'] as number) ?? 512;
+  const height = (params['height'] as number) ?? 512;
+  const bgColor = (params['backgroundColor'] as string) ?? '#ffffff';
+
+  // Valid hex color for preview swatch (only show for hex — rgba is not a solid color)
+  const isValidHex = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(bgColor);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      {/* Width / Height row */}
+      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+        <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.6)' }}>W</span>
+        <input
+          type="number"
+          min={1}
+          max={8192}
+          value={width}
+          style={{ ...emptyInputStyle, width: 52 }}
+          onChange={(e) => updateNodeParams(nodeId, { ...params, width: Number(e.target.value) })}
+        />
+        <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.6)' }}>H</span>
+        <input
+          type="number"
+          min={1}
+          max={8192}
+          value={height}
+          style={{ ...emptyInputStyle, width: 52 }}
+          onChange={(e) => updateNodeParams(nodeId, { ...params, height: Number(e.target.value) })}
+        />
+      </div>
+
+      {/* BackgroundColor row */}
+      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+        <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.6)' }}>C</span>
+        <input
+          type="text"
+          value={bgColor}
+          style={{ ...emptyInputStyle, flex: 1, fontFamily: 'monospace' }}
+          placeholder="#ffffff"
+          onChange={(e) => updateNodeParams(nodeId, { ...params, backgroundColor: e.target.value })}
+        />
+        {isValidHex && (
+          <div
+            style={{
+              width: 14,
+              height: 14,
+              borderRadius: 3,
+              background: bgColor,
+              border: '1px solid rgba(255,255,255,0.2)',
+              flexShrink: 0,
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
+};

@@ -370,3 +370,49 @@ export const exportDefinition: NodeDefinition = {
   outputs: [],
   params: [],
 };
+
+export const emptyInputDefinition: NodeDefinition = {
+  type: 'empty-input',
+  category: NODE_CATEGORIES.INPUT,
+  label: 'Empty Image',
+  description: 'Generate a blank image with specified dimensions and background color',
+  version: '1.0.0',
+  inputs: [],
+  outputs: [
+    {
+      id: 'image',
+      name: 'Image',
+      type: 'image',
+      dataType: PortDataType.IMAGE,
+      required: true,
+      description: 'Generated blank image',
+    },
+  ],
+  params: [
+    {
+      id: 'width',
+      name: 'Width',
+      type: 'number',
+      default: 512,
+      min: 1,
+      max: 8192,
+      description: 'Image width in pixels',
+    },
+    {
+      id: 'height',
+      name: 'Height',
+      type: 'number',
+      default: 512,
+      min: 1,
+      max: 8192,
+      description: 'Image height in pixels',
+    },
+    {
+      id: 'backgroundColor',
+      name: 'Background Color',
+      type: 'string',
+      default: '#ffffff',
+      description: 'Background color (hex or rgb)',
+    },
+  ],
+};

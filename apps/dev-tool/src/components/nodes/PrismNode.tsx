@@ -28,6 +28,7 @@ import {
   ApplyMaskBody,
   CompositeBody,
   ExportBody,
+  EmptyInputBody,
   useExecutionThumbnail,
   usePreviewImage,
   setDragImageState,
@@ -132,6 +133,7 @@ export const PrismNode: FC<PrismNodeProps> = ({ id, data, selected }) => {
     data.nodeType === 'apply-mask' ||
     data.nodeType === 'composite' ||
     data.nodeType === 'export' ||
+    data.nodeType === 'empty-input' ||
     paramSummary.length > 0 ||
     !!executionThumbnail;
 
@@ -280,6 +282,14 @@ export const PrismNode: FC<PrismNodeProps> = ({ id, data, selected }) => {
             />
           )}
 
+          {data.nodeType === 'empty-input' && (
+            <EmptyInputBody
+              params={params}
+              updateNodeParams={updateNodeParams}
+              nodeId={id}
+            />
+          )}
+
           {/* Generic fallback: param chips + thumbnail */}
           {![
             'load-image',
@@ -288,6 +298,7 @@ export const PrismNode: FC<PrismNodeProps> = ({ id, data, selected }) => {
             'apply-mask',
             'composite',
             'export',
+            'empty-input',
           ].includes(data.nodeType) && (
             <>
               {paramSummary.length > 0 && (

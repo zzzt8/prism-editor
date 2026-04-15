@@ -14,12 +14,14 @@ import { applyMaskExecutor } from './apply-mask';
 import { compositeExecutor } from './composite';
 import { transformExecutor } from './transform';
 import { exportExecutor } from './export-image';
+import { emptyInputExecutor } from './empty-input';
 
 export { loadImageExecutor, loadMaskExecutor };
 export { applyMaskExecutor };
 export { compositeExecutor };
 export { transformExecutor };
 export { exportExecutor };
+export { emptyInputExecutor };
 
 export const nodeExecutors: Record<string, NodeExecutor> = {
   'load-image': loadImageExecutor,
@@ -28,4 +30,5 @@ export const nodeExecutors: Record<string, NodeExecutor> = {
   'composite': compositeExecutor,
   'transform': transformExecutor,
   'export': exportExecutor,
+  'empty-input': emptyInputExecutor,
 };

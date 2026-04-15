@@ -331,6 +331,11 @@ export interface TransformExecutorOutput extends BaseExecutorOutput {
   image: ImageRuntimeObject;
 }
 
+export interface EmptyInputExecutorOutput extends BaseExecutorOutput {
+  type: 'empty-input';
+  image: ImageRuntimeObject;
+}
+
 export interface ExportExecutorOutput extends BaseExecutorOutput {
   type: 'export';
   previewUrl: string;
@@ -347,4 +352,5 @@ export type ExecutorOutput =
   | ApplyMaskExecutorOutput
   | CompositeExecutorOutput
   | TransformExecutorOutput
+  | EmptyInputExecutorOutput
   | ExportExecutorOutput;

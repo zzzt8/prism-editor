@@ -6,6 +6,7 @@ export * from './apply-mask';
 export * from './composite';
 export * from './transform';
 export * from './export-image';
+export * from './empty-input';
 export * from './memory-manager';
 export * from './executors';
 export * from './scheduler';
