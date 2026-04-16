@@ -1,6 +1,7 @@
 // Repository interfaces - define the contract for data access
 
 import type { Workflow, WorkflowMeta, PublishedWorkflow } from '@prism/shared-types';
+import type { Template, TemplateSummary } from '@prism/shared-types';
 
 export interface PublishedWorkflowMeta {
   sourceId: string;
@@ -40,4 +41,12 @@ export interface IPublishRepository {
   unpublish(workflowId: string): Promise<void>;
   getPublished(sourceId: string): Promise<PublishedWorkflow | null>;
   listPublished(): Promise<PublishedWorkflowMeta[]>;
+}
+
+export interface ITemplateRepository {
+  list(): Promise<TemplateSummary[]>;
+  get(id: string): Promise<Template>;
+  save(template: Template): Promise<void>;
+  delete(id: string): Promise<void>;
+  exists(id: string): Promise<boolean>;
 }
