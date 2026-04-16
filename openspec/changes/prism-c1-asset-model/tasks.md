@@ -54,7 +54,7 @@ dependencies:
   - type: task
     refs: [T3]
 -->
-- [ ] T4: 在 repositories/index.ts 中导出 TemplateRepository
+- [x] T4: 在 repositories/index.ts 中导出 TemplateRepository
   - layer: editor
   - 文件: `apps/dev-tool/src/modules/repositories/index.ts`
 
@@ -66,7 +66,7 @@ dependencies:
   - type: task
     refs: [T3]
 -->
-- [ ] T5: 扩展 SaveDialog 增加"另存为模板"选项
+- [x] T5: 扩展 SaveDialog 增加"另存为模板"选项
   - layer: editor
   - 文件: `apps/dev-tool/src/components/header/SaveDialog.tsx`
   - 内容:
@@ -83,7 +83,7 @@ dependencies:
   - type: task
     refs: [T3]
 -->
-- [ ] T6: 新增 TemplateManager UI 组件
+- [x] T6: 新增 TemplateManager UI 组件
   - layer: editor
   - 目录: `apps/dev-tool/src/components/TemplateManager/`
   - 文件:
