@@ -1,4 +1,5 @@
 // TemplateManager - modal for managing and creating workflows from templates
+// DEPRECATED: Will be removed in a future version. Use SnippetFragment system instead.
 
 import React, { useState } from 'react';
 import type { TemplateSummary, Template } from '@prism/shared-types';
