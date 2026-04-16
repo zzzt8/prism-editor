@@ -1,3 +1,9 @@
+## change_class
+
+`medium` — 仅 UI 体验改进，不影响核心数据契约，不触及 engine/backend 层接口。
+
+---
+
 ## Why
 
 当前编辑器"功能可用"但"体验粗糙"。具体痛点：
