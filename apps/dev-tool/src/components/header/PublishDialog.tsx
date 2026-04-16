@@ -431,11 +431,15 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
         const paramDef = node?.data.definition?.params.find((p) => p.id === entry.paramId);
         const schemaType = node?.data.definition?.paramSchema?.[entry.paramId]?.type;
         const key = `${entry.nodeId}:${entry.paramId}`;
+        const inferred = inferControlType(schemaType, paramDef);
+        if (entry.paramId === 'backgroundColor') {
+          console.log('[publish] backgroundColor paramDef:', paramDef, 'schemaType:', schemaType, 'inferred controlType:', inferred);
+        }
         return {
           nodeId: entry.nodeId,
           paramId: entry.paramId,
           label: entry.label,
-          controlType: paramControlTypes[key] ?? inferControlType(schemaType, paramDef),
+          controlType: paramControlTypes[key] ?? inferred,
           options: inferOptions(paramDef),
           defaultValue: paramDef?.default,
           validation: {

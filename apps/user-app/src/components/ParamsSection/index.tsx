@@ -67,9 +67,26 @@ const SelectControl: React.FC<ControlProps> = ({ value, onChange, paramDef, disa
 };
 
 const NumberControl: React.FC<ControlProps> = ({ value, onChange, paramDef, disabled }) => {
-  const num = typeof value === 'number' ? value : parseFloat(String(value ?? '0'));
+  const raw = typeof value === 'number' ? value : parseFloat(String(value ?? 'NaN'));
+  const isValid = !isNaN(raw);
+  const num = isValid ? raw : 0;
   const min = paramDef?.validation?.min;
   const max = paramDef?.validation?.max;
+
+  if (!isValid) {
+    return (
+      <input
+        type="text"
+        className="ua-param-text"
+        value={String(value ?? '')}
+        onChange={(e) => {
+          const parsed = parseFloat(e.target.value);
+          onChange(isNaN(parsed) ? e.target.value : parsed);
+        }}
+        disabled={disabled}
+      />
+    );
+  }
 
   return (
     <div className="ua-param-number-row">
@@ -79,13 +96,11 @@ const NumberControl: React.FC<ControlProps> = ({ value, onChange, paramDef, disa
         min={min ?? 0}
         max={max ?? 1}
         step={0.01}
-        value={isNaN(num) ? (min ?? 0) : num}
+        value={num}
         onChange={(e) => onChange(parseFloat(e.target.value))}
         disabled={disabled}
       />
-      <span className="ua-param-slider-value">
-        {isNaN(num) ? '—' : num.toFixed(2)}
-      </span>
+      <span className="ua-param-slider-value">{num.toFixed(2)}</span>
     </div>
   );
 };
@@ -103,11 +118,12 @@ const StringControl: React.FC<ControlProps> = ({ value, onChange, disabled }) =>
 };
 
 const BooleanControl: React.FC<ControlProps> = ({ value, onChange, disabled }) => {
+  const boolValue = typeof value === 'boolean' ? value : Boolean(value);
   return (
     <label className="ua-param-switch">
       <input
         type="checkbox"
-        checked={Boolean(value)}
+        checked={boolValue}
         onChange={(e) => onChange(e.target.checked)}
         disabled={disabled}
       />
