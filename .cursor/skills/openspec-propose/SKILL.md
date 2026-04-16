@@ -18,6 +18,51 @@ verify:
 
 > **前置共享片段：** layer 映射和增量测试策略见 [\_shared/SHARED-LAYERS.md](../_shared/SHARED-LAYERS.md)。
 
+## Schema / Config 一致性 Preflight（硬关卡）
+
+在所有操作之前执行。如果失败，立即停止，不得调用 CLI。
+
+```bash
+# 1. 读取 config.yaml 中配置的 schema 名称
+SCHEMA_NAME=$(grep -E "^schema:" openspec/config.yaml | sed 's/^schema: *//')
+
+# 2. 检查 schema 目录是否存在
+if [ ! -d "openspec/schemas/$SCHEMA_NAME" ]; then
+  echo "[opsx-propose] Schema 缺失，硬关卡触发。"
+  echo ""
+  echo "openspec/config.yaml 引用了 schema '$SCHEMA_NAME'，"
+  echo "但 'openspec/schemas/$SCHEMA_NAME/' 目录不存在。"
+  echo ""
+  echo "可能原因："
+  echo "  - Schema 被误删（目录存在但被删除）"
+  echo "  - config.yaml 中的 schema 名称过时"
+  echo ""
+  echo "排查建议："
+  echo "  1. 检查 openspec/schemas/ 下有哪些可用 schema：ls openspec/schemas/"
+  echo "  2. 检查 openspec/config.yaml 中的 schema 字段是否正确"
+  echo "  3. 查看 git log openspec/schemas/ 定位删除提交"
+  echo ""
+  echo "下一步：输入 /opsx-debug 调试"
+  echo "停止执行。"
+  exit 1
+fi
+
+# 3. 检查 schema.yaml 是否存在
+if [ ! -f "openspec/schemas/$SCHEMA_NAME/schema.yaml" ]; then
+  echo "[opsx-propose] Schema 定义文件缺失，硬关卡触发。"
+  echo ""
+  echo "'openspec/schemas/$SCHEMA_NAME/' 目录存在，"
+  echo "但 'openspec/schemas/$SCHEMA_NAME/schema.yaml' 文件缺失。"
+  echo ""
+  echo "Schema 定义不完整，请检查目录内容。"
+  echo "下一步：输入 /opsx-debug 调试"
+  echo "停止执行。"
+  exit 1
+fi
+```
+
+**硬关卡：Schema 检查失败 → 输出上述信息后立即停止。不得尝试调用 `openspec new change`。**
+
 ## 核心职责
 
 - 分析用户需求，推断 change_class
@@ -198,3 +243,4 @@ dependencies:
 - **强制**CLI 失败时立即停止，不得手造 artifacts
 - **强制**不得尝试重建 schema
 - **强制**用户追加的约束必须写入 proposal 的 out-of-scope 段
+- **强制**调用 CLI 前必须执行 Schema / Config 一致性 Preflight，检查失败则立即停止

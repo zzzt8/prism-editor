@@ -48,6 +48,51 @@ verify:
 4. 用户确认后，手动同步 JSON（如需）
 ```
 
+## Schema / Config 一致性 Preflight（硬关卡）
+
+在所有操作之前执行。如果失败，立即停止。
+
+```bash
+# 1. 读取 config.yaml 中配置的 schema 名称
+SCHEMA_NAME=$(grep -E "^schema:" openspec/config.yaml | sed 's/^schema: *//')
+
+# 2. 检查 schema 目录是否存在
+if [ ! -d "openspec/schemas/$SCHEMA_NAME" ]; then
+  echo "[opsx-apply] Schema 缺失，硬关卡触发。"
+  echo ""
+  echo "openspec/config.yaml 引用了 schema '$SCHEMA_NAME'，"
+  echo "但 'openspec/schemas/$SCHEMA_NAME/' 目录不存在。"
+  echo ""
+  echo "可能原因："
+  echo "  - Schema 被误删"
+  echo "  - config.yaml 中的 schema 名称过时"
+  echo ""
+  echo "排查建议："
+  echo "  1. 检查 openspec/schemas/ 下有哪些可用 schema：ls openspec/schemas/"
+  echo "  2. 检查 openspec/config.yaml 中的 schema 字段"
+  echo "  3. 查看 git log openspec/schemas/ 定位删除提交"
+  echo ""
+  echo "下一步：输入 /opsx-debug 调试"
+  echo "停止执行。"
+  exit 1
+fi
+
+# 3. 检查 schema.yaml 是否存在
+if [ ! -f "openspec/schemas/$SCHEMA_NAME/schema.yaml" ]; then
+  echo "[opsx-apply] Schema 定义文件缺失，硬关卡触发。"
+  echo ""
+  echo "'openspec/schemas/$SCHEMA_NAME/' 目录存在，"
+  echo "但 'openspec/schemas/$SCHEMA_NAME/schema.yaml' 文件缺失。"
+  echo ""
+  echo "Schema 定义不完整，请检查目录内容。"
+  echo "下一步：输入 /opsx-debug 调试"
+  echo "停止执行。"
+  exit 1
+fi
+```
+
+**硬关卡：Schema 检查失败 → 输出上述信息后立即停止。**
+
 ## Artifact Precondition（硬关卡）
 
 在开始执行前，必须确认以下 artifacts 存在且可读：
@@ -295,6 +340,7 @@ pnpm test
 - **强制**apply 开始前验证所有 artifacts 存在，缺失则阻断
 - **强制**测试失败时执行 Test Failure Attribution 并输出归因分析
 - **强制**存在 `related` 或 `undetermined` 时必须转 /opsx-debug
+- **强制**调用 CLI 前必须执行 Schema / Config 一致性 Preflight，检查失败则立即停止
 
 **禁止：**
 - **禁止**在 apply 阶段探索代码库
