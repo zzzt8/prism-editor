@@ -32,42 +32,42 @@
 
 ## 任务列表
 
-> Task 元数据格式：
+> **Task 元数据格式：**
 > ```html
 > <!-- opsx-meta
 > id: T1
 > layer: engine
-> risk: high
-> verify:
->   - unit-tests
->   - golden-fixture
+> verify: unit-tests
+> dependencies:
+>   - type: task
+>     refs: []
 > -->
 > ```
 >
-> **layer 取值**：editor | runtime | backend | engine | ui-skin
-> **risk 取值**：low | medium | high
+> **layer 取值**：editor | runtime | backend | engine | ui-skin | meta
 > **verify 取值**：unit-tests | golden-fixture | api-tests | smoke-test | visual-check
 
 <!-- opsx-meta
+id: T1
 layer: engine
-risk: high
-verify:
-  - unit-tests
-  - golden-fixture
+verify: unit-tests
+dependencies:
+  - type: task
+    refs: []
 -->
 - [ ] T1: [任务描述]
   - layer: engine
-  - files: packages/workflow-core/**
 
 <!-- opsx-meta
+id: T2
 layer: backend
-risk: medium
-verify:
-  - api-tests
+verify: api-tests
+dependencies:
+  - type: task
+    refs: [T1]
 -->
 - [ ] T2: [任务描述]
   - layer: backend
-  - files: server/src/**
 
 ---
 
@@ -76,3 +76,17 @@ verify:
 - [ ] UI 交互正常
 - [ ] 错误提示友好
 - [ ] 性能可接受
+
+---
+
+## change_class = low 测试指南
+
+> 适用于 change_class = low 的测试设计。
+> 测试并入 tasks 验证命令，不保留独立测试章节。
+
+### Low-change 验证命令标准写法
+
+```markdown
+- [ ] T1.1: [任务名]
+  - 验证命令：`pnpm test --filter=<package> -- --grep "TC-xxx"`
+```
