@@ -13,3 +13,4 @@ export * from './port-types';
 export * from './node-package';
 export * from './editor-draft';
 export * from './template';
+export * from './snippet';
