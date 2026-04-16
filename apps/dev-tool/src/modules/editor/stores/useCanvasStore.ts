@@ -13,6 +13,7 @@ import type {
 } from '@prism/shared-types';
 import type { Template } from '@prism/shared-types';
 import { canConnectByDataType, PortDataType } from '@prism/shared-types';
+import type { SnippetFragment, SnippetSummary } from '@prism/shared-types';
 import { globalRegistry } from '@prism/core';
 import { PORT_TYPE_COLORS } from '../../../utils/portTypeStyles';
 import type { ContextMenuState } from './selectionSlice';
@@ -20,6 +21,7 @@ import { autosaveService, initAutosaveService, getAutosaveService } from '../ser
 import { executionService, getExecutionService } from '../services/executionService';
 import { indexedDBStorageAdapter } from '../../../storage';
 import { WorkflowRepository } from '../../repositories/workflowRepository';
+import { SnippetRepository } from '../../repositories/snippetRepository';
 
 type ReactFlowConnection = RfConnection;
 
@@ -66,6 +68,70 @@ function ensureNodeRegistryInitialized(): void {
 
 let nodeCounter = 0;
 let edgeCounter = 0;
+
+// ─── ID Remapping helpers ────────────────────────────────────────────────────
+
+function createNodeId(): string {
+  return `node-${++nodeCounter}`;
+}
+
+function createEdgeId(): string {
+  return `edge-${++edgeCounter}`;
+}
+
+const PASTE_OFFSET = 40;
+
+/**
+ * Remaps node IDs and positions for snippet insertion or clipboard paste.
+ * - Assigns fresh IDs via module-level counters
+ * - Offsets positions by PASTE_OFFSET (40px)
+ * - Resets runtime state (executionResult, executionError, etc.)
+ * - Filters edges to only those where both endpoints are in oldToNewIdMap
+ * - Returns new nodes, new edges, and the oldToNewIdMap for callers that need it
+ */
+function remapAndInsertNodes(
+  fragmentNodes: EditorCanvasNode[],
+  fragmentEdges: EditorCanvasEdge[],
+  basePosition: { x: number; y: number }
+): {
+  newNodes: EditorCanvasNode[];
+  newEdges: EditorCanvasEdge[];
+  oldToNewIdMap: Map<string, string>;
+} {
+  const oldToNewIdMap = new Map<string, string>();
+
+  const newNodes = fragmentNodes.map((origNode) => {
+    const newId = createNodeId();
+    oldToNewIdMap.set(origNode.id, newId);
+    return {
+      ...origNode,
+      id: newId,
+      position: {
+        x: origNode.position.x + basePosition.x + PASTE_OFFSET,
+        y: origNode.position.y + basePosition.y + PASTE_OFFSET,
+      },
+      data: {
+        ...origNode.data,
+        executionResult: undefined,
+        executionError: undefined,
+        bypassed: false,
+        minimized: false,
+      },
+    };
+  });
+
+  const fragmentNodeIds = new Set(fragmentNodes.map((n) => n.id));
+  const newEdges = fragmentEdges
+    .filter((edge) => fragmentNodeIds.has(edge.source) && fragmentNodeIds.has(edge.target))
+    .map((edge) => ({
+      ...edge,
+      id: createEdgeId(),
+      source: oldToNewIdMap.get(edge.source) ?? edge.source,
+      target: oldToNewIdMap.get(edge.target) ?? edge.target,
+    }));
+
+  return { newNodes, newEdges, oldToNewIdMap };
+}
 
 // ─── Store interface ─────────────────────────────────────────────────────────
 
@@ -165,12 +231,20 @@ interface CanvasState {
 
   addExtraInput: (nodeId: string, port: { id: string; name: string; type: 'image'; dataType: PortDataType }) => void;
   removeExtraInput: (nodeId: string, portId: string) => void;
+
+  // ── Snippet operations ──────────────────────────────────────────────────────
+
+  snippetSave: (name: string, description: string, selectedNodeIds: string[]) => Promise<void>;
+  snippetList: () => Promise<SnippetSummary[]>;
+  insertSnippet: (snippetId: string, position: { x: number; y: number }) => Promise<void>;
+  deleteSnippet: (id: string) => Promise<void>;
 }
 
 // ─── Initialize services ─────────────────────────────────────────────────────
 
 // Create workflow repository for autosave
 const workflowRepository = new WorkflowRepository(indexedDBStorageAdapter);
+const snippetRepository = new SnippetRepository();
 
 // Initialize autosave service
 const autosave = autosaveService;
@@ -560,39 +634,13 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const state = get();
     if (!state.clipboard || state.clipboard.length === 0) return;
 
-    const pasteOffset = 40;
-    const oldToNewIdMap = new Map<string, string>();
-
-    const newNodes = state.clipboard.map((origNode) => {
-      const newId = `node-${++nodeCounter}`;
-      oldToNewIdMap.set(origNode.id, newId);
-      return {
-        ...origNode,
-        id: newId,
-        position: {
-          x: origNode.position.x + pasteOffset,
-          y: origNode.position.y + pasteOffset,
-        },
-        data: {
-          ...origNode.data,
-          executionResult: undefined,
-          executionError: undefined,
-          bypassed: false,
-          minimized: false,
-        },
-      };
-    });
-
-    // Also copy edges between pasted nodes
+    // Extract edges that are within the clipboard
     const clipboardNodeIds = new Set(state.clipboard.map((n) => n.id));
-    const newEdges = state.edges
-      .filter((edge) => clipboardNodeIds.has(edge.source) && clipboardNodeIds.has(edge.target))
-      .map((edge) => ({
-        ...edge,
-        id: `edge-${++edgeCounter}`,
-        source: oldToNewIdMap.get(edge.source) ?? edge.source,
-        target: oldToNewIdMap.get(edge.target) ?? edge.target,
-      }));
+    const clipboardEdges = state.edges.filter(
+      (e) => clipboardNodeIds.has(e.source) && clipboardNodeIds.has(e.target)
+    );
+
+    const { newNodes, newEdges } = remapAndInsertNodes(state.clipboard, clipboardEdges, position);
 
     set((s) => ({
       nodes: [...s.nodes, ...newNodes],
@@ -1078,5 +1126,79 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       }),
     }));
     get()._triggerAutoSave();
+  },
+
+  // ── Snippet operations ──────────────────────────────────────────────────────
+
+  async snippetSave(name: string, description: string, selectedNodeIds: string[]): Promise<void> {
+    const { nodes } = get();
+    const selectedNodes = nodes.filter((n) => selectedNodeIds.includes(n.id));
+
+    // Filter out nodes without definition (unavailable node types)
+    const validNodes = selectedNodes.filter((n) => n.data.definition != null);
+    if (validNodes.length === 0) return;
+
+    const validNodeIds = new Set(validNodes.map((n) => n.id));
+
+    // Filter edges: only keep edges where both endpoints are in the snippet
+    const fragmentEdges = get().edges.filter(
+      (e) => validNodeIds.has(e.source) && validNodeIds.has(e.target)
+    );
+
+    const fragment: SnippetFragment = {
+      id: crypto.randomUUID(),
+      name: name.trim(),
+      description: description.trim() || undefined,
+      createdAt: new Date().toISOString(),
+      nodes: validNodes,
+      edges: fragmentEdges,
+      groups: [], // Groups are not saved in snippets (first version)
+    };
+
+    await snippetRepository.save(fragment);
+  },
+
+  async snippetList(): Promise<SnippetSummary[]> {
+    return snippetRepository.list();
+  },
+
+  async insertSnippet(snippetId: string, position: { x: number; y: number }): Promise<void> {
+    const fragment = await snippetRepository.get(snippetId);
+
+    // Filter out nodes whose nodeType is no longer registered
+    const availableNodes = fragment.nodes.filter((n) => {
+      if (!n.data.nodeType) return true;
+      const def = globalRegistry.getNode(n.data.nodeType);
+      if (!def) {
+        console.warn(`[insertSnippet] Skipping node '${n.id}' of unknown type '${n.data.nodeType}'`);
+        return false;
+      }
+      return true;
+    });
+
+    if (availableNodes.length === 0) return;
+
+    const availableNodeIds = new Set(availableNodes.map((n) => n.id));
+    const snippetEdges = fragment.edges.filter(
+      (e) => availableNodeIds.has(e.source) && availableNodeIds.has(e.target)
+    );
+
+    // basePosition = clickPosition - PASTE_OFFSET, since helper adds PASTE_OFFSET on top
+    const basePosition = {
+      x: position.x - PASTE_OFFSET,
+      y: position.y - PASTE_OFFSET,
+    };
+
+    const { newNodes, newEdges } = remapAndInsertNodes(availableNodes, snippetEdges, basePosition);
+
+    set((s) => ({
+      nodes: [...s.nodes, ...newNodes],
+      edges: [...s.edges, ...newEdges],
+    }));
+    get()._triggerAutoSave();
+  },
+
+  async deleteSnippet(id: string): Promise<void> {
+    await snippetRepository.delete(id);
   },
 }));
