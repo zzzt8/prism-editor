@@ -6,6 +6,33 @@ import type { Connection } from './workflow';
 /** Export format options for published output nodes */
 export type ExportFormat = 'png' | 'jpeg' | 'webp';
 
+/** Control type for user-facing parameter widgets */
+export type ParamControlType = 'select' | 'number' | 'string' | 'boolean' | 'image-file';
+
+/** Validation rules for a published parameter */
+export interface PublishedParamValidation {
+  required?: boolean;
+  min?: number;
+  max?: number;
+  pattern?: string;
+}
+
+/**
+ * Full parameter definition for a published exposed param.
+ * Richer than PublishedParamConfig — carries UI metadata for user-app rendering.
+ */
+export interface PublishedParamDefinition {
+  nodeId: string;
+  paramId: string;
+  label: string;
+  controlType: ParamControlType;
+  options?: Array<{ label: string; value: unknown }>;
+  defaultValue?: unknown;
+  validation?: PublishedParamValidation;
+  visibility?: 'visible' | 'hidden' | 'locked';
+  description?: string;
+}
+
 /**
  * Configuration for a single user-facing input entry in the published workflow.
  * Represents a source node (e.g. load-image) that the end user must provide.
@@ -94,6 +121,9 @@ export interface PublishedConfig {
   exposedParams: PublishedParamConfig[];
   /** Auto-detected output nodes that produce the final result */
   outputs: PublishedOutputConfig[];
+
+  /** Rich parameter definitions for exposed params (includes UI metadata) */
+  paramDefinitions?: PublishedParamDefinition[];
 
   // ── Custom node packages ─────────────────────────────────────────────────
 
