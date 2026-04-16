@@ -101,7 +101,7 @@ dependencies:
   - type: task
     refs: [T5, T6]
 -->
-- [ ] T7: 扩展 canvasStore 支持从模板加载
+- [x] T7: 扩展 canvasStore 支持从模板加载
   - layer: editor
   - 文件: `apps/dev-tool/src/modules/editor/stores/canvasStore.ts`
   - 内容:

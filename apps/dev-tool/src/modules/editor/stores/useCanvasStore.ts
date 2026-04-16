@@ -11,6 +11,7 @@ import type {
   EditorWorkflowMeta,
   ExecutionProgress,
 } from '@prism/shared-types';
+import type { Template } from '@prism/shared-types';
 import { canConnectByDataType, PortDataType } from '@prism/shared-types';
 import { globalRegistry } from '@prism/core';
 import { PORT_TYPE_COLORS } from '../../../utils/portTypeStyles';
@@ -143,6 +144,7 @@ interface CanvasState {
   newWorkflow: () => void;
   toWorkflow: () => import('@prism/shared-types').Workflow;
   loadWorkflow: (workflow: import('@prism/shared-types').Workflow) => void;
+  loadFromTemplate: (template: Template) => void;
   saveWorkflow: (workflowName?: string) => Promise<void>;
   loadWorkflowFromStore: (id: string) => Promise<void>;
   exportWorkflowAsJson: () => Promise<void>;
@@ -713,6 +715,81 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         updatedAt: new Date().toISOString(),
       },
     };
+  },
+
+  loadFromTemplate(template: Template) {
+    // Cancel autosave
+    const autosaveSvc = getAutosaveService();
+    autosaveSvc.cancel();
+
+    ensureNodeRegistryInitialized();
+
+    // Map old node IDs to new ones
+    const oldToNewIdMap = new Map<string, string>();
+
+    // Rebuild canvas nodes from template snapshot
+    // 1. Assign fresh IDs to avoid collision with existing canvas nodes
+    // 2. Re-resolve node definitions from globalRegistry
+    // 3. Reset runtime state (executionResult, executionError, etc.)
+    const canvasNodes: EditorCanvasNode[] = template.nodes.map((origNode) => {
+      const newId = `node-${++nodeCounter}`;
+      oldToNewIdMap.set(origNode.id, newId);
+
+      const def = globalRegistry.getNode(origNode.data.nodeType);
+      return {
+        ...origNode,
+        id: newId,
+        type: 'prismNode',
+        data: {
+          label: origNode.data.label,
+          nodeType: origNode.data.nodeType,
+          params: origNode.data.params,
+          definition: def,
+          extraInputs: origNode.data.extraInputs,
+          extraOutputs: origNode.data.extraOutputs,
+          bypassed: false,
+          minimized: origNode.data.minimized,
+          pinned: origNode.data.pinned,
+        },
+      };
+    });
+
+    // Rebuild edges with remapped source/target node IDs
+    const canvasEdges: EditorCanvasEdge[] = template.edges.map((origEdge) => ({
+      ...origEdge,
+      id: `edge-${++edgeCounter}`,
+      source: oldToNewIdMap.get(origEdge.source) ?? origEdge.source,
+      target: oldToNewIdMap.get(origEdge.target) ?? origEdge.target,
+    }));
+
+    // Rebuild groups with remapped node IDs
+    const remappedGroups: EditorNodeGroup[] = template.groups.map((g) => ({
+      ...g,
+      id: `group-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      nodeIds: g.nodeIds
+        .map((oldId) => oldToNewIdMap.get(oldId))
+        .filter((id): id is string => id !== undefined),
+    }));
+
+    // New workflow meta (fresh identity, independent from template snapshot)
+    const now = new Date().toISOString();
+
+    set({
+      nodes: canvasNodes,
+      edges: canvasEdges,
+      groups: remappedGroups,
+      workflowMeta: {
+        id: crypto.randomUUID(),
+        name: template.name,
+        version: '1.0.0',
+      },
+      selectedNodeIds: [],
+      selectedEdgeIds: [],
+      isDirty: true,
+      isDraggingFromPanel: false,
+      _executionStatus: 'idle',
+      _currentNodeId: null,
+    });
   },
 
   loadWorkflow(workflow) {
