@@ -9,6 +9,8 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
 import type { CanvasNode } from '../../store/canvasStore';
+import { usePublishStore } from '../../modules/editor/stores/publishSlice';
+import type { ParamControlType } from '@prism/shared-types';
 import type {
   PublishedWorkflow,
   PublishedInput,
@@ -19,7 +21,7 @@ import type {
   ExportFormat,
   PublishedParamDefinition,
 } from '@prism/shared-types';
-import { Check, Copy, Download, Upload, X, Plus, ChevronDown, ChevronRight, Pencil, CircleDot } from 'lucide-react';
+import { Check, Copy, Download, Upload, X, Plus, ChevronDown, ChevronRight, Pencil, CircleDot, Eye, EyeOff, Lock } from 'lucide-react';
 import { copyWorkflowToClipboard, downloadWorkflowAsFile } from '../../utils/workflowExport';
 import { inferControlType, inferOptions } from '../../modules/editor/mappers/workflowToPublished';
 
@@ -202,6 +204,7 @@ function broadcastPublish(pw: PublishedWorkflow) {
 
 export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { nodes, edges, workflowMeta } = useCanvasStore();
+  const { setParamDefinitions } = usePublishStore();
 
   const [publishName, setPublishName] = useState(workflowMeta.name);
   const [publishDesc, setPublishDesc] = useState('');
@@ -262,6 +265,12 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
   const [whitelistLabels, setWhitelistLabels] = useState<Record<string, string>>({});
   // Which checkboxes in the node-browser are checked
   const [browserChecked, setBrowserChecked] = useState<Record<string, boolean>>({});
+  // Per-param visibility state (nodeId:paramId → visibility)
+  const [paramVisibilities, setParamVisibilities] = useState<Record<string, 'visible' | 'hidden' | 'locked'>>({});
+  // Per-param controlType state
+  const [paramControlTypes, setParamControlTypes] = useState<Record<string, ParamControlType>>({});
+  // Per-param validation expanded state
+  const [validationExpanded, setValidationExpanded] = useState<Record<string, boolean>>({});
 
   // ── Node-browser panel toggle ──────────────────────────────────────────
   const [nodeBrowserOpen, setNodeBrowserOpen] = useState(false);
@@ -320,11 +329,26 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
       setBrowserChecked((p) => { const n = { ...p }; delete n[key]; return n; });
       setWhitelist((p) => p.filter((e) => `${e.nodeId}:${e.paramId}` !== key));
       setWhitelistLabels((p) => { const n = { ...p }; delete n[key]; return n; });
+      setParamVisibilities((p) => { const n = { ...p }; delete n[key]; return n; });
+      setParamControlTypes((p) => { const n = { ...p }; delete n[key]; return n; });
     } else {
       // Check: add to whitelist with empty label (required before publish)
       setBrowserChecked((p) => ({ ...p, [key]: true }));
       setWhitelist((p) => [...p, { nodeId, paramId, label: '' }]);
       setWhitelistLabels((p) => ({ ...p, [key]: paramName }));
+      // Initialize visibility and controlType
+      setParamVisibilities((p) => ({ ...p, [key]: 'visible' }));
+      // Infer controlType from paramDef (will be set below after lookup)
+      const node = nodes.find((n) => n.id === nodeId);
+      const paramDef = node?.data.definition?.params.find((p) => p.id === paramId);
+      let inferredType: ParamControlType = 'string';
+      if (paramDef) {
+        if (paramDef.type === 'select') inferredType = 'select';
+        else if (paramDef.type === 'boolean') inferredType = 'boolean';
+        else if (paramDef.type === 'number') inferredType = 'number';
+        else if (paramDef.type === 'image-file') inferredType = 'image-file';
+      }
+      setParamControlTypes((p) => ({ ...p, [key]: inferredType }));
     }
   };
 
@@ -343,6 +367,9 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     setBrowserChecked((p) => { const n = { ...p }; delete n[key]; return n; });
     setWhitelist((p) => p.filter((e) => `${e.nodeId}:${e.paramId}` !== key));
     setWhitelistLabels((p) => { const n = { ...p }; delete n[key]; return n; });
+    setParamVisibilities((p) => { const n = { ...p }; delete n[key]; return n; });
+    setParamControlTypes((p) => { const n = { ...p }; delete n[key]; return n; });
+    setValidationExpanded((p) => { const n = { ...p }; delete n[key]; return n; });
   };
 
   // ── Start inline edit of a whitelist label ─────────────────────────────
@@ -403,11 +430,12 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
         const node = nodes.find((n) => n.id === entry.nodeId);
         const paramDef = node?.data.definition?.params.find((p) => p.id === entry.paramId);
         const schemaType = node?.data.definition?.paramSchema?.[entry.paramId]?.type;
+        const key = `${entry.nodeId}:${entry.paramId}`;
         return {
           nodeId: entry.nodeId,
           paramId: entry.paramId,
           label: entry.label,
-          controlType: inferControlType(schemaType, paramDef),
+          controlType: paramControlTypes[key] ?? inferControlType(schemaType, paramDef),
           options: inferOptions(paramDef),
           defaultValue: paramDef?.default,
           validation: {
@@ -415,10 +443,13 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
             min: paramDef?.min,
             max: paramDef?.max,
           },
-          visibility: 'visible',
+          visibility: paramVisibilities[key] ?? 'visible',
           description: paramDef?.description,
         };
       });
+
+      // Sync to publish store
+      setParamDefinitions(paramDefinitions);
 
       const config = buildPublishedConfig({ nodes, edges, userInputNodes: selectedInputNodes, inputLabels, outputLabels, outputFormats, whitelist, paramDefinitions });
   const publishedInputs: PublishedWorkflow['inputs'] = config.inputs.map((i) => ({
@@ -629,43 +660,111 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                   const node = nodes.find((n) => n.id === entry.nodeId);
                   const paramDef = node?.data.definition?.params.find((p) => p.id === entry.paramId);
                   const isEditing = editingEntryKey === key;
+                  const visibility = paramVisibilities[key] ?? 'visible';
+                  const controlType = paramControlTypes[key] ?? 'string';
+                  const isValidationExpanded = validationExpanded[key] ?? false;
 
                   return (
                     <div key={key} className="publish-whitelist-row">
-                      <span className="publish-whitelist-path">
-                        {node?.data.label ?? entry.nodeId} → {paramDef?.name ?? entry.paramId}
-                      </span>
-                      {isEditing ? (
-                        <div className="publish-whitelist-edit-row">
-                          <input
-                            className="dialog-input"
-                            value={editingLabel}
-                            onChange={(e) => setEditingLabel(e.target.value)}
-                            onKeyDown={(e) => { if (e.key === 'Enter') commitEditLabel(); }}
-                            autoFocus
-                          />
-                          <button className="dialog-btn dialog-btn-primary" onClick={commitEditLabel}>保存</button>
-                          <button className="dialog-btn dialog-btn-secondary" onClick={() => setEditingEntryKey(null)}>取消</button>
-                        </div>
-                      ) : (
-                        <div className="publish-whitelist-actions">
-                          <span className="publish-whitelist-label">{entry.label || '(未命名)'}</span>
-                          <button
-                            className="publish-icon-btn"
-                            title="编辑名称"
-                            onClick={() => startEditLabel(entry.nodeId, entry.paramId, entry.label)}
-                          >
-                            <Pencil size={12} />
-                          </button>
-                          <button
-                            className="publish-icon-btn publish-icon-btn--danger"
-                            title="移除"
-                            onClick={() => removeWhitelistEntry(entry.nodeId, entry.paramId)}
-                          >
-                            <X size={12} />
-                          </button>
-                        </div>
-                      )}
+                      <div className="publish-whitelist-row-main">
+                        <span className="publish-whitelist-path">
+                          {node?.data.label ?? entry.nodeId} → {paramDef?.name ?? entry.paramId}
+                        </span>
+                        {isEditing ? (
+                          <div className="publish-whitelist-edit-row">
+                            <input
+                              className="dialog-input"
+                              value={editingLabel}
+                              onChange={(e) => setEditingLabel(e.target.value)}
+                              onKeyDown={(e) => { if (e.key === 'Enter') commitEditLabel(); }}
+                              autoFocus
+                            />
+                            <button className="dialog-btn dialog-btn-primary" onClick={commitEditLabel}>保存</button>
+                            <button className="dialog-btn dialog-btn-secondary" onClick={() => setEditingEntryKey(null)}>取消</button>
+                          </div>
+                        ) : (
+                          <div className="publish-whitelist-actions">
+                            <span className="publish-whitelist-label">{entry.label || '(未命名)'}</span>
+                            {/* Visibility toggle */}
+                            <button
+                              className={`publish-icon-btn ${visibility === 'visible' ? '' : visibility === 'locked' ? 'publish-icon-btn--locked' : 'publish-icon-btn--hidden'}`}
+                              title={visibility === 'visible' ? '可见' : visibility === 'locked' ? '锁定' : '隐藏'}
+                              onClick={() => setParamVisibilities((p) => ({ ...p, [key]: visibility === 'visible' ? 'locked' : visibility === 'locked' ? 'hidden' : 'visible' }))}
+                            >
+                              {visibility === 'visible' ? <Eye size={12} /> : visibility === 'locked' ? <Lock size={12} /> : <EyeOff size={12} />}
+                            </button>
+                            {/* ControlType selector */}
+                            <select
+                              className="dialog-select dialog-select--sm"
+                              value={controlType}
+                              onChange={(e) => setParamControlTypes((p) => ({ ...p, [key]: e.target.value as ParamControlType }))}
+                            >
+                              <option value="string">文本</option>
+                              <option value="number">数字</option>
+                              <option value="boolean">开关</option>
+                              <option value="select">下拉</option>
+                              <option value="image-file">图片</option>
+                            </select>
+                            <button
+                              className="publish-icon-btn"
+                              title="编辑名称"
+                              onClick={() => startEditLabel(entry.nodeId, entry.paramId, entry.label)}
+                            >
+                              <Pencil size={12} />
+                            </button>
+                            <button
+                              className="publish-icon-btn publish-icon-btn--danger"
+                              title="移除"
+                              onClick={() => removeWhitelistEntry(entry.nodeId, entry.paramId)}
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      {/* Validation collapsible panel */}
+                      <div className="publish-whitelist-validation">
+                        <button
+                          className="publish-whitelist-validation-toggle"
+                          onClick={() => setValidationExpanded((p) => ({ ...p, [key]: !p[key] }))}
+                        >
+                          {isValidationExpanded ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+                          校验规则
+                        </button>
+                        {isValidationExpanded && (
+                          <div className="publish-whitelist-validation-body">
+                            <label className="dialog-label">
+                              <input
+                                type="checkbox"
+                                checked={paramDef?.required ?? false}
+                                disabled
+                              />{' '}
+                              必填
+                            </label>
+                            {(controlType === 'number') && (
+                              <div className="publish-whitelist-validation-row">
+                                <label className="dialog-label">最小值</label>
+                                <input
+                                  className="dialog-input dialog-input--sm"
+                                  type="number"
+                                  value={paramDef?.min ?? ''}
+                                  disabled
+                                />
+                                <label className="dialog-label">最大值</label>
+                                <input
+                                  className="dialog-input dialog-input--sm"
+                                  type="number"
+                                  value={paramDef?.max ?? ''}
+                                  disabled
+                                />
+                              </div>
+                            )}
+                            {paramDef?.description && (
+                              <p className="publish-whitelist-desc">{paramDef.description}</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
