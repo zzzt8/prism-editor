@@ -48,6 +48,11 @@ export interface NodeDefinition {
   version?: string;
   /** Optional executor ID override. Defaults to node type if not specified. */
   executor?: string;
+  /**
+   * Structured parameter schema for runtime type inference.
+   * Maps paramId → type descriptor for control-type inference at publish time.
+   */
+  paramSchema?: Record<string, { type: string }>;
 }
 
 export const NODE_CATEGORIES = {
