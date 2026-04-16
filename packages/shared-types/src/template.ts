@@ -8,9 +8,8 @@ import type {
   EditorCanvasEdge,
   EditorNodeGroup,
   EditorWorkflowMeta,
-  WorkflowInput,
-  WorkflowOutput,
 } from './editor-draft';
+import type { WorkflowInput, WorkflowOutput } from './workflow';
 
 /**
  * Template metadata - non-node data for template management
