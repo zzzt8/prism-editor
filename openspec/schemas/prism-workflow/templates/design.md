@@ -1,22 +1,22 @@
 ## Context
 
-<!-- Background and current state -->
+<!-- 背景和当前状态 -->
 
 ## Goals / Non-Goals
 
 **Goals:**
-<!-- What this design aims to achieve -->
+<!-- 本设计要实现的目标 -->
 
 **Non-Goals:**
-<!-- What is explicitly out of scope -->
+<!-- 明确排除的范围 -->
 
 ## Decisions
 
-<!-- Key design decisions and rationale -->
+<!-- 关键设计决策和理由 -->
 
 ## Risks / Trade-offs
 
-<!-- Known risks and trade-offs -->
+<!-- 已知风险和权衡 -->
 
 ---
 
@@ -72,3 +72,24 @@
 1. 数据迁移脚本
 2. 灰度发布步骤
 3. 回滚触发条件
+
+---
+
+## change_class 分层处理指南
+
+> 根据 proposal 顶部的 `change_class` 字段选择对应模板。
+
+### change_class = high
+
+使用上方完整的 Architecture Review 章节。
+
+### change_class = low
+
+> Low-risk change，跳过 formal Architecture Review。
+> 仅需在下方填写简要设计说明。
+
+**简要设计说明：**
+<!-- 简要描述技术方案（1-3 句话）-->
+
+**替代方案考虑：**
+<!-- 简要说明为何选择此方案而非更简单的替代方案 -->
