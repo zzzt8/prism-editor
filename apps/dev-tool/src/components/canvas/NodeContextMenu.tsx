@@ -14,9 +14,10 @@
 import React, { type FC, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
 import { useOnSelectionChange } from '@xyflow/react';
+import type { SnippetSummary } from '@prism/shared-types';
 import {
   Copy, Scissors, Clipboard, Pin, PinOff, FastForward, Minimize2, Maximize2,
-  Trash2, Info, BookmarkPlus,
+  Trash2, Info, BookmarkPlus, Plus,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -25,7 +26,9 @@ interface MenuItem {
   shortcut?: string;
   danger?: boolean;
   disabled?: boolean;
-  action: () => void;
+  action?: () => void;
+  submenu?: SnippetSummary[]; // render as submenu if present
+  onInsert?: (snippetId: string) => void;
 }
 
 interface NodeContextMenuProps {
@@ -62,6 +65,14 @@ export const NodeContextMenu: FC<NodeContextMenuProps> = ({
   const pasteNodes = useCanvasStore((s) => s.pasteNodes);
   const openInspector = useCanvasStore((s) => s.openInspector);
   const snippetSave = useCanvasStore((s) => s.snippetSave);
+  const snippetListStore = useCanvasStore((s) => s.snippetList);
+  const insertSnippet = useCanvasStore((s) => s.insertSnippet);
+  const [snippetList, setSnippetList] = useState<SnippetSummary[]>([]);
+
+  // Load snippet list on mount
+  useEffect(() => {
+    snippetListStore().then(setSnippetList);
+  }, [snippetListStore]);
 
   // Close on click outside or Escape
   useEffect(() => {
@@ -135,6 +146,24 @@ export const NodeContextMenu: FC<NodeContextMenuProps> = ({
       icon: <BookmarkPlus size={14} />,
       action: () => { setSaveDialogOpen(true); },
     },
+    { label: '', icon: null, action: () => {}, disabled: true }, // separator
+    ...(snippetList.length > 0
+      ? [
+          { label: '插入片段', icon: <Plus size={14} />, disabled: false, action: (() => {}) as () => void },
+          ...snippetList.map((s) => ({
+            label: `  ${s.name}`,
+            icon: <BookmarkPlus size={14} />,
+            shortcut: undefined as undefined,
+            danger: false as false,
+            disabled: false as false,
+            action: () => {
+              insertSnippet(s.id, { x, y });
+              onClose();
+            },
+          })),
+          { label: '', icon: null, action: (() => {}) as () => void, disabled: true } as MenuItem,
+        ]
+      : []),
     { label: '', icon: null, action: () => {}, disabled: true }, // separator
     {
       label: isPinned ? '解除固定' : '固定节点',
