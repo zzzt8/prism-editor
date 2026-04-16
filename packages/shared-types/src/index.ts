@@ -12,3 +12,4 @@ export * from './port-data-types';  // port-types.ts imports PortDataType from h
 export * from './port-types';
 export * from './node-package';
 export * from './editor-draft';
+export * from './template';
