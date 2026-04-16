@@ -177,15 +177,6 @@ export const WorkflowCanvas: React.FC = () => {
     [clearSelection, setContextMenu]
   );
 
-  const handleNodeContextMenu = useCallback(
-    (event: React.MouseEvent, _node: import('@xyflow/react').Node) => {
-      event.preventDefault();
-      event.stopPropagation();
-      setContextMenu({ x: event.clientX, y: event.clientY, nodeId: _node.id });
-    },
-    [setContextMenu]
-  );
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handlePaneContextMenu: (event: any) => void = useCallback(
     (event) => {
@@ -249,7 +240,6 @@ export const WorkflowCanvas: React.FC = () => {
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         onNodeClick={handleNodeClick}
-        onNodeContextMenu={handleNodeContextMenu}
         onPaneContextMenu={handlePaneContextMenu}
         onPaneClick={handlePaneClick}
         onNodeDoubleClick={() => setSearchOpen(true)}

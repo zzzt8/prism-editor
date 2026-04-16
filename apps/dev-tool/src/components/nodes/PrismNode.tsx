@@ -49,6 +49,7 @@ export const PrismNode: FC<PrismNodeProps> = ({ id, data, selected }) => {
   const definition = data.definition;
   const label = data.label ?? data.nodeType ?? 'Unknown';
   const updateNodeParams = useCanvasStore((s) => s.updateNodeParams);
+  const setContextMenu = useCanvasStore((s) => s.setContextMenu);
 
   // Execution status derived from node data (not global store)
   // This prevents unnecessary re-renders of all nodes when any node executes
@@ -159,6 +160,11 @@ export const PrismNode: FC<PrismNodeProps> = ({ id, data, selected }) => {
           .filter(Boolean)
           .join(' ')}
         data-node-id={id}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setContextMenu({ x: e.clientX, y: e.clientY, nodeId: id });
+        }}
         style={{
           '--node-color': categoryColor,
         } as React.CSSProperties}
