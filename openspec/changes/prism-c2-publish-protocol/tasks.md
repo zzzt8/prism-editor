@@ -8,7 +8,7 @@ dependencies:
   - type: task
     refs: []
 -->
-- [ ] T1: 扩展 PublishedParamDefinition 类型
+- [x] T1: 扩展 PublishedParamDefinition 类型
   - layer: engine
   - 文件: `packages/shared-types/src/published.ts`
   - 内容:
@@ -26,7 +26,7 @@ dependencies:
   - type: task
     refs: []
 -->
-- [ ] T2: 扩展 NodeDefinition 接口增加 paramSchema
+- [x] T2: 扩展 NodeDefinition 接口增加 paramSchema
   - layer: engine
   - 文件: `packages/shared-types/src/node.ts`（或 `packages/node-definitions/src/`）
   - 内容:
@@ -42,7 +42,7 @@ dependencies:
   - type: task
     refs: [T1, T2]
 -->
-- [ ] T3: 扩展 workflowToPublished mapper 实现控件类型推断
+- [x] T3: 扩展 workflowToPublished mapper 实现控件类型推断
   - layer: editor
   - 文件: `apps/dev-tool/src/modules/editor/mappers/workflowToPublished.ts`
   - 内容:
@@ -59,7 +59,7 @@ dependencies:
   - type: task
     refs: [T1, T3]
 -->
-- [ ] T4: 新增 publishSlice 状态管理
+- [x] T4: 新增 publishSlice 状态管理
   - layer: editor
   - 文件: `apps/dev-tool/src/modules/editor/stores/publishSlice.ts`
   - 内容:
@@ -75,7 +75,7 @@ dependencies:
   - type: task
     refs: [T1, T4]
 -->
-- [ ] T5: 重构 PublishDialog 参数配置 UI
+- [x] T5: 重构 PublishDialog 参数配置 UI
   - layer: editor
   - 文件: `apps/dev-tool/src/components/header/PublishDialog.tsx`
   - 内容:
@@ -85,13 +85,13 @@ dependencies:
 
 <!-- opsx-meta
 id: T6
-layer: editor
+layer: runtime
 verify: smoke-test
 dependencies:
   - type: task
     refs: [T1]
 -->
-- [ ] T6: 扩展 user-app 端 ParamsSection 渲染器
+- [x] T6: 扩展 user-app 端 ParamsSection 渲染器
   - layer: runtime
   - 文件: `apps/user-app/src/components/ParamsSection/`
   - 内容:
@@ -113,7 +113,7 @@ dependencies:
   - type: task
     refs: [T3, T5]
 -->
-- [ ] T7: 端到端验证——发布含参数的 workflow 并在 user-app 渲染
+- [x] T7: 端到端验证——发布含参数的 workflow 并在 user-app 渲染
   - layer: editor
   - 内容:
     - 在编辑器中配置含参数的节点，发布

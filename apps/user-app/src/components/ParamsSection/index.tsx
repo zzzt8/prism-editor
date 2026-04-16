@@ -24,11 +24,7 @@ import type {
   ParamControlType,
 } from '@prism/shared-types';
 
-interface ParamValue {
-  nodeKey: string;
-  paramId: string;
-  value: unknown;
-}
+// ── ParamsSection Props ────────────────────────────────────────────────────────
 
 export interface ParamsSectionProps {
   workflow: {
