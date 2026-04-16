@@ -98,6 +98,42 @@ export const WorkflowCanvas: React.FC = () => {
   useCanvasKeyboard();
   useCanvasSelectionSync();
 
+  // ── Native contextmenu interceptor ───────────────────────────────────────────
+  // React 18 事件委托模型中，JSX onContextMenu 的 preventDefault()
+  // 在 React Flow 内部通过 wrapHandler 包装后可能失效。
+  // 改用原生 addEventListener 在 React 外部拦截，绕过事件委托，
+  // 确保浏览器原生菜单被阻止。
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // 判断右键点击是否落在节点上
+      const nodeEl = target.closest('[data-node-id]');
+      const isInReactFlow = target.closest('.react-flow');
+
+      if (!isInReactFlow) return;
+
+      if (nodeEl) {
+        // 节点右键：阻止默认菜单，设置 store
+        e.preventDefault();
+        e.stopPropagation();
+        const nodeId = nodeEl.getAttribute('data-node-id')!;
+        setContextMenu({ x: e.clientX, y: e.clientY, nodeId });
+      } else {
+        // 画布右键：阻止默认菜单，设置 pane 菜单
+        e.preventDefault();
+        e.stopPropagation();
+        const flowPos = reactFlowInstance.screenToFlowPosition({ x: e.clientX, y: e.clientY });
+        setPaneMenuPos({ x: e.clientX, y: e.clientY });
+        setPaneMenuFlowPos(flowPos);
+        setPaneMenuOpen(true);
+        snippetListStore().then((list) => setSnippetList(list));
+      }
+    };
+
+    document.addEventListener('contextmenu', handler, true); // capture phase
+    return () => document.removeEventListener('contextmenu', handler, true);
+  }, [reactFlowInstance, setContextMenu, snippetListStore]);
+
   // React Flow change handlers
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -177,21 +213,6 @@ export const WorkflowCanvas: React.FC = () => {
     [clearSelection, setContextMenu]
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handlePaneContextMenu: (event: any) => void = useCallback(
-    (event) => {
-      event.preventDefault();
-      const screenX = event.clientX;
-      const screenY = event.clientY;
-      const flowPos = reactFlowInstance.screenToFlowPosition({ x: screenX, y: screenY });
-      setPaneMenuPos({ x: screenX, y: screenY });
-      setPaneMenuFlowPos(flowPos);
-      setPaneMenuOpen(true);
-      snippetListStore().then((list) => setSnippetList(list));
-    },
-    [reactFlowInstance, snippetListStore]
-  );
-
   const handleInsertSnippet = useCallback(
     async (snippetId: string) => {
       await insertSnippet(snippetId, paneMenuFlowPos);
@@ -240,7 +261,6 @@ export const WorkflowCanvas: React.FC = () => {
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         onNodeClick={handleNodeClick}
-        onPaneContextMenu={handlePaneContextMenu}
         onPaneClick={handlePaneClick}
         onNodeDoubleClick={() => setSearchOpen(true)}
         zoomOnDoubleClick={false}
