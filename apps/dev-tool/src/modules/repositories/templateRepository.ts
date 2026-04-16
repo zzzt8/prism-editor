@@ -42,7 +42,7 @@ export class TemplateRepository implements ITemplateRepository {
     return this.dbInitPromise;
   }
 
-  private async get<T>(key: string): Promise<T | null> {
+  private async dbGet<T>(key: string): Promise<T | null> {
     const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_TEMPLATES, 'readonly');
@@ -53,7 +53,7 @@ export class TemplateRepository implements ITemplateRepository {
     });
   }
 
-  private async getAll<T>(): Promise<T[]> {
+  private async dbGetAll<T>(): Promise<T[]> {
     const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_TEMPLATES, 'readonly');
@@ -64,7 +64,7 @@ export class TemplateRepository implements ITemplateRepository {
     });
   }
 
-  private async put(value: unknown): Promise<void> {
+  private async dbPut(value: unknown): Promise<void> {
     const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_TEMPLATES, 'readwrite');
@@ -75,7 +75,7 @@ export class TemplateRepository implements ITemplateRepository {
     });
   }
 
-  private async remove(key: string): Promise<void> {
+  private async dbRemove(key: string): Promise<void> {
     const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_TEMPLATES, 'readwrite');
@@ -87,28 +87,28 @@ export class TemplateRepository implements ITemplateRepository {
   }
 
   async list(): Promise<TemplateSummary[]> {
-    const templates = await this.getAll<Template>();
+    const templates = await this.dbGetAll<Template>();
     return templates
       .map((t) => this.toSummary(t))
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   }
 
   async get(id: string): Promise<Template> {
-    const template = await this.get<Template>(id);
+    const template = await this.dbGet<Template>(id);
     if (!template) throw new Error(`Template not found: ${id}`);
     return template;
   }
 
   async save(template: Template): Promise<void> {
-    await this.put(template);
+    await this.dbPut(template);
   }
 
   async delete(id: string): Promise<void> {
-    await this.remove(id);
+    await this.dbRemove(id);
   }
 
   async exists(id: string): Promise<boolean> {
-    const t = await this.get<Template>(id);
+    const t = await this.dbGet<Template>(id);
     return t !== null;
   }
 
