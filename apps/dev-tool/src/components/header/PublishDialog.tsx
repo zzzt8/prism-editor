@@ -17,9 +17,11 @@ import type {
   PublishedParamConfig,
   PublishedOutputConfig,
   ExportFormat,
+  PublishedParamDefinition,
 } from '@prism/shared-types';
 import { Check, Copy, Download, Upload, X, Plus, ChevronDown, ChevronRight, Pencil, CircleDot } from 'lucide-react';
 import { copyWorkflowToClipboard, downloadWorkflowAsFile } from '../../utils/workflowExport';
+import { inferControlType, inferOptions } from '../../modules/editor/mappers/workflowToPublished';
 
 const CHANNEL_NAME = 'prism-publish-channel';
 
@@ -121,6 +123,7 @@ function buildPublishedConfig(opts: {
   outputLabels: Record<string, string>;
   outputFormats: Record<string, ExportFormat>;
   whitelist: PublishedParamConfig[];
+  paramDefinitions?: PublishedParamDefinition[];
 }): PublishedWorkflow['config'] {
   const { nodes, edges, userInputNodes, inputLabels, outputLabels, outputFormats, whitelist } = opts;
 
@@ -183,6 +186,7 @@ function buildPublishedConfig(opts: {
     inputs,
     exposedParams: whitelist,
     outputs,
+    paramDefinitions: opts.paramDefinitions,
   };
 }
 
@@ -394,7 +398,29 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     setError(null);
 
     try {
-      const config = buildPublishedConfig({ nodes, edges, userInputNodes: selectedInputNodes, inputLabels, outputLabels, outputFormats, whitelist });
+      // Build paramDefinitions from whitelist using inferControlType/inferOptions
+      const paramDefinitions: PublishedParamDefinition[] = whitelist.map((entry) => {
+        const node = nodes.find((n) => n.id === entry.nodeId);
+        const paramDef = node?.data.definition?.params.find((p) => p.id === entry.paramId);
+        const schemaType = node?.data.definition?.paramSchema?.[entry.paramId]?.type;
+        return {
+          nodeId: entry.nodeId,
+          paramId: entry.paramId,
+          label: entry.label,
+          controlType: inferControlType(schemaType, paramDef),
+          options: inferOptions(paramDef),
+          defaultValue: paramDef?.default,
+          validation: {
+            required: paramDef?.required ?? false,
+            min: paramDef?.min,
+            max: paramDef?.max,
+          },
+          visibility: 'visible',
+          description: paramDef?.description,
+        };
+      });
+
+      const config = buildPublishedConfig({ nodes, edges, userInputNodes: selectedInputNodes, inputLabels, outputLabels, outputFormats, whitelist, paramDefinitions });
   const publishedInputs: PublishedWorkflow['inputs'] = config.inputs.map((i) => ({
     id: i.nodeId,
     name: i.label,

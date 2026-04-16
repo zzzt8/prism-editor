@@ -8,9 +8,12 @@ import type {
   PublishedInput,
   PublishedOutput,
   Connection,
+  PublishedParamDefinition,
+  ParamControlType,
 } from '@prism/shared-types';
 import { PortDataType } from '@prism/shared-types';
 import { globalRegistry } from '@prism/core';
+import type { NodeDefinition, ParamDefinition } from '@prism/shared-types';
 
 interface SourceNode {
   nodeId: string;
@@ -25,7 +28,45 @@ interface OutputNode {
 }
 
 /**
- * 检测 Workflow 中的 source 节点（没有输入连接的节点）
+ * Infer the user-facing control type from a param schema type string or ParamDefinition.
+ */
+export function inferControlType(
+  paramSchemaType: string | undefined,
+  paramDef: ParamDefinition | undefined
+): ParamControlType {
+  if (paramDef) {
+    switch (paramDef.type) {
+      case 'select': return 'select';
+      case 'image-file': return 'image-file';
+      case 'boolean': return 'boolean';
+      case 'number': return 'number';
+      case 'string': return 'string';
+      case 'image': return 'string';
+      case 'mask': return 'string';
+    }
+  }
+  if (paramSchemaType) {
+    const t = paramSchemaType.toLowerCase();
+    if (t.includes('bool')) return 'boolean';
+    if (t.includes('num') || t.includes('int') || t.includes('float') || t.includes('double')) return 'number';
+    if (t.includes('select') || t.includes('enum')) return 'select';
+    if (t.includes('image')) return 'image-file';
+  }
+  return 'string';
+}
+
+/**
+ * Extract select options from a ParamDefinition if available.
+ */
+export function inferOptions(paramDef: ParamDefinition | undefined): Array<{ label: string; value: unknown }> {
+  if (paramDef?.options && paramDef.options.length > 0) {
+    return paramDef.options;
+  }
+  return [];
+}
+
+/**
+ * Detect source nodes (no incoming edges) in the workflow.
  */
 function detectSourceNodes(workflow: Workflow): SourceNode[] {
   const connectedNodeIds = new Set<string>();
