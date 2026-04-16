@@ -34,7 +34,7 @@ export interface ConnectionValidation {
   targetType?: PortDataType;
 }
 
-export type InspectorTab = 'parameters' | 'settings' | 'info';
+export type InspectorTab = 'parameters' | 'preview' | 'debug' | 'settings' | 'info';
 export type ExecutionStatus = 'idle' | 'running' | 'done' | 'error' | 'cancelled';
 
 // ─── Port lookup helpers ─────────────────────────────────────────────────────

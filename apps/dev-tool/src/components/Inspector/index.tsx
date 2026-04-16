@@ -10,6 +10,8 @@ import { InspectorTabs } from './InspectorTabs';
 import { ParametersPanel } from './ParametersPanel';
 import { SettingsPanel } from './SettingsPanel';
 import { InfoPanel } from './InfoPanel';
+import { PreviewPanel } from './PreviewPanel';
+import { DebugTab } from './DebugTab';
 import { CircleDot, RotateCcw, Check, Loader2 } from 'lucide-react';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -108,6 +110,10 @@ export const Inspector: React.FC = () => {
     switch (inspectorTab) {
       case 'parameters':
         return <ParametersPanel nodeId={selectedNode.id} />;
+      case 'preview':
+        return <PreviewPanel nodeId={selectedNode.id} />;
+      case 'debug':
+        return <DebugTab nodeId={selectedNode.id} />;
       case 'settings':
         return <SettingsPanel nodeId={selectedNode.id} />;
       case 'info':

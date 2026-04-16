@@ -13,6 +13,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
 
 export const STATUS_DOT_CLASS: Record<string, string> = {
   idle:    'dcn-status-dot--idle',
+  pending: 'dcn-status-dot--pending',
   running: 'dcn-status-dot--running',
   done:    'dcn-status-dot--done',
   error:   'dcn-status-dot--error',
@@ -20,7 +21,7 @@ export const STATUS_DOT_CLASS: Record<string, string> = {
 
 interface PrismNodeHeaderProps {
   label: string;
-  execStatus: 'idle' | 'running' | 'done' | 'error';
+  execStatus: 'idle' | 'pending' | 'running' | 'done' | 'error';
   categoryColor: string;
   definition?: { category?: string };
 }

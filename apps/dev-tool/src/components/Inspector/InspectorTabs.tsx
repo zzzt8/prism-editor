@@ -1,4 +1,4 @@
-// InspectorTabs — three-tab bar: 参数 / 设置 / 信息
+// InspectorTabs — five-tab bar: 参数 / 预览 / 调试 / 设置 / 信息
 // Reads inspectorTab from store, calls openInspector on click.
 
 import React from 'react';
@@ -6,8 +6,10 @@ import { useCanvasStore } from '../../store/canvasStore';
 
 const TABS = [
   { id: 'parameters' as const, label: '参数' },
-  { id: 'settings' as const, label: '设置' },
-  { id: 'info' as const, label: '信息' },
+  { id: 'preview' as const,    label: '预览' },
+  { id: 'debug' as const,     label: '调试' },
+  { id: 'settings' as const,   label: '设置' },
+  { id: 'info' as const,      label: '信息' },
 ];
 
 export const InspectorTabs: React.FC = () => {

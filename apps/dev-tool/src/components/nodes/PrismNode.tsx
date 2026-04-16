@@ -55,13 +55,18 @@ export const PrismNode: FC<PrismNodeProps> = ({ id, data, selected: _rfSelected 
   const selected = selectedNodeIds.includes(id);
 
   // Execution status derived from node data (not global store)
-  // This prevents unnecessary re-renders of all nodes when any node executes
-  const execStatus: 'idle' | 'running' | 'done' | 'error' = data.executionError
+  // This prevents unnecessary re-renders of all nodes when any node executes.
+  // pending: workflow is running but this node hasn't started yet
+  const _executionStatus = useCanvasStore((s) => s._executionStatus);
+  const _currentNodeId = useCanvasStore((s) => s._currentNodeId);
+  const execStatus: 'idle' | 'pending' | 'running' | 'done' | 'error' = data.executionError
     ? 'error'
     : data.executionResult
     ? 'done'
-    : data._executingNodeId === id
+    : _currentNodeId === id
     ? 'running'
+    : _executionStatus === 'running'
+    ? 'pending'
     : 'idle';
 
   // Category color for header and selected border
