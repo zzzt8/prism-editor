@@ -20,7 +20,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import type { PublishedInput, PublishedInputConfig } from '@prism/shared-types';
+import type { PublishedInput, PublishedInputConfig, PublishedParamDefinition } from '@prism/shared-types';
 
 // ── Image input field ────────────────────────────────────────────────────────
 
@@ -321,6 +321,7 @@ interface ExposedParamsFormProps {
       nodeTypes?: Record<string, string>;
       nodeConfigs?: Record<string, { params?: Record<string, unknown> }>;
       exposedParams?: Array<{ nodeId: string; paramId: string; label: string }>;
+      paramDefinitions?: PublishedParamDefinition[];
     };
   };
   paramValues: Record<string, Record<string, unknown>>;
@@ -331,8 +332,15 @@ function ExposedParamsForm({ selectedWorkflow, paramValues, onParamChange }: Exp
   const nodeTypes = selectedWorkflow.config.nodeTypes ?? {};
   const nodeConfigs = selectedWorkflow.config.nodeConfigs ?? {};
   const exposedParams = selectedWorkflow.config.exposedParams ?? [];
+  const paramDefinitions = selectedWorkflow.config.paramDefinitions ?? [];
 
-  if (exposedParams.length === 0) return null;
+  console.log('[ExposedParamsForm] ▶ raw paramDefinitions=', JSON.stringify(paramDefinitions, null, 2));
+  console.log('[ExposedParamsForm] ▶ exposedParams=', JSON.stringify(exposedParams, null, 2));
+
+  const paramDefMap = new Map<string, PublishedParamDefinition>();
+  for (const pd of paramDefinitions) {
+    paramDefMap.set(`${pd.nodeId}:${pd.paramId}`, pd);
+  }
 
   return (
     <div className="ua-exposed-params">
@@ -341,12 +349,67 @@ function ExposedParamsForm({ selectedWorkflow, paramValues, onParamChange }: Exp
         const nodeType = nodeTypes[ep.nodeId] ?? '';
         const config = nodeConfigs[ep.nodeId];
         const rawValue = paramValues[ep.nodeId]?.[ep.paramId] ?? config?.params?.[ep.paramId];
+        const pd = paramDefMap.get(`${ep.nodeId}:${ep.paramId}`);
+        const controlType = pd?.controlType ?? 'number';
+
+        if (controlType === 'string' || controlType === 'image-file') {
+          return (
+            <div key={`${ep.nodeId}:${ep.paramId}`} className="ua-input-group">
+              <label className="ua-input-label">{ep.label}</label>
+              <input
+                type={controlType === 'image-file' ? 'url' : 'text'}
+                className="ua-param-text"
+                placeholder={controlType === 'image-file' ? '输入图片 URL' : undefined}
+                value={(rawValue as string) ?? ''}
+                onChange={(e) => onParamChange(ep.nodeId, ep.paramId, e.target.value)}
+              />
+            </div>
+          );
+        }
+
+        if (controlType === 'boolean') {
+          const boolValue = typeof rawValue === 'boolean' ? rawValue : Boolean(rawValue);
+          return (
+            <div key={`${ep.nodeId}:${ep.paramId}`} className="ua-input-group">
+              <label className="ua-param-switch" style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                <span className="ua-input-label" style={{ marginBottom: 0 }}>{ep.label}</span>
+                <input
+                  type="checkbox"
+                  checked={boolValue}
+                  onChange={(e) => onParamChange(ep.nodeId, ep.paramId, e.target.checked)}
+                />
+              </label>
+            </div>
+          );
+        }
+
+        if (controlType === 'select') {
+          const options = pd?.options ?? [];
+          return (
+            <div key={`${ep.nodeId}:${ep.paramId}`} className="ua-input-group">
+              <label className="ua-input-label">{ep.label}</label>
+              <select
+                className="ua-param-select"
+                value={String(rawValue ?? '')}
+                onChange={(e) => onParamChange(ep.nodeId, ep.paramId, e.target.value)}
+              >
+                {options.map((opt) => (
+                  <option key={String(opt.value)} value={String(opt.value)}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          );
+        }
+
+        // number (slider)
         const numValue = typeof rawValue === 'number'
           ? rawValue
           : parseFloat(String(rawValue ?? 0));
         const displayValue = isNaN(numValue)
           ? String(rawValue ?? '')
           : numValue.toFixed(2);
+        const min = pd?.validation?.min ?? 0;
+        const max = pd?.validation?.max ?? 1;
 
         return (
           <div key={`${ep.nodeId}:${ep.paramId}`} className="ua-input-group">
@@ -354,10 +417,10 @@ function ExposedParamsForm({ selectedWorkflow, paramValues, onParamChange }: Exp
             <input
               type="range"
               className="ua-param-slider"
-              min={0}
-              max={1}
+              min={min}
+              max={max}
               step={0.01}
-              value={isNaN(numValue) ? 0.5 : numValue}
+              value={isNaN(numValue) ? (min + max) / 2 : numValue}
               onChange={(e) => onParamChange(ep.nodeId, ep.paramId, parseFloat(e.target.value))}
             />
             <div className="ua-param-slider-value">{displayValue}</div>
@@ -378,6 +441,8 @@ export interface InputSectionProps {
       nodeConfigs?: Record<string, { params?: Record<string, unknown> }>;
       /** New v2 field: structured input configs from auto-detected source nodes */
       inputs?: PublishedInputConfig[];
+      exposedParams?: Array<{ nodeId: string; paramId: string; label: string }>;
+      paramDefinitions?: import('@prism/shared-types').PublishedParamDefinition[];
     };
   };
   inputValues: Record<string, string>;

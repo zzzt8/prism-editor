@@ -125,9 +125,9 @@ dependencies:
 
 ### 手工验收清单
 
-- [ ] workflowToPublished 发布时自动推断 controlType（不崩溃）
-- [ ] PublishDialog 中可编辑参数可见性
-- [ ] 发布的 PublishedWorkflow 包含 paramDefinitions 字段
-- [ ] user-app 读取 paramDefinitions 并正确渲染（select → 下拉，boolean → switch）
-- [ ] 降级：仅有 exposedParams 无 paramDefinitions 时，user-app 不崩溃（渲染为文本输入）
-- [ ] typecheck 通过
+- [x] workflowToPublished 发布时自动推断 controlType（不崩溃）
+- [x] PublishDialog 中可编辑参数可见性
+- [x] 发布的 PublishedWorkflow 包含 paramDefinitions 字段
+- [x] user-app 读取 paramDefinitions 并正确渲染（select → 下拉，boolean → switch）
+- [x] 降级：仅有 exposedParams 无 paramDefinitions 时，user-app 不崩溃（渲染为文本输入）
+- [x] typecheck 通过

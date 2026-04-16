@@ -28,18 +28,45 @@ interface OutputNode {
 }
 
 /**
+ * Pixel-unit parameter names (dimensions, positions, spacing, etc.).
+ * These use string inputs rather than number sliders because the range
+ * is too large/unbounded for a slider to be practical.
+ */
+const PIXEL_PARAM_PATTERNS = [
+  /\bwidth\b/i, /\bheight\b/i,
+  /\bx\b/i, /\by\b/i,
+  /\bsize\b/i, /\bradius\b/i, /\bdiameter\b/i,
+  /\bmargin\b/i, /\bpadding\b/i, /\bgap\b/i,
+  /\bborder.?width\b/i, /\bstroke.?width\b/i,
+  /\bfont.?size\b/i, /\bline.?height\b/i,
+  /\bleft\b/i, /\bright\b/i, /\btop\b/i, /\bbottom\b/i,
+  /\boffset\b/i, /\boffsetx\b/i, /\boffsety\b/i,
+  /\bthreshold\b/i,
+];
+
+/**
+ * Detect if a parameter name suggests pixel-unit values.
+ */
+function isPixelParam(paramId: string | undefined): boolean {
+  if (!paramId) return false;
+  return PIXEL_PARAM_PATTERNS.some((re) => re.test(paramId));
+}
+
+/**
  * Infer the user-facing control type from a param schema type string or ParamDefinition.
  */
 export function inferControlType(
   paramSchemaType: string | undefined,
-  paramDef: ParamDefinition | undefined
+  paramDef: ParamDefinition | undefined,
+  paramId?: string
 ): ParamControlType {
   if (paramDef) {
     switch (paramDef.type) {
       case 'select': return 'select';
       case 'image-file': return 'image-file';
       case 'boolean': return 'boolean';
-      case 'number': return 'number';
+      case 'number':
+        return isPixelParam(paramId) ? 'string' : 'number';
       case 'string': return 'string';
       case 'image': return 'string';
       case 'mask': return 'string';
@@ -48,7 +75,9 @@ export function inferControlType(
   if (paramSchemaType) {
     const t = paramSchemaType.toLowerCase();
     if (t.includes('bool')) return 'boolean';
-    if (t.includes('num') || t.includes('int') || t.includes('float') || t.includes('double')) return 'number';
+    if (t.includes('num') || t.includes('int') || t.includes('float') || t.includes('double')) {
+      return isPixelParam(paramId) ? 'string' : 'number';
+    }
     if (t.includes('select') || t.includes('enum')) return 'select';
     if (t.includes('image')) return 'image-file';
   }

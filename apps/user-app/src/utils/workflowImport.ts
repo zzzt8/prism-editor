@@ -69,6 +69,24 @@ const publishedConfigSchema = z.object({
     label: z.string(),
     format: z.enum(['png', 'jpeg', 'webp']).default('png'),
   })).default([]),
+
+  /** Rich parameter definitions (includes UI metadata for exposed params) */
+  paramDefinitions: z.array(z.object({
+    nodeId: z.string(),
+    paramId: z.string(),
+    label: z.string(),
+    controlType: z.enum(['select', 'number', 'string', 'boolean', 'image-file']),
+    options: z.array(z.object({ label: z.string(), value: z.unknown() })).default([]),
+    defaultValue: z.unknown().optional(),
+    validation: z.object({
+      required: z.boolean().optional(),
+      min: z.number().optional(),
+      max: z.number().optional(),
+      pattern: z.string().optional(),
+    }).optional(),
+    visibility: z.enum(['visible', 'hidden', 'locked']).optional(),
+    description: z.string().optional(),
+  })).optional(),
 });
 
 export const publishedWorkflowSchema = z.object({
