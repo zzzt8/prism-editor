@@ -1,0 +1,5 @@
+schema: prism-workflow
+name: prism-c6-snippet-fragments
+change_class: high
+reason: "touches canvas store API contract, introduces new persistent data type (SnippetFragment), modifies editor layer UI interaction patterns"
+created: 2026-04-16

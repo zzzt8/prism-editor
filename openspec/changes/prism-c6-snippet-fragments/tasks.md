@@ -1,10 +1,10 @@
 ## 任务列表
 
 <!-- opsx-meta
-id: T1
-layer: engine
-verify: unit-tests
-dependencies:
+|id: T1
+|layer: engine
+|verify: unit-tests
+|dependencies:
   - type: task
     refs: []
 -->
@@ -20,10 +20,10 @@ dependencies:
   - 验证命令: `pnpm typecheck --filter=@prism/shared-types`
 
 <!-- opsx-meta
-id: T2
-layer: editor
-verify: unit-tests
-dependencies:
+|id: T2
+|layer: editor
+|verify: unit-tests
+|dependencies:
   - type: task
     refs: []
 -->
@@ -41,10 +41,10 @@ dependencies:
   - 验证命令: `pnpm typecheck --filter=@prism/dev-tool`
 
 <!-- opsx-meta
-id: T3
-layer: editor
-verify: smoke-test
-dependencies:
+|id: T3
+|layer: editor
+|verify: smoke-test
+|dependencies:
   - type: task
     refs: [T1, T2]
 -->
@@ -59,10 +59,10 @@ dependencies:
   - 验证命令: `pnpm typecheck --filter=@prism/dev-tool`
 
 <!-- opsx-meta
-id: T4
-layer: editor
-verify: smoke-test
-dependencies:
+|id: T4
+|layer: editor
+|verify: smoke-test
+|dependencies:
   - type: task
     refs: [T1, T2]
 -->
@@ -77,10 +77,10 @@ dependencies:
   - 验证命令: `pnpm typecheck --filter=@prism/dev-tool`
 
 <!-- opsx-meta
-id: T5
-layer: editor
-verify: smoke-test
-dependencies:
+|id: T5
+|layer: editor
+|verify: smoke-test
+|dependencies:
   - type: task
     refs: [T4]
 -->
@@ -95,10 +95,10 @@ dependencies:
   - 验证命令: 手工测试节点右键菜单
 
 <!-- opsx-meta
-id: T6
-layer: editor
-verify: smoke-test
-dependencies:
+|id: T6
+|layer: editor
+|verify: smoke-test
+|dependencies:
   - type: task
     refs: [T4]
 -->
@@ -114,10 +114,10 @@ dependencies:
   - 验证命令: 手工测试画布空白处右键
 
 <!-- opsx-meta
-id: T7
-layer: editor
-verify: smoke-test
-dependencies:
+|id: T7
+|layer: editor
+|verify: smoke-test
+|dependencies:
   - type: task
     refs: [T5, T6]
 -->
@@ -153,12 +153,12 @@ dependencies:
 
 ### 手工验收清单
 
-- [ ] typecheck 通过
-- [ ] snippetRepository.save/list/get/delete 正常工作
-- [ ] 选中节点 → 右键「保存为片段」→ 输入名称 → 保存成功
-- [ ] 画布空白处右键 → 「插入片段」子菜单显示已保存片段
-- [ ] 插入后节点 ID 不与现有节点冲突
-- [ ] 页面刷新后片段列表仍存在（IndexedDB 持久化）
-- [ ] 边过滤正确（只保留两端节点都在片段内的边）
-- [ ] 降级：片段含未知 nodeType 时跳过该节点 + console.warn，不崩溃
-- [ ] WorkflowsView 顶栏不再显示「模板管理」按钮
+- [x] typecheck 通过
+- [x] snippetRepository.save/list/get/delete 正常工作
+- [x] 选中节点 → 右键「保存为片段」→ 输入名称 → 保存成功
+- [x] 画布空白处右键 → 「插入片段」子菜单显示已保存片段
+- [x] 插入后节点 ID 不与现有节点冲突
+- [x] 页面刷新后片段列表仍存在（IndexedDB 持久化）
+- [x] 边过滤正确（只保留两端节点都在片段内的边）
+- [x] 降级：片段含未知 nodeType 时跳过该节点 + console.warn，不崩溃
+- [x] WorkflowsView 顶栏不再显示「模板管理」按钮

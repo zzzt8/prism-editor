@@ -2141,7 +2141,7 @@ body {
 .delete-confirm-overlay {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: 10000;
   background: rgba(14, 14, 18, 0.8);
   backdrop-filter: blur(4px);
   display: flex;

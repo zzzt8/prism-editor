@@ -32,7 +32,6 @@ import { NodeSearchModal } from './NodeSearchModal';
 import { NodeContextMenu } from './NodeContextMenu';
 import { useCanvasDragDrop } from './useCanvasDragDrop';
 import { useCanvasKeyboard } from './useCanvasKeyboard';
-import { useCanvasSelectionSync } from './useCanvasSelectionSync';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nodeTypes: Record<string, any> = {
@@ -89,7 +88,6 @@ export const WorkflowCanvas: React.FC = () => {
   // Apply focused hooks
   const { handleDragOver, handleDrop } = useCanvasDragDrop(reactFlowInstance);
   useCanvasKeyboard();
-  useCanvasSelectionSync();
 
   // ── Native contextmenu interceptor ───────────────────────────────────────────
   // React 18 事件委托模型中，JSX onContextMenu 的 preventDefault()
@@ -107,12 +105,17 @@ export const WorkflowCanvas: React.FC = () => {
       e.preventDefault();
       e.stopPropagation();
 
-      if (nodeEl) {
-        // 节点右键：显示节点菜单
+      if (!nodeEl) {
+        // 空白画布右键：显示画布级菜单（nodeId = null）
+        setContextMenu({ x: e.clientX, y: e.clientY, nodeId: null });
+      } else {
+        // 节点右键：判断节点是否已在选中列表中
         const nodeId = nodeEl.getAttribute('data-node-id')!;
-        setContextMenu({ x: e.clientX, y: e.clientY, nodeId });
+        const isSelected = useCanvasStore.getState().selectedNodeIds.includes(nodeId);
+        // 已选中节点右键 → 用 nodeId: null，让 NodeContextMenu 从 liveSelectedIds 读取
+        // 未选中节点右键 → 传入该 nodeId（点击后会先触发 selectNode 使其选中）
+        setContextMenu({ x: e.clientX, y: e.clientY, nodeId: isSelected ? null : nodeId });
       }
-      // 画布右键：仅阻止浏览器原生菜单，不显示额外菜单
     };
 
     document.addEventListener('contextmenu', handler, true); // capture phase
@@ -168,8 +171,8 @@ export const WorkflowCanvas: React.FC = () => {
 
   const handleNodeClick: NodeMouseHandler = useCallback(
     (_event, node) => {
-      const isCtrlPressed = _event.ctrlKey || _event.metaKey;
-      selectNode(node.id, isCtrlPressed);
+      const isMulti = _event.ctrlKey || _event.metaKey || _event.shiftKey;
+      selectNode(node.id, isMulti);
     },
     [selectNode]
   );

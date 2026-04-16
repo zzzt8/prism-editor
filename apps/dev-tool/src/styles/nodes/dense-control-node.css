@@ -765,7 +765,7 @@
   border: 1px solid var(--dcn-border);
   border-radius: var(--dcn-radius-sm);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-  overflow: hidden;
+  overflow: visible;
   animation: dcn-menu-in 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -801,6 +801,76 @@
   font-size: 10px;
   color: #71717a;
   font-family: 'Space Grotesk', monospace;
+}
+
+/* Submenu */
+.dcn-submenu-wrapper {
+  position: relative;
+}
+
+/* Hovering the wrapper reveals the submenu */
+.dcn-submenu-wrapper:hover > .dcn-submenu {
+  display: block;
+}
+
+.dcn-submenu {
+  display: none;
+  position: absolute;
+  left: 100%;
+  top: 0;
+  min-width: 160px;
+  background: #27272a;
+  border: 1px solid var(--dcn-border);
+  border-radius: var(--dcn-radius-sm);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  animation: dcn-menu-in 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 10000;
+}
+
+.dcn-submenu .dcn-context-menu-item {
+  border-radius: 0;
+}
+
+/* Snippet item — contains the delete button and the menu item */
+.dcn-snippet-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.dcn-snippet-item:hover .dcn-snippet-item-delete {
+  opacity: 0.5;
+}
+
+.dcn-snippet-item-delete {
+  position: absolute;
+  left: 4px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: #18181b;
+  border: 1px solid #3f3f46;
+  border-radius: 50%;
+  color: #a1a1aa;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+  padding: 0;
+}
+
+.dcn-snippet-item-delete:hover {
+  opacity: 1 !important;
+  color: #FF6B6B;
+  border-color: #FF6B6B;
+}
+
+.dcn-snippet-item .dcn-context-menu-item {
+  padding-left: 28px;
+  width: 100%;
 }
 
 /* ----------------------------------------------------------------

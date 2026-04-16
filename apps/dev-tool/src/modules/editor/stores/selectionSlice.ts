@@ -6,7 +6,8 @@ import type { EditorCanvasNode } from '@prism/shared-types';
 export interface ContextMenuState {
   x: number;
   y: number;
-  nodeId: string;
+  /** null = canvas right-click; string = right-clicked specific node */
+  nodeId: string | null;
 }
 
 export interface SelectionSlice {

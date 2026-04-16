@@ -44,12 +44,15 @@ interface PrismNodeProps extends Omit<NodeProps, 'data'> {
 // Main PrismNode component
 // ---------------------------------------------------------------------------
 
-export const PrismNode: FC<PrismNodeProps> = ({ id, data, selected }) => {
+export const PrismNode: FC<PrismNodeProps> = ({ id, data, selected: _rfSelected }) => {
   const params = data.params ?? {};
   const definition = data.definition;
   const label = data.label ?? data.nodeType ?? 'Unknown';
   const updateNodeParams = useCanvasStore((s) => s.updateNodeParams);
   const setContextMenu = useCanvasStore((s) => s.setContextMenu);
+  const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
+
+  const selected = selectedNodeIds.includes(id);
 
   // Execution status derived from node data (not global store)
   // This prevents unnecessary re-renders of all nodes when any node executes
