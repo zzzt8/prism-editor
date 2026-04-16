@@ -7,39 +7,39 @@
 ## Structure
 
 ```
-.cursor/
-├── skills/
-│   ├── _shared/
-│   │   └── SHARED-LAYERS.md          # Layer mapping, validation commands
-│   ├── openspec-apply/              # Apply a change (execute tasks)
-│   ├── openspec-archive/            # Archive completed changes
-│   ├── openspec-change-index/       # Batch-create sub-changes
-│   ├── openspec-debug/              # Debug execution issues
-│   ├── openspec-explore/            # Explore codebase structure
-│   ├── openspec-meta-propose/      # Create meta-change
-│   ├── openspec-propose/            # Create a new change
-│   └── openspec-verify/             # Verify implementation
-└── commands/
-    └── opsx-*.md                    # CLI command aliases
+.cursor/skills/
+├── _shared/
+│   ├── SHARED-LAYERS.md       # Layer mapping, validation commands
+│   ├── SKILL-INDEX.md         # Auto-generated skill index
+│   ├── SKILL-SCHEMA.md        # Metadata schema definition
+│   └── generate-skill-index.js # Index generation script
+├── openspec-explore/           # Explore codebase structure
+├── openspec-propose/           # Create a new change with artifacts
+├── openspec-plan/              # Plan and derive sub-changes (non-default)
+├── openspec-apply/             # Execute tasks with incremental verification
+├── openspec-verify/            # Verify implementation consistency
+├── openspec-archive/           # Archive completed changes
+├── openspec-debug/            # Debug issues in apply phase
+└── openspec-skill/            # Skill system maintenance (not exposed by default)
 ```
 
 ## Skills Overview
 
 | Skill | Purpose |
 |-------|---------|
-| `openspec-apply` | Execute tasks for a change with incremental verification |
-| `openspec-verify` | Verify completeness / correctness / coherence |
-| `openspec-propose` | Create a new change with artifacts |
+| `openspec-explore` | Explore codebase structure |
+| `openspec-propose` | Create a new change with artifacts; change_class triggers templates |
+| `openspec-plan` | Derive sub-changes from expert documents (non-default capability) |
+| `openspec-apply` | Execute tasks with incremental verification; checkbox-based checkpointing |
+| `openspec-verify` | Verify implementation consistency (Full + coherence-lite) |
 | `openspec-archive` | Archive completed changes |
 | `openspec-debug` | Debug issues in apply phase |
-| `openspec-explore` | Explore codebase structure |
-| `openspec-change-index` | Batch-create sub-changes from meta-change |
-| `openspec-meta-propose` | Parse expert plan → meta-change |
+| `openspec-skill` | Skill system maintenance (not exposed by default) |
 
 ## Usage
 
 When working in this project, the Cursor AI agent will automatically
-read and follow these skill files. You can also invoke them via the
+read and follow these skill files. You can invoke them via the
 `/opsx-*` commands in Cursor (e.g., `/opsx-verify`).
 
 See the OpenSpec documentation in `openspec/` for the full workflow.

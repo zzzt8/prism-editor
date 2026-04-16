@@ -1,305 +1,311 @@
 # Prism Editor
 
-A visual low-code workflow editor for composable image processing pipelines. Build workflows in the browser, test them live, and publish to end users.
+一个可视化低代码图像处理工作流编辑器。在浏览器中构建工作流，实时测试，并发布给终端用户。
 
 ---
 
-## Architecture
+## 特性亮点
+
+- **前端优先执行**：工作流完全在浏览器端运行，无需后端计算
+- **可视化编辑器**：基于 React Flow 的节点画布，拖拽连线
+- **图像处理引擎**：纯 Canvas API 实现，支持 alpha mask、亮度 mask、合成等操作
+- **开发者工具**：注册登录、JWT 认证、节点市场、版本历史
+- **终端用户运行时**：浏览已发布工作流、配置参数、导出结果
+- **后端 API**：Fastify + Prisma + SQLite，工作流 CRUD 和发布
+- **自定义节点**：支持导入和运行自定义节点包
+- **OpenSpec 变更管理**：结构化的变更提案、设计、任务追踪系统
+
+---
+
+## 项目架构
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      prism-editor                           │
+│                     prism-editor                            │
 │                     (pnpm monorepo)                         │
 ├─────────────────────────────────────────────────────────────┤
-│  apps/                                                       │
-│  ├── dev-tool/          Developer UI — build & publish      │
-│  │                      (Login/Register, Node Canvas,      │
-│  │                       Workflows Dashboard)                │
-│  └── user-app/          End-user UI — run published flows   │
+│  apps/                                                      │
+│  ├── dev-tool/           开发者工具 — 构建和发布工作流       │
+│  │                       (登录注册、节点画布、工作流仪表盘)  │
+│  └── user-app/           终端用户应用 — 运行已发布的工作流   │
 ├─────────────────────────────────────────────────────────────┤
-│  server/                                                    │
-│  ├── Fastify API server — Workflow CRUD + publishing        │
-│  ├── Prisma ORM — SQLite database                           │
-│  ├── Auth — JWT-based authentication                        │
-│  └── Node Package Registry — custom node sharing            │
+│  server/                                                   │
+│  ├── Fastify API — 工作流 CRUD + 发布 + 认证               │
+│  ├── Prisma ORM — SQLite 数据库                            │
+│  └── JWT 认证系统                                          │
 ├─────────────────────────────────────────────────────────────┤
-│  packages/                                                   │
-│  ├── core/              Inline executor & utilities         │
-│  ├── image-ops/         Pure image operations (Canvas API) │
-│  ├── node-definitions/  Node metadata: inputs, params, UI   │
-│  ├── shared-types/      Workflow, PublishedWorkflow, types  │
-│  ├── shared-ui/         Design tokens + shared components  │
-│  └── workflow-core/     Executor, topological sort, cache   │
+│  packages/                                                  │
+│  ├── core/               自定义节点内联执行器               │
+│  ├── image-ops/          图像处理操作（Canvas API）        │
+│  ├── node-definitions/   节点元数据：输入、参数、UI 配置   │
+│  ├── shared-types/       工作流、已发布工作流、类型定义    │
+│  ├── shared-ui/          设计系统和共享 UI 组件            │
+│  └── workflow-core/      执行器、拓扑排序、LRU 缓存        │
 ├─────────────────────────────────────────────────────────────┤
-│  openspec/              Change proposals, specs, task track │
+│  openspec/             变更提案、设计文档、任务追踪        │
+├─────────────────────────────────────────────────────────────┤
+│  .cursor/               Cursor AI Agent Skill 系统          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Data Flow
+### 数据流
 
 ```
-Developer (dev-tool)
-  1. Login/Register → JWT auth
-  2. Create workflow → Drag nodes → canvas
-  3. Wire them together
-  4. Configure parameters
-  5. Preview live output
-  6. Publish → API Server (Fastify + Prisma/SQLite)
+开发者 (dev-tool)
+  1. 登录/注册 → JWT 认证
+  2. 创建工作流 → 拖拽节点 → 画布
+  3. 连接节点端口
+  4. 配置参数
+  5. 实时预览输出
+  6. 发布 → API 服务器 (Fastify + Prisma/SQLite)
          ↓
-End User (user-app)
-  7. Browse published workflows from API
-  8. Fill inputs / adjust params
-  9. Run → PublishedWorkflowExecutor → HTML img
+终端用户 (user-app)
+  7. 浏览已发布的工作流
+  8. 填写输入 / 调整参数
+  9. 运行 → PublishedWorkflowExecutor → HTML img
 ```
 
 ---
 
-## Node Types
+## 节点类型
 
-| Node | Category | Description |
-|------|----------|-------------|
-| **LoadImage** | Input | Load image from URL, file upload, or blob |
-| **LoadMask** | Input | Load mask image (alpha/brightness/luminance) |
-| **Transform** | Processing | Crop, resize, rotate, translate |
-| **ApplyMask** | Processing | Apply alpha / brightness / luminance mask |
-| **Composite** | Processing | Blend two images — supports multi-overlay, blend mode + opacity |
-| **Export** | Output | Export as PNG / JPEG / WebP, optionally resized |
-
----
-
-## Features
-
-### Developer Tool (`apps/dev-tool`)
-
-- **Authentication**: Login/Register with JWT tokens
-- **Node Canvas**: React Flow-based visual editor
-  - Drag nodes from the palette
-  - Wire nodes by connecting ports
-  - Inline parameter configuration
-  - Live preview on any node
-- **Workflow Management**: Create, edit, duplicate, delete workflows
-- **Version History**: Track and rollback workflow versions
-- **Publish Dialog**: Configure user-facing inputs and export settings
-- **Node Package Manager**: Import custom node packages
-- **Node Marketplace**: Browse shared node packages
-
-### User App (`apps/user-app`)
-
-- **Workflow Browser**: Browse and search published workflows
-- **Runtime Executor**: Run workflows entirely client-side
-- **Input Configuration**: Fill in URLs, adjust parameters
-- **Export Options**: Download result in PNG/JPEG/WebP
-
-### Server (`server/`)
-
-- **Auth API**: Register, login, logout, token refresh
-- **Workflow API**: CRUD operations, versioning, publishing
-- **Published API**: List and fetch published workflows
-- **Node Package API**: Publish and browse custom node packages
+| 节点 | 分类 | 描述 |
+|------|------|------|
+| **LoadImage** | 输入 | 从 URL / 文件上传 / Blob 加载图像 |
+| **LoadMask** | 输入 | 加载蒙版图像（alpha / brightness / luminance） |
+| **Transform** | 处理 | 裁剪、缩放、旋转、平移 |
+| **ApplyMask** | 处理 | 应用 alpha / brightness / luminance 蒙版 |
+| **Composite** | 处理 | 合成两张图像 — 支持多层叠加、混合模式 + 透明度 |
+| **Export** | 输出 | 导出为 PNG / JPEG / WebP，可选调整尺寸 |
 
 ---
 
-## Getting Started
+## 核心功能
+
+### 开发者工具 (`apps/dev-tool`)
+
+- **认证系统**：登录/注册，JWT token 管理
+- **节点画布**：基于 React Flow 的可视化编辑器
+  - 从节点面板拖拽节点
+  - 连接端口连线
+  - 内联参数配置
+  - 任意节点实时预览
+- **工作流管理**：创建、编辑、复制、删除
+- **版本历史**：追踪和回滚工作流版本
+- **发布对话框**：配置用户输入和导出设置
+- **节点包管理器**：导入自定义节点包
+- **节点市场**：浏览和安装共享节点包
+
+### 终端用户应用 (`apps/user-app`)
+
+- **工作流浏览器**：浏览和搜索已发布的工作流
+- **运行时执行器**：完全在客户端运行
+- **输入配置**：填写 URL，调整参数
+- **导出选项**：下载 PNG / JPEG / WebP 格式结果
+
+### 后端服务 (`server/`)
+
+- **认证 API**：注册、登录、登出、token 刷新
+- **工作流 API**：CRUD 操作、版本管理、发布
+- **已发布 API**：列出和获取已发布的工作流
+- **节点包 API**：发布和浏览自定义节点包
+
+---
+
+## 快速开始
 
 ```bash
-# Install dependencies
+# 安装依赖
 pnpm install
 
-# Start all apps (dev-tool, user-app, and server)
+# 启动所有应用（dev-tool、user-app、server）
 pnpm dev
 
-# Start dev-tool only
+# 仅启动 dev-tool
 pnpm dev:dev-tool
 
-# Start user-app only
+# 仅启动 user-app
 pnpm dev:user-app
 
-# Start backend API server only
+# 仅启动后端 API 服务器
 pnpm server:dev
 
-# Migrate data from localStorage to API (one-time)
+# 从 localStorage 迁移数据到 API（一次性）
 pnpm server:migrate
 
-# Build for production
+# 生产构建
 pnpm build
 
-# Run all tests (Vitest + canvas npm polyfill for pixel-level assertions)
+# 运行所有测试
 pnpm test
 
-# Type-check all packages
+# 类型检查
 pnpm typecheck
 
-# Clean build artifacts
+# 清理构建产物
 pnpm clean
 ```
 
-**Requirements:** Node.js >= 18, pnpm >= 8.
+**环境要求：** Node.js >= 18, pnpm >= 8
 
 ---
 
-## Apps
+## 应用详情
 
 ### dev-tool (`apps/dev-tool`)
 
-The developer's workspace. Powered by React Flow for the node canvas and Zustand for state management.
+开发者工作空间。基于 React Flow 构建节点画布，Zustand 管理状态。
 
-- Login/Register with JWT authentication
-- Drag nodes from the node palette onto the canvas
-- Wire nodes by connecting ports
-- Configure node parameters inline
-- Click **Preview** on any node to see its live output
-- **Publish** dialog: manually select which nodes are user-facing inputs, configure parameter visibility, export the workflow
-- **Version History**: Track workflow changes and rollback to previous versions
-- **Node Package Manager**: Import custom node packages from JSON
-- **Marketplace**: Browse and install shared node packages
+- JWT 认证登录/注册
+- 从节点面板拖拽到画布
+- 连接端口连线
+- 内联节点参数配置
+- 点击 **Preview** 查看实时输出
+- **Publish** 对话框：手动选择用户输入节点、配置参数可见性、导出工作流
+- **Version History**：追踪变更并回滚到之前版本
+- **Node Package Manager**：从 JSON 导入自定义节点包
+- **Marketplace**：浏览和安装共享节点包
 
 ### user-app (`apps/user-app`)
 
-The end-user runtime. Loads published workflows from the API server and runs them entirely client-side via `PublishedWorkflowExecutor`.
+终端用户运行时。从 API 服务器加载已发布工作流，通过 `PublishedWorkflowExecutor` 完全在客户端运行。
 
-- Browse published workflows
-- Fill inputs and adjust parameters
-- Run workflow and view results
-- Export result images
-
----
-
-## Server (`server/`)
-
-Backend API powered by Fastify + Prisma + SQLite with JWT authentication.
-
-| Script | Description |
-|--------|-------------|
-| `pnpm server:dev` | Start dev server with hot reload (port 3001) |
-| `pnpm server:migrate` | Migrate workflows from localStorage to API |
-
-### API Endpoints
-
-**Auth**
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login
-- `POST /api/auth/logout` - Logout
-- `POST /api/auth/refresh` - Refresh token
-- `GET /api/auth/me` - Get current user
-
-**Workflows**
-- `GET /api/workflows` - List user workflows
-- `POST /api/workflows` - Create workflow
-- `GET /api/workflows/:id` - Get workflow
-- `PUT /api/workflows/:id` - Update workflow
-- `DELETE /api/workflows/:id` - Delete workflow
-
-**Versions**
-- `GET /api/workflows/:id/versions` - List versions
-- `POST /api/workflows/:id/versions` - Create version
-- `GET /api/workflows/:id/versions/:vid` - Get version
-
-**Published**
-- `GET /api/published` - List published workflows
-- `GET /api/published/:id` - Get published workflow
-
-**Node Packages**
-- `GET /api/nodes` - List node packages
-- `POST /api/nodes` - Publish node package
-- `GET /api/nodes/:name` - Get node package
-
-See `server/README.md` for full API documentation.
+- 浏览已发布的工作流
+- 填写输入和调整参数
+- 运行工作流并查看结果
+- 导出结果图像
 
 ---
 
-## Packages
+## 后端服务 (`server/`)
 
-### `@prism/image-ops`
+基于 Fastify + Prisma + SQLite 的后端 API，JWT 认证。
 
-Pure image processing operations using the Canvas API. Every node type has a corresponding executor function here. Tested pixel-to-pixel with Vitest + `canvas` npm polyfill.
+| 脚本 | 描述 |
+|------|------|
+| `pnpm server:dev` | 启动开发服务器，热重载（端口 3001） |
+| `pnpm server:migrate` | 从 localStorage 迁移工作流到 API |
 
-### `@prism/workflow-core`
+### API 端点
 
-- **`WorkflowExecutor`**: topologically sorts nodes, resolves inputs from upstream outputs, runs each executor
-- **`PublishedWorkflowExecutor`**: bridges a `PublishedWorkflow` (developer-curated subset, index-keyed) back to a runnable `Workflow` and injects user-supplied inputs
-- **Cache**: LRU cache for decoded `ImageData` objects, keyed by source URL
+**认证**
+- `POST /api/auth/register` - 注册新用户
+- `POST /api/auth/login` - 登录
+- `POST /api/auth/logout` - 登出
+- `POST /api/auth/refresh` - 刷新 token
+- `GET /api/auth/me` - 获取当前用户
 
-### `@prism/node-definitions`
+**工作流**
+- `GET /api/workflows` - 列出用户工作流
+- `POST /api/workflows` - 创建工作流
+- `GET /api/workflows/:id` - 获取工作流
+- `PUT /api/workflows/:id` - 更新工作流
+- `DELETE /api/workflows/:id` - 删除工作流
 
-Type-safe node definitions: inputs, outputs, parameter schemas, UI metadata (category, color, icon).
+**版本**
+- `GET /api/workflows/:id/versions` - 列出版本
+- `POST /api/workflows/:id/versions` - 创建版本
+- `GET /api/workflows/:id/versions/:vid` - 获取版本
 
-### `@prism/shared-types`
+**已发布**
+- `GET /api/published` - 列出已发布的工作流
+- `GET /api/published/:id` - 获取已发布工作流
 
-All shared TypeScript interfaces: `Workflow`, `PublishedWorkflow`, `Connection`, executor types (`NodeExecutor`), executor output types (`LoadImageExecutorOutput`, `CompositeExecutorOutput`, ...).
+**节点包**
+- `GET /api/nodes` - 列出节点包
+- `POST /api/nodes` - 发布节点包
+- `GET /api/nodes/:name` - 获取节点包
 
-### `@prism/shared-ui`
-
-Design tokens (CSS variables) and shared UI components used across dev-tool and user-app.
-
-### `@prism/core`
-
-Inline executor utilities for custom node support.
+详细 API 文档见 `server/README.md`。
 
 ---
 
-## Key Concepts
+## 核心概念
 
 ### ImageRuntimeObject (IRO)
 
-The unified image data structure passed between executors:
+节点间传递的统一图像数据结构：
 
 ```typescript
 { data: ImageData | Blob; width: number; height: number; previewUrl: string; ... }
 ```
 
-### Execution Context
+### 执行上下文
 
-Each executor receives an `ExecutionContext` providing:
+每个执行器接收 `ExecutionContext`：
 
-- `requireInput(name, nodeType)` — reads upstream output; throws if missing
-- `setOutput(name, value)` — stores executor result
-- `signal` — `AbortSignal` for cancellation
+- `requireInput(name, nodeType)` — 读取上游输出；缺失则抛错
+- `setOutput(name, value)` — 存储执行结果
+- `signal` — `AbortSignal` 取消信号
 
-### Publishing Model
+### 发布模型
 
-`buildPublishedConfig` maps the React Flow canvas (node IDs, edges) to a portable `PublishedWorkflow` config:
+`buildPublishedConfig` 将 React Flow 画布（节点 ID、边）映射为可移植的 `PublishedWorkflow` 配置：
 
-- `nodeConfigs[nodeId]` — parameter values; large `dataUrl` strings are stripped for user-input nodes (users supply the URL at runtime)
-- `config.inputs` — manually selected nodes exposed to the end user
-- `config.outputs` — auto-detected leaf nodes (export/composite) with `{nodeId}:image` format IDs
-- `connections` — source → target wiring using node IDs
-
-### Test Strategy
-
-Tests live next to the code they test (`.test.ts`). The `canvas` npm package provides browser APIs (`ImageData`, `OffscreenCanvas`, `Image`) for Node.js. Each image operation test uses pixel-level assertions against known-good reference images.
+- `nodeConfigs[nodeId]` — 参数值；用户输入节点的大 `dataUrl` 字符串被剥离
+- `config.inputs` — 手动选择暴露给终端用户的节点
+- `config.outputs` — 自动检测的叶子节点（export/composite），格式为 `{nodeId}:image`
+- `connections` — 源 → 目标连线，使用节点 ID
 
 ---
 
-## Recent Changes
+## 目录结构
 
-See `git log` for full history. Highlights:
-
-- **IndexedDB Storage**: Replace localStorage with IndexedDB for better performance and larger storage capacity
-- **Custom Node Support**: Import and run custom node packages with inline executors
-- **User Authentication**: JWT-based auth system with register/login/logout flows
-- **Node Package Marketplace**: Share and browse custom node packages
-- **Workflow Versioning**: Track workflow changes with version history and rollback
-- **Backend storage migration**: Fastify API server with Prisma ORM + SQLite for workflow CRUD and publishing
-- **Codebase cleanup**: Removed deprecated features, unified shared components, optimized storage layer
+```
+prism-editor/
+├── apps/
+│   ├── dev-tool/          开发者工具（React Flow 节点画布）
+│   └── user-app/          终端用户运行时
+├── packages/
+│   ├── core/              自定义节点内联执行器
+│   ├── image-ops/         图像处理操作（Canvas API）
+│   ├── node-definitions/  节点类型定义
+│   ├── shared-types/      共享 TypeScript 类型
+│   ├── shared-ui/         设计系统和共享组件
+│   └── workflow-core/     工作流执行引擎
+├── server/                Fastify API + Prisma + SQLite
+├── openspec/              OpenSpec 变更管理
+│   └── changes/           变更提案、设计、任务
+│       └── archive/       已归档变更
+├── .cursor/               Cursor AI Agent Skill 系统
+│   ├── commands/         命令入口
+│   └── skills/           Skill 定义
+└── docs/                  文档
+```
 
 ---
 
-## License
+## 技术栈
 
-This project is licensed under the MIT License.
+| 层级 | 技术 |
+|------|------|
+| 框架 | React 18, React Flow, Zustand |
+| 样式 | Tailwind CSS, CSS Modules |
+| 构建 | Vite, Turborepo |
+| 后端 | Fastify, Prisma ORM |
+| 数据库 | SQLite |
+| 认证 | JWT |
+| 测试 | Vitest, canvas (Node.js polyfill) |
+| 语言 | TypeScript 5 |
+
+---
+
+## 最近更新
+
+查看 `git log` 获取完整历史。主要更新：
+
+- **IndexedDB 存储**：替换 localStorage，支持更大存储容量
+- **自定义节点支持**：导入和运行自定义节点包
+- **用户认证系统**：JWT 认证，注册/登录/登出流程
+- **节点包市场**：共享和浏览自定义节点包
+- **工作流版本控制**：版本历史追踪和回滚
+- **后端存储迁移**：Fastify API 服务器，Prisma ORM + SQLite
+- **代码库清理**：移除废弃功能，统一共享组件，优化存储层
+
+---
+
+## 许可证
+
+MIT License
 
 Copyright (c) 2024 Prism Editor
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.

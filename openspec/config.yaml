@@ -1,16 +1,5 @@
 schema: prism-workflow
-profile: custom
 
-workflows:
-  enabled:
-    - explore
-    - propose
-    - apply
-    - verify
-    - archive
-
-# Project context
-# This is shown to AI when creating artifacts.
 context: |
   Prism Editor 是一个 pnpm monorepo：
   - apps/dev-tool: 开发者 UI（React Flow 编辑器）
@@ -22,23 +11,83 @@ context: |
   - packages/shared-types: 共享类型定义
   - packages/shared-ui: 设计系统和共享组件
 
-  影响层判定规则：
-  - 修改 workflow-core/image-ops/node-definitions → engine
-  - 修改 dev-tool → editor
-  - 修改 user-app → runtime
-  - 修改 server/prisma → backend
-  - 修改 shared-ui → ui-skin
-  - 跨 app 改动 → 必须 architecture-review
-  - 涉及协议/数据迁移 → architecture-review + test-plan
-
-# Per-artifact rules
 rules:
+  # ===== 保留原有规则 =====
+  change_class:
+    low:
+      - 仅样式/文案/UI 布局，不影响逻辑
+      - 仅单 app 局部，不涉及接口
+    high:
+      - 触及 store / API contract / node schema
+      - 涉及跨包接口、数据迁移、序列化格式
+      - engine/core 层改动（任何 scope）
+    default: high
   proposal:
-    - 必须包含 impact map
-    - 必须标注影响层
+    - 必须包含 acceptance criteria
+    - 必须包含 change_class 和 reason 推断结论
   design:
-    - 影响 engine/backend/跨 app 时必须包含 Architecture Review 章节
+    - change_class = high 时自动插入 review checklist
   tasks:
-    - 必须包含 layer/type/risk 元数据
-    - engine/backend 层任务必须包含 test-plan 章节
-    - 按 layer 优先级执行：engine > backend > editor > runtime > ui-skin
+    - change_class = high 时自动触发独立测试章节
+    - change_class = low 时测试并入 tasks 验证命令
+
+  # ===== 新增：4 条分层规则 =====
+
+  # 规则 1：Task Anchor（上层 A 类 + 下层 B 类）
+  task_anchor:
+    description: "原始用户任务是唯一目标。约束/非目标只能收紧边界，不能替换任务主题。"
+    exploration_phase:
+      - 强制输出 Task Anchor 声明块
+      - 约束类追加内容写入当前任务 Scope，禁止建议新建 change
+      - 若任务主题改变，停止当前任务并告知用户
+    creation_phase:
+      - 强制输出 Task Anchor Echo
+      - change name 必须与原始任务主题一致，不一致则硬关卡阻断
+
+  # 规则 2：Code Mutation Gate（下层 B 类硬关卡）
+  mutation_gate:
+    description: "所有代码变更只能发生在 /opsx-apply。"
+    allowed_phase:
+      apply: [create, edit, delete]
+    forbidden_phases:
+      explore: [create, edit, delete]
+      propose: [create, edit, delete]
+      plan: [create, edit, delete]
+      verify: [create, edit, delete]
+      archive: [create, edit, delete]
+    enforcement:
+      - 一旦越权，立即停止并报告
+      - 记录越权内容，询问用户是否切换到 apply
+
+  # 规则 3：Failure Halt（下层 B 类硬关卡）
+  failure_handling:
+    description: "CLI / schema / config 失败时，必须停止流程推进。"
+    fail_fast_on:
+      - CLI 命令返回非零退出码
+      - schema 缺失或解析失败
+      - 所需模板/文件缺失
+      - command 执行异常
+    enforcement:
+      - 失败时立即停止，不得手动伪造 artifacts
+      - 不得尝试重建 schema 或自行创建 change 目录
+      - 必须切换到 /opsx-debug 或请求用户确认
+
+  # 规则 4：Test Failure Attribution（A+B 混合）
+  test_failure_attribution:
+    description: "测试失败时，必须先完成归因声明，声明不成立再硬停。"
+    phases:
+      apply:
+        - 强制输出归因分析表
+        - 存在 related/undetermined 时硬关卡阻断
+      verify:
+        - 重新确认归因状态
+        - 存在 undetermined 时禁止给出"可以 archive"结论
+    attribution_levels:
+      related: "在本次改动覆盖范围内，必须修复"
+      unrelated_proven: "能用 git diff 证明无关，记录并继续"
+      flaky_proven: "已知 flaky，记录并继续"
+      undetermined: "无法明确证明无关，硬关卡阻断"
+    enforcement:
+      - 必须输出归因声明（含证据）
+      - 禁止未归因就自行判断"无关"并继续
+      - undetermined 必须切换到 /opsx-debug

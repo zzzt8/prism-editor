@@ -1,11 +1,27 @@
 ---
 name: openspec-archive
-description: 归档已完成的 OpenSpec change。直接调用官方 CLI，增加 git 干净度和最终检查清单。
+description: 归档已完成的 OpenSpec change。直接调用官方 CLI，增加 git 干净度和最终确认。
+version: "3.0"
+category: archive
+tags:
+  - openspec
+  - layer:meta
+aliases:
+  - /opsx-archive
+depends_on:
+  - openspec-verify
+permissions: []
+risks: []
+verify:
+  - typecheck
 ---
 
 ## 核心职责
 
-- 检查完成状态
+> **v3.0 变更：** Archive 只做收尾动作，不再重复 verify 的检查（已由 verify 阶段完成）。
+> 状态以 tasks.md checkbox 为主。
+
+- 确认用户已确认（最后一次人工检查点）
 - 检查 git 工作区干净度
 - 调用官方 CLI
 - 显示归档摘要
@@ -14,78 +30,66 @@ description: 归档已完成的 OpenSpec change。直接调用官方 CLI，增�
 
 ### 1. 检查完成状态
 
-```bash
-openspec status --change "<name>" --json
-```
-
-- 检查 artifacts 是否全部完成
-- 检查 tasks 是否全部勾选（`- [x]` 或 `status: done`）
+读取 `tasks.md`，确认所有 checkbox 为 `- [x]`（done）。
 
 ### 2. Git 工作区检查
 
+> **v3.0 变更：** 区分 tracked 和 untracked 文件。
+
 ```bash
-git status
+# 检查 change 目录的 git 状态
+git status --porcelain
+
+# 区分检查
+git diff --cached --name-only  # 应该有内容（已 staged）
+git diff --name-only          # 应该为空（或者用户确认只做 staged commit）
 ```
 
-- 如果有未提交的代码 → **警告并阻断**，先 commit 再归档
-- 如果只有 untracked 文件（如 `node_modules/.cache/` 等生成物）→ 可忽略
-- 如果有 untracked 的敏感文件（如 `.env`、`*.db`）→ 警告但不阻断
+**检查规则：**
 
-**为什么要检查 git：**
-归档的 change 应该对应一个完整的 git commit，避免归档内容和代码库历史脱节。
+| 情况 | 处理 |
+|------|------|
+| 有未 staged 的 tracked 文件 | **警告并阻断**，先 commit 再归档 |
+| 有 untracked 的敏感文件（.env, *.db） | **警告**但不阻断 |
+| 有 untracked 的生成物（node_modules/.cache/） | 忽略 |
 
-### 3. 最终检查清单
+### 3. 用户最终确认
 
-在调用 CLI 之前，逐项确认：
+> **v3.0 变更：** 移除对 tasks-state.json 的引用，改为读 checkbox。
 
 ```
-最终检查清单 — <change-name>
-│
-├─ [ ] Completeness：tasks.md 所有 task 都是 - [x] 或 status: done
-├─ [ ] Completeness：architecture-review 章节已填写（当需要时）
-├─ [ ] Completeness：test-plan 章节已填写（当需要时）
-├─ [ ] Correctness：相关 layer 的测试全部通过（见 SHARED-LAYERS.md 增量验证策略）
-├─ [ ] Coherence：design.md 的每个技术决策都有对应实现
-├─ [ ] Git：工作区干净，无未提交的代码（git status 干净）
-├─ [ ] No Secrets：没有 .env 或凭据混入 change
-└─ [ ] User Confirm：用户确认上述检查结果
+## Archive 最终确认 — <change-name>
+
+tasks.md checkbox 确认：所有 task 为 - [x]（done）
+Git 工作区：干净（已 commit）
+
+请确认：
+- [ ] 所有代码改动已 commit
+- [ ] verify 阶段已通过
+- [ ] 没有需要保留的未提交改动
+
+输入 "archive" 完成归档，或输入 "cancel" 取消。
 ```
 
-如有任意项未通过：
-- 显示 `❌ 未通过的检查项`
-- 列出具体问题
-- 询问用户是继续修复还是强制归档（用户需明确确认）
-
-### 4. 提示确认（如有未完成任务）
-
-如果有未完成任务：
-- 显示警告
-- 等待用户确认是否继续归档
-
-### 5. 调用官方 CLI
+### 4. 调用官方 CLI
 
 ```bash
 openspec archive --change <name> --yes
 ```
 
-官方 archive 命令会：
-- 验证所有 artifacts 完成
-- 合并 delta specs（如有）
-- 移动到 archive 目录
-
-### 6. 显示摘要
+### 5. 显示摘要
 
 - 归档位置
 - spec 同步状态
-- git commit 对应（如有）
+- git commit 对应
 - 警告信息（如有）
 
 ## Guardrails
 
 - **禁止**手搓 `mkdir` + `mv` 命令
 - **强制**使用官方 `openspec archive` 命令
-- **必须**在归档前检查任务完成状态
-- **必须**在归档前检查 git 工作区（未提交的代码应先 commit）
-- **必须**逐项执行最终检查清单
-- **必须**处理未完成任务警告
+- **强制**在归档前检查 git 工作区
 - **强制**无 git commit 时提示用户先 commit 再归档
+- **强制**在归档前调用 verify（由 depends_on 保证）
+- **禁止**在 archive 中重复 verify 的检查（职责分离）
+- **强制**状态检查以 tasks.md checkbox 为准（不是 tasks-state.json）
