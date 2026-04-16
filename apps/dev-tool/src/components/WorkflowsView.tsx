@@ -3,9 +3,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box, Search, ChevronDown, List, LayoutGrid, Plus,
-  Layers, MoreHorizontal, Trash2, FolderOpen, Info, X, AlertCircle,
+  Layers, MoreHorizontal, Trash2, FolderOpen, Info, X, AlertCircle, FileText,
 } from 'lucide-react';
 import type { WorkflowMeta } from '@prism/shared-types';
+import { TemplateManager } from './TemplateManager';
 import { indexedDBStorageAdapter } from '../storage';
 import { useAppStore } from '../store/appStore';
 import { useCanvasStore } from '../store/canvasStore';
@@ -80,6 +81,7 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
   const [deleteTarget, setDeleteTarget] = useState<WorkflowMeta | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [showTemplateManager, setShowTemplateManager] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -200,6 +202,10 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
         </div>
         <div className="home-header-actions">
           <button className="home-import-btn" onClick={() => fileInputRef.current?.click()}>Import</button>
+          <button className="home-import-btn" onClick={() => setShowTemplateManager(true)}>
+            <FileText size={14} />
+            模板管理
+          </button>
           <input ref={fileInputRef} type="file" accept=".json" style={fileInputStyle} onChange={handleImport} />
           <button className="home-new-btn" onClick={onNewWorkflow}>
             <Plus size={16} />
@@ -468,6 +474,10 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
           onConfirm={handleDelete}
           onCancel={() => setDeleteTarget(null)}
         />
+      )}
+
+      {showTemplateManager && (
+        <TemplateManager onClose={() => setShowTemplateManager(false)} />
       )}
     </div>
   );
