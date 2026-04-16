@@ -13,6 +13,7 @@
 
 import React, { type FC, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
+import { useOnSelectionChange } from '@xyflow/react';
 import {
   Copy, Scissors, Clipboard, Pin, PinOff, FastForward, Minimize2, Maximize2,
   Trash2, Info, BookmarkPlus,
@@ -45,8 +46,14 @@ export const NodeContextMenu: FC<NodeContextMenuProps> = ({
   const [snippetName, setSnippetName] = useState('');
   const [snippetDesc, setSnippetDesc] = useState('');
 
+  // Track live selection directly from React Flow to avoid store sync lag
+  const [liveSelectedIds, setLiveSelectedIds] = useState<string[]>([]);
+  useOnSelectionChange({
+    onChange: ({ nodes }) => setLiveSelectedIds(nodes.map((n) => n.id)),
+  });
+
   const node = useCanvasStore((s) => s.nodes.find((n) => n.id === nodeId));
-  const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
+  const storeSelectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
   const updateNodeData = useCanvasStore((s) => s.updateNodeData);
   const copyNodes = useCanvasStore((s) => s.copyNodes);
   const cutNodes = useCanvasStore((s) => s.cutNodes);
@@ -84,10 +91,14 @@ export const NodeContextMenu: FC<NodeContextMenuProps> = ({
   const adjustedX = Math.min(x, window.innerWidth - 200);
   const adjustedY = Math.min(y, window.innerHeight - 400);
 
-  // Collect all selected node IDs (include the right-clicked node too)
-  const allSelectedIds = selectedNodeIds.includes(nodeId)
-    ? selectedNodeIds
-    : [...selectedNodeIds, nodeId];
+  // Use live selection from React Flow to include newly-selected nodes in multi-select
+  const allSelectedIds = liveSelectedIds.includes(nodeId)
+    ? liveSelectedIds
+    : liveSelectedIds.length > 0
+    ? liveSelectedIds
+    : storeSelectedNodeIds.includes(nodeId)
+    ? storeSelectedNodeIds
+    : [...storeSelectedNodeIds, nodeId];
 
   const handleSaveSnippet = async () => {
     if (!snippetName.trim()) return;
