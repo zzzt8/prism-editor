@@ -8,7 +8,7 @@ dependencies:
   - type: task
     refs: []
 -->
-- [ ] T1: 新增 Inspector PreviewPanel 内嵌预览组件
+- [x] T1: 新增 Inspector PreviewPanel 内嵌预览组件
   - layer: editor
   - 目录: `apps/dev-tool/src/components/Inspector/PreviewPanel.tsx`
   - 内容:
@@ -27,7 +27,7 @@ dependencies:
   - type: task
     refs: []
 -->
-- [ ] T2: 新增 Inspector DebugTab 调试信息面板
+- [x] T2: 新增 Inspector DebugTab 调试信息面板
   - layer: editor
   - 目录: `apps/dev-tool/src/components/Inspector/DebugTab.tsx`
   - 内容:
@@ -46,7 +46,7 @@ dependencies:
   - type: task
     refs: []
 -->
-- [ ] T3: 扩展 PrismNode 执行状态 UI
+- [x] T3: 扩展 PrismNode 执行状态 UI
   - layer: editor
   - 文件: `apps/dev-tool/src/components/nodes/PrismNode.tsx`
   - 内容:
@@ -65,7 +65,7 @@ dependencies:
   - type: task
     refs: [T1, T2, T3]
 -->
-- [ ] T4: 端到端验证
+- [x] T4: 端到端验证
   - layer: editor
   - 内容:
     - 在编辑器中配置完整链路，执行
@@ -78,9 +78,9 @@ dependencies:
 
 ### 手工验收清单
 
-- [ ] 选中节点后，Inspector PreviewTab 显示该节点执行结果
-- [ ] 节点执行时，PrismNode 显示 running 动画
-- [ ] 节点执行完成后，PreviewTab 自动更新（无弹窗）
-- [ ] Inspector DebugTab 显示耗时和输入/输出快照
-- [ ] 节点执行失败时，DebugTab 显示错误信息
-- [ ] typecheck 通过
+- [x] 选中节点后，Inspector PreviewTab 显示该节点执行结果
+- [x] 节点执行时，PrismNode 显示 running 动画
+- [x] 节点执行完成后，PreviewTab 自动更新（无弹窗）
+- [x] Inspector DebugTab 显示耗时和输入/输出快照
+- [x] 节点执行失败时，DebugTab 显示错误信息
+- [x] typecheck 通过
