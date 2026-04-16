@@ -2,6 +2,7 @@
 
 import type { Workflow, WorkflowMeta, PublishedWorkflow } from '@prism/shared-types';
 import type { Template, TemplateSummary } from '@prism/shared-types';
+import type { SnippetFragment, SnippetSummary } from '@prism/shared-types';
 
 export interface PublishedWorkflowMeta {
   sourceId: string;
@@ -49,4 +50,11 @@ export interface ITemplateRepository {
   save(template: Template): Promise<void>;
   delete(id: string): Promise<void>;
   exists(id: string): Promise<boolean>;
+}
+
+export interface ISnippetRepository {
+  list(): Promise<SnippetSummary[]>;
+  get(id: string): Promise<SnippetFragment>;
+  save(fragment: SnippetFragment): Promise<string>;
+  delete(id: string): Promise<void>;
 }
