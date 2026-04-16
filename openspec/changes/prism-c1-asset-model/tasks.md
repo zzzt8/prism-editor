@@ -25,7 +25,7 @@ dependencies:
   - type: task
     refs: [T1]
 -->
-- [ ] T2: 在 shared-types index.ts 中导出 Template
+- [x] T2: 在 shared-types index.ts 中导出 Template
   - layer: engine
   - 文件: `packages/shared-types/src/index.ts`
 
@@ -37,7 +37,7 @@ dependencies:
   - type: task
     refs: [T1, T2]
 -->
-- [ ] T3: 实现 ITemplateRepository 接口与 TemplateRepository
+- [x] T3: 实现 ITemplateRepository 接口与 TemplateRepository
   - layer: editor
   - 文件: `apps/dev-tool/src/modules/repositories/templateRepository.ts`
   - 内容:

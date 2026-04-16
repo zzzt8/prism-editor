@@ -4,9 +4,11 @@
 export { WorkflowRepository } from './workflowRepository';
 export { VersionRepository } from './versionRepository';
 export { PublishRepository } from './publishRepository';
+export { TemplateRepository } from './templateRepository';
 
 export type {
   IWorkflowRepository,
   IVersionRepository,
   IPublishRepository,
+  ITemplateRepository,
 } from './interfaces';
