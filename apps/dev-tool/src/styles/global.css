@@ -248,6 +248,77 @@ body {
   margin-bottom: 2px;
 }
 
+.dialog-error {
+  font-size: 12px;
+  color: #ef4444;
+  padding: 6px 10px;
+  background: rgba(239, 68, 68, 0.08);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.dialog-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 4px 0;
+}
+
+.dialog-info-label {
+  font-weight: 500;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.dialog-info-value {
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.save-type-options {
+  display: flex;
+  gap: 8px;
+}
+
+.save-type-option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.save-type-option input {
+  display: none;
+}
+
+.save-type-option--active {
+  border-color: var(--accent);
+  background: rgba(168, 85, 247, 0.06);
+}
+
+.save-type-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.save-type-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.field-required {
+  color: #ef4444;
+  margin-left: 2px;
+}
+
 .dialog-input {
   width: 100%;
   background: var(--bg-elevated);
