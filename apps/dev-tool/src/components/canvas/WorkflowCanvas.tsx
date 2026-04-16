@@ -21,6 +21,7 @@ import {
   type NodeChange,
   type EdgeChange,
 } from '@xyflow/react';
+import type { SnippetSummary } from '@prism/shared-types';
 import '@xyflow/react/dist/style.css';
 import { useCanvasStore, type ConnectionValidation, type CanvasNode, type CanvasEdge } from '../../store/canvasStore';
 import { PrismNode } from '../nodes/PrismNode';
@@ -81,9 +82,15 @@ export const WorkflowCanvas: React.FC = () => {
   const groups = useCanvasStore((s) => s.groups);
   const contextMenu = useCanvasStore((s) => s.contextMenu);
   const setContextMenu = useCanvasStore((s) => s.setContextMenu);
+  const snippetListStore = useCanvasStore((s) => s.snippetList);
+  const insertSnippet = useCanvasStore((s) => s.insertSnippet);
 
   const [validationError, setValidationError] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [paneMenuOpen, setPaneMenuOpen] = useState(false);
+  const [paneMenuPos, setPaneMenuPos] = useState({ x: 0, y: 0 });
+  const [paneMenuFlowPos, setPaneMenuFlowPos] = useState({ x: 0, y: 0 });
+  const [snippetList, setSnippetList] = useState<SnippetSummary[]>([]);
   const validationErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Apply focused hooks
@@ -165,6 +172,7 @@ export const WorkflowCanvas: React.FC = () => {
     () => {
       clearSelection();
       setContextMenu(null);
+      setPaneMenuOpen(false);
     },
     [clearSelection, setContextMenu]
   );
@@ -176,6 +184,29 @@ export const WorkflowCanvas: React.FC = () => {
       setContextMenu({ x: event.clientX, y: event.clientY, nodeId: _node.id });
     },
     [setContextMenu]
+  );
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handlePaneContextMenu: (event: any) => void = useCallback(
+    (event) => {
+      event.preventDefault();
+      const screenX = event.clientX;
+      const screenY = event.clientY;
+      const flowPos = reactFlowInstance.screenToFlowPosition({ x: screenX, y: screenY });
+      setPaneMenuPos({ x: screenX, y: screenY });
+      setPaneMenuFlowPos(flowPos);
+      setPaneMenuOpen(true);
+      snippetListStore().then((list) => setSnippetList(list));
+    },
+    [reactFlowInstance, snippetListStore]
+  );
+
+  const handleInsertSnippet = useCallback(
+    async (snippetId: string) => {
+      await insertSnippet(snippetId, paneMenuFlowPos);
+      setPaneMenuOpen(false);
+    },
+    [insertSnippet, paneMenuFlowPos]
   );
 
   // Double-click on canvas pane to open node search
@@ -219,6 +250,7 @@ export const WorkflowCanvas: React.FC = () => {
         onDrop={handleDrop}
         onNodeClick={handleNodeClick}
         onNodeContextMenu={handleNodeContextMenu}
+        onPaneContextMenu={handlePaneContextMenu}
         onPaneClick={handlePaneClick}
         onNodeDoubleClick={() => setSearchOpen(true)}
         zoomOnDoubleClick={false}
@@ -303,6 +335,41 @@ export const WorkflowCanvas: React.FC = () => {
           nodeId={contextMenu.nodeId}
           onClose={() => setContextMenu(null)}
         />
+      )}
+
+      {/* Pane context menu — Insert Snippet submenu */}
+      {paneMenuOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            left: Math.min(paneMenuPos.x, window.innerWidth - 200),
+            top: Math.min(paneMenuPos.y, window.innerHeight - 320),
+            zIndex: 9998,
+          }}
+          className="dcn-context-menu"
+        >
+          <div style={{ padding: '6px 12px', borderBottom: '1px solid #3f3f46', fontSize: 12, color: '#9ca3af' }}>
+            插入片段
+          </div>
+          {snippetList.length === 0 ? (
+            <div style={{ padding: '8px 12px', fontSize: 12, color: '#6b7280' }}>
+              暂无片段
+            </div>
+          ) : (
+            snippetList.map((s) => (
+              <button
+                key={s.id}
+                className="dcn-context-menu-item"
+                onClick={() => handleInsertSnippet(s.id)}
+              >
+                <span style={{ flex: 1, fontSize: 13 }}>{s.name}</span>
+                <span style={{ fontSize: 11, color: '#6b7280', marginLeft: 8 }}>
+                  {s.nodeCount} 节点
+                </span>
+              </button>
+            ))
+          )}
+        </div>
       )}
     </div>
     </CanvasErrorBoundary>

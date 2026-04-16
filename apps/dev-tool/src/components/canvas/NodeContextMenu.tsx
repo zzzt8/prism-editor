@@ -11,9 +11,12 @@
 // - Minimize / Expand
 // - Node Info (open Inspector Info tab)
 
-import React, { type FC, useEffect, useRef, type ReactNode } from 'react';
+import React, { type FC, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
-import { Copy, Scissors, Clipboard, Pin, PinOff, FastForward, Minimize2, Maximize2, Trash2, Info } from 'lucide-react';
+import {
+  Copy, Scissors, Clipboard, Pin, PinOff, FastForward, Minimize2, Maximize2,
+  Trash2, Info, BookmarkPlus,
+} from 'lucide-react';
 
 interface MenuItem {
   label: string;
@@ -38,8 +41,12 @@ export const NodeContextMenu: FC<NodeContextMenuProps> = ({
   onClose,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [snippetName, setSnippetName] = useState('');
+  const [snippetDesc, setSnippetDesc] = useState('');
 
   const node = useCanvasStore((s) => s.nodes.find((n) => n.id === nodeId));
+  const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
   const updateNodeData = useCanvasStore((s) => s.updateNodeData);
   const copyNodes = useCanvasStore((s) => s.copyNodes);
   const cutNodes = useCanvasStore((s) => s.cutNodes);
@@ -47,6 +54,7 @@ export const NodeContextMenu: FC<NodeContextMenuProps> = ({
   const clipboard = useCanvasStore((s) => s.clipboard);
   const pasteNodes = useCanvasStore((s) => s.pasteNodes);
   const openInspector = useCanvasStore((s) => s.openInspector);
+  const snippetSave = useCanvasStore((s) => s.snippetSave);
 
   // Close on click outside or Escape
   useEffect(() => {
@@ -76,6 +84,20 @@ export const NodeContextMenu: FC<NodeContextMenuProps> = ({
   const adjustedX = Math.min(x, window.innerWidth - 200);
   const adjustedY = Math.min(y, window.innerHeight - 400);
 
+  // Collect all selected node IDs (include the right-clicked node too)
+  const allSelectedIds = selectedNodeIds.includes(nodeId)
+    ? selectedNodeIds
+    : [...selectedNodeIds, nodeId];
+
+  const handleSaveSnippet = async () => {
+    if (!snippetName.trim()) return;
+    await snippetSave(snippetName.trim(), snippetDesc, allSelectedIds);
+    setSaveDialogOpen(false);
+    setSnippetName('');
+    setSnippetDesc('');
+    onClose();
+  };
+
   const menuItems: MenuItem[] = [
     {
       label: '复制',
@@ -95,6 +117,12 @@ export const NodeContextMenu: FC<NodeContextMenuProps> = ({
       shortcut: 'Ctrl+V',
       disabled: !clipboard || clipboard.length === 0,
       action: () => { pasteNodes({ x, y }); onClose(); },
+    },
+    { label: '', icon: null, action: () => {}, disabled: true }, // separator
+    {
+      label: '保存为片段',
+      icon: <BookmarkPlus size={14} />,
+      action: () => { setSaveDialogOpen(true); },
     },
     { label: '', icon: null, action: () => {}, disabled: true }, // separator
     {
@@ -172,6 +200,89 @@ export const NodeContextMenu: FC<NodeContextMenuProps> = ({
             )}
           </button>
         )
+      )}
+      {/* Save as Snippet Dialog */}
+      {saveDialogOpen && (
+        <div
+          className="delete-confirm-overlay"
+          onClick={() => setSaveDialogOpen(false)}
+        >
+          <div
+            className="delete-confirm"
+            style={{ minWidth: 300 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+              <BookmarkPlus size={18} />
+              <h3 style={{ margin: 0, fontSize: 15 }}>保存为片段</h3>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div>
+                <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 4 }}>
+                  片段名称
+                </label>
+                <input
+                  autoFocus
+                  value={snippetName}
+                  onChange={(e) => setSnippetName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSaveSnippet();
+                    }
+                  }}
+                  style={{
+                    width: '100%', boxSizing: 'border-box',
+                    background: '#1a1a2e', border: '1px solid #3f3f46',
+                    color: '#f4f4f5', borderRadius: 6, padding: '6px 10px',
+                    fontSize: 13,
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 4 }}>
+                  描述（可选）
+                </label>
+                <textarea
+                  value={snippetDesc}
+                  onChange={(e) => setSnippetDesc(e.target.value)}
+                  rows={2}
+                  style={{
+                    width: '100%', boxSizing: 'border-box',
+                    background: '#1a1a2e', border: '1px solid #3f3f46',
+                    color: '#f4f4f5', borderRadius: 6, padding: '6px 10px',
+                    fontSize: 13, resize: 'none',
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
+                <button
+                  onClick={() => setSaveDialogOpen(false)}
+                  style={{
+                    background: 'transparent', border: '1px solid #3f3f46',
+                    color: '#9ca3af', borderRadius: 6, padding: '6px 16px',
+                    cursor: 'pointer', fontSize: 13,
+                  }}
+                >
+                  取消
+                </button>
+                <button
+                  disabled={!snippetName.trim()}
+                  onClick={handleSaveSnippet}
+                  style={{
+                    background: snippetName.trim() ? '#6366f1' : '#3f3f46',
+                    border: 'none',
+                    color: '#fff', borderRadius: 6, padding: '6px 16px',
+                    cursor: snippetName.trim() ? 'pointer' : 'not-allowed',
+                    fontSize: 13,
+                  }}
+                >
+                  保存
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
