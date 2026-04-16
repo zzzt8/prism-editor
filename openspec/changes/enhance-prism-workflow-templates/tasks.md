@@ -35,6 +35,7 @@
 ## 任务列表
 
 <!-- opsx-meta
+id: T1
 layer: meta
 risk: high
 verify:
@@ -45,6 +46,7 @@ verify:
   - **验收标准**：移除冗余注释，保留章节骨架
 
 <!-- opsx-meta
+id: T2
 layer: meta
 risk: medium
 verify:
