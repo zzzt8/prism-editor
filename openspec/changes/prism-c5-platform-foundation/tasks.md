@@ -73,7 +73,7 @@ dependencies:
   - type: task
     refs: [T1]
 -->
-- [ ] T5.1: 在 executionSlice 中埋入日志记录点
+- [x] T5.1: 在 executionSlice 中埋入日志记录点
   - layer: editor
   - 文件: `apps/dev-tool/src/modules/editor/stores/executionSlice.ts`
   - 内容:

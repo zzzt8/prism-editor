@@ -165,6 +165,7 @@ interface CanvasState {
   _executionStatus: ExecutionStatus;
   _currentNodeId: string | null;
   _executionAbort: (() => void) | null;
+  _executionLog: import('@prism/shared-types').ExecutionLog | null;
   _executionLogs: ExecutionLog[];
 
   // ── Graph operations ────────────────────────────────────────────────────────
@@ -284,6 +285,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   _executionStatus: 'idle',
   _currentNodeId: null,
   _executionAbort: null,
+  _executionLog: null,
   _executionLogs: [],
 
   // ── Graph operations ────────────────────────────────────────────────────────
@@ -737,6 +739,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       _executionStatus: 'idle',
       _currentNodeId: null,
       _executionAbort: null,
+      _executionLog: null,
       _executionLogs: [],
     });
   },
@@ -846,6 +849,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       isDraggingFromPanel: false,
       _executionStatus: 'idle',
       _currentNodeId: null,
+      _executionAbort: null,
+      _executionLog: null,
       _executionLogs: [],
     });
   },
@@ -914,6 +919,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       isDraggingFromPanel: false,
       _executionStatus: 'idle',
       _currentNodeId: null,
+      _executionAbort: null,
+      _executionLog: null,
       _executionLogs: [],
     });
   },
@@ -1176,6 +1183,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       })),
       _executionStatus: 'idle' as const,
       _currentNodeId: null,
+      _executionAbort: null,
+      _executionLog: null,
       _executionLogs: [],
     }));
   },
