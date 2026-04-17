@@ -8,7 +8,7 @@ dependencies:
   - type: task
     refs: []
 -->
-- [ ] T1.1: 定义 ExecutionLog 类型
+- [x] T1.1: 定义 ExecutionLog 类型
   - layer: engine
   - 文件: `packages/shared-types/src/execution-log.ts`
   - 内容:
