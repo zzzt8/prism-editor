@@ -14,3 +14,6 @@ export * from './node-package';
 export * from './editor-draft';
 export * from './template';
 export * from './snippet';
+export * from './execution-log';
+export * from './auth';
+export * from './runtime-protocol';
