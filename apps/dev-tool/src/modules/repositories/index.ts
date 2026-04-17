@@ -5,6 +5,7 @@ export { WorkflowRepository } from './workflowRepository';
 export { VersionRepository } from './versionRepository';
 export { PublishRepository } from './publishRepository';
 export { TemplateRepository } from './templateRepository';
+export { TemplateVersionRepository } from './templateVersionRepository';
 export { SnippetRepository } from './snippetRepository';
 
 export type {
@@ -12,5 +13,7 @@ export type {
   IVersionRepository,
   IPublishRepository,
   ITemplateRepository,
+  ITemplateVersionRepository,
+  TemplateVersion,
   ISnippetRepository,
 } from './interfaces';

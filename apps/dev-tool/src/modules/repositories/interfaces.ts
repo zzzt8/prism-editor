@@ -52,6 +52,20 @@ export interface ITemplateRepository {
   exists(id: string): Promise<boolean>;
 }
 
+export interface TemplateVersion {
+  id: string;
+  version: string;
+  createdBy: string | null;
+  createdAt: string;
+}
+
+export interface ITemplateVersionRepository {
+  list(templateId: string): Promise<TemplateVersion[]>;
+  get(templateId: string, versionId: string): Promise<Template>;
+  create(templateId: string, content: Template): Promise<TemplateVersion>;
+  rollback(templateId: string, versionId: string): Promise<Template>;
+}
+
 export interface ISnippetRepository {
   list(): Promise<SnippetSummary[]>;
   get(id: string): Promise<SnippetFragment>;
