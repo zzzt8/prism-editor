@@ -25,7 +25,7 @@ dependencies:
   - type: task
     refs: []
 -->
-- [ ] T2.1: 定义 Auth 权限模型类型
+- [x] T2.1: 定义 Auth 权限模型类型
   - layer: engine
   - 文件: `packages/shared-types/src/auth.ts`
   - 内容:
@@ -43,7 +43,7 @@ dependencies:
   - type: task
     refs: []
 -->
-- [ ] T3.1: 定义 RuntimeProtocol 类型
+- [x] T3.1: 定义 RuntimeProtocol 类型
   - layer: engine
   - 文件: `packages/shared-types/src/runtime-protocol.ts`
   - 内容:
@@ -60,7 +60,7 @@ dependencies:
   - type: task
     refs: [T1]
 -->
-- [ ] T4.1: 在 shared-types index.ts 中导出新类型
+- [x] T4.1: 在 shared-types index.ts 中导出新类型
   - layer: engine
   - 文件: `packages/shared-types/src/index.ts`
   - 内容: 导出 execution-log, auth, runtime-protocol
