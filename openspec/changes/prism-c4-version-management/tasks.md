@@ -8,7 +8,7 @@ dependencies:
   - type: task
     refs: []
 -->
-- [ ] T1: 实现 TemplateVersionRepository
+- [x] T1: 实现 TemplateVersionRepository
   - layer: editor
   - 文件: `apps/dev-tool/src/modules/repositories/templateVersionRepository.ts`
   - 内容:
@@ -25,7 +25,7 @@ dependencies:
   - type: task
     refs: [T1]
 -->
-- [ ] T2: 新增 TemplateCenter UI 组件
+- [x] T2: 新增 TemplateCenter UI 组件
   - layer: editor
   - 目录: `apps/dev-tool/src/components/TemplateCenter/`
   - 文件:
@@ -43,7 +43,7 @@ dependencies:
   - type: task
     refs: [T1, T2]
 -->
-- [ ] T3: 新增模板版本历史面板
+- [x] T3: 新增模板版本历史面板
   - layer: editor
   - 文件: `apps/dev-tool/src/components/TemplateCenter/TemplateVersionHistory.tsx`
   - 内容:
@@ -60,7 +60,7 @@ dependencies:
   - type: task
     refs: [T3]
 -->
-- [ ] T4: 端到端验证
+- [x] T4: 端到端验证
   - layer: editor
   - 内容:
     - 保存模板（多次）→ 打开版本历史 → 对比两个版本 → 回滚到旧版本
@@ -71,9 +71,9 @@ dependencies:
 
 ### 手工验收清单
 
-- [ ] TemplateCenter 首页 Tab 可正常加载
-- [ ] 模板列表显示正确（包含分类/标签）
-- [ ] 标签筛选功能正常
-- [ ] 模板版本历史显示版本列表
-- [ ] 模板版本回滚成功
-- [ ] typecheck 通过
+- [x] TemplateCenter 首页 Tab 可正常加载
+- [x] 模板列表显示正确（包含分类/标签）
+- [x] 标签筛选功能正常
+- [x] 模板版本历史显示版本列表
+- [x] 模板版本回滚成功
+- [x] typecheck 通过
