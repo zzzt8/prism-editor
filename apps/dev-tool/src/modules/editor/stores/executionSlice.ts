@@ -8,6 +8,8 @@ export interface ExecutionSlice {
   _executionStatus: ExecutionStatus;
   _currentNodeId: string | null;
   _executionAbort: (() => void) | null;
+  /** In-memory execution log (C5: execution-log pre-fill) */
+  _executionLog: import('@prism/shared-types').ExecutionLog | null;
 
   // Operations
   startExecution: () => void;
@@ -24,12 +26,25 @@ export function createExecutionSlice(): Pick<ExecutionSlice, keyof ExecutionSlic
     _executionStatus: 'idle' as ExecutionStatus,
     _currentNodeId: null,
     _executionAbort: null,
+    _executionLog: null,
 
     // Operations
     startExecution() {
+      const runId = `run_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      const log = {
+        runId,
+        workflowId: '' as string,
+        inputs: {} as Record<string, unknown>,
+        outputs: {} as Record<string, unknown>,
+        status: 'started' as const,
+        startedAt: Date.now(),
+        nodeTimings: [] as import('@prism/shared-types').NodeTiming[],
+        errors: [] as import('@prism/shared-types').ExecutionError[],
+      };
       return {
         _executionStatus: 'running' as ExecutionStatus,
         _currentNodeId: null,
+        _executionLog: log,
       };
     },
 
