@@ -17,6 +17,7 @@ import type { SnippetFragment, SnippetSummary } from '@prism/shared-types';
 import { globalRegistry } from '@prism/core';
 import { PORT_TYPE_COLORS } from '../../../utils/portTypeStyles';
 import type { ContextMenuState } from './selectionSlice';
+import type { ExecutionLog, NodeTiming } from '@prism/shared-types';
 import { autosaveService, initAutosaveService, getAutosaveService } from '../services/autosaveService';
 import { executionService, getExecutionService } from '../services/executionService';
 import { indexedDBStorageAdapter } from '../../../storage';
@@ -80,6 +81,10 @@ function createEdgeId(): string {
 }
 
 const PASTE_OFFSET = 40;
+
+// Module-level execution log state
+let _currentLog: import('@prism/shared-types').ExecutionLog | null = null;
+const _nodeStartTimes = new Map<string, number>();
 
 /**
  * Remaps node IDs and positions for snippet insertion or clipboard paste.
@@ -160,6 +165,7 @@ interface CanvasState {
   _executionStatus: ExecutionStatus;
   _currentNodeId: string | null;
   _executionAbort: (() => void) | null;
+  _executionLogs: ExecutionLog[];
 
   // ── Graph operations ────────────────────────────────────────────────────────
 
@@ -222,6 +228,7 @@ interface CanvasState {
   executeWorkflow: () => Promise<{ status: 'done' | 'error' | 'cancelled'; error?: string }>;
   cancelExecution: () => void;
   clearExecution: () => void;
+  recordNodeTiming: (nodeId: string, nodeType: string, duration?: number, status?: NodeTiming['status']) => void;
 
   // ── Inspector operations ─────────────────────────────────────────────────────
 
@@ -277,6 +284,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   _executionStatus: 'idle',
   _currentNodeId: null,
   _executionAbort: null,
+  _executionLogs: [],
 
   // ── Graph operations ────────────────────────────────────────────────────────
 
@@ -729,6 +737,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       _executionStatus: 'idle',
       _currentNodeId: null,
       _executionAbort: null,
+      _executionLogs: [],
     });
   },
 
@@ -837,6 +846,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       isDraggingFromPanel: false,
       _executionStatus: 'idle',
       _currentNodeId: null,
+      _executionLogs: [],
     });
   },
 
@@ -904,6 +914,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       isDraggingFromPanel: false,
       _executionStatus: 'idle',
       _currentNodeId: null,
+      _executionLogs: [],
     });
   },
 
@@ -1015,6 +1026,20 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     let { nodes, workflowMeta, edges } = get();
     if (nodes.length === 0) return { status: 'done' as const };
 
+    // ── ExecutionLog: create record on start ─────────────────────────────────
+    const startedAt = Date.now();
+    _currentLog = {
+      runId: crypto.randomUUID(),
+      workflowId: workflowMeta.id,
+      inputs: {},
+      outputs: {},
+      status: 'started',
+      startedAt,
+      nodeTimings: [],
+      errors: [],
+    };
+    _nodeStartTimes.clear();
+
     // Clear previous execution results and set running state
     set((state) => ({
       nodes: state.nodes.map((n) => ({
@@ -1034,6 +1059,43 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
     // Progress callback
     const progressCallback = (progress: ExecutionProgress) => {
+      // ── ExecutionLog: record node timing on each progress event ─────────────
+      if (_currentLog && progress.currentNodeId) {
+        const now = Date.now();
+        const node = get().nodes.find((n) => n.id === progress.currentNodeId);
+        const nodeType = node?.data.nodeType ?? 'unknown';
+        const startTime = _nodeStartTimes.get(progress.currentNodeId) ?? now;
+        const duration = now - startTime;
+
+        const existingIdx = _currentLog.nodeTimings.findIndex(
+          (t) => t.nodeId === progress.currentNodeId
+        );
+        const timingStatus = (() => {
+          if (progress.results.find((r) => r.nodeId === progress.currentNodeId && r.status === 'done')) return 'done';
+          if (progress.results.find((r) => r.nodeId === progress.currentNodeId && r.status === 'error')) return 'error';
+          return 'running';
+        })();
+
+        if (existingIdx >= 0) {
+          _currentLog.nodeTimings[existingIdx] = {
+            ..._currentLog.nodeTimings[existingIdx],
+            duration,
+            status: timingStatus,
+            completedAt: timingStatus === 'done' || timingStatus === 'error' ? now : undefined,
+          };
+        } else {
+          _currentLog.nodeTimings.push({
+            nodeId: progress.currentNodeId,
+            nodeType,
+            duration,
+            status: timingStatus,
+            startedAt: startTime,
+            completedAt: timingStatus === 'done' || timingStatus === 'error' ? now : undefined,
+          });
+          _nodeStartTimes.set(progress.currentNodeId, now);
+        }
+      }
+
       set((state) => ({
         nodes: state.nodes.map((n) => {
           const nodeResult = progress.results.find((r) => r.nodeId === n.id);
@@ -1063,6 +1125,39 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       }
     );
 
+    // ── ExecutionLog: finalize on completion ──────────────────────────────────
+    if (_currentLog) {
+      const completedAt = Date.now();
+      _currentLog.completedAt = completedAt;
+      _currentLog.duration = completedAt - _currentLog.startedAt;
+      _currentLog.status = result.status === 'done' ? 'completed'
+        : result.status === 'error' ? 'failed'
+        : 'cancelled';
+
+      // Collect outputs from all done nodes
+      _currentLog.outputs = Object.fromEntries(
+        get().nodes
+          .filter((n) => n.data.executionResult)
+          .map((n) => [n.id, n.data.executionResult])
+      );
+
+      // Record error if execution failed
+      if (result.error) {
+        _currentLog.errors.push({
+          nodeId: '',
+          error: result.error,
+          timestamp: completedAt,
+        });
+      }
+
+      // Store log in memory
+      set((state) => ({
+        _executionLogs: [...state._executionLogs, _currentLog!],
+      }));
+      _currentLog = null;
+      _nodeStartTimes.clear();
+    }
+
     const finalStatus = result.status as 'done' | 'error' | 'cancelled';
     set({ _executionStatus: finalStatus, _currentNodeId: null, _executionAbort: null });
     return { status: finalStatus, error: result.error };
@@ -1081,7 +1176,29 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       })),
       _executionStatus: 'idle' as const,
       _currentNodeId: null,
+      _executionLogs: [],
     }));
+  },
+
+  recordNodeTiming(nodeId, nodeType, duration, status = 'done') {
+    const now = Date.now();
+    const timing: NodeTiming = {
+      nodeId,
+      nodeType,
+      duration,
+      status,
+      startedAt: _nodeStartTimes.get(nodeId) ?? now,
+      completedAt: status === 'done' || status === 'error' ? now : undefined,
+    };
+
+    if (_currentLog) {
+      const existingIdx = _currentLog.nodeTimings.findIndex((t) => t.nodeId === nodeId);
+      if (existingIdx >= 0) {
+        _currentLog.nodeTimings[existingIdx] = timing;
+      } else {
+        _currentLog.nodeTimings.push(timing);
+      }
+    }
   },
 
   // ── Inspector operations ───────────────────────────────────────────────────
