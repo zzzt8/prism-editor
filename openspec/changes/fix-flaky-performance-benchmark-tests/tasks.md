@@ -46,7 +46,7 @@ dependencies:
   - type: task
     refs: [T1, T2]
 -->
-- [ ] T3: 全量验证：确保所有 image-ops 测试通过
+- [x] T3: 全量验证：确保所有 image-ops 测试通过
   - layer: engine
   - 验证命令：`pnpm test --filter=@prism/image-ops`
   - 预期：13 test files, 249+ tests pass（含 T1、T2 修改的测试）

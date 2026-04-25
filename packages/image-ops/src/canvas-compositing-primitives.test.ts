@@ -732,8 +732,9 @@ describe('Performance benchmarks', () => {
     const duration = end - start;
 
     // Node.js canvas npm package has significant serialization overhead (putImageData → getImageData).
-    // Threshold set to 200ms to match CI-relaxed baseline while still catching severe regressions.
-    expect(duration).toBeLessThan(200); // Allow more tolerance for JS fallback in Node.js canvas
+    // Single-run test: threshold set to 500ms to avoid flakiness. Multiple iterations
+    // with proper average checking are in apply-mask-benchmark.test.ts.
+    expect(duration).toBeLessThan(500);
     expect(jsResult.width).toBe(width);
     expect(jsResult.height).toBe(height);
   });
@@ -750,8 +751,9 @@ describe('Performance benchmarks', () => {
     const duration = end - start;
 
     // Node.js canvas npm package has significant serialization overhead (putImageData → getImageData).
-    // Threshold set to 200ms to match CI-relaxed baseline while still catching severe regressions.
-    expect(duration).toBeLessThan(200); // Allow more tolerance for JS fallback in Node.js canvas
+    // Single-run test: threshold set to 500ms to avoid flakiness. Multiple iterations
+    // with proper average checking are in apply-mask-benchmark.test.ts.
+    expect(duration).toBeLessThan(500);
     expect(jsResult.width).toBe(width);
     expect(jsResult.height).toBe(height);
   });
