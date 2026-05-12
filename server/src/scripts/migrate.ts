@@ -92,7 +92,7 @@ async function migrateWorkflow(workflow: LocalWorkflow): Promise<{ success: bool
         data: {
           email: 'default@localhost',
           name: 'Default User',
-          password: 'migrated',
+          password: process.env.SEED_USER_PASSWORD || 'migrated',
         },
       });
     }

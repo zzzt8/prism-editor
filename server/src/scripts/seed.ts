@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  const defaultPassword = 'default123'; // 开发环境默认密码
+  const defaultPassword = process.env.SEED_USER_PASSWORD || 'default123'; // 从环境变量读取，开发环境默认密码
   const hashedPassword = await bcrypt.hash(defaultPassword, 12);
 
   // Check if default user exists

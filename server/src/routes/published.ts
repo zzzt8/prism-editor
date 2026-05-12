@@ -7,35 +7,17 @@ import {
   ImportPublishWorkflowSchema,
 } from '../schemas/published.js';
 
-const DEFAULT_USER_ID = 'default-user';
-
-async function getOrCreateDefaultUser(): Promise<string> {
-  let user = await prisma.user.findFirst({
-    where: { email: 'default@localhost' },
-  });
-
-  if (!user) {
-    user = await prisma.user.create({
-      data: {
-        email: 'default@localhost',
-        name: 'Default User',
-        password: 'default',
-      },
-    });
-  }
-  return user.id;
-}
-
 const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-  const defaultUserId = await getOrCreateDefaultUser();
-  // GET /api/published - List published workflows
-  fastify.get('/published', async (request) => {
+  // GET /api/published - List published workflows for current user
+  fastify.get('/published', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const query = PublishedWorkflowQuerySchema.parse(request.query);
     const { page, limit } = query;
     const skip = (page - 1) * limit;
+    const userId = (request.user as { userId: string }).userId;
 
     const [publishedWorkflows, total] = await Promise.all([
       prisma.publishedWorkflow.findMany({
+        where: { workflow: { userId } },
         skip,
         take: limit,
         orderBy: { publishedAt: 'desc' },
@@ -53,7 +35,7 @@ const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
           },
         },
       }),
-      prisma.publishedWorkflow.count(),
+      prisma.publishedWorkflow.count({ where: { workflow: { userId } } }),
     ]);
 
     return {
@@ -74,18 +56,22 @@ const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
     };
   });
 
-  // GET /api/published/:id - Get published workflow by id
-  fastify.get('/published/:id', async (request, reply) => {
+  // GET /api/published/:id - Get published workflow by id (owner only)
+  fastify.get('/published/:id', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const { id } = PublishedWorkflowParamsSchema.parse(request.params);
+    const userId = (request.user as { userId: string }).userId;
+
     const published = await prisma.publishedWorkflow.findUnique({
       where: { id },
       include: {
         workflow: true,
       },
     });
-    if (!published) {
+
+    if (!published || published.workflow.userId !== userId) {
       return reply.status(404).send({ error: 'Published workflow not found' });
     }
+
     return {
       data: {
         id: published.id,
@@ -98,18 +84,22 @@ const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
   });
 
   // POST /api/published - Publish a workflow
-  fastify.post('/published', async (request, reply) => {
+  fastify.post('/published', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const input = PublishWorkflowSchema.parse(request.body);
+    const userId = (request.user as { userId: string }).userId;
 
-    // Check if workflow exists
     const workflow = await prisma.workflow.findUnique({
       where: { id: input.workflowId },
     });
+
     if (!workflow) {
       return reply.status(404).send({ error: 'Workflow not found' });
     }
 
-    // Check if already published
+    if (workflow.userId !== userId) {
+      return reply.status(404).send({ error: 'Workflow not found' });
+    }
+
     const existingPublished = await prisma.publishedWorkflow.findUnique({
       where: { workflowId: input.workflowId },
     });
@@ -117,11 +107,8 @@ const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
       return reply.status(409).send({ error: 'Workflow already published' });
     }
 
-    // Use the provided content (complete PublishedWorkflow JSON) if available,
-    // otherwise fall back to the raw draft workflow content
     const contentToStore = input.content ?? workflow.content;
 
-    // Create published workflow and update status in transaction
     const published = await prisma.$transaction(async (tx) => {
       const pw = await tx.publishedWorkflow.create({
         data: {
@@ -144,17 +131,19 @@ const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
   });
 
   // DELETE /api/published/:id - Unpublish a workflow
-  fastify.delete('/published/:id', async (request, reply) => {
+  fastify.delete('/published/:id', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const { id } = PublishedWorkflowParamsSchema.parse(request.params);
+    const userId = (request.user as { userId: string }).userId;
 
     const published = await prisma.publishedWorkflow.findUnique({
       where: { id },
+      include: { workflow: true },
     });
-    if (!published) {
+
+    if (!published || published.workflow.userId !== userId) {
       return reply.status(404).send({ error: 'Published workflow not found' });
     }
 
-    // Delete published workflow and update status in transaction
     await prisma.$transaction(async (tx) => {
       await tx.publishedWorkflow.delete({ where: { id } });
       await tx.workflow.update({
@@ -170,12 +159,11 @@ const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
   });
 
   // POST /api/published/import - Import and publish a workflow directly
-  fastify.post('/published/import', async (request) => {
+  fastify.post('/published/import', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const input = ImportPublishWorkflowSchema.parse(request.body);
+    const userId = (request.user as { userId: string }).userId;
 
-    // Create workflow and publish in a transaction
     const published = await prisma.$transaction(async (tx) => {
-      // Create the workflow
       const workflow = await tx.workflow.create({
         data: {
           name: input.name,
@@ -185,11 +173,10 @@ const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
           version: input.version || '1.0.0',
           status: 'PUBLISHED',
           publishedAt: new Date(),
-          userId: defaultUserId,
+          userId,
         },
       });
 
-      // Create the published workflow entry
       const pw = await tx.publishedWorkflow.create({
         data: {
           workflowId: workflow.id,

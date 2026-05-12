@@ -7,35 +7,15 @@ import {
   NodePackageQuerySchema,
 } from '../schemas/node-package.js';
 
-const DEFAULT_USER_ID = 'default-user';
-
-async function getOrCreateDefaultUser(): Promise<string> {
-  let user = await prisma.user.findFirst({
-    where: { email: 'default@localhost' },
-  });
-
-  if (!user) {
-    user = await prisma.user.create({
-      data: {
-        email: 'default@localhost',
-        name: 'Default User',
-        password: 'default',
-      },
-    });
-  }
-  return user.id;
-}
-
 const nodeRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-  const defaultUserId = await getOrCreateDefaultUser();
-
-  // GET /api/nodes - List node packages
-  fastify.get('/nodes', async (request) => {
+  // GET /api/nodes - List node packages for current user
+  fastify.get('/nodes', { onRequest: [fastify.authenticate] }, async (request) => {
     const query = NodePackageQuerySchema.parse(request.query);
     const { category, search, sort, page, limit } = query;
     const skip = (page - 1) * limit;
+    const userId = (request.user as { userId: string }).userId;
 
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = { authorId: userId };
     if (category) where.category = category;
     if (search) {
       where.OR = [
@@ -81,9 +61,10 @@ const nodeRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   });
 
   // POST /api/nodes - Upload a node package
-  fastify.post('/nodes', async (request, reply) => {
+  fastify.post('/nodes', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const input = CreateNodePackageSchema.parse(request.body);
     const manifestJson = JSON.stringify(input.manifest);
+    const userId = (request.user as { userId: string }).userId;
 
     try {
       const nodePackage = await prisma.nodePackage.create({
@@ -94,7 +75,7 @@ const nodeRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
           latestVersion: input.version,
           latestManifest: manifestJson,
           storageType: 'database',
-          authorId: defaultUserId,
+          authorId: userId,
           versions: {
             create: {
               version: input.version,
@@ -114,9 +95,11 @@ const nodeRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     }
   });
 
-  // GET /api/nodes/:id - Get node package detail
-  fastify.get('/nodes/:id', async (request, reply) => {
+  // GET /api/nodes/:id - Get node package detail (owner only)
+  fastify.get('/nodes/:id', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const { id } = NodePackageParamsSchema.parse(request.params);
+    const userId = (request.user as { userId: string }).userId;
+
     const nodePackage = await prisma.nodePackage.findUnique({
       where: { id },
       include: {
@@ -126,26 +109,22 @@ const nodeRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       },
     });
 
-    if (!nodePackage) {
+    if (!nodePackage || nodePackage.authorId !== userId) {
       return reply.status(404).send({ error: 'Node package not found' });
     }
 
     return { data: nodePackage };
   });
 
-  // PUT /api/nodes/:id - Update node package
-  fastify.put('/nodes/:id', async (request, reply) => {
+  // PUT /api/nodes/:id - Update node package (owner only)
+  fastify.put('/nodes/:id', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const { id } = NodePackageParamsSchema.parse(request.params);
     const input = UpdateNodePackageSchema.parse(request.body);
+    const userId = (request.user as { userId: string }).userId;
 
     const existing = await prisma.nodePackage.findUnique({ where: { id } });
-    if (!existing) {
+    if (!existing || existing.authorId !== userId) {
       return reply.status(404).send({ error: 'Node package not found' });
-    }
-
-    // Only the author can update
-    if (existing.authorId !== defaultUserId) {
-      return reply.status(403).send({ error: 'You are not the author of this node package' });
     }
 
     const updateData: Parameters<typeof prisma.nodePackage.update>[0]['data'] = {};
@@ -157,7 +136,6 @@ const nodeRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       updateData.latestManifest = JSON.stringify(input.manifest);
     }
 
-    // Create a new version if manifest or version changed
     if (input.manifest && input.version) {
       await prisma.nodePackageVersion.create({
         data: {
@@ -177,30 +155,27 @@ const nodeRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     return { data: nodePackage };
   });
 
-  // DELETE /api/nodes/:id - Delete node package
-  fastify.delete('/nodes/:id', async (request, reply) => {
+  // DELETE /api/nodes/:id - Delete node package (owner only)
+  fastify.delete('/nodes/:id', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const { id } = NodePackageParamsSchema.parse(request.params);
+    const userId = (request.user as { userId: string }).userId;
 
     const existing = await prisma.nodePackage.findUnique({ where: { id } });
-    if (!existing) {
+    if (!existing || existing.authorId !== userId) {
       return reply.status(404).send({ error: 'Node package not found' });
-    }
-
-    // Only the author can delete
-    if (existing.authorId !== defaultUserId) {
-      return reply.status(403).send({ error: 'You are not the author of this node package' });
     }
 
     await prisma.nodePackage.delete({ where: { id } });
     return { success: true };
   });
 
-  // GET /api/nodes/:id/versions - Get version history
-  fastify.get('/nodes/:id/versions', async (request, reply) => {
+  // GET /api/nodes/:id/versions - Get version history (owner only)
+  fastify.get('/nodes/:id/versions', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const { id } = NodePackageParamsSchema.parse(request.params);
+    const userId = (request.user as { userId: string }).userId;
 
     const existing = await prisma.nodePackage.findUnique({ where: { id } });
-    if (!existing) {
+    if (!existing || existing.authorId !== userId) {
       return reply.status(404).send({ error: 'Node package not found' });
     }
 
@@ -210,7 +185,7 @@ const nodeRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       select: {
         id: true,
         version: true,
-        manifest: false, // exclude full manifest for list
+        manifest: true,
         storageType: true,
         createdAt: true,
       },
@@ -219,12 +194,13 @@ const nodeRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     return { data: versions };
   });
 
-  // GET /api/nodes/:id/download - Download node package manifest
-  fastify.get('/nodes/:id/download', async (request, reply) => {
+  // GET /api/nodes/:id/download - Download node package manifest (owner only)
+  fastify.get('/nodes/:id/download', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const { id } = NodePackageParamsSchema.parse(request.params);
+    const userId = (request.user as { userId: string }).userId;
 
     const nodePackage = await prisma.nodePackage.findUnique({ where: { id } });
-    if (!nodePackage) {
+    if (!nodePackage || nodePackage.authorId !== userId) {
       return reply.status(404).send({ error: 'Node package not found' });
     }
 

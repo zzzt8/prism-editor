@@ -89,7 +89,7 @@ model WorkflowVersion {
 model PublishedWorkflow {
   id         String   @id @default(cuid())
   workflowId String   @unique
-  workflow   Workflow @relation(fields: [workflowId], references: [id])
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
   content    String
   publishedBy String?
   publishedAt DateTime @default(now())
