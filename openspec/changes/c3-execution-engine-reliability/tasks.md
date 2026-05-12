@@ -106,7 +106,7 @@ dependencies:
   - type: task
     refs: [T2]
 -->
-- [ ] T4: `runWorkflow.ts` 的 cancel() 实现 AbortController 信号
+- [x] T4: `runWorkflow.ts` 的 cancel() 实现 AbortController 信号
   - layer: runtime
   - **验收标准**: user-app 点取消后流水线停止
 
@@ -118,7 +118,7 @@ dependencies:
   - type: task
     refs: [T4]
 -->
-- [ ] T5: `runStore.ts` 加 `cancelling` 中间状态
+- [x] T5: `runStore.ts` 加 `cancelling` 中间状态
   - layer: runtime
   - **验收标准**: UI 显示"正在取消..."状态
 
