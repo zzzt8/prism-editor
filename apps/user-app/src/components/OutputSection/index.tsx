@@ -459,9 +459,10 @@ export interface OutputSectionProps {
   outputs: PublishedOutput[];
   workflowName: string;
   runState: {
-    status: 'idle' | 'running' | 'done' | 'error';
+    status: 'idle' | 'running' | 'cancelling' | 'done' | 'cancelled' | 'error';
     progress?: ExecutionProgress;
     result?: Record<string, unknown>;
+    error?: string;
   };
 }
 
@@ -486,6 +487,21 @@ export const OutputSection: React.FC<OutputSectionProps> = ({
 
       {runState.status === 'running' && (
         <ProgressDisplay progress={runState.progress} />
+      )}
+
+      {(runState.status === 'cancelling' || runState.status === 'cancelled') && (
+        <div className="ua-result-summary ua-result-summary--cancelled">
+          <div className="ua-result-summary-check">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="8" y1="12" x2="16" y2="12" />
+            </svg>
+          </div>
+          <div className="ua-result-summary-text">
+            <span className="ua-result-summary-title">执行已取消</span>
+            <span className="ua-result-summary-meta">部分节点结果可能不完整</span>
+          </div>
+        </div>
       )}
 
       {runState.status === 'done' && (

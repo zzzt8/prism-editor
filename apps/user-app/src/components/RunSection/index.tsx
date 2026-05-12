@@ -21,9 +21,13 @@ import type { RunState } from '../../modules/runner/runStore';
 export interface RunSectionProps {
   runState: RunState;
   onRun: () => void;
+  onCancel: () => void;
 }
 
-export const RunSection: React.FC<RunSectionProps> = ({ runState, onRun }) => {
+export const RunSection: React.FC<RunSectionProps> = ({ runState, onRun, onCancel }) => {
+  const isRunning = runState.status === 'running';
+  const isCancelling = runState.status === 'cancelling';
+
   return (
     <>
       {/* Error message from last run attempt */}
@@ -38,16 +42,21 @@ export const RunSection: React.FC<RunSectionProps> = ({ runState, onRun }) => {
         </div>
       )}
 
-      {/* Run button */}
+      {/* Run / Cancel button */}
       <button
-        className={`ua-run-btn ua-run-btn--${runState.status === 'running' ? 'running' : 'ready'}`}
-        onClick={onRun}
-        disabled={runState.status === 'running'}
+        className={`ua-run-btn ua-run-btn--${isRunning || isCancelling ? 'running' : 'ready'}`}
+        onClick={isRunning ? onCancel : onRun}
+        disabled={isCancelling}
       >
-        {runState.status === 'running' ? (
+        {isCancelling ? (
           <>
             <span className="ua-spinner ua-spinner--white" />
-            执行中…
+            正在取消…
+          </>
+        ) : isRunning ? (
+          <>
+            <span className="ua-spinner ua-spinner--white" />
+            取消执行
           </>
         ) : (
           <>

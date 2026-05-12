@@ -7,7 +7,7 @@ import { create } from 'zustand';
 import type { ExecutionProgress, PublishedWorkflowExecutionResult } from '@prism/shared-types';
 
 export interface RunState {
-  status: 'idle' | 'running' | 'done' | 'error';
+  status: 'idle' | 'running' | 'cancelling' | 'done' | 'cancelled' | 'error';
   error?: string;
   result?: PublishedWorkflowExecutionResult;
   progress?: ExecutionProgress;

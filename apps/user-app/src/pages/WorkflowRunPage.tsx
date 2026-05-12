@@ -6,13 +6,13 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useSelectedWorkflowStore } from '../modules/selection/selectedWorkflowStore';
 import { useRunStore } from '../modules/runner/runStore';
+import { execute as runWorkflowExecute, cancel as cancelWorkflow } from '../modules/runner/runWorkflow';
 import { navigateToList } from '../router';
 import { UserLayout } from '../layouts/UserLayout';
 import { WorkflowHeader } from '../components/WorkflowHeader';
 import { InputSection } from '../components/InputSection';
 import { RunSection } from '../components/RunSection';
 import { OutputSection } from '../components/OutputSection';
-import type { ExecutionProgress } from '@prism/shared-types';
 
 // ── Workflow not found / loading ─────────────────────────────────────────────
 function WorkflowErrorState() {
@@ -151,62 +151,17 @@ export const WorkflowRunPage: React.FC = () => {
       }
     }
 
-    setRunState({ status: 'running' });
+    // Delegate to shared runWorkflow module
+    await runWorkflowExecute(selectedWorkflow, inputValues as Record<string, unknown>, setRunState, paramValues);
+  }, [selectedWorkflow, inputValues, setRunState]);
 
-    console.log('[UserApp] handleRun', { inputValues, paramValues });
-
-    try {
-      const { nodeExecutors } = await import('@prism/image-ops');
-      const { PublishedWorkflowExecutor } = await import('@prism/workflow-core');
-
-      const executor = new PublishedWorkflowExecutor(nodeExecutors);
-
-      const result = await executor.execute(selectedWorkflow, {
-        inputs: inputValues,
-        exposedParams: paramValues,
-        onProgress: (p: ExecutionProgress) => {
-          setRunState((prev) => ({ ...prev, status: 'running', progress: p }));
-        },
-      });
-
-      if (result.status === 'done') {
-        const outputs: Record<string, unknown> = {};
-        const executorResults = result.results;
-
-        for (const output of effectiveOutputs) {
-          // v2 output.id format: '{nodeId}:{portId}' (e.g. 'node-4:image')
-          const colonIdx = output.id.indexOf(':');
-          if (colonIdx > 0) {
-            const nodeId = output.id.slice(0, colonIdx);
-            const nodeOutputs = executorResults[nodeId] as Record<string, unknown> | undefined;
-            if (nodeOutputs && Object.keys(nodeOutputs).length > 0) {
-              outputs[output.id] = nodeOutputs;
-              continue;
-            }
-          }
-
-          // Fallback: scan all node results for a valid image output
-          for (const nodeResult of Object.values(executorResults) as Record<string, unknown>[]) {
-            if (nodeResult?.previewUrl !== undefined || nodeResult?.dataUrl !== undefined) {
-              outputs[output.id] = nodeResult;
-              break;
-            }
-            if (nodeResult?.result !== undefined) {
-              outputs[output.id] = nodeResult.result;
-              break;
-            }
-          }
-        }
-
-        setRunState((prev) => ({ ...prev, status: 'done', result: outputs }));
-      } else {
-        setRunState((prev) => ({ ...prev, status: 'error', error: result.error ?? '执行失败' }));
-      }
-    } catch (err) {
-      console.error('[UserApp] handleRun exception:', err);
-      setRunState((prev) => ({ ...prev, status: 'error', error: String(err) }));
-    }
-  }, [selectedWorkflow, inputValues, paramValues, effectiveOutputs, setRunState]);
+  const handleCancel = useCallback(() => {
+    cancelWorkflow();
+    setRunState((prev) => ({
+      ...prev,
+      status: prev.status === 'running' ? 'cancelling' : prev.status,
+    }));
+  }, [setRunState]);
 
   // Guard: no workflow loaded
   if (!selectedWorkflow) {
@@ -233,7 +188,7 @@ export const WorkflowRunPage: React.FC = () => {
             onParamChange={updateParam}
           />
           {/* Run button at bottom of sidebar */}
-          <RunSection runState={runState} onRun={handleRun} />
+          <RunSection runState={runState} onRun={handleRun} onCancel={handleCancel} />
         </>
       }
     >
@@ -245,6 +200,7 @@ export const WorkflowRunPage: React.FC = () => {
           status: runState.status,
           progress: runState.progress,
           result: runState.result as Record<string, unknown> | undefined,
+          error: runState.error,
         }}
       />
     </UserLayout>
