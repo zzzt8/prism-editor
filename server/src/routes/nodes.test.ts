@@ -14,11 +14,23 @@ import bcrypt from 'bcryptjs';
 
 let app: FastifyInstance;
 
-// Ensure test user exists in DB (use raw SQL to bypass Prisma constraints)
+// Ensure test user exists in DB
 beforeAll(async () => {
   const hashedPassword = await bcrypt.hash('password', 12);
-  const now = new Date().toISOString();
-  await prisma.$executeRaw`INSERT OR REPLACE INTO User (id, email, name, password, createdAt, updatedAt) VALUES ('test-user-id', 'test@localhost', 'Test User', ${hashedPassword}, ${now}, ${now})`;
+  try {
+    await prisma.user.create({
+      data: {
+        id: 'test-user-id',
+        email: 'test@localhost',
+        name: 'Test User',
+        password: hashedPassword,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+  } catch (e: any) {
+    if (e.code !== 'P2002') throw e; // P2002 = unique constraint, ignore
+  }
 });
 
 const validManifest = {
