@@ -12,28 +12,43 @@ context: |
   - packages/shared-ui: 设计系统和共享组件
 
 rules:
-  # ===== 保留原有规则 =====
+  # ===== 风险分类规则 =====
+  # change_class = 风险等级，影响 verify 强度和归档条件
+  # change_profile = 流程重量，记录推断依据（schema v2 固定 5 个 artifacts）
+  # 规则来源：config.yaml 是权威来源，proposal.md 只展示推断结果
   change_class:
     low:
       - 仅样式/文案/UI 布局，不影响逻辑
       - 仅单 app 局部，不涉及接口
+    medium:
+      - 单页面交互增强
+      - 节点面板 UI 调整
+      - 发布流程里的小字段变更
+      - user-app 运行页展示逻辑调整
+      - feed 卡片结构变化
     high:
       - 触及 store / API contract / node schema
       - 涉及跨包接口、数据迁移、序列化格式
       - engine/core 层改动（任何 scope）
     default: high
+  change_profile:
+    default: medium
   proposal:
     - 必须包含 acceptance criteria
-    - 必须包含 change_class 和 reason 推断结论
+    - 必须包含 change_class + change_profile + reason 推断结论
+    - 必须输出 Task Anchor Echo section
   design:
-    - change_class = high 时自动插入 review checklist
+    - change_class = high 时自动插入完整 review checklist
+    - change_class = medium 时自动插入简化 review checklist
+    - change_class = low 时跳过 review checklist
   tasks:
     - change_class = high 时自动触发独立测试章节
+    - change_class = medium 时评估是否需要独立测试章节
     - change_class = low 时测试并入 tasks 验证命令
 
-  # ===== 新增：4 条分层规则 =====
+  # ===== Enforcement 规则 =====
 
-  # 规则 1：Task Anchor（上层 A 类 + 下层 B 类）
+  # 规则 1：Task Anchor
   task_anchor:
     description: "原始用户任务是唯一目标。约束/非目标只能收紧边界，不能替换任务主题。"
     exploration_phase:
@@ -44,7 +59,7 @@ rules:
       - 强制输出 Task Anchor Echo
       - change name 必须与原始任务主题一致，不一致则硬关卡阻断
 
-  # 规则 2：Code Mutation Gate（下层 B 类硬关卡）
+  # 规则 2：Code Mutation Gate
   mutation_gate:
     description: "所有代码变更只能发生在 /opsx-apply。"
     allowed_phase:
@@ -52,27 +67,26 @@ rules:
     forbidden_phases:
       explore: [create, edit, delete]
       propose: [create, edit, delete]
-      plan: [create, edit, delete]
       verify: [create, edit, delete]
       archive: [create, edit, delete]
     enforcement:
       - 一旦越权，立即停止并报告
       - 记录越权内容，询问用户是否切换到 apply
 
-  # 规则 3：Failure Halt（下层 B 类硬关卡）
+  # 规则 3：Failure Handling
   failure_handling:
-    description: "CLI / schema / config 失败时，必须停止流程推进。"
+    description: "apply 阶段遇到错误时，进入 failure-handling section 进行诊断。"
     fail_fast_on:
       - CLI 命令返回非零退出码
       - schema 缺失或解析失败
       - 所需模板/文件缺失
       - command 执行异常
     enforcement:
-      - 失败时立即停止，不得手动伪造 artifacts
-      - 不得尝试重建 schema 或自行创建 change 目录
-      - 必须切换到 /opsx-debug 或请求用户确认
+      - 失败时进入 failure-handling section 进行诊断
+      - 诊断后给出修复建议
+      - 修复后重试验证，不得跳过
 
-  # 规则 4：Test Failure Attribution（A+B 混合）
+  # 规则 4：Test Failure Attribution
   test_failure_attribution:
     description: "测试失败时，必须先完成归因声明，声明不成立再硬停。"
     phases:
@@ -90,4 +104,4 @@ rules:
     enforcement:
       - 必须输出归因声明（含证据）
       - 禁止未归因就自行判断"无关"并继续
-      - undetermined 必须切换到 /opsx-debug
+      - undetermined 必须进入 failure-handling section

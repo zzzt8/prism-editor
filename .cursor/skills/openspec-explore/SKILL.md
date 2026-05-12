@@ -25,7 +25,6 @@ verify:
 |------|-----------|--------------------------|
 | `/opsx-explore` | 读取文件、扫描结构、生成 Impact Map、追问用户 | **修改代码**、创建文件、改接口 |
 | `/opsx-propose` | 调用 CLI 生成 artifacts | 修改代码 |
-| `/opsx-plan` | 解析规划、派生子 change | 修改代码 |
 | `/opsx-verify` | 检查一致性、读测试输出 | 修改代码 |
 | `/opsx-archive` | 确认状态、调用 CLI | 修改代码 |
 | `/opsx-apply` | **全部操作（含代码变更）** | — |
@@ -109,7 +108,7 @@ openspec list --json
 
 ## 切换到 propose 的量化标准
 
-> 当探索达到以下条件时，建议用户切换到 `openspec-propose` 或 `openspec-plan`。
+> 当探索达到以下条件时，建议用户切换到 `openspec-propose` 或执行 change-splitting。
 
 **必须满足（全部）：**
 - [ ] 核心问题已有**清晰的技术理解**
@@ -141,9 +140,9 @@ openspec list --json
 建议运行 /opsx-propose 来正式创建 change 并生成 artifacts。
 ```
 
-**使用 /opsx-plan 的判断：**
+**使用 change-splitting 的判断：**
 
-满足以下任一条件时，建议 `/opsx-plan`：
+满足以下任一条件时，建议在 propose 阶段执行 change-splitting（见 openspec-propose SKILL.md）：
 - 预期需要 3 个以上子 change
 - 存在 change 间依赖
 - 专家规划文档已存在
@@ -157,7 +156,7 @@ openspec list --json
 - **可用** ASCII diagrams 可视化架构
 - **不要**强制产出特定 artifact
 - **强制**提供量化标准，帮助判断切换时机
-- **强制**区分简单需求（/opsx-propose）和复杂重构（/opsx-plan）
+- **强制**区分简单需求（/opsx-propose）和复杂重构（/opsx-propose + change-splitting）
 - **强制**在结构分析前输出 Task Anchor 声明块
 - **强制**识别并声明用户追加内容属于"约束/非目标"还是"新需求"
 - **强制**约束类追加内容写入当前任务 Scope，禁止建议新建 change

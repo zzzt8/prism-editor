@@ -14,13 +14,10 @@
 │   ├── SKILL-SCHEMA.md        # Metadata schema definition
 │   └── generate-skill-index.js # Index generation script
 ├── openspec-explore/           # Explore codebase structure
-├── openspec-propose/           # Create a new change with artifacts
-├── openspec-plan/              # Plan and derive sub-changes (non-default)
-├── openspec-apply/             # Execute tasks with incremental verification
-├── openspec-verify/            # Verify implementation consistency
-├── openspec-archive/           # Archive completed changes
-├── openspec-debug/            # Debug issues in apply phase
-└── openspec-skill/            # Skill system maintenance (not exposed by default)
+├── openspec-propose/          # Create a new change with artifacts
+├── openspec-apply/            # Execute tasks with incremental verification
+├── openspec-verify/           # Verify implementation consistency
+└── openspec-archive/          # Archive completed changes
 ```
 
 ## Skills Overview
@@ -29,12 +26,9 @@
 |-------|---------|
 | `openspec-explore` | Explore codebase structure |
 | `openspec-propose` | Create a new change with artifacts; change_class triggers templates |
-| `openspec-plan` | Derive sub-changes from expert documents (non-default capability) |
 | `openspec-apply` | Execute tasks with incremental verification; checkbox-based checkpointing |
 | `openspec-verify` | Verify implementation consistency (Full + coherence-lite) |
 | `openspec-archive` | Archive completed changes |
-| `openspec-debug` | Debug issues in apply phase |
-| `openspec-skill` | Skill system maintenance (not exposed by default) |
 
 ## Usage
 

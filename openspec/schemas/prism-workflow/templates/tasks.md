@@ -90,3 +90,13 @@ dependencies:
 - [ ] T1.1: [任务名]
   - 验证命令：`pnpm test --filter=<package> -- --grep "TC-xxx"`
 ```
+
+---
+
+## Layer 优先级执行策略
+
+> 按优先级从高到低执行：engine > backend > editor > runtime > ui-skin > meta
+
+- 同一 layer 内的 task 按 id 字母顺序执行
+- 高 layer task 完成后才执行依赖它的低 layer task
+- 跨层依赖时，允许依赖链存在，但不能跳过优先级倒置

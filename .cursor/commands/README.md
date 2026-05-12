@@ -1,13 +1,13 @@
 ---
 name: Commands Index
-description: Cursor Commands 索引，按 category 组织。v3.0 精简为 8 个命令。
+description: Cursor Commands 索引，按 category 组织。v3.2 精简为 5 个命令。
 ---
 
 # Commands Index
 
 ## 快速导航
 
-[explore](#explore) · [propose](#propose) · [plan](#plan) · [apply](#apply) · [verify](#verify) · [archive](#archive) · [debug](#debug)
+[explore](#explore) · [propose](#propose) · [apply](#apply) · [verify](#verify) · [archive](#archive)
 
 ---
 
@@ -33,7 +33,7 @@ description: Cursor Commands 索引，按 category 组织。v3.0 精简为 8 个
 
 ### /opsx-propose
 
-创建 change，自动生成 artifacts。根据 change_class 推断结果自动插入 review checklist 和测试分层模板。
+创建 change，自动生成 artifacts。根据 change_class 推断结果自动插入 review checklist 和测试分层模板。支持 change-splitting 多 change 编排。
 
 | 属性 | 值 |
 |------|----|
@@ -47,45 +47,20 @@ description: Cursor Commands 索引，按 category 组织。v3.0 精简为 8 个
 
 ---
 
-## plan
-
-### /opsx-plan
-
-从规划到批量派生的完整流程。多 change 协同编排的非默认能力。
-
-| 属性 | 值 |
-|------|----|
-| category | `meta` |
-| order | 2 |
-| depends_on | `openspec-explore` |
-
-```bash
-# 完整流程（从专家规划文档开始）
-/opsx-plan <path-to-expert-doc>
-
-# 仅派生（meta-change 已存在）
-/opsx-plan --derive <meta-change-name>
-```
-
----
-
 ## apply
 
 ### /opsx-apply
 
-实现 OpenSpec change 的任务。断点续传基于 tasks.md checkbox。
+实现 OpenSpec change 的任务。断点续传基于 tasks.md checkbox，内置 failure-handling 诊断。
 
 | 属性 | 值 |
 |------|----|
 | category | `apply` |
 | order | 3 |
-| depends_on | `openspec-propose`, `openspec-plan` |
+| depends_on | `openspec-propose` |
 
 ```bash
 /opsx-apply <change-name>
-
-# 批量执行
-/opsx-apply --batch
 ```
 
 ---
@@ -126,30 +101,10 @@ description: Cursor Commands 索引，按 category 组织。v3.0 精简为 8 个
 
 ---
 
-## debug
-
-### /opsx-debug
-
-调试 apply 阶段遇到的问题。
-
-| 属性 | 值 |
-|------|----|
-| category | `debug` |
-| order | — |
-| depends_on | `openspec-apply`, `openspec-verify` |
-
-```bash
-/opsx-debug
-```
-
----
-
 ## 执行顺序
 
 ```
 explore → propose → apply → verify → archive
-              ↑
-         plan → apply --batch
 ```
 
 ---

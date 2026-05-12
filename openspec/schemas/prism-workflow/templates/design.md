@@ -20,16 +20,13 @@
 
 ---
 
-## Architecture Review（技术方案评审）
+## Architecture Review
 
-> 当 change 涉及以下任一情况时，必须填写此章节：
-> - 影响 workflow-core / published protocol / node package / server schema
-> - 跨 app 改动（dev-tool + server 或 user-app + server）
-> - 涉及数据迁移或协议兼容
+<!-- change_class = high 时填写完整；medium 时精简；low 时只需简要说明 -->
 
 ### 目标
 
-[明确本次技术方案要解决的核心问题]
+[明确核心问题]
 
 ### 约束
 
@@ -39,57 +36,46 @@
 
 ### 候选方案
 
-#### 方案 A
-**Pros**:
-- ...
+<!-- low/medium 可跳过 -->
 
-**Cons**:
-- ...
+#### 方案 A
+
+**Pros**: ...
+**Cons**: ...
 
 #### 方案 B
-**Pros**:
-- ...
 
-**Cons**:
-- ...
+**Pros**: ...
+**Cons**: ...
 
 ### 决策
 
-选择方案 B，原因：
-1. ...
-2. ...
+选择方案...，原因：...
 
-### 风险与回滚
+### 回滚方案
 
-| 风险 | 概率 | 影响 | 缓解措施 |
-|------|------|------|----------|
-| ... | ... | ... | ... |
-
-**回滚方案**: ...
-
-### Migration Strategy（迁移策略）
-
-1. 数据迁移脚本
-2. 灰度发布步骤
-3. 回滚触发条件
+<!-- change_class = high 时填写 -->
 
 ---
 
-## change_class 分层处理指南
+## Review Checklist
 
-> 根据 proposal 顶部的 `change_class` 字段选择对应模板。
+<!-- change_class = high 时使用完整清单；medium 时使用简化版 -->
 
-### change_class = high
+### 完整版（high）
 
-使用上方完整的 Architecture Review 章节。
+- [ ] 方案是否覆盖 proposal 中所有 goal？
+- [ ] 是否存在更简单的替代方案？
+- [ ] 最坏情况回退路径是什么？
+- [ ] 对现有 specs/ 有哪些 ADDED / MODIFIED / REMOVED？
+- [ ] Layer 间是否有隐式依赖？
 
-### change_class = low
+### 简化版（medium）
 
-> Low-risk change，跳过 formal Architecture Review。
-> 仅需在下方填写简要设计说明。
+- [ ] 方案是否覆盖主要目标？
+- [ ] 回退路径是否清晰？
+- [ ] 影响是否可控？
 
-**简要设计说明：**
-<!-- 简要描述技术方案（1-3 句话）-->
+### 轻量版（low）
 
-**替代方案考虑：**
-<!-- 简要说明为何选择此方案而非更简单的替代方案 -->
+> Low-risk change，跳过 formal review。

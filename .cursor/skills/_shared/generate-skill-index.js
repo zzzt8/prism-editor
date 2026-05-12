@@ -76,7 +76,7 @@ function escapeMd(str) {
 }
 
 function generateIndex(skillsByCategory) {
-  const order = ['explore', 'propose', 'meta', 'apply', 'verify', 'archive', 'debug'];
+  const order = ['explore', 'propose', 'apply', 'verify', 'archive'];
   const navLinks = order.filter(c => skillsByCategory[c]).map(c => `[${c}](#${c})`).join(' · ');
 
   let md = `---
@@ -93,7 +93,6 @@ description: 所有 Skill 的索引目录。按 category 组织。
 ${navLinks}
 
 ---
-
 `;
 
   for (const cat of order) {
@@ -145,8 +144,6 @@ propose → openspec-propose
 apply   → openspec-apply
 verify  → openspec-verify
 archive → openspec-archive
-debug   → openspec-debug
-meta    → openspec-plan, openspec-skill
 \`\`\`
 
 ## 相关文件

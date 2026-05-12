@@ -75,7 +75,6 @@ aliases:
   - /opsx-apply
 depends_on:
   - openspec-propose
-  - openspec-plan
 permissions:
   - file-write
 risks:

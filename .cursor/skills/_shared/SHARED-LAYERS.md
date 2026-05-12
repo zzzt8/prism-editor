@@ -7,17 +7,16 @@ description: OpenSpec Skill 共享层：layer 映射、验证命令。所有 ope
 
 ## Layer 映射
 
-| layer | 路径 | 说明 |
+|| layer | 路径 | 说明 |
 |-------|------|------|
-| `engine` | `packages/workflow-core/`, `packages/image-ops/`, `packages/node-definitions/` | 工作流执行引擎、图像操作、节点定义 |
-| `backend` | `server/`, `server/prisma/` | Fastify API、Prisma ORM、SQLite |
+| `engine` | `packages/workflow-core/`, `packages/image-ops/`, `packages/node-definitions/`, `packages/core/` | 工作流执行引擎、图像操作、节点定义、核心工具 |
+| `backend` | `server/` | Fastify API、Prisma ORM、SQLite |
 | `editor` | `apps/dev-tool/` | 开发者工具 UI |
 | `runtime` | `apps/user-app/` | 终端用户运行时 |
-| `ui-skin` | `packages/shared-ui/` | 设计系统和共享 UI 组件 |
+| `ui-skin` | `packages/shared-ui/`, `packages/shared-types/` | 设计系统、共享类型 |
+| `meta` | `.cursor/` | Cursor skills 和 commands |
 
 ### Layer 执行优先级
-
-按优先级从高到低执行：
 
 ```
 engine > backend > editor > runtime > ui-skin > meta
@@ -30,15 +29,14 @@ engine > backend > editor > runtime > ui-skin > meta
 ### 全量验证
 
 ```bash
-pnpm typecheck
-pnpm test
+pnpm typecheck && pnpm test
 ```
 
 ### 按 layer 增量验证
 
 ```bash
 # engine layer
-pnpm typecheck --filter=@prism/workflow-core --filter=@prism/image-ops --filter=@prism/node-definitions
+pnpm typecheck --filter=@prism/workflow-core --filter=@prism/image-ops --filter=@prism/node-definitions --filter=@prism/core
 pnpm test --filter=@prism/workflow-core
 pnpm test --filter=@prism/image-ops
 
@@ -57,4 +55,7 @@ pnpm test --filter=@prism/user-app
 
 # ui-skin layer
 pnpm typecheck --filter=@prism/shared-ui
+
+# meta layer
+pnpm typecheck
 ```

@@ -303,8 +303,9 @@ export class WorkerPool {
       if (worker.errorCount >= this.config.maxErrors) {
         worker.status = 'error';
         await this.replaceWorker(worker);
-        // After replacement, retry the task on the new worker
-        const fresh = workerIndex !== -1 ? this.workers[workerIndex] : null;
+        // After replacement, retry the task on the new worker (do NOT use the
+        // old workerIndex since this.workers was mutated by replaceWorker).
+        const fresh = this.selectWorker();
         if (fresh?.proxy) {
           fresh.status = 'busy';
           fresh.lastUsed = Date.now();
@@ -313,6 +314,8 @@ export class WorkerPool {
             fresh.status = 'idle';
             this.stats.totalTasksProcessed++;
             item.resolve(result);
+            this.processQueue();
+            return;
           } catch (retryErr) {
             fresh.errorCount++;
             fresh.lastError = retryErr instanceof Error ? retryErr.message : 'Retry failed';
@@ -320,6 +323,7 @@ export class WorkerPool {
             this.stats.totalTasksFailed++;
             item.reject(retryErr instanceof Error ? retryErr : new Error('Retry failed'));
           }
+          return; // retry block handles queue via fresh going idle
         } else {
           this.stats.totalTasksFailed++;
           item.reject(new Error('Worker replacement failed'));

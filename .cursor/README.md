@@ -1,6 +1,6 @@
 # .cursor 目录说明
 
-> **v3.0 变更：** 减控制层，补模板层。tasks-state.json 从"唯一真相源"降为"兼容参考"；risk/priority/estimated_time 已删除；coherence 降级为 coherence-lite；review checklist 和测试分层模板内置到 artifact 生成阶段。
+> **v3.2 变更：** 精简命令至 5 个（移除 opsx-plan/opsx-debug/opsx-skill）；change_class 扩展为 low/medium/high 三级并分离 change_profile；新增 verify.md 模板；debug 诊断逻辑并入 apply failure-handling section；plan 编排逻辑并入 propose change-splitting section。
 
 ---
 
@@ -14,32 +14,26 @@
 │   │   ├── SKILL-INDEX.md         # 自动生成的 Skill 索引
 │   │   └── SKILL-SCHEMA.md        # 元数据 Schema 定义
 │   ├── openspec-explore/           # 探索代码库，澄清需求
-│   ├── openspec-propose/           # 创建 change，生成 artifacts（含 risk-triggered 模板）
-│   ├── openspec-plan/              # 从规划到批量派生（非默认能力）
-│   ├── openspec-apply/             # 按 task 实现代码，断点续传基于 checkbox
-│   ├── openspec-verify/            # 验证实现一致性（Full + coherence-lite）
-│   ├── openspec-archive/           # 归档完成的 change
-│   ├── openspec-debug/             # 调试 apply 阶段遇到的问题
-│   └── openspec-skill/             # Skill 系统维护（不默认暴露）
+│   ├── openspec-propose/          # 创建 change，生成 artifacts（含 risk-triggered 模板 + change-splitting）
+│   ├── openspec-apply/            # 按 task 实现代码，断点续传基于 checkbox，内置 failure-handling
+│   ├── openspec-verify/           # 验证实现一致性（Full + coherence-lite）
+│   └── openspec-archive/          # 归档完成的 change
 │
 └── commands/                       # 命令入口（触发对应 Skill）
-    └── opsx-*.md                   # 8 个核心命令
+    └── opsx-*.md                   # 5 个核心命令
 ```
 
 ---
 
-## 命令速查表（v3.0）
+## 命令速查表（v3.2）
 
 | 命令 | Skill | 阶段 | 作用 |
 |------|-------|------|------|
 | `/opsx-explore` | `openspec-explore` | 探索 | 扫描代码库结构，澄清需求，量化切换标准 |
-| `/opsx-propose` | `openspec-propose` | 提案 | 创建 change，生成 artifacts；change_class 推断触发 review/测试模板 |
-| `/opsx-plan` | `openspec-plan` | 规划 | 多 change 协同编排（非默认，详见使用门槛） |
-| `/opsx-apply` | `openspec-apply` | 实现 | 按 layer 优先级执行 task，断点续传基于 checkbox |
+| `/opsx-propose` | `openspec-propose` | 提案 | 创建 change，生成 artifacts；change_class 推断触发 review/测试模板；支持 change-splitting |
+| `/opsx-apply` | `openspec-apply` | 实现 | 按 layer 优先级执行 task，断点续传基于 checkbox；内置 failure-handling 诊断 |
 | `/opsx-verify` | `openspec-verify` | 验证 | Full 验证 + coherence-lite checklist |
 | `/opsx-archive` | `openspec-archive` | 归档 | 最终确认后归档 change |
-| `/opsx-debug` | `openspec-debug` | 调试 | 诊断错误，提供修复方案 |
-| `/opsx-skill` | `openspec-skill` | 维护 | Skill 系统维护（不默认暴露） |
 
 ---
 
@@ -56,25 +50,29 @@
 - 不自动修复 JSON
 ```
 
-### 2. change_class 推断
+### 2. change_class / change_profile 推断
 
-> 所有"按风险触发"的规则统一从 proposal 顶部的 `change_class` 推断。
+> `change_class` = 风险等级，影响 verify 强度和归档条件。
+> `change_profile` = 流程重量，记录推断依据（schema v2 固定 5 个 artifacts）。
+> 规则来源：config.yaml 的 `rules.change_class`，proposal.md 只展示推断结果。
 
 ```yaml
 ---
 name: <change-name>
-change_class: high  # 推断依据：触及 engine 层
+change_class: high      # 风险等级
+change_profile: high     # 流程重量
 reason: "touches engine layer, modifies canvas API contract"
 ---
 ```
 
-| 条件 | change_class | 触发动作 |
-|------|-------------|---------|
-| 仅样式/文案/UI 布局，不影响逻辑 | `low` | 跳过 review checklist；测试并入 tasks |
-| 触及 store / API contract / node schema | `high` | 插入 review checklist + 独立测试章节 |
-| 涉及跨包接口、数据迁移、序列化格式 | `high` | 强制 repo-analysis |
-| engine/core 层改动（任何 scope） | `high` | 插入 review checklist + 独立测试章节 |
-| 无法明确判断 | `high`（默认走保守路径） | — |
+| 条件 | change_class | change_profile | 触发动作 |
+|------|-------------|---------------|---------|
+| 仅样式/文案/UI 布局，不影响逻辑 | `low` | `low` | 跳过 review checklist；测试并入 tasks |
+| 单页面交互增强、节点面板调整、局部 UI 变更 | `medium` | `medium` | 简化 review checklist；测试章节可选 |
+| 触及 store / API contract / node schema | `high` | `high` | 插入完整 review checklist + 独立测试章节 |
+| 涉及跨包接口、数据迁移、序列化格式 | `high` | `high` | 插入完整 review checklist + 独立测试章节 |
+| engine/core 层改动（任何 scope） | `high` | `high` | 插入完整 review checklist + 独立测试章节 |
+| 无法明确判断 | `high`（默认走保守路径） | `medium`（默认走中等路径） | — |
 
 ### 3. 精简的 Task 元数据
 
@@ -119,13 +117,12 @@ coherence-lite 结构：
 │  探索代码库 → 澄清需求                                   │
 │  ↓                                                      │
 │  /opsx-propose                                          │
-│  推断 change_class → 生成 artifacts（含 risk-triggered 模板） │
-│  ↓                                                      │
+│  推断 change_class → 生成 artifacts                      │
+│  ↓ （如需多 change 编排：change-splitting）              │
 │  /opsx-apply                                            │
 │  按 layer 优先级执行 → 增量验证 → 断点续传               │
-│  ↓ 遇到问题                                              │
-│  /opsx-debug                                            │
-│  诊断 → 修复 → 继续 apply                                │
+│  ↓ 遇到问题                                             │
+│  failure-handling 诊断                                   │
 │  ↓ 所有 task 完成                                        │
 │  /opsx-verify                                           │
 │  Full + coherence-lite                                   │
@@ -134,29 +131,6 @@ coherence-lite 结构：
 │  Git 检查 → 最终确认 → 归档                              │
 └─────────────────────────────────────────────────────────┘
 ```
-
-### 规划路径（非默认）
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  /opsx-plan（满足使用门槛时）                             │
-│  解析专家报告 → 全局 repo-analysis → 产出 change-index   │
-│  ↓                                                      │
-│  /opsx-plan --derive <meta-change>                      │
-│  按依赖顺序批量创建子 change                              │
-│  ↓                                                      │
-│  /opsx-apply --batch                                     │
-└─────────────────────────────────────────────────────────┘
-```
-
-**/opsx-plan 使用门槛：**
-
-| 建议用 | 不建议用 |
-|--------|---------|
-| 预期需要 3 个以上子 change | 单个 change，独立范围 |
-| 存在 change 间依赖 | 无跨 change 依赖 |
-| 涉及共享 contract / migration | 快速验证想法 |
-| 需要批量 apply | — |
 
 ---
 

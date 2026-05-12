@@ -765,7 +765,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         },
         to: {
           nodeId: e.target,
-          port: e.targetHandle ?? (() => { throw new Error('sourceHandle is required'); })(),
+          port: e.targetHandle ?? (() => { throw new Error('targetHandle is required'); })(),
         },
       })),
       inputs: [],
@@ -1171,8 +1171,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   },
 
   cancelExecution() {
-    const abort = get()._executionAbort;
-    if (abort) abort();
+    const svc = getExecutionService();
+    svc.cancel();
   },
 
   clearExecution() {

@@ -40,6 +40,7 @@ export interface ExecutionService {
     edges: EditorCanvasEdge[],
     options: ExecuteOptions
   ) => Promise<ExecutionResult>;
+  cancel: () => void;
 }
 
 interface WorkflowExecutorType {
@@ -50,8 +51,12 @@ interface WorkflowExecutorType {
 }
 
 export function createExecutionService(): ExecutionService {
+  let activeController: AbortController | null = null;
+
   return {
     async execute(workflowMeta, nodes, edges, options) {
+      // Create a fresh AbortController for this execution run
+      activeController = new AbortController();
       const { onProgress, signal, laneConfig } = options;
       const { globalRegistry } = await import('@prism/core');
       const { WorkflowExecutor } = await import('@prism/workflow-core');
@@ -118,6 +123,10 @@ export function createExecutionService(): ExecutionService {
         error: result.error,
       };
     },
+
+    cancel() {
+      activeController?.abort();
+    },
   };
 }
 
@@ -136,5 +145,9 @@ export const executionService: ExecutionService = {
   async execute(workflowMeta, nodes, edges, options) {
     const svc = getExecutionService();
     return svc.execute(workflowMeta, nodes, edges, options);
+  },
+  cancel() {
+    const svc = getExecutionService();
+    svc.cancel();
   },
 };
