@@ -70,7 +70,7 @@ dependencies:
   - type: task
     refs: []
 -->
-- [ ] T1: 修复 `workerPool.ts` Worker 替换后重试索引 bug
+- [x] T1: 修复 `workerPool.ts` Worker 替换后重试索引 bug
   - layer: engine
   - **验收标准**: Worker 替换后重试任务分配到新 Worker
 
@@ -82,7 +82,7 @@ dependencies:
   - type: task
     refs: []
 -->
-- [ ] T2: `executionService.ts` 实现 AbortController 链 — 创建 AbortController，cancel() 调用 abort()，传递 signal 到 WorkflowExecutor
+- [x] T2: `executionService.ts` 实现 AbortController 链 — 创建 AbortController，cancel() 调用 abort()，传递 signal 到 WorkflowExecutor
   - layer: engine
   - **验收标准**: `pnpm typecheck --filter=@prism/dev-tool` 无错误
 
@@ -94,7 +94,7 @@ dependencies:
   - type: task
     refs: [T2]
 -->
-- [ ] T3: `useCanvasStore.cancelExecution()` 调 `executionService.cancel()`
+- [x] T3: `useCanvasStore.cancelExecution()` 调 `executionService.cancel()`
   - layer: editor
   - **验收标准**: 点取消后流水线停止
 
@@ -130,7 +130,7 @@ dependencies:
   - type: task
     refs: []
 -->
-- [ ] T6: 修复 `useCanvasStore.ts` 错误信息 — targetHandle 缺失时报 "targetHandle is required"
+- [x] T6: 修复 `useCanvasStore.ts` 错误信息 — targetHandle 缺失时报 "targetHandle is required"
   - layer: editor
   - **验收标准**: 错误信息准确
 
@@ -142,7 +142,7 @@ dependencies:
   - type: task
     refs: [T1]
 -->
-- [ ] T7: `workerPool.ts` 的 `MAX_ATTEMPTS` 从硬编码改为 `process.env['WORKER_POOL_MAX_ATTEMPTS']`，默认 200
+- [x] T7: `workerPool.ts` 的 `MAX_ATTEMPTS` 从硬编码改为 `process.env['WORKER_POOL_MAX_ATTEMPTS']`，默认 200
   - layer: engine
   - **验收标准**: `pnpm typecheck --filter=@prism/image-ops` 无错误
 
