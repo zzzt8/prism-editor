@@ -408,7 +408,7 @@ export class WorkerPool {
       throw new Error('WorkerPool has been terminated');
     }
 
-    const MAX_ATTEMPTS = 200; // 10 seconds max wait
+    const MAX_ATTEMPTS = parseInt(process.env['WORKER_POOL_MAX_ATTEMPTS'] ?? '200', 10);
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       const worker = this.selectWorker();
       if (worker?.proxy) {
