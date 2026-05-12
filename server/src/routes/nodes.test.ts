@@ -10,8 +10,16 @@ import Fastify, { type FastifyInstance } from 'fastify';
 // Use .js extensions for ESM compatibility (TypeScript resolves .ts but output is .js)
 import nodeRoutes from './nodes.js';
 import { prisma } from '../db/client.js';
+import bcrypt from 'bcryptjs';
 
 let app: FastifyInstance;
+
+// Ensure test user exists in DB (use raw SQL to bypass Prisma constraints)
+beforeAll(async () => {
+  const hashedPassword = await bcrypt.hash('password', 12);
+  const now = new Date().toISOString();
+  await prisma.$executeRaw`INSERT OR REPLACE INTO User (id, email, name, password, createdAt, updatedAt) VALUES ('test-user-id', 'test@localhost', 'Test User', ${hashedPassword}, ${now}, ${now})`;
+});
 
 const validManifest = {
   name: 'test-load-image',
@@ -49,7 +57,13 @@ const validPayload = {
 
 // Build a Fastify app with the routes for testing
 beforeAll(async () => {
-  app = Fastify();
+  app = Fastify({ logger: false });
+
+  // Mock authenticate decorator — sets a test user for all requests
+  app.decorate('authenticate', async (request: any) => {
+    request.user = { userId: 'test-user-id', type: 'access' };
+  });
+
   await app.register(nodeRoutes);
   await app.ready();
 });
