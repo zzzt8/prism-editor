@@ -138,12 +138,20 @@ export async function deleteFromOss(key: string): Promise<void> {
 
   if (!client) return; // Nothing to delete if OSS not enabled
 
-  await client.send(
-    new DeleteObjectCommand({
-      Bucket: config.bucket,
-      Key: key,
-    })
-  );
+  try {
+    await client.send(
+      new DeleteObjectCommand({
+        Bucket: config.bucket,
+        Key: key,
+      })
+    );
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    console.error('[OSS] Delete failed:', error.message);
+    if (config.enabled) {
+      throw new Error(`OSS delete failed: ${error.message}`);
+    }
+  }
 }
 
 /**
