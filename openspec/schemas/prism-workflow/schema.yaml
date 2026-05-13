@@ -97,8 +97,15 @@ artifacts:
       Execute in layer priority order: engine > backend > editor > runtime >
       ui-skin > meta. When change_class = high, include standalone Test Design
       section. When change_class = low, merge tests into task verification commands.
-      **质量合规性验收**: Append the N.1~N.5 quality compliance checklist from
-      specs/QUALITY_STANDARDS.md as the final section. This is MANDATORY for all changes.
+      **质量合规性验收**: Append only the relevant N.x quality compliance checklist items from
+      specs/QUALITY_STANDARDS.md as the final section. Do NOT add N sections that are
+      unrelated to the change — agents should judge relevance based on actual code impact:
+      - N.1 执行引擎完整性 → 仅 engine / workflow-core 改动
+      - N.2 状态一致性 → 仅涉及 Zustand store / 状态机
+      - N.3 Registry 与 API 契约 → 仅 backend / server / API 改动
+      - N.4 交互完整性 → 仅 UI 组件 / 前端交互改动
+      - N.5 安全与类型 → 仅 security / API / type 系统改动
+      例如：纯 backend 安全 change 只加 N.3 + N.5；UX cleanup 只加 N.4。
     requires:
       - specs
       - design

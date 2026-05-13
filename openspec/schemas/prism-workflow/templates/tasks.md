@@ -113,6 +113,13 @@ dependencies:
 ## N. 质量合规性验收
 
 > 交付前必须完成以下任务，否则不得合入 main 分支。
+> **选择性应用**：只添加与 change 直接相关的 N.x 章节，无关的不写。
+> - N.1 执行引擎完整性 → 仅 engine / workflow-core 改动
+> - N.2 状态一致性 → 仅涉及 Zustand store / 状态机
+> - N.3 Registry 与 API 契约 → 仅 backend / server / API 改动
+> - N.4 交互完整性 → 仅 UI 组件 / 前端交互改动
+> - N.5 安全与类型 → 仅 security / API / type 系统改动
+> 例如：纯 backend 安全 change 只加 N.3 + N.5；UX cleanup 只加 N.4。
 
 ### N.1 执行引擎完整性
 

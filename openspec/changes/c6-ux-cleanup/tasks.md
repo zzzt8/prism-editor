@@ -106,33 +106,12 @@ dependencies:
 ## N. 质量合规性验收
 
 > 交付前必须完成以下任务，否则不得合入 main 分支。
-
-### N.1 执行引擎完整性
-
-- [ ] N.1.1 拓扑排序测试覆盖（含 cycle detection）
-- [ ] N.1.2 节点 executor 错误隔离测试
-- [ ] N.1.3 AbortController 链路测试（取消后结果保留）
-
-### N.2 状态一致性
-
-- [ ] N.2.1 Canvas 执行状态机转换测试
-- [ ] N.2.2 取消后 Zustand store 状态检查
-
-### N.3 Registry 与 API 契约
-
-- [ ] N.3.1 Node Registry 重复注册报错验证
-- [ ] N.3.2 Prisma migration 验证（`pnpm --filter=@prism/server exec prisma migrate status`）
-- [ ] N.3.3 现有 workflow JSON 向后兼容验证（如涉及格式变更）
+> **选择性应用**：仅添加与 c6 直接相关的章节。
 
 ### N.4 交互完整性
 
-- [ ] N.4.1 无 `onClick={() => {}}` 占位交互
-- [ ] N.4.2 错误文案可读性检查
-
-### N.5 安全与类型
-
-- [ ] N.5.1 `as any` 使用检查（仅测试文件例外）
-- [ ] N.5.2 API 输入 Zod 验证覆盖（如涉及 API 变更）
+- [ ] N.4.1 无 `onClick={() => {}}` 占位交互（App.tsx 三个按钮均有具体实现）
+- [ ] N.4.2 错误文案可读性检查（alert 提示"此功能开发中"文案友好）
 
 ---
 
