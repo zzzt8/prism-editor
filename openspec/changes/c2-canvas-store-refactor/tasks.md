@@ -76,7 +76,7 @@ dependencies:
   - type: task
     refs: []
 -->
-- [ ] T1: 创建 `canvasStore.ts` — 主 Store，整合 graphSlice + executionSlice 作为实际实现，selectionSlice 剪贴板部分并入
+- [x] T1: 创建 `canvasStore.ts` — 主 Store，整合 graphSlice + executionSlice 作为实际实现，selectionSlice 剪贴板部分并入
   - layer: editor
   - **验收标准**: `pnpm typecheck --filter=@prism/dev-tool` 无错误；`pnpm dev` 能启动
 
@@ -88,7 +88,7 @@ dependencies:
   - type: task
     refs: [T1]
 -->
-- [ ] T2: 统一 nodeCounter / edgeCounter — 删除 graphSlice.ts / selectionSlice.ts 中重复的计数器副本，改为从主 Store 访问
+- [x] T2: 统一 nodeCounter / edgeCounter — 删除 graphSlice.ts / selectionSlice.ts 中重复的计数器副本，改为从主 Store 访问
   - layer: editor
   - **验收标准**: 复制粘贴 10 次节点，每个节点 ID 都不同
 
@@ -100,7 +100,7 @@ dependencies:
   - type: task
     refs: [T1]
 -->
-- [ ] T3: 剪贴板 Zustand 化 — 删除模块级 clipboardNodes / clipboardEdges 变量，改为 `canvasStore.ts` 的 `clipboard` 状态字段
+- [x] T3: 剪贴板 Zustand 化 — 删除模块级 clipboardNodes / clipboardEdges 变量，改为 `canvasStore.ts` 的 `clipboard` 状态字段
   - layer: editor
   - **验收标准**: 复制节点后刷新页面，粘贴仍可用（Zustand persist 或 localStorage 恢复）
 
@@ -112,7 +112,7 @@ dependencies:
   - type: task
     refs: [T1, T2, T3]
 -->
-- [ ] T4: IndexedDBStorageAdapter 单例 — 在 storage/ 目录 export 单例，各 Store 共用
+- [x] T4: IndexedDBStorageAdapter 单例 — 在 storage/ 目录 export 单例，各 Store 共用
   - layer: editor
   - **验收标准**: useCanvasStore 和 workflowStore 共享同一个 adapter 实例
 
@@ -124,7 +124,7 @@ dependencies:
   - type: task
     refs: [T4]
 -->
-- [ ] T5: 删除 `apps/dev-tool/src/utils/nodeCache.ts` — dev-tool 改用 `apps/user-app/src/storage/nodeCache.ts`
+- [x] T5: 删除 `apps/dev-tool/src/utils/nodeCache.ts` — dev-tool 改用 `apps/user-app/src/storage/nodeCache.ts`
   - layer: editor
   - **验收标准**: `pnpm typecheck --filter=@prism/dev-tool` 无错误；dev-tool 的 node 缓存功能正常
 
@@ -136,7 +136,7 @@ dependencies:
   - type: task
     refs: [T5]
 -->
-- [ ] T6: 确认 `apps/user-app/src/storage/nodeCache.ts` 完整可用，作为 node 缓存唯一来源
+- [x] T6: 确认 `apps/user-app/src/storage/nodeCache.ts` 完整可用，作为 node 缓存唯一来源
   - layer: runtime
   - **验收标准**: nodeCache 在 user-app 中正常工作
 
