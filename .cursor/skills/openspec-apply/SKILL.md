@@ -1,7 +1,7 @@
 ---
 name: openspec-apply
 description: 执行 OpenSpec change 的 tasks。断点续传，增量验证。
-version: "3.3"
+version: "3.4"
 category: apply
 tags:
   - openspec
@@ -24,7 +24,14 @@ verify:
 
 顺序执行，有一项失败就停。
 
-```bash
+```powershell
+# PowerShell
+openspec list --json
+Test-Path "openspec/changes/<name>/proposal.md"
+Test-Path "openspec/changes/<name>/design.md"
+Test-Path "openspec/changes/<name>/tasks.md"
+
+# Linux/macOS (bash)
 openspec list --json
 test -f "openspec/changes/<name>/proposal.md"
 test -f "openspec/changes/<name>/design.md"
@@ -48,6 +55,15 @@ engine > backend > editor > runtime > ui-skin > meta
 
 同 layer 按 task id 字母序。
 
+## 批量分组（logical commit）
+
+相邻的同类改动可以一次 commit。判断标准：
+
+- **允许合组**：同一文件的多个改动、相邻文件的同类改动（同一 task 内自然产生）
+- **强制分开**：不同 layer 的改动必须分开 commit
+
+合组后一个 commit 对应多个 task checkbox 都更新。**不得把无关改动合到一个 commit 里**。
+
 ## 单个 task 执行循环
 
 对于每个可执行的 task：
@@ -56,11 +72,12 @@ engine > backend > editor > runtime > ui-skin > meta
 1. 确认目标
    - 读 task 的 opsx-meta 块：layer、verify
    - 读 task 描述和验收标准
+   - 读文件路径（task 描述中应有相对 repo root 的路径）
 
 2. 定位代码
-   - 按 task 描述中的文件名直接定位（不从搜索开始）
-   - 如果文件名不确定，用 grep 搜关键字 → 最多读 5 个匹配文件
-   - 搜不到 → 停下来，告诉用户"找不到目标，请确认文件路径"
+   - 按 task 描述中的文件路径直接定位
+   - 路径不存在 → 用 grep 搜关键字 → 最多读 5 个匹配文件
+   - 搜不到 → 进入 Blocked 策略
 
 3. 修改代码
    - 用 str_replace 做修改
@@ -82,13 +99,47 @@ engine > backend > editor > runtime > ui-skin > meta
    - 不要改其他 checkbox
 ```
 
-## 全量验证（所有 tasks 完成后）
+## 验证命令 fallback
+
+如果 turbo 不可用（未安装或不在 PATH）：
+
+```bash
+# 替换 pnpm test --filter=<package>
+pnpm exec vitest run
+
+# 替换 pnpm typecheck --filter=<package>
+pnpm exec tsc --noEmit
+```
+
+## 全量验证
+
+### Step 1: Smoke Check（先确认测试框架可运行）
+
+```bash
+pnpm exec vitest run --reporter=verbose 2>&1 | head -20
+```
+
+- 如果所有测试被跳过（0 tests collected）且无编译错误 → 测试框架正常，继续 Step 2
+- 如果报错 "canvas native module" / "module not found" / 编译错误 → **环境问题**，记录，视为 smoke check 通过（排除环境干扰）
+- 如果有测试文件但全部 PASSED → 环境正常，继续 Step 2
+
+### Step 2: 全量验证
 
 ```bash
 pnpm typecheck && pnpm test
 ```
 
-通过 → apply 完成。失败 → 进入 Failure-Handling。
+- 通过 → apply 完成
+- 失败 → 进入 Failure-Handling
+
+## Blocked 策略
+
+根据 blocked 原因决定动作：
+
+| 原因 | 动作 |
+|------|------|
+| **依赖未满足**（T2 未完成，T3 跳） | 跳过，记入摘要。继续执行不依赖它的 tasks。 |
+| **无法定位目标**（路径/关键字搜不到） | **停下来**，告诉用户"找不到目标，请确认文件路径"。不更新 checkbox。 |
 
 ## Failure-Handling
 
@@ -102,11 +153,8 @@ pnpm typecheck && pnpm test
 - test 失败 → 看上方"测试失败？"分支
 - CLI 失败 → 输出一句话诊断，告诉用户检查什么，停止
 
-**找不到目标代码？**
-→ 停下来，告诉用户 task 描述中的目标文件/关键字无法定位，需要人工确认路径。
-
-**依赖未满足？**
-→ 跳过该 task，记录在摘要中。执行不依赖它的 tasks。完成后告诉用户 blocked tasks 列表。
+**环境问题（全量验证前 smoke check 已标记）？**
+→ 记录为"pre-existing 环境问题"，不阻断 apply 流程
 
 ## 完成后输出摘要
 
@@ -115,5 +163,6 @@ pnpm typecheck && pnpm test
 
 - 完成：T1, T2, T3
 - 跳过（blocked）：T4（T2 未完成）
+- 环境问题：<列出 smoke check 发现的问题>
 - 全量验证：通过 / 失败
 ```

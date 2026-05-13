@@ -24,6 +24,9 @@ artifacts:
         Modified capabilities → delta spec in specs/.
       - **Impact**: Affected code, APIs, dependencies, or systems.
       - **Out of Scope**: Constraints and non-goals from user input.
+      - **质量与测试规范要求**: After Out of Scope, add the quality checklist
+        table (quality dimensions check) and acceptance criteria from
+        specs/QUALITY_STANDARDS.md. This is MANDATORY for all changes.
     requires: []
   - id: specs
     generates: specs/**/*.md
@@ -50,6 +53,9 @@ artifacts:
       When change involves engine/backend or cross-app modifications,
       include Architecture Review section.
       When change_class = high, insert formal review checklist.
+      **质量合规性**: After Review Checklist, add the quality compliance section
+      from specs/QUALITY_STANDARDS.md covering execution integrity, invariants,
+      and test strategy. This is MANDATORY for all changes.
     requires:
       - proposal
   - id: tasks
@@ -60,6 +66,9 @@ artifacts:
       Create the task list that breaks down the implementation work.
       Each task MUST be a checkbox: `- [ ] X.Y Task description`
       Group under ## numbered headings.
+      **File path is mandatory**: every task description must include the target file path
+      relative to repo root, e.g. "修复 `apps/dev-tool/src/stores/canvasStore.ts` 中的 bug"。
+      Do not write tasks without file paths — the agent needs to locate the code without searching.
       Support task metadata via HTML comments:
       ```html
       <!-- opsx-meta
@@ -76,6 +85,8 @@ artifacts:
       Execute in layer priority order: engine > backend > editor > runtime >
       ui-skin > meta. When change_class = high, include standalone Test Design
       section. When change_class = low, merge tests into task verification commands.
+      **质量合规性验收**: Append the N.1~N.5 quality compliance checklist from
+      specs/QUALITY_STANDARDS.md as the final section. This is MANDATORY for all changes.
     requires:
       - specs
       - design

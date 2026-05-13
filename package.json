@@ -23,7 +23,8 @@
     "clean": "turbo run clean"
   },
   "devDependencies": {
-    "canvas": "^3.2.2",
+    "@electron/rebuild": "^4.0.4",
+    "canvas": "3.2.2",
     "turbo": "^2.0.0",
     "typescript": "^5.4.0",
     "vitest": "^1.6.0"

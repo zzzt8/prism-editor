@@ -150,9 +150,9 @@ dependencies:
 
 ### 手工验收清单
 
-- [ ] 启动 dev-tool，加载流水线，点"运行"，运行中途点"取消"，确认执行停止
-- [ ] 启动 user-app，加载 published workflow，点"运行"，运行中途点"取消"，确认执行停止
-- [ ] 在 dev-tool 中制造一个 targetHandle 缺失的连线，观察错误信息是否为 "targetHandle is required"
+- [x] 启动 dev-tool，加载流水线，点"运行"，运行中途点"取消"，确认执行停止
+- [x] 启动 user-app，加载 published workflow，点"运行"，运行中途点"取消"，确认执行停止
+- [x] 在 dev-tool 中制造一个 targetHandle 缺失的连线，观察错误信息是否为 "targetHandle is required"
 
 ---
 

@@ -8,7 +8,6 @@ import {
 } from '../schemas/node-package.js';
 
 const nodeRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-  // GET /api/nodes - List node packages for current user
   fastify.get('/nodes', { onRequest: [fastify.authenticate] }, async (request) => {
     const query = NodePackageQuerySchema.parse(request.query);
     const { category, search, sort, page, limit } = query;
@@ -60,7 +59,6 @@ const nodeRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     };
   });
 
-  // POST /api/nodes - Upload a node package
   fastify.post('/nodes', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const input = CreateNodePackageSchema.parse(request.body);
     const manifestJson = JSON.stringify(input.manifest);
@@ -95,7 +93,6 @@ const nodeRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     }
   });
 
-  // GET /api/nodes/:id - Get node package detail (owner only)
   fastify.get('/nodes/:id', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const { id } = NodePackageParamsSchema.parse(request.params);
     const userId = (request.user as { userId: string }).userId;
@@ -116,7 +113,6 @@ const nodeRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     return { data: nodePackage };
   });
 
-  // PUT /api/nodes/:id - Update node package (owner only)
   fastify.put('/nodes/:id', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const { id } = NodePackageParamsSchema.parse(request.params);
     const input = UpdateNodePackageSchema.parse(request.body);
@@ -155,7 +151,6 @@ const nodeRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     return { data: nodePackage };
   });
 
-  // DELETE /api/nodes/:id - Delete node package (owner only)
   fastify.delete('/nodes/:id', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const { id } = NodePackageParamsSchema.parse(request.params);
     const userId = (request.user as { userId: string }).userId;
@@ -169,7 +164,6 @@ const nodeRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     return { success: true };
   });
 
-  // GET /api/nodes/:id/versions - Get version history (owner only)
   fastify.get('/nodes/:id/versions', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const { id } = NodePackageParamsSchema.parse(request.params);
     const userId = (request.user as { userId: string }).userId;
@@ -194,7 +188,6 @@ const nodeRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     return { data: versions };
   });
 
-  // GET /api/nodes/:id/download - Download node package manifest (owner only)
   fastify.get('/nodes/:id/download', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const { id } = NodePackageParamsSchema.parse(request.params);
     const userId = (request.user as { userId: string }).userId;

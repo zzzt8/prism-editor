@@ -59,3 +59,23 @@ pnpm typecheck --filter=@prism/shared-ui
 # meta layer
 pnpm typecheck
 ```
+
+### turbo fallback（turbo 不可用时）
+
+```bash
+# 替换 pnpm test --filter=<package>
+pnpm exec vitest run
+
+# 替换 pnpm typecheck --filter=<package>
+pnpm exec tsc --noEmit
+```
+
+### Smoke Check（全量验证前先跑）
+
+```bash
+pnpm exec vitest run --reporter=verbose 2>&1 | head -20
+```
+
+- 所有测试被跳过（0 tests collected）且无编译错误 → 测试框架正常
+- 报错 canvas native / module not found / 编译错误 → 环境问题，记录后继续
+- 有测试文件且 PASSED → 环境正常

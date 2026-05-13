@@ -18,18 +18,21 @@ declare module '@fastify/jwt' {
   }
 }
 
-const authMiddleware: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-  fastify.decorate('authenticate', async function (request: FastifyRequest, reply: FastifyReply) {
-    try {
-      const payload = await request.jwtVerify<AuthUser>();
+async function authenticate(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+  try {
+    const payload = await request.jwtVerify<AuthUser>();
 
-      if (payload.type !== 'access') {
-        return reply.status(401).send({ error: 'Invalid token type, expected access token' });
-      }
-    } catch (err) {
-      return reply.status(401).send({ error: 'Unauthorized' });
+    if (payload.type !== 'access') {
+      return reply.status(401).send({ error: 'Invalid token type, expected access token' });
     }
-  });
+  } catch {
+    return reply.status(401).send({ error: 'Unauthorized' });
+  }
+}
+
+const authMiddleware: FastifyPluginAsync = async (fastify: FastifyInstance) => {
+  fastify.decorate('authenticate', authenticate);
 };
 
+export { authenticate };
 export default authMiddleware;

@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { prisma } from '../db/client.js';
+import { authenticate } from '../middleware/auth.js';
 import {
   PublishWorkflowSchema,
   PublishedWorkflowParamsSchema,
@@ -9,7 +10,7 @@ import {
 
 const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   // GET /api/published - List published workflows for current user
-  fastify.get('/published', { onRequest: [fastify.authenticate] }, async (request, reply) => {
+  fastify.get('/published', { onRequest: [authenticate] }, async (request, reply) => {
     const query = PublishedWorkflowQuerySchema.parse(request.query);
     const { page, limit } = query;
     const skip = (page - 1) * limit;
@@ -57,7 +58,7 @@ const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
   });
 
   // GET /api/published/:id - Get published workflow by id (owner only)
-  fastify.get('/published/:id', { onRequest: [fastify.authenticate] }, async (request, reply) => {
+  fastify.get('/published/:id', { onRequest: [authenticate] }, async (request, reply) => {
     const { id } = PublishedWorkflowParamsSchema.parse(request.params);
     const userId = (request.user as { userId: string }).userId;
 
@@ -84,7 +85,7 @@ const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
   });
 
   // POST /api/published - Publish a workflow
-  fastify.post('/published', { onRequest: [fastify.authenticate] }, async (request, reply) => {
+  fastify.post('/published', { onRequest: [authenticate] }, async (request, reply) => {
     const input = PublishWorkflowSchema.parse(request.body);
     const userId = (request.user as { userId: string }).userId;
 
@@ -131,7 +132,7 @@ const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
   });
 
   // DELETE /api/published/:id - Unpublish a workflow
-  fastify.delete('/published/:id', { onRequest: [fastify.authenticate] }, async (request, reply) => {
+  fastify.delete('/published/:id', { onRequest: [authenticate] }, async (request, reply) => {
     const { id } = PublishedWorkflowParamsSchema.parse(request.params);
     const userId = (request.user as { userId: string }).userId;
 
@@ -159,7 +160,7 @@ const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
   });
 
   // POST /api/published/import - Import and publish a workflow directly
-  fastify.post('/published/import', { onRequest: [fastify.authenticate] }, async (request, reply) => {
+  fastify.post('/published/import', { onRequest: [authenticate] }, async (request, reply) => {
     const input = ImportPublishWorkflowSchema.parse(request.body);
     const userId = (request.user as { userId: string }).userId;
 

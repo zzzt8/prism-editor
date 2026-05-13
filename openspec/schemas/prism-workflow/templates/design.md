@@ -79,3 +79,26 @@
 ### 轻量版（low）
 
 > Low-risk change，跳过 formal review。
+
+---
+
+## 质量合规性
+
+本设计遵循 [项目全局质量与交付规范](../../specs/QUALITY_STANDARDS.md)，决策已覆盖以下要求：
+
+### 执行完整性覆盖
+
+- 拓扑排序：[是否改动 / 改动影响]
+- 节点级错误隔离：[executor 清单 / 错误处理方案]
+- Cancellation 链路：[哪些节点参与取消 / signal 传递路径]
+
+### 不变量检查
+
+- Node Registry：[新增 type / 复用现有]
+- API 契约：[是否涉及 schema 变更 / 向后兼容方案]
+
+### 测试策略
+
+- [ ] 单元测试：拓扑排序 + cycle detection
+- [ ] 集成测试：executor 报错后下游节点继续执行
+- [ ] 手工验收：取消操作后结果保留验证

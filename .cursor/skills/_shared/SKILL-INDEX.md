@@ -57,13 +57,13 @@ description: 所有 Skill 的索引目录。按 category 组织。
 
 ### openspec-apply
 
-执行 OpenSpec change 的 tasks。断点续传，增量验证。
+执行 OpenSpec change 的 tasks。断点续传，增量验证。|
 
 | 属性 | 值 |
 |------|----|
 | name | `openspec-apply` |
 | category | `apply` |
-| version | `"3.3"` |
+| version | `"3.4"` |
 | tags | `openspec`, `layer:meta` |
 | aliases | `/opsx-apply` |
 | depends_on | `openspec-propose` |
