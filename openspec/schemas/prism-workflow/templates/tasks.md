@@ -32,6 +32,9 @@
 
 ## 任务列表
 
+> [!WARNING]
+> **Task ID 必须全局唯一**。同一 change 内不得出现重复 id。若两个 task 需要用同一编号，改为 T6a / T6b。重复 id 是 schema 违规，会导致 `openspec list` 的 totalTasks 计数错误。
+
 > **Task 元数据格式：**
 > ```html
 > <!-- opsx-meta
@@ -44,8 +47,15 @@
 > -->
 > ```
 >
+> **验收标准写法规则**：必须写成**可观测、可验证**的条件，禁止写需要运行时状态才能验证的句子。
+> - 好：`pnpm exec tsc --noEmit 无错误`
+> - 好：`clipboard 字段存在于 canvasStore.ts 且类型为 NodeOrEdge[]`
+> - 差：`复制节点后刷新页面，粘贴仍可用`（需要 persist middleware，属于额外 scope）
+> - 差：`两个 store 共享同一个 adapter 实例`（需要对象身份测试，属于额外 scope）
+> 如果验收标准涉及运行时行为，拆成两个 sub-task：代码可验证的 + 标记为手工验收的。
+
 > **layer 取值**：editor | runtime | backend | engine | ui-skin | meta
-> **verify 取值**：unit-tests | golden-fixture | api-tests | smoke-test | visual-check
+> **verify 取值**：unit-tests | golden-fixture | api-tests | smoke-test | visual-check | manual
 
 <!-- opsx-meta
 id: T1
@@ -71,11 +81,18 @@ dependencies:
 
 ---
 
-### 手工验收清单
+### 验收清单（E2E 优先原则）
 
-- [ ] UI 交互正常
-- [ ] 错误提示友好
-- [ ] 性能可接受
+> 机器能做的先让机器做：E2E 测试 > 单元测试 > 命令行验证 > 人工验收。
+> 填写时按上述优先级选择验证方式，人工验收仅作为兜底。
+
+- [ ] E2E / Playwright 测试覆盖（如有）
+- [ ] 单元/集成测试通过（如有）
+- [ ] `pnpm typecheck` 无错误
+- [ ] 手工验收（上述均无法覆盖时）
+
+> 若某个验收项已有测试覆盖，则不加人工验收项。
+> 只有"无法编写测试"且"命令行无法验证"时才加人工验收。
 
 ---
 

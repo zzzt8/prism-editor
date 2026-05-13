@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import bcrypt from 'bcryptjs';
+import rateLimit from '@fastify/rate-limit';
 import { prisma } from '../db/client.js';
 import { registerSchema, loginSchema } from '../schemas/auth.js';
 
@@ -16,6 +17,23 @@ interface AuthTokens {
 const REFRESH_COOKIE_NAME = 'refreshToken';
 const ACCESS_TOKEN_EXPIRES_IN = process.env.ACCESS_TOKEN_EXPIRES_IN || '15m';
 const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
+
+// Token blacklist for revocation (in-memory)
+const tokenBlacklist = new Set<string>();
+const blacklistTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+function addToBlacklist(jti: string, expiresInMs: number): void {
+  tokenBlacklist.add(jti);
+  const timer = setTimeout(() => {
+    tokenBlacklist.delete(jti);
+    blacklistTimers.delete(jti);
+  }, expiresInMs);
+  blacklistTimers.set(jti, timer);
+}
+
+function isTokenBlacklisted(jti: string): boolean {
+  return tokenBlacklist.has(jti);
+}
 
 function safeParseInt(value: string | undefined, fallback: number): number {
   if (!value) return fallback;
@@ -40,6 +58,18 @@ function parseDurationToMs(duration: string): number {
 }
 
 const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
+  // Register rate limiting for auth endpoints
+  await fastify.register(rateLimit, {
+    max: 10,
+    timeWindow: '15 minutes',
+    keyGenerator: (req) => req.ip,
+    errorResponseBuilder: (_req, context) => ({
+      statusCode: 429,
+      error: 'Too Many Requests',
+      message: `Rate limit exceeded, retry in ${context.after}`,
+    }),
+  });
+
   // POST /api/auth/register
   fastify.post('/auth/register', async (request, reply) => {
     const input = registerSchema.parse(request.body);
@@ -119,10 +149,14 @@ const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     }
 
     try {
-      const payload = await fastify.jwt.verify<RefreshTokenPayload>(refreshToken);
+      const payload = await fastify.jwt.verify<RefreshTokenPayload & { jti: string }>(refreshToken);
 
       if (payload.type !== 'refresh') {
         return reply.status(401).send({ error: 'Invalid token type' });
+      }
+
+      if (isTokenBlacklisted(payload.jti)) {
+        return reply.status(401).send({ error: 'Token has been revoked' });
       }
 
       const user = await prisma.user.findUnique({
@@ -131,6 +165,12 @@ const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
       if (!user) {
         return reply.status(401).send({ error: 'User not found' });
+      }
+
+      // Revoke old refresh token
+      const ttlMs = (payload.exp! * 1000) - Date.now();
+      if (ttlMs > 0) {
+        addToBlacklist(payload.jti, ttlMs);
       }
 
       const tokens = await generateTokens(fastify, user.id);
@@ -153,6 +193,20 @@ const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
   // POST /api/auth/logout
   fastify.post('/auth/logout', async (request, reply) => {
+    const refreshToken = request.cookies[REFRESH_COOKIE_NAME];
+
+    if (refreshToken) {
+      try {
+        const payload = await fastify.jwt.verify<RefreshTokenPayload & { jti: string }>(refreshToken);
+        const ttlMs = (payload.exp! * 1000) - Date.now();
+        if (ttlMs > 0) {
+          addToBlacklist(payload.jti, ttlMs);
+        }
+      } catch {
+        // Token invalid/expired, nothing to blacklist
+      }
+    }
+
     reply.clearCookie(REFRESH_COOKIE_NAME, {
       path: '/',
       httpOnly: true,
@@ -165,10 +219,14 @@ const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   // GET /api/auth/me
   fastify.get('/auth/me', async (request, reply) => {
     try {
-      const payload = await request.jwtVerify<{ userId: string; type: string }>();
+      const payload = await request.jwtVerify<{ userId: string; type: string; jti: string }>();
 
       if (payload.type !== 'access') {
         return reply.status(401).send({ error: 'Invalid token type' });
+      }
+
+      if (isTokenBlacklisted(payload.jti)) {
+        return reply.status(401).send({ error: 'Token has been revoked' });
       }
 
       const user = await prisma.user.findUnique({
@@ -194,13 +252,15 @@ const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 };
 
 async function generateTokens(fastify: FastifyInstance, userId: string): Promise<AuthTokens> {
+  const jti = crypto.randomUUID();
+
   const accessToken = await fastify.jwt.sign(
-    { userId, type: 'access' },
+    { userId, type: 'access', jti },
     { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
   );
 
   const refreshToken = await fastify.jwt.sign(
-    { userId, type: 'refresh' },
+    { userId, type: 'refresh', jti },
     { expiresIn: REFRESH_TOKEN_EXPIRES_IN }
   );
 

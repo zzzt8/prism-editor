@@ -66,9 +66,21 @@ artifacts:
       Create the task list that breaks down the implementation work.
       Each task MUST be a checkbox: `- [ ] X.Y Task description`
       Group under ## numbered headings.
+      **id uniqueness (MANDATORY)**: every task id must be globally unique within
+      the change. If two tasks share the same base id (e.g. T6), append a letter
+      suffix: T6a, T6b. Duplicate ids are a schema violation — detect and report
+      before execution. Do not reuse the same id across different layers.
       **File path is mandatory**: every task description must include the target file path
       relative to repo root, e.g. "修复 `apps/dev-tool/src/stores/canvasStore.ts` 中的 bug"。
       Do not write tasks without file paths — the agent needs to locate the code without searching.
+      **验收标准必须可验证**: acceptance criteria must be stated as observable,
+      verifiable conditions — NOT as implementation requirements. Examples:
+      - GOOD: "clipboard 字段存在于 canvasStore.ts 且类型为 NodeOrEdge[]"
+      - GOOD: "pnpm exec tsc --noEmit 无错误"
+      - BAD: "复制节点后刷新页面，粘贴仍可用" (requires runtime state, not verifiable in code review)
+      - BAD: "两个 store 共享同一个 adapter 实例" (requires runtime object identity check)
+      If an acceptance criterion cannot be verified without running the app, split it
+      into a code-level sub-task (verifiable) and a manual sub-task (marked as manual).
       Support task metadata via HTML comments:
       ```html
       <!-- opsx-meta

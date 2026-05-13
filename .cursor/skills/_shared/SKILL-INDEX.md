@@ -63,7 +63,7 @@ description: 所有 Skill 的索引目录。按 category 组织。
 |------|----|
 | name | `openspec-apply` |
 | category | `apply` |
-| version | `"3.4"` |
+| version | `"3.5"` |
 | tags | `openspec`, `layer:meta` |
 | aliases | `/opsx-apply` |
 | depends_on | `openspec-propose` |

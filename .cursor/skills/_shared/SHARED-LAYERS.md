@@ -60,7 +60,7 @@ pnpm typecheck --filter=@prism/shared-ui
 pnpm typecheck
 ```
 
-### turbo fallback（turbo 不可用时）
+### turbo fallback（turbo 不可用时） {#turbo-fallback}
 
 ```bash
 # 替换 pnpm test --filter=<package>

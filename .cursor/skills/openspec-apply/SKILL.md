@@ -26,13 +26,22 @@ verify:
 
 ```powershell
 # PowerShell
-openspec list --json
+$json = openspec list --json | ConvertFrom-Json
+$status = ($json.changes | Where-Object { $_.name -eq "<name>" }).status
+if ($status -ne "in-progress") {
+  Write-Error "Change status is '$status', expected 'in-progress'. Stop."
+  exit 1
+}
 Test-Path "openspec/changes/<name>/proposal.md"
 Test-Path "openspec/changes/<name>/design.md"
 Test-Path "openspec/changes/<name>/tasks.md"
 
 # Linux/macOS (bash)
-openspec list --json
+status=$(openspec list --json | jq -r '.changes[] | select(.name == "<name>") | .status')
+if [ "$status" != "in-progress" ]; then
+  echo "Change status is '$status', expected 'in-progress'. Stop."
+  exit 1
+fi
 test -f "openspec/changes/<name>/proposal.md"
 test -f "openspec/changes/<name>/design.md"
 test -f "openspec/changes/<name>/tasks.md"
@@ -99,17 +108,17 @@ engine > backend > editor > runtime > ui-skin > meta
    - 不要改其他 checkbox
 ```
 
+7. 手工验收处理（E2E 优先原则）
+   - 读完 tasks.md 末尾的"验收清单"
+   - 优先尝试 E2E / Playwright 测试：跑 Playwright 测试，若通过则标记对应项
+   - 其次命令行验证：typecheck、vitest 等，按输出标记
+   - 最后才是人工：无法编写测试且命令行无法验证的项 → 跳过，记入摘要末尾
+   - 人工项不阻断 apply 完成
+
 ## 验证命令 fallback
 
-如果 turbo 不可用（未安装或不在 PATH）：
-
-```bash
-# 替换 pnpm test --filter=<package>
-pnpm exec vitest run
-
-# 替换 pnpm typecheck --filter=<package>
-pnpm exec tsc --noEmit
-```
+> turbo 不可用时 fallback 命令见 [SHARED-LAYERS.md - turbo fallback](../../_shared/SHARED-LAYERS.md#turbo-fallback)。
+> 不得在 skill 内联重复。权威来源唯一。
 
 ## 全量验证
 
@@ -164,5 +173,6 @@ pnpm typecheck && pnpm test
 - 完成：T1, T2, T3
 - 跳过（blocked）：T4（T2 未完成）
 - 环境问题：<列出 smoke check 发现的问题>
+- 手工验收（需人工）：<列出无法自动化的验收项>
 - 全量验证：通过 / 失败
 ```
