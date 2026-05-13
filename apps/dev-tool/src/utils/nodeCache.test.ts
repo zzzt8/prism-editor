@@ -1,4 +1,6 @@
 // Tests for nodeCache utility
+// Tests moved here from dev-tool/utils/nodeCache.test.ts
+// The actual implementation lives in apps/user-app/src/storage/nodeCache.ts
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
@@ -6,7 +8,7 @@ import {
   storeNodePackageInCache,
   removeNodePackageFromCache,
   clearNodePackageCache,
-} from './nodeCache';
+} from '../../../user-app/src/storage/nodeCache';
 import type { NodePackageManifest } from '@prism/shared-types';
 
 const TEST_URL = 'https://example.com/test-package.json';
