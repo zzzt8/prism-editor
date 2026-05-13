@@ -15,12 +15,12 @@ export interface SecurityConfig {
 }
 
 export const DEFAULT_SECURITY_CONFIG: SecurityConfig = {
-  // 默认允许 localhost 和 https URLs（生产环境应缩小范围）
+  // Default allows localhost and https URLs (should be narrowed in production)
   allowedUrlPrefixes: ['https://', 'http://localhost'],
-  // 默认信任空（生产环境应配置具体注册源）
+  // Default trusts none (should configure specific registries in production)
   trustedPackageRegistries: [],
-  // 默认不要求签名（生产环境应改为 true）
-  requireSignatures: false,
+  // Signatures required by default in production (NODE_ENV=production)
+  requireSignatures: process.env.NODE_ENV === 'production',
 };
 
 export function isUrlAllowed(url: string, config: SecurityConfig): boolean {
