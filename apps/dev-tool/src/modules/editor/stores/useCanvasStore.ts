@@ -23,6 +23,12 @@ import { executionService, getExecutionService } from '../services/executionServ
 import { indexedDBStorageAdapter } from '../../../storage';
 import { WorkflowRepository } from '../../repositories/workflowRepository';
 import { SnippetRepository } from '../../repositories/snippetRepository';
+import {
+  createNodeId,
+  createEdgeId,
+  resetCounters,
+  syncCountersFromWorkflow,
+} from './idCounter';
 
 type ReactFlowConnection = RfConnection;
 
@@ -63,21 +69,6 @@ function ensureNodeRegistryInitialized(): void {
   } catch (err) {
     console.error('[canvasStore] globalRegistry.initialize() failed:', err);
   }
-}
-
-// ─── Module-level counters ───────────────────────────────────────────────────
-
-let nodeCounter = 0;
-let edgeCounter = 0;
-
-// ─── ID Remapping helpers ────────────────────────────────────────────────────
-
-function createNodeId(): string {
-  return `node-${++nodeCounter}`;
-}
-
-function createEdgeId(): string {
-  return `edge-${++edgeCounter}`;
 }
 
 const PASTE_OFFSET = 40;
@@ -295,7 +286,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const definition = globalRegistry.getNode(type);
     if (!definition) return;
 
-    const id = `node-${++nodeCounter}`;
+    const id = createNodeId();
     const newNode: EditorCanvasNode = {
       id,
       type: 'prismNode',
@@ -724,8 +715,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const autosaveSvc = getAutosaveService();
     autosaveSvc.cancel();
 
-    nodeCounter = 0;
-    edgeCounter = 0;
+    resetCounters();
 
     set({
       nodes: [],
@@ -792,7 +782,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     // 2. Re-resolve node definitions from globalRegistry
     // 3. Reset runtime state (executionResult, executionError, etc.)
     const canvasNodes: EditorCanvasNode[] = template.nodes.map((origNode) => {
-      const newId = `node-${++nodeCounter}`;
+      const newId = createNodeId();
       oldToNewIdMap.set(origNode.id, newId);
 
       const def = globalRegistry.getNode(origNode.data.nodeType);
@@ -817,7 +807,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     // Rebuild edges with remapped source/target node IDs
     const canvasEdges: EditorCanvasEdge[] = template.edges.map((origEdge) => ({
       ...origEdge,
-      id: `edge-${++edgeCounter}`,
+      id: createEdgeId(),
       source: oldToNewIdMap.get(origEdge.source) ?? origEdge.source,
       target: oldToNewIdMap.get(origEdge.target) ?? origEdge.target,
     }));
@@ -887,27 +877,10 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     }));
 
     // Sync counters
-    if (workflow.nodes.length > 0) {
-      const maxNum = Math.max(
-        0,
-        ...workflow.nodes.map((n) => {
-          const match = n.id.match(/^node-(\d+)$/);
-          return match ? parseInt(match[1], 10) : 0;
-        })
-      );
-      nodeCounter = maxNum;
-    }
-
-    if (workflow.connections.length > 0) {
-      const maxEdgeNum = Math.max(
-        0,
-        ...workflow.connections.map((e) => {
-          const match = e.id.match(/^edge-(\d+)$/);
-          return match ? parseInt(match[1], 10) : 0;
-        })
-      );
-      edgeCounter = maxEdgeNum;
-    }
+    syncCountersFromWorkflow(
+      workflow.nodes.map((n) => n.id),
+      workflow.connections.map((e) => e.id)
+    );
 
     set({
       nodes: canvasNodes,

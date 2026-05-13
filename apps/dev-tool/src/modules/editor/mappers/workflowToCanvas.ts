@@ -4,22 +4,25 @@
 import type { Workflow, WorkflowNode } from '@prism/shared-types';
 import type { EditorCanvasNode, EditorCanvasEdge, EditorWorkflowMeta, EditorDraft } from '@prism/shared-types';
 import { globalRegistry } from '@prism/core';
-
-let _nodeCounter = 0;
-let _edgeCounter = 0;
+import {
+  createNodeId,
+  createEdgeId,
+  setNodeCounter,
+  setEdgeCounter,
+} from '../stores/idCounter';
 
 /**
  * 获取并递增节点计数器
  */
 export function getNextNodeId(): string {
-  return `node-${++_nodeCounter}`;
+  return createNodeId();
 }
 
 /**
  * 获取并递增边计数器
  */
 export function getNextEdgeId(): string {
-  return `edge-${++_edgeCounter}`;
+  return createEdgeId();
 }
 
 /**
@@ -28,8 +31,8 @@ export function getNextEdgeId(): string {
  * @param maxEdgeId - 从 workflow.connections 解析的最大边编号
  */
 export function resetCounters(maxNodeId: number, maxEdgeId: number): void {
-  _nodeCounter = maxNodeId;
-  _edgeCounter = maxEdgeId;
+  setNodeCounter(maxNodeId);
+  setEdgeCounter(maxEdgeId);
 }
 
 /**
