@@ -14,6 +14,14 @@ interface AuthTokens {
   refreshToken: string;
 }
 
+interface TokenPayload {
+  userId: string;
+  type: 'access' | 'refresh';
+  jti: string;
+  iat?: number;
+  exp?: number;
+}
+
 const REFRESH_COOKIE_NAME = 'refreshToken';
 const ACCESS_TOKEN_EXPIRES_IN = process.env.ACCESS_TOKEN_EXPIRES_IN || '15m';
 const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
@@ -149,7 +157,7 @@ const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     }
 
     try {
-      const payload = await fastify.jwt.verify<RefreshTokenPayload & { jti: string }>(refreshToken);
+      const payload = await fastify.jwt.verify<TokenPayload>(refreshToken);
 
       if (payload.type !== 'refresh') {
         return reply.status(401).send({ error: 'Invalid token type' });
@@ -197,7 +205,7 @@ const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
     if (refreshToken) {
       try {
-        const payload = await fastify.jwt.verify<RefreshTokenPayload & { jti: string }>(refreshToken);
+        const payload = await fastify.jwt.verify<TokenPayload>(refreshToken);
         const ttlMs = (payload.exp! * 1000) - Date.now();
         if (ttlMs > 0) {
           addToBlacklist(payload.jti, ttlMs);
@@ -219,7 +227,7 @@ const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   // GET /api/auth/me
   fastify.get('/auth/me', async (request, reply) => {
     try {
-      const payload = await request.jwtVerify<{ userId: string; type: string; jti: string }>();
+      const payload = await request.jwtVerify<TokenPayload>();
 
       if (payload.type !== 'access') {
         return reply.status(401).send({ error: 'Invalid token type' });
@@ -255,12 +263,12 @@ async function generateTokens(fastify: FastifyInstance, userId: string): Promise
   const jti = crypto.randomUUID();
 
   const accessToken = await fastify.jwt.sign(
-    { userId, type: 'access', jti },
+    { userId, type: 'access', jti } as any,
     { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
   );
 
   const refreshToken = await fastify.jwt.sign(
-    { userId, type: 'refresh', jti },
+    { userId, type: 'refresh', jti } as any,
     { expiresIn: REFRESH_TOKEN_EXPIRES_IN }
   );
 
