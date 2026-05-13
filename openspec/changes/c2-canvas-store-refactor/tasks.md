@@ -48,9 +48,9 @@
 
 ### Backward Compatibility（向后兼容）
 
-- [ ] 所有 Zustand store 方法签名不变
-- [ ] 所有 service 接口不变（autosaveService、executionService）
-- [ ] 所有 React 组件 import 路径仍可正常工作（需同步更新 import）
+- [x] 所有 Zustand store 方法签名不变
+- [x] 所有 service 接口不变（autosaveService、executionService）
+- [x] 所有 React 组件 import 路径仍可正常工作（需同步更新 import）
 
 ---
 
@@ -148,7 +148,7 @@ dependencies:
   - type: task
     refs: [T1, T2, T3, T4, T5]
 -->
-- [ ] T6: 端到端手工验收 — 拖拽、连线、复制粘贴、执行、发布全流程跑一遍
+- [x] T6: 端到端手工验收 — 拖拽、连线、复制粘贴、执行、发布全流程跑一遍
   - layer: editor
   - **验收标准**: 所有操作行为与重构前完全一致
 
@@ -156,14 +156,14 @@ dependencies:
 
 ### 手工验收清单
 
-- [ ] `pnpm typecheck --filter=@prism/dev-tool` 无错误
-- [ ] `pnpm typecheck --filter=@prism/dev-tool --filter=@prism/shared-types --filter=@prism/core` 无跨包引用错误
-- [ ] `pnpm dev` 启动无报错
-- [ ] 拖拽节点到画布正常
-- [ ] 连线正常
-- [ ] 复制粘贴 ID 唯一
-- [ ] 运行流水线正常
-- [ ] 发布到 server 正常
+- [x] `pnpm typecheck --filter=@prism/dev-tool` 无错误
+- [x] `pnpm typecheck --filter=@prism/dev-tool --filter=@prism/shared-types --filter=@prism/core` 无跨包引用错误
+- [x] `pnpm dev` 启动无报错
+- [x] 拖拽节点到画布正常
+- [x] 连线正常
+- [x] 复制粘贴 ID 唯一
+- [x] 运行流水线正常
+- [x] 发布到 server 正常
 
 ---
 
