@@ -2,6 +2,7 @@
   "name": "prism-editor",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "前端优先执行的可视化低代码图像工作流系统",
   "engines": {
     "node": ">=18.0.0",
@@ -17,17 +18,26 @@
     "build": "turbo run build",
     "build:dev-tool": "turbo run build --filter=@prism/dev-tool",
     "build:user-app": "turbo run build --filter=@prism/user-app",
-    "lint": "turbo run lint",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.4",
+    "@eslint/js": "9",
     "@vitest/coverage-v8": "^1.6.1",
     "canvas": "3.2.2",
+    "eslint": "9",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.6.0",
+    "prettier": "^3.8.3",
     "turbo": "^2.0.0",
     "typescript": "^5.4.0",
+    "typescript-eslint": "8",
     "vitest": "^1.6.0"
   },
   "packageManager": "pnpm@9.1.0"

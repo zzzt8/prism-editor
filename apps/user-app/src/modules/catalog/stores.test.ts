@@ -7,20 +7,17 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { act } from '@testing-library/react';
 import {
   useWorkflowCatalogStore,
-  type WorkflowCatalogState,
 } from './workflowCatalogStore';
 import {
   useSelectedWorkflowStore,
   type NodeLoadError,
 } from '../selection/selectedWorkflowStore';
-import { useRunStore, type RunState, type RunStoreState } from '../runner/runStore';
+import { useRunStore, type RunState } from '../runner/runStore';
 import type { PublishedWorkflow } from '@prism/shared-types';
 
 // ─── IndexedDB mock via fake-indexeddb ────────────────────────────────────────
 
-let db: IDBDatabase | null = null;
-
-async function withFakedDB(fn: (db: IDBDatabase) => Promise<void>): Promise<void> {
+async function withFakedDB(fn: (database: IDBDatabase) => Promise<void>): Promise<void> {
   await act(async () => {
     const openReq = indexedDB.open('prism-user-app', 1);
     openReq.onupgradeneeded = () => {
@@ -29,12 +26,12 @@ async function withFakedDB(fn: (db: IDBDatabase) => Promise<void>): Promise<void
         database.createObjectStore('published-workflows', { keyPath: 'sourceId' });
       }
     };
-    db = await new Promise<IDBDatabase>((resolve, reject) => {
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
       openReq.onsuccess = () => resolve(openReq.result);
       openReq.onerror = () => reject(openReq.error);
     });
-    await fn(db);
-    db?.close();
+    await fn(database);
+    database.close();
   });
 }
 

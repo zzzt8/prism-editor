@@ -44,11 +44,11 @@ function hasValidFields(
       errors.push(`${def.type}: inputs must be an array`);
     } else {
       def.inputs.forEach((port) => {
+        const portId = port?.id ?? '?';
         if (!isValidPortDefinition(port)) {
-          errors.push(`${def.type}: input port "${port?.id ?? '?'}" has invalid shape`);
-        }
-        if (!Object.values(PortDataType).includes(port.dataType as PortDataType)) {
-          errors.push(`${def.type}: input port "${port.id}" has unknown dataType "${port.dataType}"`);
+          errors.push(`${def.type}: input port "${portId}" has invalid shape`);
+        } else if (!Object.values(PortDataType).includes(port.dataType as PortDataType)) {
+          errors.push(`${def.type}: input port "${portId}" has unknown dataType "${port.dataType}"`);
         }
       });
     }
@@ -59,11 +59,11 @@ function hasValidFields(
       errors.push(`${def.type}: outputs must be an array`);
     } else {
       def.outputs.forEach((port) => {
+        const portId = port?.id ?? '?';
         if (!isValidPortDefinition(port)) {
-          errors.push(`${def.type}: output port "${port?.id ?? '?'}" has invalid shape`);
-        }
-        if (!Object.values(PortDataType).includes(port.dataType as PortDataType)) {
-          errors.push(`${def.type}: output port "${port.id}" has unknown dataType "${port.dataType}"`);
+          errors.push(`${def.type}: output port "${portId}" has invalid shape`);
+        } else if (!Object.values(PortDataType).includes(port.dataType as PortDataType)) {
+          errors.push(`${def.type}: output port "${portId}" has unknown dataType "${port.dataType}"`);
         }
       });
     }

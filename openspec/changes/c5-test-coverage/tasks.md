@@ -71,7 +71,7 @@ dependencies:
   - type: change
     refs: [T1]
 -->
-- [ ] T5: 6 个包的 vitest.config.ts 统一加 coverage 配置（provider: v8, 80% 门槛, html/json 报告）
+- [x] T5: 6 个包的 vitest.config.ts 统一加 coverage 配置（provider: v8, 80% 门槛, html/json 报告）
   - layer: meta
   - **验收标准**: `pnpm test -- --coverage` 生成 coverage 报告；CI 覆盖检查通过
 
