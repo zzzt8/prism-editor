@@ -1,0 +1,501 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Button snapshots > renders danger variant 1`] = `
+<button
+  aria-busy="false"
+  class="_button_2a1efe _danger_2a1efe _md_2a1efe"
+>
+  <span
+    class="_label_2a1efe"
+  >
+    Click me
+  </span>
+</button>
+`;
+
+exports[`Button snapshots > renders disabled state 1`] = `
+<button
+  aria-busy="false"
+  class="_button_2a1efe _secondary_2a1efe _md_2a1efe"
+  disabled=""
+>
+  <span
+    class="_label_2a1efe"
+  >
+    Disabled
+  </span>
+</button>
+`;
+
+exports[`Button snapshots > renders full width 1`] = `
+<button
+  aria-busy="false"
+  class="_button_2a1efe _secondary_2a1efe _md_2a1efe _fullWidth_2a1efe"
+>
+  <span
+    class="_label_2a1efe"
+  >
+    Full Width
+  </span>
+</button>
+`;
+
+exports[`Button snapshots > renders ghost variant 1`] = `
+<button
+  aria-busy="false"
+  class="_button_2a1efe _ghost_2a1efe _md_2a1efe"
+>
+  <span
+    class="_label_2a1efe"
+  >
+    Click me
+  </span>
+</button>
+`;
+
+exports[`Button snapshots > renders large size 1`] = `
+<button
+  aria-busy="false"
+  class="_button_2a1efe _secondary_2a1efe _lg_2a1efe"
+>
+  <span
+    class="_label_2a1efe"
+  >
+    Large
+  </span>
+</button>
+`;
+
+exports[`Button snapshots > renders loading state 1`] = `
+<button
+  aria-busy="true"
+  class="_button_2a1efe _secondary_2a1efe _md_2a1efe _loading_2a1efe"
+  disabled=""
+>
+  <span
+    aria-hidden="true"
+    class="_spinner_2a1efe icon-spin"
+  >
+    <svg
+      class="lucide lucide-loader-circle"
+      fill="none"
+      height="14"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      viewBox="0 0 24 24"
+      width="14"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M21 12a9 9 0 1 1-6.219-8.56"
+      />
+    </svg>
+  </span>
+  <span
+    class="_label_2a1efe"
+  >
+    Loading
+  </span>
+</button>
+`;
+
+exports[`Button snapshots > renders medium size 1`] = `
+<button
+  aria-busy="false"
+  class="_button_2a1efe _secondary_2a1efe _md_2a1efe"
+>
+  <span
+    class="_label_2a1efe"
+  >
+    Medium
+  </span>
+</button>
+`;
+
+exports[`Button snapshots > renders primary variant 1`] = `
+<button
+  aria-busy="false"
+  class="_button_2a1efe _primary_2a1efe _md_2a1efe"
+>
+  <span
+    class="_label_2a1efe"
+  >
+    Click me
+  </span>
+</button>
+`;
+
+exports[`Button snapshots > renders secondary variant 1`] = `
+<button
+  aria-busy="false"
+  class="_button_2a1efe _secondary_2a1efe _md_2a1efe"
+>
+  <span
+    class="_label_2a1efe"
+  >
+    Click me
+  </span>
+</button>
+`;
+
+exports[`Button snapshots > renders small size 1`] = `
+<button
+  aria-busy="false"
+  class="_button_2a1efe _secondary_2a1efe _sm_2a1efe"
+>
+  <span
+    class="_label_2a1efe"
+  >
+    Small
+  </span>
+</button>
+`;
+
+exports[`Modal snapshots > renders closed state (null) 1`] = `null`;
+
+exports[`Modal snapshots > renders large size 1`] = `
+<div
+  aria-modal="true"
+  class="_overlay_f57fcc"
+  role="dialog"
+>
+  <div
+    class="_modal_f57fcc _lg_f57fcc "
+    role="document"
+  >
+    <div
+      class="_header_f57fcc"
+    >
+      <button
+        aria-label="关闭"
+        class="_closeBtn_f57fcc"
+      >
+        <svg
+          class="lucide lucide-x"
+          fill="none"
+          height="16"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="16"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M18 6 6 18"
+          />
+          <path
+            d="m6 6 12 12"
+          />
+        </svg>
+      </button>
+    </div>
+    <div
+      class="_body_f57fcc"
+    >
+      Large Modal
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Modal snapshots > renders open state 1`] = `
+<div
+  aria-labelledby="modal-title"
+  aria-modal="true"
+  class="_overlay_f57fcc"
+  role="dialog"
+>
+  <div
+    class="_modal_f57fcc _md_f57fcc "
+    role="document"
+  >
+    <div
+      class="_header_f57fcc"
+    >
+      <h2
+        class="_title_f57fcc"
+        id="modal-title"
+      >
+        Test Modal
+      </h2>
+      <button
+        aria-label="关闭"
+        class="_closeBtn_f57fcc"
+      >
+        <svg
+          class="lucide lucide-x"
+          fill="none"
+          height="16"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="16"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M18 6 6 18"
+          />
+          <path
+            d="m6 6 12 12"
+          />
+        </svg>
+      </button>
+    </div>
+    <div
+      class="_body_f57fcc"
+    >
+      Content
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Modal snapshots > renders small size 1`] = `
+<div
+  aria-modal="true"
+  class="_overlay_f57fcc"
+  role="dialog"
+>
+  <div
+    class="_modal_f57fcc _sm_f57fcc "
+    role="document"
+  >
+    <div
+      class="_header_f57fcc"
+    >
+      <button
+        aria-label="关闭"
+        class="_closeBtn_f57fcc"
+      >
+        <svg
+          class="lucide lucide-x"
+          fill="none"
+          height="16"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="16"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M18 6 6 18"
+          />
+          <path
+            d="m6 6 12 12"
+          />
+        </svg>
+      </button>
+    </div>
+    <div
+      class="_body_f57fcc"
+    >
+      Small Modal
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Modal snapshots > renders with footer 1`] = `
+<div
+  aria-labelledby="modal-title"
+  aria-modal="true"
+  class="_overlay_f57fcc"
+  role="dialog"
+>
+  <div
+    class="_modal_f57fcc _md_f57fcc "
+    role="document"
+  >
+    <div
+      class="_header_f57fcc"
+    >
+      <h2
+        class="_title_f57fcc"
+        id="modal-title"
+      >
+        Modal with Footer
+      </h2>
+      <button
+        aria-label="关闭"
+        class="_closeBtn_f57fcc"
+      >
+        <svg
+          class="lucide lucide-x"
+          fill="none"
+          height="16"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="16"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M18 6 6 18"
+          />
+          <path
+            d="m6 6 12 12"
+          />
+        </svg>
+      </button>
+    </div>
+    <div
+      class="_body_f57fcc"
+    >
+      Content
+    </div>
+    <div
+      class="_footer_f57fcc"
+    >
+      <button>
+        Action
+      </button>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Spinner snapshots > renders large size 1`] = `
+<span
+  aria-label="加载中"
+  class="_spinner_83c47e icon-spin "
+  role="status"
+>
+  <svg
+    aria-hidden="true"
+    fill="none"
+    height="32"
+    viewBox="0 0 32 32"
+    width="32"
+  >
+    <circle
+      cx="16"
+      cy="16"
+      r="14.75"
+      stroke="var(--border-default, #3A3A3D)"
+      stroke-width="2.5"
+    />
+    <circle
+      cx="16"
+      cy="16"
+      r="14.75"
+      stroke="var(--accent-primary, #6366F1)"
+      stroke-dasharray="69.50773746067418 92.6769832808989"
+      stroke-linecap="round"
+      stroke-width="2.5"
+      style="transform-origin: center;"
+    />
+  </svg>
+</span>
+`;
+
+exports[`Spinner snapshots > renders medium size 1`] = `
+<span
+  aria-label="加载中"
+  class="_spinner_83c47e icon-spin "
+  role="status"
+>
+  <svg
+    aria-hidden="true"
+    fill="none"
+    height="24"
+    viewBox="0 0 24 24"
+    width="24"
+  >
+    <circle
+      cx="12"
+      cy="12"
+      r="11"
+      stroke="var(--border-default, #3A3A3D)"
+      stroke-width="2"
+    />
+    <circle
+      cx="12"
+      cy="12"
+      r="11"
+      stroke="var(--accent-primary, #6366F1)"
+      stroke-dasharray="51.83627878423158 69.11503837897544"
+      stroke-linecap="round"
+      stroke-width="2"
+      style="transform-origin: center;"
+    />
+  </svg>
+</span>
+`;
+
+exports[`Spinner snapshots > renders small size 1`] = `
+<span
+  aria-label="加载中"
+  class="_spinner_83c47e icon-spin "
+  role="status"
+>
+  <svg
+    aria-hidden="true"
+    fill="none"
+    height="16"
+    viewBox="0 0 16 16"
+    width="16"
+  >
+    <circle
+      cx="8"
+      cy="8"
+      r="7"
+      stroke="var(--border-default, #3A3A3D)"
+      stroke-width="2"
+    />
+    <circle
+      cx="8"
+      cy="8"
+      r="7"
+      stroke="var(--accent-primary, #6366F1)"
+      stroke-dasharray="32.98672286269283 43.982297150257104"
+      stroke-linecap="round"
+      stroke-width="2"
+      style="transform-origin: center;"
+    />
+  </svg>
+</span>
+`;
+
+exports[`Spinner snapshots > renders with custom color 1`] = `
+<span
+  aria-label="加载中"
+  class="_spinner_83c47e icon-spin "
+  role="status"
+>
+  <svg
+    aria-hidden="true"
+    fill="none"
+    height="24"
+    viewBox="0 0 24 24"
+    width="24"
+  >
+    <circle
+      cx="12"
+      cy="12"
+      r="11"
+      stroke="#ff0000"
+      stroke-width="2"
+    />
+    <circle
+      cx="12"
+      cy="12"
+      r="11"
+      stroke="#ff0000"
+      stroke-dasharray="51.83627878423158 69.11503837897544"
+      stroke-linecap="round"
+      stroke-width="2"
+      style="transform-origin: center;"
+    />
+  </svg>
+</span>
+`;

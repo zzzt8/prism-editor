@@ -47,7 +47,7 @@ dependencies:
   - type: change
     refs: [T1]
 -->
-- [ ] T3: `node-definitions` 加测试 — 验证 7 个节点的 id / category / ports / inputs / outputs 存在且格式正确
+- [x] T3: `node-definitions` 加测试 — 验证 7 个节点的 id / category / ports / inputs / outputs 存在且格式正确
   - layer: engine
   - **验收标准**: `pnpm test --filter=@prism/node-definitions` 通过
 
