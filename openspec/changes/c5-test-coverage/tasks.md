@@ -83,7 +83,7 @@ dependencies:
   - type: task
     refs: [T1]
 -->
-- [ ] T6: 配置 ESLint / Prettier；运行 lint 并修复所有 lint 错误（proposal 的 capability 承诺了 lint）
+- [x] T6: 配置 ESLint / Prettier；运行 lint 并修复所有 lint 错误（proposal 的 capability 承诺了 lint）
   - layer: meta
   - **验收标准**: `pnpm lint` 无 error；CI lint 步骤通过
 
