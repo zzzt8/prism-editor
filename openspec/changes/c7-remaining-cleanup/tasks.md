@@ -21,13 +21,13 @@
 - [x] T7: 删除 `PublishDialog.tsx` 中所有 `console.log`
   - **验收标准**: `grep -r "console\.log" apps/dev-tool/src/components/header/PublishDialog.tsx` 无输出
 
-- [ ] T8: dev-tool 全局 console.log 最终验收
+- [x] T8: dev-tool 全局 console.log 最终验收
   - **验收标准**: `grep -r "console\.log" apps/dev-tool/src/` 无输出
 
-- [ ] T9: apps/ 全局 console.log 最终验收
+- [x] T9: apps/ 全局 console.log 最终验收
   - **验收标准**: `grep -r "console\.log" apps/` 无输出
 
-- [ ] T10: 确认 App.tsx 三个版本按钮状态（版本历史/版本对比/回滚）
+- [x] T10: 确认 App.tsx 三个版本按钮状态（版本历史/版本对比/回滚）
   - **验收标准**: 按钮有具体 onClick 实现（非空箭头函数），或已移除；点按钮不抛出未捕获 Error
 
 ---
