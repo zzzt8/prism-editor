@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.4",
+    "@vitest/coverage-v8": "^1.6.1",
     "canvas": "3.2.2",
     "turbo": "^2.0.0",
     "typescript": "^5.4.0",

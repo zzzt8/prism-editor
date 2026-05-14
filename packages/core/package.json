@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "build": "tsc",
     "clean": "rm -rf dist",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@prism/shared-types": "workspace:*",

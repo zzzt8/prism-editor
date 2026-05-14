@@ -59,7 +59,7 @@ dependencies:
   - type: change
     refs: [T1]
 -->
-- [ ] T4: `user-app` stores 加测试 — workflowCatalogStore / selectedWorkflowStore / runStore 的加载/错误/取消路径
+- [x] T4: `user-app` stores 加测试 — workflowCatalogStore / selectedWorkflowStore / runStore 的加载/错误/取消路径
   - layer: runtime
   - **验收标准**: `pnpm test --filter=@prism/user-app` 通过
 

@@ -9,6 +9,7 @@
   },
   "scripts": {
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "build": "tsc",
     "clean": "rm -rf dist"

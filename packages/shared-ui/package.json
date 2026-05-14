@@ -20,6 +20,7 @@
   "scripts": {
     "build": "tsc --build && node scripts/copy-css.js",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
