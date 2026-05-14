@@ -1,24 +1,24 @@
 ## 任务列表
 
-- [ ] T1: 删除 `workflowCatalogStore.ts` 中所有 `console.log`
+- [x] T1: 删除 `workflowCatalogStore.ts` 中所有 `console.log`
   - **验收标准**: `grep -r "console\.log" apps/user-app/src/modules/catalog/` 无输出
 
-- [ ] T2: 删除 `selectedWorkflowStore.ts` 中所有 `console.log`
+- [x] T2: 删除 `selectedWorkflowStore.ts` 中所有 `console.log`
   - **验收标准**: `grep -r "console\.log" apps/user-app/src/modules/selection/` 无输出
 
-- [ ] T3: 删除 `IndexedDBStorageAdapter.ts` 中所有 `console.log`
+- [x] T3: 删除 `IndexedDBStorageAdapter.ts` 中所有 `console.log`
   - **验收标准**: `grep -r "console\.log" apps/user-app/src/storage/` 无输出
 
-- [ ] T4: 删除 `WorkflowListPage.tsx` 中所有 `console.log`
+- [x] T4: 删除 `WorkflowListPage.tsx` 中所有 `console.log`
   - **验收标准**: `grep -r "console\.log" apps/user-app/src/pages/WorkflowListPage.tsx` 无输出
 
-- [ ] T5: 删除 `WorkflowRunPage.tsx` 中所有 `console.log`
+- [x] T5: 删除 `WorkflowRunPage.tsx` 中所有 `console.log`
   - **验收标准**: `grep -r "console\.log" apps/user-app/src/pages/WorkflowRunPage.tsx` 无输出
 
-- [ ] T6: 删除 `InputSection/index.tsx` 中所有 `console.log`
+- [x] T6: 删除 `InputSection/index.tsx` 中所有 `console.log`
   - **验收标准**: `grep -r "console\.log" apps/user-app/src/components/InputSection/` 无输出
 
-- [ ] T7: 删除 `PublishDialog.tsx` 中所有 `console.log`
+- [x] T7: 删除 `PublishDialog.tsx` 中所有 `console.log`
   - **验收标准**: `grep -r "console\.log" apps/dev-tool/src/components/header/PublishDialog.tsx` 无输出
 
 - [ ] T8: dev-tool 全局 console.log 最终验收
