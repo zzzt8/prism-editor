@@ -35,7 +35,7 @@ dependencies:
   - type: change
     refs: [T1]
 -->
-- [ ] T2: `shared-ui` 加 vitest 配置（jsdom + globals + coverage）；Button / Modal / Spinner 快照测试
+- [x] T2: `shared-ui` 加 vitest 配置（jsdom + globals + coverage）；Button / Modal / Spinner 快照测试
   - layer: ui-skin
   - **验收标准**: `pnpm test --filter=@prism/shared-ui` 通过
 
