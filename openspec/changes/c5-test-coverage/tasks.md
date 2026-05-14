@@ -23,7 +23,7 @@ dependencies:
   - type: change
     refs: []
 -->
-- [ ] T1: 创建 `.github/workflows/ci.yml` — checkout + pnpm setup + node 20 + typecheck + test + build
+- [x] T1: 创建 `.github/workflows/ci.yml` — checkout + pnpm setup + node 20 + typecheck + test + build
   - layer: meta
   - **验收标准**: PR 推送后 GitHub Actions 自动触发；所有步骤通过后显示 ✅
 
