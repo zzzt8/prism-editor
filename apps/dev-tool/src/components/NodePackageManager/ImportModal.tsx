@@ -11,7 +11,7 @@ import type { NodeExecutor } from '@prism/shared-types';
 
 interface ImportModalProps {
   onClose: () => void;
-  onSuccess: (manifest: NodePackageManifest, nodeTypes: string[]) => void;
+  onSuccess: (_manifest: NodePackageManifest, _nodeTypes: string[]) => void;
 }
 
 type ImportState = 'idle' | 'loading' | 'success' | 'error';
@@ -42,9 +42,6 @@ export const ImportModal: React.FC<ImportModalProps> = ({ onClose, onSuccess }) 
       }
 
       const validManifest = result.data;
-
-      // Collect executor IDs
-      const executorIds = new Set(validManifest.executors.map((e) => e.id));
 
       // Parse executors into actual functions
       const parsedExecutors: Record<string, NodeExecutor> = {};

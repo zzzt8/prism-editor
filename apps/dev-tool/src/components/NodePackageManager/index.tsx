@@ -1,10 +1,9 @@
 // NodePackageManager - UI for managing custom node packages
 
 import React, { useState, useCallback } from 'react';
-import { Package, Plus, RefreshCw } from 'lucide-react';
+import { Plus, RefreshCw } from 'lucide-react';
 import { ImportModal } from './ImportModal';
 import { PackageList } from './PackageList';
-import { useCanvasStore } from '../../store/canvasStore';
 
 interface StoredPackage {
   manifest: { name: string; version: string; description?: string };

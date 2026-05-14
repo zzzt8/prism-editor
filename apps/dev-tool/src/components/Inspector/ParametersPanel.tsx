@@ -15,7 +15,7 @@ function ParamField({
 }: {
   param: ParamDefinition;
   value: unknown;
-  onChange: (id: string, val: unknown) => void;
+  onChange: (_id: string, _val: unknown) => void;
 }) {
   const handleChange = (val: unknown) => onChange(param.id, val);
 
@@ -161,7 +161,7 @@ function ImageFileField({
 }: {
   param: ParamDefinition;
   value: unknown;
-  onChange: (id: string, val: unknown) => void;
+  onChange: (_id: string, _val: unknown) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const imageValue = value as ImageFileValue | undefined;

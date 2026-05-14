@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { globalRegistry } from '@prism/core';
 import type { NodeDefinition, NodePackageManifest } from '@prism/shared-types';
-import { Download, RefreshCw, VenetianMask, Image, Upload, Search, X, Hexagon, CircleDot, ChevronDown, Plus, Settings, ExternalLink, Package } from 'lucide-react';
+import { Download, RefreshCw, VenetianMask, Image, Upload, Search, X, Hexagon, CircleDot, ChevronDown, Plus, Package } from 'lucide-react';
 import './NodePanel.css';
 import { ImportModal } from './NodePackageManager/ImportModal';
 import { MarketplaceList } from './NodeMarketplace';
@@ -118,7 +118,6 @@ export const NodePanel: React.FC = () => {
   const [showImport, setShowImport] = useState(false);
   const [showMarketplace, setShowMarketplace] = useState(false);
   const [nodeVersion, setNodeVersion] = useState(0); // 用于触发节点列表刷新
-  const [initError, setInitError] = useState<string | null>(null);
 
   const allDefinitions = useMemo(() => {
     try {
@@ -133,7 +132,7 @@ export const NodePanel: React.FC = () => {
     }
   }, [nodeVersion]); // 添加 nodeVersion 作为依赖
 
-  const handleImportSuccess = (manifest: NodePackageManifest, nodeTypes: string[]) => {
+  const handleImportSuccess = (manifest: NodePackageManifest, _nodeTypes: string[]) => {
     setToast(`节点包 "${manifest.name}" 导入成功！`);
     setShowImport(false);
     setNodeVersion((v) => v + 1); // 触发节点列表刷新

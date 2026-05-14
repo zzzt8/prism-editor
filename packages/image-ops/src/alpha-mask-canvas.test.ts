@@ -18,7 +18,7 @@ function makeImage(
     data[i * 4 + 2] = b;
     data[i * 4 + 3] = a;
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   return new (globalThis.ImageData as any)(data, width, height) as ImageData;
 }
 
@@ -34,7 +34,7 @@ function makeMixedImage(width: number, height: number): ImageData {
       data[i + 3] = 255;
     }
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   return new (globalThis.ImageData as any)(data, width, height) as ImageData;
 }
 
@@ -47,7 +47,7 @@ function makeAlphaMask(width: number, height: number, alphaValue: number): Image
     data[i * 4 + 2] = 255; // B (ignored for alpha mask)
     data[i * 4 + 3] = alphaValue;
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   return new (globalThis.ImageData as any)(data, width, height) as ImageData;
 }
 
@@ -65,7 +65,7 @@ function makeVaryingAlphaMask(width: number, height: number): ImageData {
       data[i + 3] = alpha;
     }
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   return new (globalThis.ImageData as any)(data, width, height) as ImageData;
 }
 

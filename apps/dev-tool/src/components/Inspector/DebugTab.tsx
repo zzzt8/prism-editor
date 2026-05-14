@@ -58,14 +58,6 @@ const JsonBlock: React.FC<{ data: unknown; maxHeight?: number }> = ({ data, maxH
   );
 };
 
-const StatusBadge: React.FC<{ label: string; color: string }> = ({ label, color }) => (
-  <span
-    className="debug-status-badge"
-    style={{ color, borderColor: color + '44', background: color + '11' }}
-  >
-    {label}
-  </span>
-);
 
 export const DebugTab: React.FC<DebugTabProps> = ({ nodeId }) => {
   const nodes = useCanvasStore((s) => s.nodes);

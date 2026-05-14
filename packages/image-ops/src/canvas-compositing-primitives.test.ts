@@ -19,7 +19,7 @@ function makeImage(
     data[i * 4 + 2] = b;
     data[i * 4 + 3] = a;
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   return new (globalThis.ImageData as any)(data, width, height) as ImageData;
 }
 
@@ -36,7 +36,7 @@ function makeMixedImage(width: number, height: number): ImageData {
       data[i + 3] = 255;
     }
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   return new (globalThis.ImageData as any)(data, width, height) as ImageData;
 }
 
@@ -411,7 +411,7 @@ describe('applyThreshold', () => {
       data[i * 4 + 2] = val;
       data[i * 4 + 3] = 255;
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const mask = new (globalThis.ImageData as any)(data, 4, 1) as ImageData;
 
     const result = jsApplyThreshold(mask, 128, false);
@@ -427,7 +427,7 @@ describe('applyThreshold', () => {
   it('inverts mask when invert=true', () => {
     const data = new Uint8ClampedArray(4);
     data[0] = 200; data[1] = 200; data[2] = 200; data[3] = 255;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const mask = new (globalThis.ImageData as any)(data, 2, 1) as ImageData;
 
     const result = jsApplyThreshold(mask, 128, true);

@@ -21,7 +21,7 @@ export function parseInlineExecutor(code: string, executorId: string): NodeExecu
   }
 
   try {
-    // eslint-disable-next-line no-new-func
+     
     const fn = new Function(
       'inputs',
       'params',

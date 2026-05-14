@@ -10,7 +10,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, X, RefreshCw, ChevronLeft, ChevronRight, Package, ExternalLink, Loader } from 'lucide-react';
+import { Search, X, RefreshCw, ChevronLeft, ChevronRight, Package, Loader } from 'lucide-react';
 import type { NodePackageManifest } from '@prism/shared-types';
 import { registerNodePackage } from '../../utils/nodePackageImport';
 
@@ -27,7 +27,7 @@ interface NodePackageItem {
 }
 
 interface MarketplaceListProps {
-  onInstallPackage: (manifest: NodePackageManifest) => void;
+  onInstallPackage: (_manifest: NodePackageManifest) => void;
   onClose?: () => void;
 }
 
@@ -44,7 +44,7 @@ const CATEGORY_OPTIONS = [
   { value: 'output', label: 'Output' },
 ];
 
-export const MarketplaceList: React.FC<MarketplaceListProps> = ({ onInstallPackage, onClose }) => {
+export const MarketplaceList: React.FC<MarketplaceListProps> = ({ onInstallPackage: _onInstallPackage, onClose }) => {
   const [packages, setPackages] = useState<NodePackageItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -116,7 +116,7 @@ export const MarketplaceList: React.FC<MarketplaceListProps> = ({ onInstallPacka
       const manifest = await response.json() as NodePackageManifest;
       // Register in global registry + localStorage
       await registerNodePackage(manifest);
-      onInstallPackage(manifest);
+      _onInstallPackage(manifest);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to install package');
     }

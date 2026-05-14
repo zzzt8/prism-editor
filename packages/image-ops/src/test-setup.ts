@@ -109,11 +109,11 @@ class FileReaderPolyfill {
   private _error: Error | null = null;
   private _readyState = 0;
   private _listeners: Map<string, EventListenerOrEventListenerObject[]> = new Map();
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
+   
   onload: ((this: FileReaderPolyfill, ev: ProgressEvent<FileReaderPolyfill>) => void) | null = null;
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
+   
   onerror: ((this: FileReaderPolyfill, ev: ProgressEvent<FileReaderPolyfill>) => void) | null = null;
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
+   
   onloadend: ((this: FileReaderPolyfill, ev: ProgressEvent<FileReaderPolyfill>) => void) | null = null;
 
   get result() { return this._result; }

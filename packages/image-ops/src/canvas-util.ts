@@ -5,7 +5,7 @@ let _canvasModule: typeof import('canvas') | null = null;
 function getCanvasModule(): typeof import('canvas') | null {
   if (_canvasModule === null) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       _canvasModule = require('canvas') as typeof import('canvas');
     } catch {
       _canvasModule = null;

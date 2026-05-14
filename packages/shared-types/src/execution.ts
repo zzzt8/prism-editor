@@ -3,7 +3,7 @@
 import type { ImageRef } from './image';
 
 // ImageData is a browser built-in — re-export for use in executor output types
-// eslint-disable-next-line @typescript-eslint/no-redeclare
+ 
 type ImageData = globalThis.ImageData;
 
 export type NodeStatus = 'pending' | 'running' | 'done' | 'error';

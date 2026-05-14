@@ -60,7 +60,7 @@ async function executeCode(
   context: { signal?: AbortSignal; nodeId: string }
 ): Promise<unknown> {
   // Use Function constructor with sandboxed parameters
-  // eslint-disable-next-line no-new-func
+   
   const fn = new Function(
     'inputs',
     'params',

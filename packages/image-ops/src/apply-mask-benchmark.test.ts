@@ -61,9 +61,9 @@ function generateTestImage(width: number, height: number): TestData {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const image = new (globalThis.ImageData as any)(imageData, width, height) as ImageData;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const mask = new (globalThis.ImageData as any)(maskData, width, height) as ImageData;
 
   return { image, mask, width, height };
@@ -80,7 +80,7 @@ function generateUniformImage(width: number, height: number, r = 128, g = 128, b
     data[i * 4 + 2] = b;
     data[i * 4 + 3] = a;
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   return new (globalThis.ImageData as any)(data, width, height) as ImageData;
 }
 
@@ -95,7 +95,7 @@ function generateAlphaMask(width: number, height: number, alphaValue: number): I
     data[i * 4 + 2] = 255;   // B
     data[i * 4 + 3] = alphaValue; // A
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   return new (globalThis.ImageData as any)(data, width, height) as ImageData;
 }
 
