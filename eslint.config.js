@@ -22,6 +22,12 @@ export default tseslint.config(
       '**/*.log',
       'server/**',
       'vendor/**',
+      // Config files — not source code to lint
+      '**/package.json',
+      '**/tsconfig.json',
+      '**/tsconfig*.json',
+      '**/*.config.ts',
+      '**/*.config.js',
     ],
   },
 
@@ -30,13 +36,30 @@ export default tseslint.config(
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
       parser: tseslint.parser,
-      // Skip project resolution for speed — monorepo projects make it very slow
       parserOptions: {
         sourceType: 'module',
       },
       globals: {
         ...globals.browser,
         ...globals.node,
+        // IndexedDB API types not in globals.browser
+        IDBValidKey: 'readonly',
+        IDBTransactionMode: 'readonly',
+        EventListenerOrEventListenerObject: 'readonly',
+        // Canvas / CSSOM types not in globals.browser
+        PredefinedColorSpace: 'readonly',
+        GlobalCompositeOperation: 'readonly',
+        // Vitest globals for test-setup.ts (not in test file pattern)
+        expect: 'readonly',
+        test: 'readonly',
+        it: 'readonly',
+        describe: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        vi: 'readonly',
+        jest: 'readonly',
       },
     },
     plugins: {
@@ -47,7 +70,11 @@ export default tseslint.config(
       ...tseslint.configs.recommended.rules,
       ...prettier.rules,
 
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      // Disable no-undef for TSX files — TypeScript resolves JSX types, ESLint globals can't
+      'no-undef': 'off',
+
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'warn',
     },
   },
@@ -69,12 +96,4 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': 'off',
     },
   },
-
-  // ── Non-TS files ───────────────────────────────────────────────────────────
-  {
-    files: ['**/*.json', '**/*.jsonc'],
-    languageOptions: {
-      globals: globals.node,
-    },
-  }
 );
