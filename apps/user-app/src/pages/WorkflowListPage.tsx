@@ -128,14 +128,10 @@ export const WorkflowListPage: React.FC = () => {
 
   // ── Import from file ─────────────────────────────────────────────────────
   const handleFileImport = useCallback(async (file: File) => {
-    console.log('[WorkflowListPage] handleFileImport:', file.name, file.size);
     const result = await importWorkflowFromFile(file);
-    console.log('[WorkflowListPage] importWorkflowFromFile:', result.success ? 'OK' : 'FAILED', result.success ? result.workflow.name : result.reason);
     if (result.success) {
       try {
         await syncWorkflowToLocal(result.workflow);
-        console.log('[WorkflowListPage] syncWorkflowToLocal OK');
-        loadWorkflows();
         showToast(`已导入「${result.workflow.name}」`, 'success');
       } catch (err) {
         console.error('[WorkflowListPage] syncWorkflowToLocal ERROR:', err);

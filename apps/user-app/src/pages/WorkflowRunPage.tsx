@@ -53,7 +53,6 @@ export const WorkflowRunPage: React.FC = () => {
 
   // Reset input values when workflow changes
   useEffect(() => {
-    console.log('[WorkflowRunPage] useEffect triggered, selectedWorkflow:', selectedWorkflow?.name, selectedWorkflow ? 'loaded' : 'NULL');
     if (selectedWorkflow) {
       const defaults: Record<string, string> = {};
 
@@ -62,13 +61,15 @@ export const WorkflowRunPage: React.FC = () => {
       if (configInputs && configInputs.length > 0) {
         for (const ci of configInputs) {
           defaults[`${ci.nodeId}:out`] = '';
-          console.log('[WorkflowRunPage] useEffect: registering v2 input', `${ci.nodeId}:out`, ci.label, ci.type);
         }
       } else {
         // Legacy format: inputs are in workflow.inputs (PublishedInput[])
         for (const inp of selectedWorkflow.inputs) {
-          defaults[inp.id] = inp.defaultValue != null ? String(inp.defaultValue) : '';
-          console.log('[WorkflowRunPage] useEffect: registering legacy input', inp.id, inp.name, inp.type);
+          if (inp.defaultValue != null) {
+            defaults[inp.id] = String(inp.defaultValue);
+          } else {
+            defaults[inp.id] = '';
+          }
         }
       }
       setInputValues(defaults);
@@ -103,7 +104,6 @@ export const WorkflowRunPage: React.FC = () => {
   }, [selectedWorkflow?.sourceId, setRunState]);
 
   const updateInput = useCallback((id: string, value: string) => {
-    console.log('[WorkflowRunPage] updateInput', { id, valueLen: value.length, valuePrefix: value.slice(0, 60) });
     setInputValues((prev) => ({ ...prev, [id]: value }));
   }, []);
 

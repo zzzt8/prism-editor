@@ -23,7 +23,6 @@ export const useWorkflowCatalogStore = create<WorkflowCatalogState>((set) => {
     loadError: undefined,
 
     loadWorkflows: async function loadWorkflows() {
-      console.log('[workflowCatalogStore] loadWorkflows called');
       set({ isLoading: true, loadError: undefined });
       try {
         const metas = await workflowRepo.listPublished();

@@ -37,7 +37,6 @@ export class IndexedDBStorageAdapter {
       const request = store.getAll();
 
       request.onsuccess = () => {
-        console.log('[IndexedDB] listPublished results:', request.result);
         const results: PublishedWorkflowMeta[] = (request.result as PublishedWorkflow[]).map((w) => ({
           sourceId: w.sourceId,
           name: w.name,
@@ -57,7 +56,6 @@ export class IndexedDBStorageAdapter {
   }
 
   async loadPublished(sourceId: string): Promise<PublishedWorkflow> {
-    console.log('[IndexedDB] loadPublished sourceId:', sourceId);
     const db = await openDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readonly');
@@ -66,7 +64,6 @@ export class IndexedDBStorageAdapter {
 
       request.onsuccess = () => {
         const result = request.result as PublishedWorkflow | undefined;
-        console.log('[IndexedDB] loadPublished result:', result ? 'found' : 'NOT FOUND', result?.name);
         if (!result) {
           reject(new Error('Published workflow not found'));
         } else {
@@ -79,7 +76,6 @@ export class IndexedDBStorageAdapter {
   }
 
   async importWorkflow(workflow: PublishedWorkflow | ValidatedPublishedWorkflow): Promise<{ id: string }> {
-    console.log('[IndexedDB] importWorkflow:', workflow.name, 'sourceId:', workflow.sourceId);
     const db = await openDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -91,7 +87,6 @@ export class IndexedDBStorageAdapter {
       const request = store.put(record);
 
       request.onsuccess = () => {
-        console.log('[IndexedDB] importWorkflow SUCCESS, id:', workflow.sourceId);
         resolve({ id: workflow.sourceId });
       };
       request.onerror = () => {

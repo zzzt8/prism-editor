@@ -41,18 +41,14 @@ function ImageInputField({ inp, value, onChange }: ImageInputFieldProps) {
       setImgError(false);
       const file = e.dataTransfer.files[0];
       if (file && file.type.startsWith('image/')) {
-        console.log('[InputSection] handleDrop: file=', file.name, file.size);
         const reader = new FileReader();
         reader.onload = (ev) => {
           if (typeof ev.target?.result === 'string') {
-            console.log('[InputSection] handleDrop: loaded, len=', ev.target.result.length);
             onChange(ev.target.result);
           }
         };
         reader.onerror = () => { console.error('[InputSection] handleDrop: error'); setImgError(true); };
         reader.readAsDataURL(file);
-      } else {
-        console.log('[InputSection] handleDrop: no file or not image');
       }
     },
     [onChange]
@@ -61,12 +57,10 @@ function ImageInputField({ inp, value, onChange }: ImageInputFieldProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setImgError(false);
     const file = e.target.files?.[0];
-    console.log('[InputSection] handleFileChange: file=', file?.name, file?.size);
     if (file) {
       const reader = new FileReader();
       reader.onload = (ev) => {
         if (typeof ev.target?.result === 'string') {
-          console.log('[InputSection] handleFileChange: loaded, len=', ev.target.result.length);
           onChange(ev.target.result);
         }
       };
@@ -333,9 +327,6 @@ function ExposedParamsForm({ selectedWorkflow, paramValues, onParamChange }: Exp
   const nodeConfigs = selectedWorkflow.config.nodeConfigs ?? {};
   const exposedParams = selectedWorkflow.config.exposedParams ?? [];
   const paramDefinitions = selectedWorkflow.config.paramDefinitions ?? [];
-
-  console.log('[ExposedParamsForm] ▶ raw paramDefinitions=', JSON.stringify(paramDefinitions, null, 2));
-  console.log('[ExposedParamsForm] ▶ exposedParams=', JSON.stringify(exposedParams, null, 2));
 
   const paramDefMap = new Map<string, PublishedParamDefinition>();
   for (const pd of paramDefinitions) {
