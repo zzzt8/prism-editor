@@ -17,8 +17,8 @@ export function createInspectorSlice(): Pick<InspectorSlice, keyof InspectorSlic
     inspectorTab: 'parameters',
 
     // Operations
-    openInspector(tab) {
-      return tab;
+    openInspector(_tab, _nodeId) {
+      return _tab;
     },
   };
 }

@@ -48,13 +48,13 @@ export function createExecutionSlice(): Pick<ExecutionSlice, keyof ExecutionSlic
       };
     },
 
-    updateProgress(nodeId) {
-      return nodeId;
+    updateProgress(_nodeId) {
+      return _nodeId;
     },
 
-    finishExecution(status, error) {
+    finishExecution(_status, _error) {
       return {
-        _executionStatus: status,
+        _executionStatus: _status,
         _currentNodeId: null,
         _executionAbort: null,
       };
@@ -72,8 +72,8 @@ export function createExecutionSlice(): Pick<ExecutionSlice, keyof ExecutionSlic
       };
     },
 
-    setAbortHandler(abort) {
-      return abort;
+    setAbortHandler(_abort) {
+      return _abort;
     },
   };
 }

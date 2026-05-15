@@ -30,12 +30,12 @@ export function createDraftSlice(): Pick<DraftSlice, keyof DraftSlice> {
     isDraggingFromPanel: false,
 
     // Operations
-    setWorkflowMeta(meta) {
-      return meta;
+    setWorkflowMeta(_meta) {
+      return _meta;
     },
 
-    renameWorkflow(name) {
-      const trimmed = name.trim();
+    renameWorkflow(_name) {
+      const trimmed = _name.trim();
       if (!trimmed) return null;
       return {
         id: this.workflowMeta.id,
@@ -44,16 +44,16 @@ export function createDraftSlice(): Pick<DraftSlice, keyof DraftSlice> {
       };
     },
 
-    setViewport(viewport) {
-      return viewport;
+    setViewport(_viewport) {
+      return _viewport;
     },
 
-    setDraggingFromPanel(dragging) {
-      return dragging;
+    setDraggingFromPanel(_dragging) {
+      return _dragging;
     },
 
-    loadDraft(meta, viewport = { x: 0, y: 0, zoom: 1 }) {
-      return { meta, viewport };
+    loadDraft(_meta, _viewport = { x: 0, y: 0, zoom: 1 }) {
+      return { meta: _meta, viewport: _viewport };
     },
 
     newDraft() {
