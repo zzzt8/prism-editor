@@ -122,12 +122,10 @@ export const NodePanel: React.FC = () => {
   const allDefinitions = useMemo(() => {
     try {
       globalRegistry.initialize();
-      setInitError(null);
       return globalRegistry.listNodes();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to initialize node registry';
-      setInitError(message);
-      console.error('[NodePanel] globalRegistry.initialize() failed:', err);
+      console.warn('[NodePanel] globalRegistry.initialize() failed:', message);
       return [];
     }
   }, [nodeVersion]); // 添加 nodeVersion 作为依赖

@@ -26,7 +26,7 @@
   - 将 `"shamefully-hoist": true` 和 `"auto-install-peers": true` 删除，回归 pnpm 默认行为
   - 验证命令: `npm run typecheck 2>&1` — 无 npm warn about pnpm config
 
-- [ ] T1.3: 在 `eslint.config.js` 中添加 `react-hooks` 插件
+- [x] T1.3: 在 `eslint.config.js` 中添加 `react-hooks` 插件
   - 文件: `eslint.config.js`
   - 安装 `eslint-plugin-react-hooks` 并引入插件和 `react-hooks/exhaustive-deps` 规则
   - 验证命令: `npm run lint 2>&1 | findstr "react-hooks/exhaustive-deps"` — 不应再有 "Definition for rule" 错误
