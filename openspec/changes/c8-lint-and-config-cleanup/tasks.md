@@ -21,9 +21,9 @@
   - 文件: `tsconfig.json`
   - 验证命令: `npx tsc --noEmit 2>&1 | findstr "TS17004 TS6142" | findstr /V "was resolved" | findstr /V "--jsx" | findstr /V "Cannot use"` — 应只输出非 JSX 的真实类型错误
 
-- [ ] T1.2: 迁移 npm pnpm-only 配置到 `package.json` 的 `"pnpm"` 字段
-  - 文件: `package.json`
-  - 将 `"shamefully-hoist": true` 和 `"auto-install-peers": true` 移入 `"pnpm"` 对象
+- [x] T1.2: 删除 `.npmrc` 中的 pnpm-only 配置（`shamefully-hoist`、`auto-install-peers`）
+  - 文件: `.npmrc`
+  - 将 `"shamefully-hoist": true` 和 `"auto-install-peers": true` 删除，回归 pnpm 默认行为
   - 验证命令: `npm run typecheck 2>&1` — 无 npm warn about pnpm config
 
 - [ ] T1.3: 在 `eslint.config.js` 中添加 `react-hooks` 插件
