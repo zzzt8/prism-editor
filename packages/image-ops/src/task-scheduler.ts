@@ -98,8 +98,8 @@ export class TaskScheduler {
       };
 
       const completeTask = (result: T) => {
-        const _val = this.tasks.get(id);
-        if (!_val) return;
+        const captured = this.tasks.get(id);
+        if (!captured) return;
         this.clearTimer(id);
         captured.status = 'done';
         captured.endTime = Date.now();
@@ -108,7 +108,7 @@ export class TaskScheduler {
         resolve(result);
       };
 
-      const failTask = (_err: Error) => {
+      const failTask = (err: Error) => {
         const captured = this.tasks.get(id);
         if (!captured) return;
         this.clearTimer(id);

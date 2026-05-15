@@ -299,7 +299,7 @@ export const LoadImageBody: FC<{
     setIsDragOver(false); setDragImageState(null);
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/')) {
-      processImageFile(file, updateNodeParams, nodeId, params, 'imageFile');
+      processImageFile(file, updateNodeParams, nodeId, imageFileValue ?? {}, 'imageFile');
     }
   };
 
@@ -330,7 +330,7 @@ export const LoadImageBody: FC<{
           <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }}
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) processImageFile(file, updateNodeParams, nodeId, params, 'imageFile');
+              if (file) processImageFile(file, updateNodeParams, nodeId, imageFileValue ?? {}, 'imageFile');
               e.target.value = '';
             }}
           />
@@ -354,7 +354,7 @@ export const LoadImageBody: FC<{
         style={{ display: 'none' }}
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) processImageFile(file, updateNodeParams, nodeId, params, 'imageFile');
+          if (file) processImageFile(file, updateNodeParams, nodeId, imageFileValue ?? {}, 'imageFile');
           e.target.value = '';
         }}
       />
@@ -416,7 +416,7 @@ export const LoadMaskBody: FC<{
     setIsDragOver(false); setDragImageState(null);
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/')) {
-      processImageFile(file, updateNodeParams, nodeId, params, 'maskFile');
+      processImageFile(file, updateNodeParams, nodeId, maskFileValue ?? {}, 'maskFile');
     }
   };
 
@@ -444,7 +444,7 @@ export const LoadMaskBody: FC<{
           <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }}
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) processImageFile(file, updateNodeParams, nodeId, params, 'maskFile');
+              if (file) processImageFile(file, updateNodeParams, nodeId, maskFileValue ?? {}, 'maskFile');
               e.target.value = '';
             }}
           />
@@ -468,7 +468,7 @@ export const LoadMaskBody: FC<{
         style={{ display: 'none' }}
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) processImageFile(file, updateNodeParams, nodeId, params, 'maskFile');
+          if (file) processImageFile(file, updateNodeParams, nodeId, maskFileValue ?? {}, 'maskFile');
           e.target.value = '';
         }}
       />
@@ -478,12 +478,12 @@ export const LoadMaskBody: FC<{
 
 /** Transform body */
 export const TransformBody: FC<{
-  _params: Record<string, unknown>;
+  params: Record<string, unknown>;
   updateNodeParams: (id: string, params: Record<string, unknown>) => void;
   nodeId: string;
   executionResult: CanvasNodeData['executionResult'];
   _onShowPreview: () => void;
-}> = ({ _params, updateNodeParams, nodeId, executionResult, _onShowPreview }) => {
+}> = ({ params, updateNodeParams, nodeId, executionResult, _onShowPreview }) => {
   const scaleAlg = (params['scaleAlgorithm'] as string) ?? 'lanczos';
   const execW = executionResult ? (executionResult['width'] as number) : undefined;
   const execH = executionResult ? (executionResult['height'] as number) : undefined;
@@ -503,7 +503,7 @@ export const TransformBody: FC<{
         </select>
       </div>
       {thumb && (
-        <div className="dcn-preview" data-preview onClick={onShowPreview}>
+        <div className="dcn-preview" data-preview onClick={_onShowPreview}>
           <img src={thumb} alt="preview" className="dcn-preview-img" />
           {execW && execH && <span className="dcn-preview-badge">{execW}×{execH}</span>}
         </div>
@@ -514,12 +514,12 @@ export const TransformBody: FC<{
 
 /** ApplyMask body */
 export const ApplyMaskBody: FC<{
-  _params: Record<string, unknown>;
+  params: Record<string, unknown>;
   updateNodeParams: (id: string, params: Record<string, unknown>) => void;
   nodeId: string;
   executionResult: CanvasNodeData['executionResult'];
   _onShowPreview: () => void;
-}> = ({ _params, updateNodeParams, nodeId, executionResult, _onShowPreview }) => {
+}> = ({ params, updateNodeParams, nodeId, executionResult, _onShowPreview }) => {
   const maskType = (params['maskType'] as string) ?? 'alpha';
   const threshold = (params['threshold'] as number) ?? 128;
   const invert = (params['invert'] as boolean) ?? false;
@@ -554,7 +554,7 @@ export const ApplyMaskBody: FC<{
         />
       </div>
       {thumb && (
-        <div className="dcn-preview" data-preview onClick={onShowPreview}>
+        <div className="dcn-preview" data-preview onClick={_onShowPreview}>
           <img src={thumb} alt="preview" className="dcn-preview-img" />
           {execW && execH && <span className="dcn-preview-badge">{execW}×{execH}</span>}
         </div>
@@ -565,12 +565,12 @@ export const ApplyMaskBody: FC<{
 
 /** Composite body */
 export const CompositeBody: FC<{
-  _params: Record<string, unknown>;
+  params: Record<string, unknown>;
   updateNodeParams: (id: string, params: Record<string, unknown>) => void;
   nodeId: string;
   executionResult: CanvasNodeData['executionResult'];
   _onShowPreview: () => void;
-}> = ({ _params, updateNodeParams, nodeId, executionResult, _onShowPreview }) => {
+}> = ({ params, updateNodeParams, nodeId, executionResult, _onShowPreview }) => {
   const blendMode = (params['blendMode'] as string) ?? 'normal';
   const opacity = (params['opacity'] as number) ?? 1;
   const thumb = getExecThumb(executionResult);
@@ -646,10 +646,10 @@ const emptyInputStyle: React.CSSProperties = {
 
 /** Empty Input body — inline width / height / backgroundColor controls, ref ComfyUI EmptyImage */
 export const EmptyInputBody: FC<{
-  _params: Record<string, unknown>;
+  params: Record<string, unknown>;
   updateNodeParams: (id: string, params: Record<string, unknown>) => void;
   nodeId: string;
-}> = ({ _params, updateNodeParams, nodeId }) => {
+}> = ({ params, updateNodeParams, nodeId }) => {
   const width = (params['width'] as number) ?? 512;
   const height = (params['height'] as number) ?? 512;
   const bgColor = (params['backgroundColor'] as string) ?? '#ffffff';
