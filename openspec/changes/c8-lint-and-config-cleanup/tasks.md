@@ -17,7 +17,7 @@
 
 ### 1. meta layer 配置修复
 
-- [ ] T1.1: 修复 `tsconfig.json`，添加 `"jsx": "react-jsx"` 和 `"module": "ESNext"` 配置
+- [x] T1.1: 修复 `tsconfig.json`，添加 `"jsx": "react-jsx"` 和 `"module": "ESNext"` 配置
   - 文件: `tsconfig.json`
   - 验证命令: `npx tsc --noEmit 2>&1 | findstr "TS17004 TS6142" | findstr /V "was resolved" | findstr /V "--jsx" | findstr /V "Cannot use"` — 应只输出非 JSX 的真实类型错误
 
