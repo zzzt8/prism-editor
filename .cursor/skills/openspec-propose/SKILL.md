@@ -30,15 +30,9 @@ openspec list --json
 创建 change: <name>  ← 用户确认后继续
 ```
 
-## Anchor Echo（调用 CLI 前必须输出）
+## Anchor Echo（调用 CLI 前输出）
 
-```markdown
-## Anchor Echo
-
-- 原始任务：[回显]
-- change 名称：<name>
-- 是否服务于原始任务：是 / 否（否则停止）
-```
+简要确认：`创建 change: <name> ← 用户确认后继续`
 
 ## 创建 change
 
@@ -76,11 +70,14 @@ CLI 失败 → 停止，告诉用户检查 CLI 配置。不要自己造 artifact
 - `high`：完整 Architecture Review + 正式评审清单
 
 **tasks.md**（所有 class 必须）：
-- 每个 task 含 opsx-meta 块（id、layer、verify）
-- task 描述 + 验收标准
-- `low`：测试并入 tasks 验证命令
-- `medium`：可插入独立测试章节
-- `high`：必须插入独立测试章节
+- `low`：纯 checkbox，**不生成** opsx-meta 块。示例：
+
+  ```
+  - [ ] T1: <描述>
+  - [ ] T2: <描述>
+  ```
+- `medium`：`low` 格式 + 验收清单（E2E 优先原则）。**不生成** opsx-meta 块。
+- `high`：每个 task 含 opsx-meta 块（id、layer、verify）。
 
 ## change-splitting（可选）
 

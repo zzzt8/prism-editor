@@ -30,33 +30,22 @@
 
 ---
 
-## 任务列表
+## 任务列表（按 change_class 生成）
 
-> [!WARNING]
-> **Task ID 必须全局唯一**。同一 change 内不得出现重复 id。若两个 task 需要用同一编号，改为 T6a / T6b。重复 id 是 schema 违规，会导致 `openspec list` 的 totalTasks 计数错误。
+### change_class = low / medium
 
-> **Task 元数据格式：**
-> ```html
-> <!-- opsx-meta
-> id: T1
-> layer: engine
-> verify: unit-tests
-> dependencies:
->   - type: task
->     refs: []
-> -->
-> ```
->
-> **验收标准写法规则**：必须写成**可观测、可验证**的条件，禁止写需要运行时状态才能验证的句子。
-> - 好：`pnpm exec tsc --noEmit 无错误`
-> - 好：`clipboard 字段存在于 canvasStore.ts 且类型为 NodeOrEdge[]`
-> - 差：`复制节点后刷新页面，粘贴仍可用`（需要 persist middleware，属于额外 scope）
-> - 差：`两个 store 共享同一个 adapter 实例`（需要对象身份测试，属于额外 scope）
-> 如果验收标准涉及运行时行为，拆成两个 sub-task：代码可验证的 + 标记为手工验收的。
+纯 checkbox，**不使用** opsx-meta 块：
 
-> **layer 取值**：editor | runtime | backend | engine | ui-skin | meta
-> **verify 取值**：unit-tests | golden-fixture | api-tests | smoke-test | visual-check | manual
+```markdown
+- [ ] T1: <描述>
+- [ ] T2: <描述>
+```
 
+### change_class = high
+
+使用 opsx-meta 块（保留完整格式）：
+
+```html
 <!-- opsx-meta
 id: T1
 layer: engine
@@ -67,17 +56,17 @@ dependencies:
 -->
 - [ ] T1: [任务描述]
   - layer: engine
+```
 
-<!-- opsx-meta
-id: T2
-layer: backend
-verify: api-tests
-dependencies:
-  - type: task
-    refs: [T1]
--->
-- [ ] T2: [任务描述]
-  - layer: backend
+> **layer 取值**：editor | runtime | backend | engine | ui-skin | meta
+> **verify 取值**：unit-tests | golden-fixture | api-tests | smoke-test | visual-check | manual
+
+> **验收标准写法规则**：必须写成**可观测、可验证**的条件，禁止写需要运行时状态才能验证的句子。
+> - 好：`pnpm exec tsc --noEmit 无错误`
+> - 好：`clipboard 字段存在于 canvasStore.ts 且类型为 NodeOrEdge[]`
+> - 差：`复制节点后刷新页面，粘贴仍可用`（需要 persist middleware，属于额外 scope）
+> - 差：`两个 store 共享同一个 adapter 实例`（需要对象身份测试，属于额外 scope）
+> 如果验收标准涉及运行时行为，拆成两个 sub-task：代码可验证的 + 标记为手工验收的。
 
 ---
 
@@ -152,8 +141,9 @@ dependencies:
 
 ## Layer 优先级执行策略
 
-> 按优先级从高到低执行：engine > backend > editor > runtime > ui-skin > meta
+> 仅适用于 change_class = medium 或 high。change_class = low 时跳过此节。
 
+- 按优先级从高到低执行：engine > backend > editor > runtime > ui-skin > meta
 - 同一 layer 内的 task 按 id 字母顺序执行
 - 高 layer task 完成后才执行依赖它的低 layer task
 - 跨层依赖时，允许依赖链存在，但不能跳过优先级倒置

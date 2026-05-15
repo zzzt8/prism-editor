@@ -49,20 +49,54 @@ test -f "openspec/changes/<name>/tasks.md"
 
 失败 → 输出缺失的 artifact → 停止。不得自行创建。
 
+## 执行路径分支
+
+读取 `openspec/changes/<name>/.openspec.yaml`，获取 `change_class`（在 `schema:` 字段下），决定执行路径：
+
+| change_class | 执行路径 |
+|---|---|
+| `low` | Fast 路径（见下方） |
+| `medium` / `high` | Standard 路径（当前 7 步循环） |
+
+### Fast 路径（low）
+
+- 不做 layer 优先级排序，按 tasks.md 顺序执行
+- 不做 logical commit 分组，每完成 1-2 个 task commit 一次（同类改动合组）
+- 不做增量验证（跳过"单个 task 执行循环"第 5 步"增量验证"）
+- 改为"快速检查"：每 2 个 task commit 后跑 `pnpm typecheck`，失败才停
+- commit message 仍用 `task: <id>` 格式
+- 全量验证同 Standard 路径
+
 ## 收集可执行 tasks
+
+### Standard 路径额外步骤：预验证（resume 时）
+
+如果 change 之前执行过（存在已完成 commit），resume 进入 Standard 路径时：
+
+1. 读 tasks.md，收集所有 `[x]` 的 task
+2. 对每个 `[x]` task，尝试重新运行其 verify 命令：
+   - `grep "console\.log"` 类 → 确认无残留
+   - 文件字段存在性 → 用 grep/find 确认
+   - 不可自动验证的项 → 跳过（信任 checkbox）
+3. verify 通过 → 信任 checkbox，继续
+4. verify 失败 → 标记回 `[ ]`，记入摘要 "T1 验收未通过，已重置"
+
+### 执行
 
 从 tasks.md 收集所有 `-[ ]` 的 task，逐个检查依赖：
 
 - `type: task` 依赖未 `-[x]` → 跳过，记为 blocked
 - `type: change` 依赖未 completed → 跳过，记为 blocked
 
-剩余可执行 tasks 按 layer 优先级排序：
+剩余可执行 tasks 按以下顺序：
 
-```
-engine > backend > editor > runtime > ui-skin > meta
-```
+1. 优先执行有依赖的 task（dep 非空的优先）
+2. 其余按 layer 优先级排序（建议，非强制）：
 
-同 layer 按 task id 字母序。
+   ```
+   engine > backend > editor > runtime > ui-skin > meta
+   ```
+3. 同 layer 按 task id 字母序。
 
 ## 批量分组（logical commit）
 

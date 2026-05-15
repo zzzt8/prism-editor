@@ -16,7 +16,9 @@ description: OpenSpec Skill 共享层：layer 映射、验证命令。所有 ope
 | `ui-skin` | `packages/shared-ui/`, `packages/shared-types/` | 设计系统、共享类型 |
 | `meta` | `.cursor/` | Cursor skills 和 commands |
 
-### Layer 执行优先级
+### Layer 执行优先级（建议，非强制）
+
+> 仅在 change_class = medium 或 high 时参考此优先级。change_class = low 时，按 tasks.md 顺序执行即可。
 
 ```
 engine > backend > editor > runtime > ui-skin > meta
