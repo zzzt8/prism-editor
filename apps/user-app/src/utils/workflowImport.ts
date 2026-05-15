@@ -4,7 +4,6 @@
  */
 
 import { z } from 'zod';
-import type { PublishedWorkflow } from '@prism/shared-types';
 
 // ─── Zod Schemas ─────────────────────────────────────────────────────────────
 

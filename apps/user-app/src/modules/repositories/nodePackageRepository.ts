@@ -6,7 +6,6 @@ import type { INodePackageRepository } from './interfaces';
 import {
   getNodePackageFromCache,
   storeNodePackageInCache,
-  clearNodePackageCache,
 } from '../../storage/nodeCache';
 
 export class NodePackageRepository implements INodePackageRepository {

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
 import { TemplateRepository } from '../../modules/repositories/templateRepository';
 import type { Template } from '@prism/shared-types';
-import { X, FileText } from 'lucide-react';
+import { X } from 'lucide-react';
 
 const templateRepo = new TemplateRepository();
 

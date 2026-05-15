@@ -38,7 +38,7 @@ export async function loadRequiredNodes(workflow: PublishedWorkflow): Promise<No
     return errors;
   }
 
-  for (const [packageName, pkgInfo] of Object.entries(requiredNodes)) {
+    for (const [packageName, _pkgInfo] of Object.entries(requiredNodes)) {
     if (pkgInfo.url) {
       try {
         const cached = nodePackageRepo.getFromCache(pkgInfo.url);
@@ -100,7 +100,7 @@ export function importRequiredNode(manifest: NodePackageManifest): void {
         );
       }
       const url = source.url;
-      executors[execDef.id] = async (inputs, params, context) => {
+      executors[execDef.id] = async (inputs, params, _context) => {
         const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

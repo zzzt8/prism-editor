@@ -33,8 +33,8 @@ const ImageClass = canvas.Image as unknown as typeof Image;
 const proto = canvas.Canvas.prototype as unknown as Record<string, unknown>;
 
 // Capture toBuffer with correct `this` binding using a factory per-call.
-function makeToBuffer(c: canvas.Canvas) {
-  return canvas.Canvas.prototype.toBuffer.bind(c);
+function makeToBuffer(_c: canvas.Canvas) {
+  return canvas.Canvas.prototype.toBuffer.bind({} as canvas.Canvas);
 }
 
 function canvasToBlob(c: canvas.Canvas, type: string, quality?: number): Blob {
@@ -110,11 +110,11 @@ class FileReaderPolyfill {
   private _readyState = 0;
   private _listeners: Map<string, EventListenerOrEventListenerObject[]> = new Map();
    
-  onload: ((this: FileReaderPolyfill, ev: ProgressEvent<FileReaderPolyfill>) => void) | null = null;
-   
-  onerror: ((this: FileReaderPolyfill, ev: ProgressEvent<FileReaderPolyfill>) => void) | null = null;
-   
-  onloadend: ((this: FileReaderPolyfill, ev: ProgressEvent<FileReaderPolyfill>) => void) | null = null;
+  onload: ((_this: FileReaderPolyfill, _ev: ProgressEvent<FileReaderPolyfill>) => void) | null = null;
+  
+  onerror: ((_this: FileReaderPolyfill, _ev: ProgressEvent<FileReaderPolyfill>) => void) | null = null;
+  
+  onloadend: ((_this: FileReaderPolyfill, _ev: ProgressEvent<FileReaderPolyfill>) => void) | null = null;
 
   get result() { return this._result; }
   get error() { return this._error as DOMException | null; }

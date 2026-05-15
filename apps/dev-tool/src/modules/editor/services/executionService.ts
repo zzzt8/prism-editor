@@ -43,18 +43,11 @@ export interface ExecutionService {
   cancel: () => void;
 }
 
-interface WorkflowExecutorType {
-  execute: (
-    workflow: import('@prism/shared-types').Workflow,
-    options: { signal: AbortSignal; onProgress: (progress: ExecutionProgress) => void }
-  ) => Promise<{ status: 'done' | 'error' | 'cancelled'; error?: string }>;
-}
-
 export function createExecutionService(): ExecutionService {
   let activeController: AbortController | null = null;
 
   return {
-    async execute(workflowMeta, nodes, edges, options) {
+    async execute(_workflowMeta, _nodes, _edges, options) {
       // Create a fresh AbortController for this execution run
       activeController = new AbortController();
       const { onProgress, signal, laneConfig } = options;
@@ -83,7 +76,7 @@ export function createExecutionService(): ExecutionService {
       }
 
       const executor = new WorkflowExecutor(executors);
-      const workflow = {
+      const _workflow = {
         id: workflowMeta.id,
         name: workflowMeta.name,
         version: workflowMeta.version,
@@ -112,7 +105,7 @@ export function createExecutionService(): ExecutionService {
       };
 
       const effectiveLaneConfig = { ...DEFAULT_LANE_CONFIG, ...laneConfig };
-      const result = await executor.execute(workflow, {
+      const result = await executor.execute(_workflow, {
         signal,
         onProgress,
         laneConfig: effectiveLaneConfig,

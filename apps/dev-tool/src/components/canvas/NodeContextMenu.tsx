@@ -43,7 +43,7 @@ interface NodeContextMenuProps {
 
 interface SnippetSaveDialogProps {
   allSelectedIds: string[];
-  snippetSave: (name: string, description: string, ids: string[]) => Promise<void>;
+  snippetSave: (_name: string, _description: string, _ids: string[]) => Promise<void>;
   onClose: () => void;
 }
 
@@ -168,7 +168,7 @@ const SnippetSaveDialogContent: FC<SnippetSaveDialogProps> = ({
 // ── Submenu context ───────────────────────────────────────────────────────────
 
 interface SnippetMenuItemProps {
-  id: string;
+  _id: string;
   name: string;
   onInsert: (id: string) => void;
   onDelete: (id: string) => Promise<void>;
@@ -178,7 +178,7 @@ interface SnippetMenuItemProps {
 const LONG_PRESS_DURATION = 400;
 
 const SnippetMenuItem: FC<SnippetMenuItemProps> = ({
-  id,
+  _id,
   name,
   onInsert,
   onDelete,
@@ -210,7 +210,7 @@ const SnippetMenuItem: FC<SnippetMenuItemProps> = ({
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    await onDelete(id);
+    onDelete(_id);
     onDeleted();
   };
 
@@ -230,7 +230,7 @@ const SnippetMenuItem: FC<SnippetMenuItemProps> = ({
       </button>
       <button
         className="dcn-context-menu-item"
-        onClick={() => { onInsert(id); }}
+        onClick={() => { onInsert(_id); }}
         style={{ opacity: showDelete ? 0.4 : 1 }}
       >
         <span style={{ flexShrink: 0, width: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

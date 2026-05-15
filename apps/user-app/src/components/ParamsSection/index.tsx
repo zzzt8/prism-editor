@@ -36,14 +36,14 @@ export interface ParamsSectionProps {
     };
   };
   paramValues: Record<string, Record<string, unknown>>;
-  onParamChange: (nodeKey: string, paramId: string, value: unknown) => void;
+  onParamChange: (_nodeKey: string, _paramId: string, _value: unknown) => void;
 }
 
 // ── Individual control renderers ──────────────────────────────────────────────
 
 interface ControlProps {
   value: unknown;
-  onChange: (value: unknown) => void;
+  onChange: (_value: unknown) => void;
   paramDef: PublishedParamDefinition | undefined;
   disabled: boolean;
 }
@@ -209,7 +209,7 @@ export const ParamsSection: React.FC<ParamsSectionProps> = ({
     }
   } else {
     // Fallback: iterate nodeConfigs params (backward compat with exposedParams)
-    for (const [nodeKey, nodeType] of Object.entries(nodeTypes)) {
+    for (const [nodeKey, _nodeType] of Object.entries(nodeTypes)) {
       const config = nodeConfigs[nodeKey];
       const params = config?.params;
       if (!params) continue;

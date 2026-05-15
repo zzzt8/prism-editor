@@ -10,7 +10,7 @@ import { FileText } from 'lucide-react';
 interface TemplateListProps {
   templates: TemplateSummary[];
   selectedId?: string;
-  onSelect: (id: string) => void;
+  onSelect: (_id: string) => void;
 }
 
 export const TemplateList: React.FC<TemplateListProps> = ({

@@ -1,4 +1,3 @@
-import type { WorkflowMeta } from '@prism/shared-types';
 import type { PublishedWorkflow } from '@prism/shared-types';
 import type { ValidatedPublishedWorkflow } from '../utils/workflowImport';
 

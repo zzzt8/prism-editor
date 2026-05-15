@@ -186,7 +186,7 @@ export function getDragImageState(): DragState | null {
 
 // Helper function to process an image file and update node params
 function processImageFile(
-  file: File,
+  _file: File,
   updateNodeParams: (id: string, params: Record<string, unknown>) => void,
   nodeId: string,
   params: Record<string, unknown>,
@@ -245,12 +245,12 @@ function getExecThumb(executionResult: CanvasNodeData['executionResult']): strin
 /** LoadImage body — file name + upload button + preview + resolution + replace */
 export const LoadImageBody: FC<{
   imageFileValue: ImageFileValue | undefined;
-  params: Record<string, unknown>;
+  _params: Record<string, unknown>;
   updateNodeParams: (id: string, params: Record<string, unknown>) => void;
   nodeId: string;
   executionResult: CanvasNodeData['executionResult'];
-  onShowPreview: () => void;
-}> = ({ imageFileValue, params, updateNodeParams, nodeId, executionResult, onShowPreview }) => {
+  _onShowPreview: () => void;
+}> = ({ imageFileValue, _params, updateNodeParams, nodeId, executionResult, _onShowPreview }) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const img = imageFileValue;
   const [isDragOver, setIsDragOver] = useState(false);
@@ -365,12 +365,12 @@ export const LoadImageBody: FC<{
 /** LoadMask body — identical to LoadImage but for mask files */
 export const LoadMaskBody: FC<{
   maskFileValue: ImageFileValue | undefined;
-  params: Record<string, unknown>;
+  _params: Record<string, unknown>;
   updateNodeParams: (id: string, params: Record<string, unknown>) => void;
   nodeId: string;
   executionResult: CanvasNodeData['executionResult'];
-  onShowPreview: () => void;
-}> = ({ maskFileValue, params, updateNodeParams, nodeId, executionResult, onShowPreview }) => {
+  _onShowPreview: () => void;
+}> = ({ maskFileValue, _params, updateNodeParams, nodeId, executionResult, _onShowPreview }) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const img = maskFileValue;
   const [isDragOver, setIsDragOver] = useState(false);
@@ -478,12 +478,12 @@ export const LoadMaskBody: FC<{
 
 /** Transform body */
 export const TransformBody: FC<{
-  params: Record<string, unknown>;
+  _params: Record<string, unknown>;
   updateNodeParams: (id: string, params: Record<string, unknown>) => void;
   nodeId: string;
   executionResult: CanvasNodeData['executionResult'];
-  onShowPreview: () => void;
-}> = ({ params, updateNodeParams, nodeId, executionResult, onShowPreview }) => {
+  _onShowPreview: () => void;
+}> = ({ _params, updateNodeParams, nodeId, executionResult, _onShowPreview }) => {
   const scaleAlg = (params['scaleAlgorithm'] as string) ?? 'lanczos';
   const execW = executionResult ? (executionResult['width'] as number) : undefined;
   const execH = executionResult ? (executionResult['height'] as number) : undefined;
@@ -514,12 +514,12 @@ export const TransformBody: FC<{
 
 /** ApplyMask body */
 export const ApplyMaskBody: FC<{
-  params: Record<string, unknown>;
+  _params: Record<string, unknown>;
   updateNodeParams: (id: string, params: Record<string, unknown>) => void;
   nodeId: string;
   executionResult: CanvasNodeData['executionResult'];
-  onShowPreview: () => void;
-}> = ({ params, updateNodeParams, nodeId, executionResult, onShowPreview }) => {
+  _onShowPreview: () => void;
+}> = ({ _params, updateNodeParams, nodeId, executionResult, _onShowPreview }) => {
   const maskType = (params['maskType'] as string) ?? 'alpha';
   const threshold = (params['threshold'] as number) ?? 128;
   const invert = (params['invert'] as boolean) ?? false;
@@ -565,12 +565,12 @@ export const ApplyMaskBody: FC<{
 
 /** Composite body */
 export const CompositeBody: FC<{
-  params: Record<string, unknown>;
+  _params: Record<string, unknown>;
   updateNodeParams: (id: string, params: Record<string, unknown>) => void;
   nodeId: string;
   executionResult: CanvasNodeData['executionResult'];
-  onShowPreview: () => void;
-}> = ({ params, updateNodeParams, nodeId, executionResult, onShowPreview }) => {
+  _onShowPreview: () => void;
+}> = ({ _params, updateNodeParams, nodeId, executionResult, _onShowPreview }) => {
   const blendMode = (params['blendMode'] as string) ?? 'normal';
   const opacity = (params['opacity'] as number) ?? 1;
   const thumb = getExecThumb(executionResult);
@@ -609,8 +609,8 @@ export const CompositeBody: FC<{
 /** Export body */
 export const ExportBody: FC<{
   executionResult: CanvasNodeData['executionResult'];
-  onShowPreview: () => void;
-}> = ({ executionResult, onShowPreview }) => {
+  _onShowPreview: () => void;
+}> = ({ executionResult, _onShowPreview }) => {
   const ready = !!executionResult;
   const previewUrl = executionResult?.['previewUrl'] as string | undefined;
   const execW = executionResult?.['width'] as number | undefined;
@@ -646,10 +646,10 @@ const emptyInputStyle: React.CSSProperties = {
 
 /** Empty Input body — inline width / height / backgroundColor controls, ref ComfyUI EmptyImage */
 export const EmptyInputBody: FC<{
-  params: Record<string, unknown>;
+  _params: Record<string, unknown>;
   updateNodeParams: (id: string, params: Record<string, unknown>) => void;
   nodeId: string;
-}> = ({ params, updateNodeParams, nodeId }) => {
+}> = ({ _params, updateNodeParams, nodeId }) => {
   const width = (params['width'] as number) ?? 512;
   const height = (params['height'] as number) ?? 512;
   const bgColor = (params['backgroundColor'] as string) ?? '#ffffff';

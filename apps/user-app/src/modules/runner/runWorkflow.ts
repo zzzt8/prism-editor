@@ -8,7 +8,7 @@ import type { PublishedWorkflow } from '@prism/shared-types';
 import type { ExecutionProgress } from '@prism/shared-types';
 import type { RunState } from './runStore';
 
-export type RunStateSetter = (state: RunState | ((prev: RunState) => RunState)) => void;
+export type RunStateSetter = (_state: RunState | ((_prev: RunState) => RunState)) => void;
 
 // Module-level AbortController for the current execution
 let _activeController: AbortController | null = null;

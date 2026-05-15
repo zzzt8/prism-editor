@@ -127,7 +127,7 @@ export const WorkflowListPage: React.FC = () => {
   }, [isLoading, loadError, workflows.length]);
 
   // ── Import from file ─────────────────────────────────────────────────────
-  const handleFileImport = useCallback(async (file: File) => {
+  const handleFileImport = useCallback(async (_file: File) => {
     const result = await importWorkflowFromFile(file);
     if (result.success) {
       try {

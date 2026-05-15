@@ -27,7 +27,7 @@ import type { PublishedInput, PublishedInputConfig, PublishedParamDefinition } f
 interface ImageInputFieldProps {
   inp: PublishedInput;
   value: string;
-  onChange: (v: string) => void;
+  onChange: (_v: string) => void;
 }
 
 function ImageInputField({ inp, value, onChange }: ImageInputFieldProps) {
@@ -158,7 +158,7 @@ function ImageInputField({ inp, value, onChange }: ImageInputFieldProps) {
 interface TextInputFieldProps {
   inp: PublishedInput;
   value: string;
-  onChange: (v: string) => void;
+  onChange: (_v: string) => void;
 }
 
 function TextInputField({ inp, value, onChange }: TextInputFieldProps) {
@@ -190,7 +190,7 @@ function TextInputField({ inp, value, onChange }: TextInputFieldProps) {
 interface MaskInputFieldProps {
   inp: PublishedInput;
   value: string;
-  onChange: (v: string) => void;
+  onChange: (_v: string) => void;
 }
 
 function MaskInputField({ inp, value, onChange }: MaskInputFieldProps) {
@@ -319,7 +319,7 @@ interface ExposedParamsFormProps {
     };
   };
   paramValues: Record<string, Record<string, unknown>>;
-  onParamChange: (nodeKey: string, paramId: string, value: unknown) => void;
+  onParamChange: (_nodeKey: string, _paramId: string, _value: unknown) => void;
 }
 
 function ExposedParamsForm({ selectedWorkflow, paramValues, onParamChange }: ExposedParamsFormProps) {
@@ -337,7 +337,6 @@ function ExposedParamsForm({ selectedWorkflow, paramValues, onParamChange }: Exp
     <div className="ua-exposed-params">
       <div className="ua-exposed-params-title">调整参数</div>
       {exposedParams.map((ep) => {
-        const nodeType = nodeTypes[ep.nodeId] ?? '';
         const config = nodeConfigs[ep.nodeId];
         const rawValue = paramValues[ep.nodeId]?.[ep.paramId] ?? config?.params?.[ep.paramId];
         const pd = paramDefMap.get(`${ep.nodeId}:${ep.paramId}`);
@@ -438,8 +437,8 @@ export interface InputSectionProps {
   };
   inputValues: Record<string, string>;
   paramValues: Record<string, Record<string, unknown>>;
-  onInputChange: (id: string, value: string) => void;
-  onParamChange: (nodeKey: string, paramId: string, value: unknown) => void;
+  onInputChange: (_id: string, _value: string) => void;
+  onParamChange: (_nodeKey: string, _paramId: string, _value: unknown) => void;
 }
 
 export const InputSection: React.FC<InputSectionProps> = ({

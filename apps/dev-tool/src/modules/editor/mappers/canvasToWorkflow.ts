@@ -1,7 +1,7 @@
 // canvasToWorkflow - 将画布状态转换为 Workflow 格式
 // 用于编辑器保存和持久化
 
-import type { Workflow, WorkflowNode, Connection, WorkflowMetadata } from '@prism/shared-types';
+import type { Workflow, WorkflowNode, Connection } from '@prism/shared-types';
 import type { EditorCanvasNode, EditorCanvasEdge, EditorWorkflowMeta } from '@prism/shared-types';
 
 /**

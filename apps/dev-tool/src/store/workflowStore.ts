@@ -33,11 +33,11 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
     }
   },
 
-  deleteSavedWorkflow: async (id: string) => {
+  deleteSavedWorkflow: async (_id: string) => {
     try {
-      await workflowRepository.delete(id);
+      await workflowRepository.delete(_id);
       set((state) => ({
-        savedWorkflows: state.savedWorkflows.filter((w) => w.id !== id),
+        savedWorkflows: state.savedWorkflows.filter((w) => w.id !== _id),
       }));
     } catch (err) {
       set({ error: String(err) });

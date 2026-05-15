@@ -8,8 +8,8 @@ import { FileText, Trash2, Clock } from 'lucide-react';
 const repo = new TemplateRepository();
 
 interface TemplateListProps {
-  onSelect: (id: string) => void;
-  onDelete: (id: string) => void;
+  onSelect: (_id: string) => void;
+  onDelete: (_id: string) => void;
   selectedId?: string;
 }
 

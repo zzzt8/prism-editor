@@ -30,8 +30,8 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
   const importWorkflowFromFile = useCanvasStore((s) => s.importWorkflowFromFile);
   const renameWorkflow = useCanvasStore((s) => s.renameWorkflow);
   const saveWorkflow = useCanvasStore((s) => s.saveWorkflow);
-  const leftPanelOpen = useAppStore((s) => s.leftPanelOpen);
-  const rightPanelOpen = useAppStore((s) => s.rightPanelOpen);
+  const _leftPanelOpen = useAppStore((s) => s.leftPanelOpen);
+  const _rightPanelOpen = useAppStore((s) => s.rightPanelOpen);
 
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);

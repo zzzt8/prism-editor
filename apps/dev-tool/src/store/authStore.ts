@@ -63,12 +63,12 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       isAuthenticated: false,
 
-      login: async (email: string, password: string) => {
+      login: async (_email: string, _password: string) => {
         const response = await authFetch(`${API_BASE}/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ email: _email, password: _password }),
         });
 
         if (!response.ok) {
@@ -84,12 +84,12 @@ export const useAuthStore = create<AuthState>()(
         syncStorageTokens();
       },
 
-      register: async (email: string, password: string, name?: string) => {
+      register: async (_email: string, _password: string, _name?: string) => {
         const response = await authFetch(`${API_BASE}/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ email, password, name }),
+          body: JSON.stringify({ email: _email, password: _password, name: _name }),
         });
 
         if (!response.ok) {

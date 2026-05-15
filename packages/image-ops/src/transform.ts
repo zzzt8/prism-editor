@@ -4,7 +4,6 @@
 type ImageData = globalThis.ImageData;
 import type { TransformOptions } from '@prism/shared-types';
 import { unwrapImageData } from '@prism/shared-types';
-import { getImageMemoryManager } from './memory-manager';
 import { generatePreviewUrl } from './preview-strategy';
 import { getWorkerRunner, type WorkerRunner } from './scheduler/workerRunner';
 import type { NodeExecutor, TransformExecutorOutput } from '@prism/shared-types';
@@ -83,7 +82,7 @@ export function transformImage(
     throw new Error('Invalid output dimensions after transform');
   }
 
-  const { canvas: outCanvas, ctx: outCtx } = createCanvas(outWidth, outHeight);
+  const { canvas: _outCanvas, ctx: outCtx } = createCanvas(outWidth, outHeight);
 
   outCtx.save();
 
@@ -145,7 +144,7 @@ export function cropImage(
 
   ctx.putImageData(imageData, 0, 0);
 
-  const { canvas: outCanvas, ctx: outCtx } = createCanvas(width, height);
+  const { canvas: _outCanvas, ctx: outCtx } = createCanvas(width, height);
   outCtx.drawImage(canvas, x, y, width, height, 0, 0, width, height);
 
   return outCtx.getImageData(0, 0, width, height);
@@ -177,7 +176,7 @@ export function resizeImageData(
 
   ctx.putImageData(imageData, 0, 0);
 
-  const { canvas: outCanvas, ctx: outCtx } = createCanvas(width, height);
+  const { canvas: _outCanvas, ctx: outCtx } = createCanvas(width, height);
   outCtx.drawImage(canvas, 0, 0, width, height);
 
   return outCtx.getImageData(0, 0, width, height);

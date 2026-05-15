@@ -18,9 +18,6 @@ interface StoredPackage {
  * Used by both ImportModal (file import) and MarketplaceList (API download).
  */
 export async function registerNodePackage(manifest: NodePackageManifest): Promise<string[]> {
-  // Collect executor IDs
-  const executorIds = new Set(manifest.executors.map((e) => e.id));
-
   // Parse executors into actual functions
   const parsedExecutors: Record<string, NodeExecutor> = {};
   for (const execDef of manifest.executors) {

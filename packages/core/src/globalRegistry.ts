@@ -70,7 +70,7 @@ export const globalRegistry: GlobalRegistry = {
     _executors.set(type, fn);
   },
 
-  registerAll(definitions: NodeDefinition[], executors: NodeExecutorMap, isCustom = false): void {
+  registerAll(definitions: NodeDefinition[], executors: NodeExecutorMap, _isCustom = false): void {
     for (const def of definitions) {
       this.registerNode(def, isCustom);
     }
@@ -99,7 +99,7 @@ export const globalRegistry: GlobalRegistry = {
     return Array.from(_definitions.values()).filter((d) => _customNodeTypes.has(d.type));
   },
 
-  isCustomNode(type: string): boolean {
+  isCustomNode(_type: string): boolean {
     return _customNodeTypes.has(type);
   },
 

@@ -128,13 +128,13 @@ export class TaskQueue {
 
       // Submit to worker pool
       this.workerPool.execute(() => task.execute())
-        .then((result) => {
+        .then((_result) => {
           clearTimeout(timeoutId);
           this.runningTasks.delete(taskId);
           task.onComplete?.(result as T);
           resolve(result as T);
         })
-        .catch((err) => {
+        .catch((_err) => {
           clearTimeout(timeoutId);
           this.runningTasks.delete(taskId);
           task.onError?.(err instanceof Error ? err : new Error(String(err)));

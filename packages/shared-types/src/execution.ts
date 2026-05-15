@@ -83,15 +83,15 @@ export interface ExecutionContext {
   progress: ExecutionProgress;
   signal?: AbortSignal;
   /** Register an async task and return a cancel function */
-  registerAsyncTask?: (task: AsyncTask) => () => void;
+  registerAsyncTask?: (_task: AsyncTask) => () => void;
   /** Check if an async task is still pending */
-  isTaskPending?: (taskId: string) => boolean;
+  isTaskPending?: (_taskId: string) => boolean;
   /**
    * Assert a required input is present. Throws if the input is missing.
-   * @param key      The input port name
-   * @param nodeName Human-readable node name for error messages
+   * @param _key      The input port name
+   * @param _nodeName Human-readable node name for error messages
    */
-  requireInput: <T>(key: string, nodeName: string) => T;
+  requireInput: <T>(_key: string, _nodeName: string) => T;
 }
 
 export type ProgressCallback = (progress: ExecutionProgress) => void;

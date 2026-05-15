@@ -59,7 +59,6 @@ export const NodeSearchModal: React.FC<{ onClose: () => void }> = ({ onClose }) 
   const handleSelect = useCallback(
     (def: NodeDefinition) => {
       // Add node at center of current viewport
-      const center = reactFlowInstance.getViewport();
       const position = reactFlowInstance.screenToFlowPosition({
         x: window.innerWidth / 2,
         y: window.innerHeight / 2,

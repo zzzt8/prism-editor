@@ -23,10 +23,10 @@ interface VersionListProps {
     total: number;
     totalPages: number;
   };
-  onSelect: (versionId: string) => void;
+  onSelect: (_versionId: string) => void;
   onCompare: () => void;
   onRollback: (version: VersionSummary) => void;
-  onPageChange: (page: number) => void;
+  onPageChange: (_page: number) => void;
   canCompare: boolean;
   diffLoading: boolean;
 }

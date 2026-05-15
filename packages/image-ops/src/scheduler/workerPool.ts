@@ -194,7 +194,7 @@ export class WorkerPool {
         pooledWorker.errorCount++;
       };
 
-      workerInstance.onmessage = (event) => {
+      workerInstance.onmessage = (_event) => {
         // Comlink handles its own message protocol
         // This is for any custom messages we might add later
       };
@@ -286,7 +286,7 @@ export class WorkerPool {
       return;
     }
 
-    const workerIndex = this.workers.indexOf(worker);
+    const _workerIndex = this.workers.indexOf(worker);
     worker.status = 'busy';
     worker.lastUsed = Date.now();
 
@@ -403,7 +403,7 @@ export class WorkerPool {
    * Polls until an idle worker is available.
    * Uses Comlink.transfer() to move ImageData buffers without copying.
    */
-  async execute<T>(fn: (worker: ImageWorker) => Promise<T>): Promise<T> {
+  async execute<T>(fn: (_worker: ImageWorker) => Promise<T>): Promise<T> {
     if (this.terminated) {
       throw new Error('WorkerPool has been terminated');
     }

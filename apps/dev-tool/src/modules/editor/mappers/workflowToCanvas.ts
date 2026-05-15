@@ -2,7 +2,7 @@
 // 用于从存储加载工作流
 
 import type { Workflow, WorkflowNode } from '@prism/shared-types';
-import type { EditorCanvasNode, EditorCanvasEdge, EditorWorkflowMeta, EditorDraft } from '@prism/shared-types';
+import type { EditorCanvasNode, EditorCanvasEdge, EditorDraft } from '@prism/shared-types';
 import { globalRegistry } from '@prism/core';
 import {
   createNodeId,

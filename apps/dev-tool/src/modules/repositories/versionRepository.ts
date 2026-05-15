@@ -20,19 +20,19 @@ interface VersionAdapter {
 }
 
 export class VersionRepository implements IVersionRepository {
-  constructor(private adapter: VersionAdapter) {}
+  constructor(private _adapter: VersionAdapter) {}
 
-  async list(workflowId: string): Promise<WorkflowVersion[]> {
-    const result = await this.adapter.getVersions(workflowId, 1, 50);
+  async list(_workflowId: string): Promise<WorkflowVersion[]> {
+    const result = await this._adapter.getVersions(_workflowId, 1, 50);
     return result.data;
   }
 
-  async get(workflowId: string, versionId: string): Promise<Workflow> {
-    const content = await this.adapter.getVersionContent(workflowId, versionId);
+  async get(_workflowId: string, _versionId: string): Promise<Workflow> {
+    const content = await this._adapter.getVersionContent(_workflowId, _versionId);
     return JSON.parse(content.content) as Workflow;
   }
 
-  async create(workflowId: string, content: Workflow): Promise<WorkflowVersion> {
+  async create(_workflowId: string, content: Workflow): Promise<WorkflowVersion> {
     const id = crypto.randomUUID();
     const version: WorkflowVersion = {
       id,
@@ -43,8 +43,8 @@ export class VersionRepository implements IVersionRepository {
     return version;
   }
 
-  async rollback(workflowId: string, versionId: string): Promise<Workflow> {
-    await this.adapter.rollbackWorkflow(workflowId, versionId);
-    return this.get(workflowId, versionId);
+  async rollback(_workflowId: string, _versionId: string): Promise<Workflow> {
+    await this._adapter.rollbackWorkflow(_workflowId, _versionId);
+    return this.get(_workflowId, _versionId);
   }
 }

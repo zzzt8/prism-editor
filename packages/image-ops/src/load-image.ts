@@ -330,7 +330,7 @@ function requireParam<T>(
 export const loadImageExecutor: NodeExecutor = async (
   inputs,
   params,
-  ctx
+  _ctx
 ) => {
   let imageData: globalThis.ImageData;
   let imageRef: import('@prism/shared-types').ImageRef;
@@ -419,7 +419,7 @@ interface MaskFileValue {
 export const loadMaskExecutor: NodeExecutor = async (
   inputs,
   params,
-  ctx
+  _ctx
 ) => {
   const urlValue = params['url'] as string | undefined;
   const maskFile = params['maskFile'] as MaskFileValue | undefined;

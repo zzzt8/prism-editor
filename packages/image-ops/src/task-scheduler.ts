@@ -7,7 +7,7 @@
 // - Progress callbacks
 
 import type { WorkerPool } from './scheduler/workerPool';
-import { TaskType, type AsyncTask } from '@prism/shared-types';
+import { TaskType } from '@prism/shared-types';
 
 export interface ScheduledTask {
   id: string;
@@ -98,8 +98,8 @@ export class TaskScheduler {
       };
 
       const completeTask = (result: T) => {
-        const captured = this.tasks.get(id);
-        if (!captured) return;
+        const _val = this.tasks.get(id);
+        if (!_val) return;
         this.clearTimer(id);
         captured.status = 'done';
         captured.endTime = Date.now();
@@ -108,7 +108,7 @@ export class TaskScheduler {
         resolve(result);
       };
 
-      const failTask = (err: Error) => {
+      const failTask = (_err: Error) => {
         const captured = this.tasks.get(id);
         if (!captured) return;
         this.clearTimer(id);
@@ -143,7 +143,7 @@ export class TaskScheduler {
    */
   scheduleWorker<T>(
     id: string,
-    fn: (pool: NonNullable<TaskSchedulerOptions['workerPool']>) => Promise<T>,
+    fn: (_pool: NonNullable<TaskSchedulerOptions['workerPool']>) => Promise<T>,
     timeoutMs?: number
   ): Promise<T> {
     return this.schedule(id, TaskType.ASYNC, () => fn(this.options.workerPool), timeoutMs);

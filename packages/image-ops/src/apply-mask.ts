@@ -5,7 +5,6 @@ type ImageData = globalThis.ImageData;
 import type { MaskOptions } from '@prism/shared-types';
 import { resizeImageData } from './transform';
 import { unwrapImageData } from '@prism/shared-types';
-import { getImageMemoryManager } from './memory-manager';
 import { generatePreviewUrl } from './preview-strategy';
 import { getWorkerRunner, type WorkerRunner } from './scheduler/workerRunner';
 import type { NodeExecutor, ApplyMaskExecutorOutput } from '@prism/shared-types';

@@ -16,7 +16,7 @@ const repo = new TemplateRepository();
 
 export interface TemplateCenterProps {
   onClose: () => void;
-  onSelect: (id: string) => void;
+  onSelect: (_id: string) => void;
 }
 
 type Tab = 'all' | 'byCategory';

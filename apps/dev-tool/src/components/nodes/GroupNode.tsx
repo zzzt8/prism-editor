@@ -18,7 +18,7 @@ interface GroupNodeData {
 
 export type GroupNodeType = Node<GroupNodeData, 'groupNode'>;
 
-export const GroupNode: FC<NodeProps<GroupNodeType>> = ({ id, data }) => {
+export const GroupNode: FC<NodeProps<GroupNodeType>> = ({ _id, data }) => {
   const { group } = data;
   const moveGroup = useCanvasStore((s) => s.moveGroup);
 
@@ -46,16 +46,6 @@ export const GroupNode: FC<NodeProps<GroupNodeType>> = ({ id, data }) => {
         if (deltaX !== 0 || deltaY !== 0) {
           moveGroup(group.id, deltaX, deltaY);
           dragStartRef.current = { mouseX: moveEvent.clientX, mouseY: moveEvent.clientY };
-        }
-      };
-
-      const handleMouseUp = () => {
-        dragStartRef.current = null;
-        setDragging(false);
-        if (listenersAttachedRef.current) {
-          document.removeEventListener('mousemove', listenersAttachedRef.current.move!);
-          document.removeEventListener('mouseup', listenersAttachedRef.current.up!);
-          listenersAttachedRef.current = null;
         }
       };
 

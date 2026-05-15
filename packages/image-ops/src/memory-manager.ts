@@ -13,7 +13,7 @@ export class ImageMemoryManager {
   private registry = new Map<string, RefCount>();
   private memoryUsed = 0;
 
-  constructor(private memoryLimit = DEFAULT_MEMORY_LIMIT_BYTES) {}
+  constructor(private _memoryLimit = DEFAULT_MEMORY_LIMIT_BYTES) {}
 
   createObjectURL(blob: Blob, width: number, height: number): ImageRef {
     const url = URL.createObjectURL(blob);
@@ -61,7 +61,7 @@ export class ImageMemoryManager {
   }
 
   revokeAll(): void {
-    for (const [url, entry] of this.registry) {
+    for (const [url, _entry] of this.registry) {
       URL.revokeObjectURL(url);
     }
     this.registry.clear();

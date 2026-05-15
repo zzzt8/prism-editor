@@ -19,7 +19,7 @@ import { PORT_TYPE_COLORS } from '../../../utils/portTypeStyles';
 import type { ContextMenuState } from './selectionSlice';
 import type { ExecutionLog, NodeTiming } from '@prism/shared-types';
 import { autosaveService, initAutosaveService, getAutosaveService } from '../services/autosaveService';
-import { executionService, getExecutionService } from '../services/executionService';
+import { getExecutionService } from '../services/executionService';
 import { indexedDBStorageAdapter } from '../../../storage';
 import { WorkflowRepository } from '../../repositories/workflowRepository';
 import { SnippetRepository } from '../../repositories/snippetRepository';

@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { X, History, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, History, ChevronLeft } from 'lucide-react';
 import { VersionList } from './VersionList';
 import { VersionDiff } from './VersionDiff';
 import { RollbackConfirm } from './RollbackConfirm';
@@ -56,14 +56,14 @@ interface VersionHistoryProps {
 type ViewMode = 'list' | 'diff' | 'confirm';
 
 export function VersionHistory({
-  workflowId,
-  currentVersion,
+  workflowId: _workflowId,
+  currentVersion: _currentVersion,
   onClose,
   onRollbackComplete,
-  getVersions,
-  getVersionContent,
-  diffVersions,
-  rollbackWorkflow,
+  getVersions: _getVersions,
+  getVersionContent: _getVersionContent,
+  diffVersions: _diffVersions,
+  rollbackWorkflow: _rollbackWorkflow,
 }: VersionHistoryProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [versions, setVersions] = useState<VersionSummary[]>([]);

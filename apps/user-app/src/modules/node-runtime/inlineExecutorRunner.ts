@@ -57,7 +57,7 @@ export function createInlineExecutor(executorId: string, code: string): NodeExec
         context,
       };
 
-      const callback: { resolve: (v: unknown) => void; reject: (e: Error) => void } = {
+      const callback: { resolve: (_v: unknown) => void; reject: (_e: Error) => void } = {
         resolve: promiseResolve as (v: unknown) => void,
         reject: promiseReject,
       };

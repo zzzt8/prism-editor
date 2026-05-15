@@ -22,7 +22,7 @@ export const useRunStore = create<RunStoreState>((set) => {
   return {
     runState: { status: 'idle' },
 
-    setRunState: function setRunState(stateOrUpdater: RunState | ((prev: RunState) => RunState)): void {
+    setRunState: function setRunState(stateOrUpdater: RunState | ((_prev: RunState) => RunState)): void {
       set((state) => ({
         runState:
           typeof stateOrUpdater === 'function'

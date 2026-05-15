@@ -4,7 +4,6 @@ type ImageData = globalThis.ImageData;
 import type { BlendMode } from '@prism/shared-types';
 import { createCanvas, makeImageData } from './canvas-util';
 import { unwrapImageData, type ImageRuntimeObject } from '@prism/shared-types';
-import { getImageMemoryManager } from './memory-manager';
 import { generatePreviewUrl } from './preview-strategy';
 import { getWorkerRunner, type WorkerRunner } from './scheduler/workerRunner';
 import type { NodeExecutor, CompositeExecutorOutput } from '@prism/shared-types';

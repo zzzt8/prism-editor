@@ -18,7 +18,6 @@ export interface AutosaveService {
 
 export function createAutosaveService(repository: IWorkflowRepository): AutosaveService {
   let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
-  let autoSaveWorkflowId: string | null = null;
 
   return {
     trigger(workflowMeta, nodes, edges, onDone) {
@@ -32,7 +31,6 @@ export function createAutosaveService(repository: IWorkflowRepository): Autosave
       autoSaveWorkflowId = workflowMeta.id;
       autoSaveTimer = setTimeout(async () => {
         autoSaveTimer = null;
-        autoSaveWorkflowId = null;
 
         try {
           const { canvasToWorkflow } = await import('../../editor/mappers');
@@ -49,7 +47,6 @@ export function createAutosaveService(repository: IWorkflowRepository): Autosave
       if (autoSaveTimer !== null) {
         clearTimeout(autoSaveTimer);
         autoSaveTimer = null;
-        autoSaveWorkflowId = null;
       }
     },
   };

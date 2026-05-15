@@ -373,7 +373,7 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
 
   // Migration helper: import workflows from localStorage
   async migrateFromLocalStorage(): Promise<{ migrated: number; failed: number }> {
-    const LEGACY_PREFIX = 'prism:';
+    const _LEGACY_PREFIX = 'prism:';
     const LEGACY_WORKFLOW_PREFIX = 'prism:workflow:';
     const LEGACY_META_PREFIX = 'prism:meta:';
 

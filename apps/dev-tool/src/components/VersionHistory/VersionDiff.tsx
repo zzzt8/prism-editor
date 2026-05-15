@@ -25,7 +25,7 @@ interface VersionDiffProps {
   onBack: () => void;
 }
 
-export function VersionDiff({ diff, onBack }: VersionDiffProps) {
+export function VersionDiff({ diff, _onBack }: VersionDiffProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleString('zh-CN', {

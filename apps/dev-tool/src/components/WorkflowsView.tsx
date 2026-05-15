@@ -67,7 +67,6 @@ interface WorkflowsViewProps {
 export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
   const navigateToEditor = useAppStore((s) => s.navigateToEditor);
   const loadWorkflow = useCanvasStore((s) => s.loadWorkflow);
-  const newWorkflow = useCanvasStore((s) => s.newWorkflow);
   const importWorkflowFromFile = useCanvasStore((s) => s.importWorkflowFromFile);
 
   const [allWorkflows, setAllWorkflows] = useState<WorkflowMeta[]>([]);

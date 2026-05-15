@@ -33,7 +33,7 @@ export interface WorkflowVersion {
 export interface IVersionRepository {
   list(workflowId: string): Promise<WorkflowVersion[]>;
   get(workflowId: string, versionId: string): Promise<Workflow>;
-  create(workflowId: string, content: Workflow): Promise<WorkflowVersion>;
+  create(_workflowId: string, content: Workflow): Promise<WorkflowVersion>;
   rollback(workflowId: string, versionId: string): Promise<Workflow>;
 }
 
@@ -60,10 +60,10 @@ export interface TemplateVersion {
 }
 
 export interface ITemplateVersionRepository {
-  list(templateId: string): Promise<TemplateVersion[]>;
-  get(templateId: string, versionId: string): Promise<Template>;
-  create(templateId: string, content: Template): Promise<TemplateVersion>;
-  rollback(templateId: string, versionId: string): Promise<Template>;
+  list(_templateId: string): Promise<TemplateVersion[]>;
+  get(_templateId: string, versionId: string): Promise<Template>;
+  create(_templateId: string, content: Template): Promise<TemplateVersion>;
+  rollback(_templateId: string, versionId: string): Promise<Template>;
 }
 
 export interface ISnippetRepository {

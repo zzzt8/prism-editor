@@ -40,7 +40,7 @@ interface TemplateVersionDiffResult {
 }
 
 interface DiffFn {
-  (fromId: string, toId: string): Promise<TemplateVersionDiffResult>;
+  (_fromId: string, _toId: string): Promise<TemplateVersionDiffResult>;
 }
 
 export interface TemplateVersionHistoryProps {

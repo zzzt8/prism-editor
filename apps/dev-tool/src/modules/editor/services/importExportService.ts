@@ -1,7 +1,7 @@
 // importExportService - handles workflow import/export operations
 // Extracted from canvasStore
 
-import type { EditorWorkflowMeta, EditorCanvasNode, EditorCanvasEdge } from '@prism/shared-types';
+import type { EditorWorkflowMeta } from '@prism/shared-types';
 
 export interface ImportExportService {
   exportAsJson: (
@@ -9,7 +9,7 @@ export interface ImportExportService {
     nodes: EditorCanvasNode[],
     edges: EditorCanvasEdge[]
   ) => Promise<void>;
-  importFromFile: (file: File) => Promise<{
+  importFromFile: (_file: File) => Promise<{
     nodes: EditorCanvasNode[];
     edges: EditorCanvasEdge[];
     workflowMeta: EditorWorkflowMeta;

@@ -58,9 +58,9 @@ async function createWorkerExecutor(url: string): Promise<Worker> {
         reject(new Error(`Worker load error: ${event.message}`));
       };
 
-      worker.onmessage = (event) => {
+      worker.onmessage = (_event) => {
         // Wait for 'ready' message before resolving
-        if (event.data?.type === 'ready') {
+        if (_event.data?.type === 'ready') {
           clearTimeout(timeoutId);
           resolve(worker);
         }
@@ -144,7 +144,7 @@ export async function loadRemoteExecutor(
 
       pendingRequests.set(id, { resolve: resolve as (value: unknown) => void, reject, timeoutId });
 
-      const message: WorkerExecutorMessage = {
+      const _message: WorkerExecutorMessage = {
         type: 'execute',
         id,
         inputs,

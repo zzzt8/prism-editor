@@ -1,7 +1,6 @@
 // CanvasPool - Object pool for OffscreenCanvas instances
 // Implements LRU eviction with TTL support for efficient memory management
 
-import type { BlendMode, TransformOptions, MaskOptions, ExportOptions } from '@prism/shared-types';
 import { registerImageDataTransferHandler } from '../comlink-image-data-transfer';
 
 registerImageDataTransferHandler();

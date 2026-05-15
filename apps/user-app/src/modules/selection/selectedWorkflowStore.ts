@@ -28,7 +28,7 @@ export const useSelectedWorkflowStore = create<SelectedWorkflowState>((set) => {
     selectedWorkflow: null,
     nodeLoadErrors: [],
 
-    selectWorkflow: async function selectWorkflow(sourceId: string) {
+    selectWorkflow: async function selectWorkflow(_sourceId: string) {
       try {
         const workflow = await workflowRepo.getPublished(sourceId);
 

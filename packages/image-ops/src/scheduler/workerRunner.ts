@@ -2,7 +2,7 @@
 // Provides a unified interface for worker-based execution
 
 import type { TransformOptions, MaskOptions, BlendMode } from '@prism/shared-types';
-import type { WorkerImageResult, WorkerLoadResult, WorkerExportResult } from '../worker/imageWorker.worker';
+import type { WorkerImageResult, WorkerExportResult } from '../worker/imageWorker.worker';
 import { ImageWorker } from '../worker/imageWorker.worker';
 import { getWorkerPool } from './workerPool';
 

@@ -29,7 +29,7 @@ interface PrismNodeHeaderProps {
 export const PrismNodeHeader: FC<PrismNodeHeaderProps> = ({
   label,
   execStatus,
-  categoryColor,
+  categoryColor: _categoryColor,
   definition,
 }) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);

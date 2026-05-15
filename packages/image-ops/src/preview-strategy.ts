@@ -14,7 +14,7 @@ export interface PreviewStrategy {
    * Generate a preview URL for the given ImageData.
    * Returns an object with the URL and a cleanup function.
    */
-  generatePreview(imageData: ImageData, width: number, height: number): Promise<PreviewRef>;
+  generatePreview(_imageData: ImageData, _width: number, _height: number): Promise<PreviewRef>;
 }
 
 export interface PreviewRef {

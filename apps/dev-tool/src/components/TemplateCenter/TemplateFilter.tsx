@@ -10,8 +10,8 @@ interface TemplateFilterProps {
   tags: string[];
   selectedCategory: string | null;
   selectedTags: string[];
-  onCategoryChange: (category: string | null) => void;
-  onTagToggle: (tag: string) => void;
+  onCategoryChange: (_category: string | null) => void;
+  onTagToggle: (_tag: string) => void;
 }
 
 export const TemplateFilter: React.FC<TemplateFilterProps> = ({

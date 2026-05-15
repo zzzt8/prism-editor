@@ -1,4 +1,4 @@
-import type { StorageAdapter, WorkflowMeta, NodeDefinition, Connection } from '@prism/shared-types';
+import type { StorageAdapter, WorkflowMeta, NodeDefinition, Connection, AuthTokens } from '@prism/shared-types';
 import type { Workflow } from '@prism/shared-types';
 
 const API_BASE = '/api';

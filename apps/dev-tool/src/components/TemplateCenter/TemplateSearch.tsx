@@ -7,7 +7,7 @@ import { Search, X } from 'lucide-react';
 
 interface TemplateSearchProps {
   value: string;
-  onChange: (value: string) => void;
+  onChange: (_value: string) => void;
 }
 
 export const TemplateSearch: React.FC<TemplateSearchProps> = ({ value, onChange }) => {

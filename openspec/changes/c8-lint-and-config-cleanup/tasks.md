@@ -33,7 +33,7 @@
 
 ### 2. editor layer — 编译错误修复
 
-- [ ] T2.1: 修复 `NodePanel.tsx` 中的 `setInitError` 未定义问题
+- [x] T2.1: 修复 `NodePanel.tsx` 中的 `setInitError` 未定义问题
   - 文件: `apps/dev-tool/src/components/NodePanel.tsx`
   - 将第 125、129 行的 `setInitError(...)` 调用改为 `console.warn(...)`
   - 验证命令: `npx tsc --noEmit -p apps/dev-tool/tsconfig.json 2>&1` — 无 TS2304 错误

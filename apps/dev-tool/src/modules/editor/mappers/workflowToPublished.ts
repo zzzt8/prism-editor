@@ -7,13 +7,10 @@ import type {
   PublishedConfig,
   PublishedInput,
   PublishedOutput,
-  Connection,
-  PublishedParamDefinition,
   ParamControlType,
 } from '@prism/shared-types';
-import { PortDataType } from '@prism/shared-types';
 import { globalRegistry } from '@prism/core';
-import type { NodeDefinition, ParamDefinition } from '@prism/shared-types';
+import type { ParamDefinition } from '@prism/shared-types';
 
 interface SourceNode {
   nodeId: string;

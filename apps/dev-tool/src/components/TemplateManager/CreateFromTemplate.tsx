@@ -19,7 +19,7 @@ export const CreateFromTemplate: React.FC<CreateFromTemplateProps> = ({ template
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<Template | null>(null);
 
-  const loadFromTemplate = useCanvasStore((s) => 'loadFromTemplate' in s ? (s as ReturnType<typeof useCanvasStore.getState> & { loadFromTemplate: (t: Template) => void }).loadFromTemplate : undefined);
+  const loadFromTemplate = useCanvasStore((s) => 'loadFromTemplate' in s ? (s as ReturnType<typeof useCanvasStore.getState> & { loadFromTemplate: (_t: Template) => void }).loadFromTemplate : undefined);
 
   const handleCreate = async () => {
     setLoading(true);

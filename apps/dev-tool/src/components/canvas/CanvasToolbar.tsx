@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
-import { Check, X, AlertCircle } from 'lucide-react';
+import { Check, AlertCircle } from 'lucide-react';
 
 export const CanvasToolbar: React.FC = () => {
   const nodes = useCanvasStore((s) => s.nodes);
