@@ -5,11 +5,11 @@ import type { EditorWorkflowMeta, EditorCanvasNode, EditorCanvasEdge } from '@pr
 
 export interface ImportExportService {
   exportAsJson: (
-    workflowMeta: EditorWorkflowMeta,
-    nodes: EditorCanvasNode[],
-    edges: EditorCanvasEdge[]
+    _workflowMeta: EditorWorkflowMeta,
+    _nodes: EditorCanvasNode[],
+    _edges: EditorCanvasEdge[]
   ) => Promise<void>;
-  importFromFile: (file: File) => Promise<{
+  importFromFile: (_file: File) => Promise<{
     nodes: EditorCanvasNode[];
     edges: EditorCanvasEdge[];
     workflowMeta: EditorWorkflowMeta;
