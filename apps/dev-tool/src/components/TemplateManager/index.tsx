@@ -25,7 +25,7 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({ onClose }) => 
     'loadFromTemplate' in s
       ? (s as ReturnType<typeof useCanvasStore.getState> & { loadFromTemplate: (_t: Template) => void }).loadFromTemplate
       : undefined
-  ) as ((t: Template) => void) | undefined;
+  ) as ((_t: Template) => void) | undefined;
 
   // Load template list
   React.useEffect(() => {

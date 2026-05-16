@@ -25,7 +25,7 @@ interface VersionListProps {
   };
   onSelect: (_versionId: string) => void;
   onCompare: () => void;
-  onRollback: (version: VersionSummary) => void;
+  onRollback: (_version: VersionSummary) => void;
   onPageChange: (_page: number) => void;
   canCompare: boolean;
   diffLoading: boolean;

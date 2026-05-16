@@ -44,26 +44,26 @@ interface VersionHistoryProps {
   currentVersion: string;
   onClose: () => void;
   onRollbackComplete?: () => void;
-  getVersions: (page?: number, limit?: number) => Promise<{
+  getVersions: (_page?: number, _limit?: number) => Promise<{
     data: VersionSummary[];
     pagination: { page: number; limit: number; total: number; totalPages: number };
   }>;
-  getVersionContent: (versionId: string) => Promise<VersionContent>;
-  diffVersions: (fromId: string, toId: string) => Promise<VersionDiffResult>;
-  rollbackWorkflow: (versionId: string, newVersion?: string) => Promise<void>;
+  getVersionContent: (_versionId: string) => Promise<VersionContent>;
+  diffVersions: (_fromId: string, _toId: string) => Promise<VersionDiffResult>;
+  rollbackWorkflow: (_versionId: string, _newVersion?: string) => Promise<void>;
 }
 
 type ViewMode = 'list' | 'diff' | 'confirm';
 
 export function VersionHistory({
-  workflowId: _workflowId,
-  currentVersion: _currentVersion,
+  workflowId,
+  currentVersion,
   onClose,
   onRollbackComplete,
-  getVersions: _getVersions,
-  getVersionContent: _getVersionContent,
-  diffVersions: _diffVersions,
-  rollbackWorkflow: _rollbackWorkflow,
+  getVersions,
+  getVersionContent,
+  diffVersions,
+  rollbackWorkflow,
 }: VersionHistoryProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [versions, setVersions] = useState<VersionSummary[]>([]);

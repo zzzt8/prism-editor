@@ -186,7 +186,7 @@ export function getDragImageState(): DragState | null {
 
 // Helper function to process an image file and update node params
 function processImageFile(
-  _file: File,
+  file: File,
   updateNodeParams: (id: string, params: Record<string, unknown>) => void,
   nodeId: string,
   params: Record<string, unknown>,
@@ -245,12 +245,12 @@ function getExecThumb(executionResult: CanvasNodeData['executionResult']): strin
 /** LoadImage body — file name + upload button + preview + resolution + replace */
 export const LoadImageBody: FC<{
   imageFileValue: ImageFileValue | undefined;
-  _params: Record<string, unknown>;
+  params: Record<string, unknown>;
   updateNodeParams: (id: string, params: Record<string, unknown>) => void;
   nodeId: string;
   executionResult: CanvasNodeData['executionResult'];
-  _onShowPreview: () => void;
-}> = ({ imageFileValue, _params, updateNodeParams, nodeId, executionResult, _onShowPreview }) => {
+  onShowPreview: () => void;
+}> = ({ imageFileValue, params, updateNodeParams, nodeId, executionResult, onShowPreview }) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const img = imageFileValue;
   const [isDragOver, setIsDragOver] = useState(false);
@@ -299,7 +299,7 @@ export const LoadImageBody: FC<{
     setIsDragOver(false); setDragImageState(null);
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/')) {
-      processImageFile(file, updateNodeParams, nodeId, imageFileValue ?? {}, 'imageFile');
+      processImageFile(file, updateNodeParams, nodeId, imageFileValue as unknown as Record<string, unknown> ?? {}, 'imageFile');
     }
   };
 
@@ -330,7 +330,7 @@ export const LoadImageBody: FC<{
           <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }}
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) processImageFile(file, updateNodeParams, nodeId, imageFileValue ?? {}, 'imageFile');
+              if (file) processImageFile(file, updateNodeParams, nodeId, imageFileValue as unknown as Record<string, unknown> ?? {}, 'imageFile');
               e.target.value = '';
             }}
           />
@@ -354,7 +354,7 @@ export const LoadImageBody: FC<{
         style={{ display: 'none' }}
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) processImageFile(file, updateNodeParams, nodeId, imageFileValue ?? {}, 'imageFile');
+          if (file) processImageFile(file, updateNodeParams, nodeId, imageFileValue as unknown as Record<string, unknown> ?? {}, 'imageFile');
           e.target.value = '';
         }}
       />
@@ -365,12 +365,12 @@ export const LoadImageBody: FC<{
 /** LoadMask body — identical to LoadImage but for mask files */
 export const LoadMaskBody: FC<{
   maskFileValue: ImageFileValue | undefined;
-  _params: Record<string, unknown>;
+  params: Record<string, unknown>;
   updateNodeParams: (id: string, params: Record<string, unknown>) => void;
   nodeId: string;
   executionResult: CanvasNodeData['executionResult'];
-  _onShowPreview: () => void;
-}> = ({ maskFileValue, _params, updateNodeParams, nodeId, executionResult, _onShowPreview }) => {
+  onShowPreview: () => void;
+}> = ({ maskFileValue, params, updateNodeParams, nodeId, executionResult, onShowPreview }) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const img = maskFileValue;
   const [isDragOver, setIsDragOver] = useState(false);
@@ -416,7 +416,7 @@ export const LoadMaskBody: FC<{
     setIsDragOver(false); setDragImageState(null);
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/')) {
-      processImageFile(file, updateNodeParams, nodeId, maskFileValue ?? {}, 'maskFile');
+      processImageFile(file, updateNodeParams, nodeId, maskFileValue as unknown as Record<string, unknown> ?? {}, 'maskFile');
     }
   };
 
@@ -444,7 +444,7 @@ export const LoadMaskBody: FC<{
           <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }}
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) processImageFile(file, updateNodeParams, nodeId, maskFileValue ?? {}, 'maskFile');
+              if (file) processImageFile(file, updateNodeParams, nodeId, maskFileValue as unknown as Record<string, unknown> ?? {}, 'maskFile');
               e.target.value = '';
             }}
           />
@@ -468,7 +468,7 @@ export const LoadMaskBody: FC<{
         style={{ display: 'none' }}
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) processImageFile(file, updateNodeParams, nodeId, maskFileValue ?? {}, 'maskFile');
+          if (file) processImageFile(file, updateNodeParams, nodeId, maskFileValue as unknown as Record<string, unknown> ?? {}, 'maskFile');
           e.target.value = '';
         }}
       />
@@ -482,8 +482,8 @@ export const TransformBody: FC<{
   updateNodeParams: (id: string, params: Record<string, unknown>) => void;
   nodeId: string;
   executionResult: CanvasNodeData['executionResult'];
-  _onShowPreview: () => void;
-}> = ({ params, updateNodeParams, nodeId, executionResult, _onShowPreview }) => {
+  onShowPreview: () => void;
+}> = ({ params, updateNodeParams, nodeId, executionResult, onShowPreview }) => {
   const scaleAlg = (params['scaleAlgorithm'] as string) ?? 'lanczos';
   const execW = executionResult ? (executionResult['width'] as number) : undefined;
   const execH = executionResult ? (executionResult['height'] as number) : undefined;
@@ -503,7 +503,7 @@ export const TransformBody: FC<{
         </select>
       </div>
       {thumb && (
-        <div className="dcn-preview" data-preview onClick={_onShowPreview}>
+        <div className="dcn-preview" data-preview onClick={onShowPreview}>
           <img src={thumb} alt="preview" className="dcn-preview-img" />
           {execW && execH && <span className="dcn-preview-badge">{execW}×{execH}</span>}
         </div>
@@ -518,8 +518,8 @@ export const ApplyMaskBody: FC<{
   updateNodeParams: (id: string, params: Record<string, unknown>) => void;
   nodeId: string;
   executionResult: CanvasNodeData['executionResult'];
-  _onShowPreview: () => void;
-}> = ({ params, updateNodeParams, nodeId, executionResult, _onShowPreview }) => {
+  onShowPreview: () => void;
+}> = ({ params, updateNodeParams, nodeId, executionResult, onShowPreview }) => {
   const maskType = (params['maskType'] as string) ?? 'alpha';
   const threshold = (params['threshold'] as number) ?? 128;
   const invert = (params['invert'] as boolean) ?? false;
@@ -554,7 +554,7 @@ export const ApplyMaskBody: FC<{
         />
       </div>
       {thumb && (
-        <div className="dcn-preview" data-preview onClick={_onShowPreview}>
+        <div className="dcn-preview" data-preview onClick={onShowPreview}>
           <img src={thumb} alt="preview" className="dcn-preview-img" />
           {execW && execH && <span className="dcn-preview-badge">{execW}×{execH}</span>}
         </div>
@@ -569,8 +569,8 @@ export const CompositeBody: FC<{
   updateNodeParams: (id: string, params: Record<string, unknown>) => void;
   nodeId: string;
   executionResult: CanvasNodeData['executionResult'];
-  _onShowPreview: () => void;
-}> = ({ params, updateNodeParams, nodeId, executionResult, _onShowPreview }) => {
+  onShowPreview: () => void;
+}> = ({ params, updateNodeParams, nodeId, executionResult, onShowPreview }) => {
   const blendMode = (params['blendMode'] as string) ?? 'normal';
   const opacity = (params['opacity'] as number) ?? 1;
   const thumb = getExecThumb(executionResult);
@@ -609,8 +609,8 @@ export const CompositeBody: FC<{
 /** Export body */
 export const ExportBody: FC<{
   executionResult: CanvasNodeData['executionResult'];
-  _onShowPreview: () => void;
-}> = ({ executionResult, _onShowPreview }) => {
+  onShowPreview: () => void;
+}> = ({ executionResult, onShowPreview }) => {
   const ready = !!executionResult;
   const previewUrl = executionResult?.['previewUrl'] as string | undefined;
   const execW = executionResult?.['width'] as number | undefined;
