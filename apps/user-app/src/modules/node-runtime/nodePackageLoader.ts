@@ -39,15 +39,15 @@ export async function loadRequiredNodes(workflow: PublishedWorkflow): Promise<No
   }
 
     for (const [packageName, _pkgInfo] of Object.entries(requiredNodes)) {
-    if (pkgInfo.url) {
+    if (_pkgInfo.url) {
       try {
-        const cached = nodePackageRepo.getFromCache(pkgInfo.url);
+        const cached = nodePackageRepo.getFromCache(_pkgInfo.url);
         if (cached) {
           importRequiredNode(cached);
           continue;
         }
 
-        const response = await fetch(pkgInfo.url);
+        const response = await fetch(_pkgInfo.url);
         if (!response.ok) {
           errors.push({ packageName, message: `Failed to fetch package: ${response.status}` });
           continue;

@@ -30,7 +30,7 @@ export const useSelectedWorkflowStore = create<SelectedWorkflowState>((set) => {
 
     selectWorkflow: async function selectWorkflow(_sourceId: string) {
       try {
-        const workflow = await workflowRepo.getPublished(sourceId);
+        const workflow = await workflowRepo.getPublished(_sourceId);
 
         set({
           selectedWorkflow: workflow,
