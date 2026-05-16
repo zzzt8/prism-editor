@@ -26,7 +26,7 @@ export const GroupNode: FC<NodeProps<GroupNodeType>> = ({ id: _id, data }) => {
   const dragStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
 
   // Stable refs to hold listener functions so they can be removed on unmount
-  const listenersAttachedRef = useRef<{ move?: (e: MouseEvent) => void; up?: (e: MouseEvent) => void } | null>(null);
+  const listenersAttachedRef = useRef<{ move?: (_e: MouseEvent) => void; up?: () => void } | null>(null);
 
   // When the group node position changes (via React Flow drag), sync to all child nodes
   // The header is the drag handle — we track mousedown/mouseup to sync child positions

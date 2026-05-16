@@ -312,7 +312,7 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     // Prune whitelist entries whose nodes no longer exist
     const validNodeIds = new Set(nodes.map((n) => n.id));
     setWhitelist((prev) => prev.filter((e) => validNodeIds.has(e.nodeId)));
-    setBrowserChecked((prev) => {
+    setBrowserChecked(() => {
       const n: Record<string, boolean> = {};
       for (const e of whitelist) n[`${e.nodeId}:${e.paramId}`] = true;
       return n;

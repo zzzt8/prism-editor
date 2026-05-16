@@ -10,7 +10,7 @@ const templateRepo = new TemplateRepository();
 
 interface SaveDialogProps {
   onClose: () => void;
-  onSavedAsTemplate?: (templateId: string) => void;
+  onSavedAsTemplate?: (_templateId: string) => void;
 }
 
 type SaveMode = 'draft' | 'template';
@@ -21,6 +21,7 @@ export const SaveDialog: React.FC<SaveDialogProps> = ({ onClose, onSavedAsTempla
   const edges = useCanvasStore((s) => s.edges);
   const groups = useCanvasStore((s) => s.groups);
   const viewport = useCanvasStore((s) => s.viewport);
+  void viewport; // read from store but used only for triggering re-render
   const saveWorkflow = useCanvasStore((s) => s.saveWorkflow);
 
   const [saveMode, setSaveMode] = useState<SaveMode>('draft');

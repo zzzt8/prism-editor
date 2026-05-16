@@ -56,12 +56,12 @@ interface VersionHistoryProps {
 type ViewMode = 'list' | 'diff' | 'confirm';
 
 export function VersionHistory({
-  workflowId,
-  currentVersion,
+  workflowId: _workflowId,
+  currentVersion: _currentVersion,
   onClose,
-  onRollbackComplete,
+  onRollbackComplete: _onRollbackComplete,
   getVersions,
-  getVersionContent,
+  getVersionContent: _getVersionContent,
   diffVersions,
   rollbackWorkflow,
 }: VersionHistoryProps) {

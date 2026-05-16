@@ -187,17 +187,17 @@ export function getDragImageState(): DragState | null {
 // Helper function to process an image file and update node params
 function processImageFile(
   file: File,
-  updateNodeParams: (id: string, params: Record<string, unknown>) => void,
+  updateNodeParams: (_id: string, _params: Record<string, unknown>) => void,
   nodeId: string,
-  params: Record<string, unknown>,
+  _params: Record<string, unknown>,
   paramKey: 'imageFile' | 'maskFile'
 ) {
   const reader = new FileReader();
   reader.onload = (ev) => {
     const dataUrl = ev.target?.result as string;
     const i = new Image();
-    i.onload = () => updateNodeParams(nodeId, { ...params, [paramKey]: { dataUrl, width: i.naturalWidth, height: i.naturalHeight, fileName: file.name } });
-    i.onerror = () => updateNodeParams(nodeId, { ...params, [paramKey]: { dataUrl, width: 0, height: 0, fileName: file.name } });
+    i.onload = () => updateNodeParams(nodeId, { ..._params, [paramKey]: { dataUrl, width: i.naturalWidth, height: i.naturalHeight, fileName: file.name } });
+    i.onerror = () => updateNodeParams(nodeId, { ..._params, [paramKey]: { dataUrl, width: 0, height: 0, fileName: file.name } });
     i.src = dataUrl;
   };
   reader.readAsDataURL(file);
@@ -246,11 +246,11 @@ function getExecThumb(executionResult: CanvasNodeData['executionResult']): strin
 export const LoadImageBody: FC<{
   imageFileValue: ImageFileValue | undefined;
   params: Record<string, unknown>;
-  updateNodeParams: (id: string, params: Record<string, unknown>) => void;
+  updateNodeParams: (_id: string, _params: Record<string, unknown>) => void;
   nodeId: string;
   executionResult: CanvasNodeData['executionResult'];
   onShowPreview: () => void;
-}> = ({ imageFileValue, params, updateNodeParams, nodeId, executionResult, onShowPreview }) => {
+}> = ({ imageFileValue, params: _params, updateNodeParams, nodeId, executionResult, onShowPreview: _onShowPreview }) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const img = imageFileValue;
   const [isDragOver, setIsDragOver] = useState(false);
@@ -366,11 +366,11 @@ export const LoadImageBody: FC<{
 export const LoadMaskBody: FC<{
   maskFileValue: ImageFileValue | undefined;
   params: Record<string, unknown>;
-  updateNodeParams: (id: string, params: Record<string, unknown>) => void;
+  updateNodeParams: (_id: string, _params: Record<string, unknown>) => void;
   nodeId: string;
   executionResult: CanvasNodeData['executionResult'];
   onShowPreview: () => void;
-}> = ({ maskFileValue, params, updateNodeParams, nodeId, executionResult, onShowPreview }) => {
+}> = ({ maskFileValue, params: _params, updateNodeParams, nodeId, executionResult, onShowPreview: _onShowPreview }) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const img = maskFileValue;
   const [isDragOver, setIsDragOver] = useState(false);
@@ -479,11 +479,11 @@ export const LoadMaskBody: FC<{
 /** Transform body */
 export const TransformBody: FC<{
   params: Record<string, unknown>;
-  updateNodeParams: (id: string, params: Record<string, unknown>) => void;
-  nodeId: string;
-  executionResult: CanvasNodeData['executionResult'];
+  updateNodeParams: (_id: string, _params: Record<string, unknown>) => void;
+  _nodeId: string;
+  _executionResult: CanvasNodeData['executionResult'];
   onShowPreview: () => void;
-}> = ({ params, updateNodeParams, nodeId, executionResult, onShowPreview }) => {
+}> = ({ params, updateNodeParams, nodeId: _nodeId, executionResult: _executionResult, onShowPreview }) => {
   const scaleAlg = (params['scaleAlgorithm'] as string) ?? 'lanczos';
   const execW = executionResult ? (executionResult['width'] as number) : undefined;
   const execH = executionResult ? (executionResult['height'] as number) : undefined;
@@ -515,11 +515,11 @@ export const TransformBody: FC<{
 /** ApplyMask body */
 export const ApplyMaskBody: FC<{
   params: Record<string, unknown>;
-  updateNodeParams: (id: string, params: Record<string, unknown>) => void;
-  nodeId: string;
-  executionResult: CanvasNodeData['executionResult'];
+  updateNodeParams: (_id: string, _params: Record<string, unknown>) => void;
+  _nodeId: string;
+  _executionResult: CanvasNodeData['executionResult'];
   onShowPreview: () => void;
-}> = ({ params, updateNodeParams, nodeId, executionResult, onShowPreview }) => {
+}> = ({ params, updateNodeParams, nodeId: _nodeId, executionResult: _executionResult, onShowPreview }) => {
   const maskType = (params['maskType'] as string) ?? 'alpha';
   const threshold = (params['threshold'] as number) ?? 128;
   const invert = (params['invert'] as boolean) ?? false;
@@ -566,11 +566,11 @@ export const ApplyMaskBody: FC<{
 /** Composite body */
 export const CompositeBody: FC<{
   params: Record<string, unknown>;
-  updateNodeParams: (id: string, params: Record<string, unknown>) => void;
-  nodeId: string;
-  executionResult: CanvasNodeData['executionResult'];
+  updateNodeParams: (_id: string, _params: Record<string, unknown>) => void;
+  _nodeId: string;
+  _executionResult: CanvasNodeData['executionResult'];
   onShowPreview: () => void;
-}> = ({ params, updateNodeParams, nodeId, executionResult, onShowPreview }) => {
+}> = ({ params, updateNodeParams, nodeId: _nodeId, executionResult: _executionResult, onShowPreview }) => {
   const blendMode = (params['blendMode'] as string) ?? 'normal';
   const opacity = (params['opacity'] as number) ?? 1;
   const thumb = getExecThumb(executionResult);
@@ -647,9 +647,9 @@ const emptyInputStyle: React.CSSProperties = {
 /** Empty Input body — inline width / height / backgroundColor controls, ref ComfyUI EmptyImage */
 export const EmptyInputBody: FC<{
   params: Record<string, unknown>;
-  updateNodeParams: (id: string, params: Record<string, unknown>) => void;
-  nodeId: string;
-}> = ({ params, updateNodeParams, nodeId }) => {
+  updateNodeParams: (_id: string, _params: Record<string, unknown>) => void;
+  _nodeId: string;
+}> = ({ params, updateNodeParams, nodeId: _nodeId }) => {
   const width = (params['width'] as number) ?? 512;
   const height = (params['height'] as number) ?? 512;
   const bgColor = (params['backgroundColor'] as string) ?? '#ffffff';

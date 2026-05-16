@@ -284,7 +284,8 @@ export const NodeContextMenu: FC<NodeContextMenuProps> = ({
 
   // nodeId: null → canvas right-click (menu shows liveSelectedIds)
   // nodeId: string → right-clicked specific node (use that node's data + liveSelectedIds)
-  const targetNode = nodeId != null ? useCanvasStore((s) => s.nodes.find((n) => n.id === nodeId)) : null;
+  const allNodes = useCanvasStore((s) => s.nodes);
+  const targetNode = nodeId != null ? allNodes.find((n) => n.id === nodeId) : null;
   const storeSelectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
   const updateNodeData = useCanvasStore((s) => s.updateNodeData);
   const copyNodes = useCanvasStore((s) => s.copyNodes);
