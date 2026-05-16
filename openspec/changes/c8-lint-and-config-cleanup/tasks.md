@@ -192,7 +192,7 @@
 
 ### 4. 验收清单
 
-- [ ] `npx tsc --noEmit -p apps/dev-tool/tsconfig.json 2>&1` 无 TS 错误（0 errors）
-- [ ] `npm run lint 2>&1` 无 lint 错误（0 errors）
+- [x] `pnpm typecheck 2>&1` 全量 typecheck 通过（9 packages，0 errors）
+- [ ] `npm run lint 2>&1` 无 lint 错误（204 pre-existing errors 在 packages/ 非 c8 scope；c8 相关文件的 lint 错误已修复）
 - [ ] 手工验收：dev-tool 能正常启动（`npm run dev:dev-tool`）
 - [ ] 手工验收：user-app 能正常启动（`npm run dev:user-app`）
