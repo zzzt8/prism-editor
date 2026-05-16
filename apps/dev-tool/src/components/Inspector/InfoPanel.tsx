@@ -40,18 +40,17 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ nodeId }) => {
   const _executionStatus = useCanvasStore((s) => s._executionStatus);
   const _currentNodeId = useCanvasStore((s) => s._currentNodeId);
 
+  // Hooks must be called before any early returns
   const node = nodes.find((n) => n.id === nodeId);
-  if (!node) return null;
-
-  const { definition, nodeType, extraInputs, extraOutputs } = node.data;
+  const { definition, nodeType, extraInputs, extraOutputs } = node?.data ?? {};
 
   // Determine execution status for this node
   const nodeExecutionStatus = useMemo(() => {
     if (_currentNodeId === nodeId) return 'running';
-    if (node.data.executionError) return 'error';
-    if (node.data.executionResult) return 'done';
+    if (node?.data.executionError) return 'error';
+    if (node?.data.executionResult) return 'done';
     return 'idle';
-  }, [_currentNodeId, nodeId, node.data.executionError, node.data.executionResult]);
+  }, [_currentNodeId, nodeId, node?.data.executionError, node?.data.executionResult]);
 
   const statusCfg = STATUS_CONFIG[nodeExecutionStatus] ?? STATUS_CONFIG.idle;
 
@@ -97,9 +96,11 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ nodeId }) => {
 
   // Format last execution time
   const lastExecutionTime = useMemo(() => {
-    if (!node.data.executionResult && !node.data.executionError) return null;
+    if (!node?.data.executionResult && !node?.data.executionError) return null;
     return new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  }, [node.data.executionResult, node.data.executionError]);
+  }, [node?.data.executionResult, node?.data.executionError]);
+
+  if (!node) return null;
 
   return (
     <div className="inspector-panel-body">

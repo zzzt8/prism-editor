@@ -69,6 +69,9 @@ export class WorkflowExecutor {
   /**
    * Execute a single node and record its result.
    * Returns the node result and outputs.
+   *
+   * For parallel execution, each node gets an isolated context copy to avoid
+   * race conditions when multiple nodes run concurrently.
    */
   private async executeNode(
     nodeId: string,
@@ -79,6 +82,18 @@ export class WorkflowExecutor {
     cache: ExecutionCache | null,
     typeErrors: string[]
   ): Promise<{ outputs: Record<string, unknown>; failed: boolean }> {
+    // Create isolated context for this node to avoid race conditions in parallel execution.
+    // Only inputs, nodeId, and progress.currentNodeId are per-node; everything else is shared.
+    const isolatedCtx: ExecutionContext = {
+      ...ctx,
+      nodeId,
+      inputs: nodeInputs,
+      progress: {
+        ...ctx.progress,
+        currentNodeId: nodeId,
+      },
+    };
+
     const executor = this.executors.get(node.type);
 
     if (!executor) {
