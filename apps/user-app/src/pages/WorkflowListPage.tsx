@@ -29,48 +29,47 @@ function Toast({ toast, onDismiss }: { toast: ToastState; onDismiss: () => void 
 
 // ─── Date formatter ─────────────────────────────────────────────────────────
 
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+function formatRelativeTime(isoDate: string): string {
+  const diff = Date.now() - new Date(isoDate).getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  return new Date(isoDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-// ─── WorkflowCard ─────────────────────────────────────────────────────────────
+// ─── WorkflowRow ─────────────────────────────────────────────────────────────
 
-function WorkflowCard({ meta, onClick }: { meta: PublishedWorkflowMeta; onClick: () => void }) {
+function WorkflowRow({ meta, onClick }: { meta: PublishedWorkflowMeta; onClick: () => void }) {
   return (
-    <div className="ua-workflow-card" onClick={onClick} role="button" tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && onClick()}>
-      <div className="ua-card-icon">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <rect x="3" y="3" width="7" height="7" rx="1" />
-          <rect x="14" y="3" width="7" height="7" rx="1" />
-          <rect x="3" y="14" width="7" height="7" rx="1" />
-          <rect x="14" y="14" width="7" height="7" rx="1" />
-        </svg>
-      </div>
-      <div className="ua-card-info">
-        <div className="ua-card-name">{meta.name}</div>
-        {meta.description && (
-          <div className="ua-card-desc">{meta.description}</div>
-        )}
-        <div className="ua-card-meta">
-          <span className="ua-card-version">v{meta.version}</span>
-          <span className="ua-card-sep">·</span>
-          <span className="ua-card-source">{meta.sourceName}</span>
+    <div className="home-workflow-row" onClick={onClick}>
+      <div className="home-workflow-row-info">
+        <div className="home-workflow-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+          </svg>
         </div>
-        <div className="ua-card-date">{formatDate(meta.publishedAt)}</div>
+        <div className="home-workflow-details">
+          <span className="home-workflow-name">{meta.name}</span>
+          {meta.description && (
+            <span className="home-workflow-desc">{meta.description}</span>
+          )}
+        </div>
       </div>
-      <div className="ua-card-io">
+
+      <div className="home-workflow-row-actions">
+        <span className="home-workflow-time">
+          {formatRelativeTime(meta.publishedAt)}
+        </span>
         <span className="ua-io-badge ua-io-badge--in">{meta.inputCount} 输入</span>
         <span className="ua-io-badge ua-io-badge--out">{meta.outputCount} 输出</span>
       </div>
-      <div className="ua-card-arrow">›</div>
     </div>
   );
 }
@@ -93,7 +92,6 @@ function FileInputTrigger({ inputRef, onFile }: FileInputProps) {
         const file = e.target.files?.[0];
         if (file) {
           onFile(file);
-          // Reset so the same file can be selected again
           e.target.value = '';
         }
       }}
@@ -107,6 +105,7 @@ export const WorkflowListPage: React.FC = () => {
   const { workflows, isLoading, loadError, loadWorkflows } = useWorkflowCatalogStore();
 
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [search, setSearch] = useState('');
   const [pasteHint, setPasteHint] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -116,25 +115,23 @@ export const WorkflowListPage: React.FC = () => {
 
   const dismissToast = useCallback(() => setToast(null), []);
 
-  // Initial load
   useEffect(() => {
     loadWorkflows();
   }, [loadWorkflows]);
 
-  // Show paste hint when list is empty after loading
   useEffect(() => {
     if (!isLoading && !loadError && workflows.length === 0) {
       setPasteHint(true);
     }
   }, [isLoading, loadError, workflows.length]);
 
-  // ── Import from file ─────────────────────────────────────────────────────
   const handleFileImport = useCallback(async (_file: File) => {
     const result = await importWorkflowFromFile(_file);
     if (result.success) {
       try {
         await syncWorkflowToLocal(result.workflow);
         showToast(`已导入「${result.workflow.name}」`, 'success');
+        loadWorkflows();
       } catch (err) {
         console.error('[WorkflowListPage] syncWorkflowToLocal ERROR:', err);
         showToast(`保存失败：${err instanceof Error ? err.message : String(err)}`, 'error');
@@ -144,15 +141,11 @@ export const WorkflowListPage: React.FC = () => {
     }
   }, [loadWorkflows, showToast]);
 
-  // ── Ctrl+V paste detection ───────────────────────────────────────────────
-  // Only active when the list is empty (pasteHint is shown)
   useEffect(() => {
     if (!pasteHint) return;
 
     const handleKeyDown = async (e: KeyboardEvent) => {
-      // Ctrl+V on Windows/Linux, Cmd+V on Mac
       if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
-        // Don't intercept if focus is in a text input
         const target = e.target as HTMLElement;
         if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
           return;
@@ -179,32 +172,58 @@ export const WorkflowListPage: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [pasteHint, loadWorkflows, showToast]);
 
+  const filtered = workflows.filter((w) =>
+    w.name.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <div className="ua-page ua-list-page">
+    <div className="home-layout">
       <FileInputTrigger inputRef={fileInputRef} onFile={handleFileImport} />
 
-      <div className="ua-page-header">
-        {/* Logo — dev-tool style */}
-        <div className="wf-logo-group">
-          <div className="wf-logo-icon">
+      {/* Header — dev-tool style */}
+      <header className="home-header">
+        <div className="home-header-logo">
+          <div className="home-logo-icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
               <polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5" />
               <circle cx="12" cy="12" r="3" fill="white" stroke="none" />
             </svg>
           </div>
-          <span className="wf-logo-text">Prism Editor</span>
+          <div className="home-header-title-group">
+            <span className="wf-logo-text">Prism Editor</span>
+            <span className="home-header-subtitle">已发布工作流</span>
+          </div>
         </div>
-
-        <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: 15, flexShrink: 0 }}>/</span>
-
-        <div className="ua-page-title">
-          <h1>已发布工作流</h1>
-          <p>选择一个工作流开始处理图像</p>
+        <div className="home-header-actions">
+          <button
+            className="home-import-btn"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            Import
+          </button>
         </div>
-      </div>
+      </header>
 
-      <div className="ua-page-body">
-        {/* Toast notifications */}
+      <main className="home-main">
+        {/* Toolbar */}
+        <section className="home-toolbar">
+          <div className="home-toolbar-left">
+            <div className="home-search-wrapper">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="home-search-icon">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                type="text"
+                className="home-search-input"
+                placeholder="Filter workflows..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          </div>
+        </section>
+
         {toast && <Toast toast={toast} onDismiss={dismissToast} />}
 
         {isLoading && (
@@ -215,59 +234,57 @@ export const WorkflowListPage: React.FC = () => {
         )}
 
         {loadError && (
-          <div className="ua-error-box">
-            <span>加载失败：{loadError}</span>
+          <section className="home-error-banner">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>{loadError}</span>
             <button onClick={loadWorkflows}>重试</button>
-          </div>
+          </section>
         )}
 
-        {!isLoading && !loadError && workflows.length === 0 && (
-          <div className="ua-empty-state">
-            <div className="ua-empty-icon">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-                <rect x="3" y="3" width="7" height="7" rx="1" />
-                <rect x="14" y="3" width="7" height="7" rx="1" />
-                <rect x="3" y="14" width="7" height="7" rx="1" />
-                <rect x="14" y="14" width="7" height="7" rx="1" />
-              </svg>
-            </div>
-            <div className="ua-empty-title">创建你的第一个工作流</div>
-            <div className="ua-empty-sub">请在开发者工具中创建并发布工作流</div>
-            <div className="ua-empty-actions">
+        {!isLoading && !loadError && filtered.length === 0 && (
+          <section className="home-empty">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="home-empty-icon">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+            </svg>
+            <p className="home-empty-title">创建你的第一个工作流</p>
+            <p className="home-empty-subtitle">
+              {search
+                ? 'No workflows match your current filters.'
+                : '还没有保存的工作流。点击下方按钮创建一个。'}
+            </p>
+            {!search && (
               <button
-                className="ua-btn ua-btn--secondary"
+                className="home-empty-btn"
                 onClick={() => fileInputRef.current?.click()}
               >
-                上传工作流文件
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                导入工作流文件
               </button>
-              {pasteHint && (
-                <div className="ua-paste-hint">
-                  或切换到开发者工具发布后，按 <kbd>Ctrl+V</kbd> 从剪贴板导入
-                </div>
-              )}
-            </div>
-          </div>
+            )}
+          </section>
         )}
 
-        {!isLoading && workflows.length > 0 && (
-          <div className="ua-workflow-list">
-            {workflows.map((meta) => (
-              <WorkflowCard
+        {!isLoading && filtered.length > 0 && (
+          <section className="home-workflow-list">
+            {filtered.map((meta) => (
+              <WorkflowRow
                 key={meta.sourceId}
                 meta={meta}
                 onClick={() => navigateToWorkflow(meta.sourceId)}
               />
             ))}
-            {/* Import more */}
-            <button
-              className="ua-import-more-btn"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              + 导入更多工作流
-            </button>
-          </div>
+          </section>
         )}
-      </div>
+      </main>
     </div>
   );
 };
