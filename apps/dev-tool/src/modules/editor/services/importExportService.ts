@@ -1,15 +1,15 @@
 // importExportService - handles workflow import/export operations
 // Extracted from canvasStore
 
-import type { EditorWorkflowMeta } from '@prism/shared-types';
+import type { EditorWorkflowMeta, EditorCanvasNode, EditorCanvasEdge } from '@prism/shared-types';
 
 export interface ImportExportService {
   exportAsJson: (
-    _workflowMeta: EditorWorkflowMeta,
-    _nodes: EditorCanvasNode[],
-    _edges: EditorCanvasEdge[]
+    workflowMeta: EditorWorkflowMeta,
+    nodes: EditorCanvasNode[],
+    edges: EditorCanvasEdge[]
   ) => Promise<void>;
-  importFromFile: (_file: File) => Promise<{
+  importFromFile: (file: File) => Promise<{
     nodes: EditorCanvasNode[];
     edges: EditorCanvasEdge[];
     workflowMeta: EditorWorkflowMeta;
@@ -65,7 +65,7 @@ export function initImportExportService(jsonFileAdapter: JsonFileAdapterType): v
 
 // Default instance (lazy initialization)
 export const importExportService: ImportExportService = {
-  async exportAsJson(workflowMeta, nodes, edges) {
+    async exportAsJson(workflowMeta, nodes, edges) {
     if (!_serviceInstance) {
       throw new Error('ImportExportService not initialized. Call initImportExportService first.');
     }

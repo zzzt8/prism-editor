@@ -26,7 +26,7 @@ export const useAppStore = create<AppState>((set) => ({
   navigateToEditor: (_workflowId: string) => {
     // Persist the last workflow ID so it can be restored after refresh/restart
     localStorage.setItem('prism:lastWorkflowId', _workflowId);
-    set({ view: 'editor', currentWorkflowId: workflowId, leftPanelOpen: true, rightPanelOpen: true });
+    set({ view: 'editor', currentWorkflowId: _workflowId, leftPanelOpen: true, rightPanelOpen: true });
   },
 
   toggleLeftPanel: () =>

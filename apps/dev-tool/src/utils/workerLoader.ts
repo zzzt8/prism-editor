@@ -152,7 +152,7 @@ export async function loadRemoteExecutor(
         context: context as Record<string, unknown>,
       };
 
-      worker.postMessage(message);
+      worker.postMessage(_message);
     });
   };
 

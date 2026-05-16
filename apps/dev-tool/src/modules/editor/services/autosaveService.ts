@@ -8,10 +8,10 @@ const AUTO_SAVE_DELAY_MS = 5 * 60 * 1000; // 5 minutes
 
 export interface AutosaveService {
   trigger: (
-    _workflowMeta: EditorWorkflowMeta,
-    _nodes: EditorCanvasNode[],
-    _edges: EditorCanvasEdge[],
-    _onDone: () => void
+    workflowMeta: EditorWorkflowMeta,
+    nodes: EditorCanvasNode[],
+    edges: EditorCanvasEdge[],
+    onDone: () => void
   ) => void;
   cancel: () => void;
 }
@@ -28,7 +28,6 @@ export function createAutosaveService(repository: IWorkflowRepository): Autosave
         clearTimeout(autoSaveTimer);
       }
 
-      autoSaveWorkflowId = workflowMeta.id;
       autoSaveTimer = setTimeout(async () => {
         autoSaveTimer = null;
 
