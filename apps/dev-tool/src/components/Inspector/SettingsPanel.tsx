@@ -104,8 +104,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ nodeId }) => {
     [nodeId, removeExtraInput]
   );
 
-  const isComposite = nodeType === 'composite';
-
   return (
     <div className="inspector-panel-body">
       {/* Alias edit */}

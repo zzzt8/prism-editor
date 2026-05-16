@@ -152,7 +152,9 @@ export class WorkflowExecutor {
     const startTime = Date.now();
 
     try {
-      const outputs = await executor(nodeInputs, node.params, ctx as ExecutionContext);
+      // Pass isolated context to avoid race conditions in parallel execution.
+      // recordNodeResult still uses ctx to update shared progress/results.
+      const outputs = await executor(nodeInputs, node.params, isolatedCtx);
 
       if (cache) {
         cache.set(ctx.workflowId, nodeId, inputsHash, outputs);
@@ -269,17 +271,12 @@ export class WorkflowExecutor {
           }
         }
 
-        ctx.nodeId = nodeId;
-        ctx.progress.currentNodeId = nodeId;
-        ctx.inputs = nodeInputs;
-
-        if (options.onProgress) {
-          options.onProgress(ctx.progress);
-        }
+        // Do NOT set ctx.nodeId / ctx.inputs / ctx.progress here — executeNode
+        // creates an isolated context to avoid race conditions in parallel execution.
 
         promises.push(
           this.executeNode(nodeId, node, nodeInputs, ctx, options, cache, typeErrors).then(
-            ({ outputs, failed }) => ({ nodeId, outputs, failed })
+            ({ outputs }) => ({ nodeId, outputs })
           )
         );
       }
@@ -288,10 +285,10 @@ export class WorkflowExecutor {
       const levelResults = await Promise.all(promises);
 
       // Record results
-      for (const { nodeId, outputs, failed } of levelResults) {
+      for (const { nodeId, outputs } of levelResults) {
         nodeResults.set(nodeId, outputs);
 
-        // Update currentNodeId for progress tracking (point to last node in level)
+        // Update shared progress after each node completes
         ctx.progress.currentNodeId = nodeId;
         if (options.onProgress) {
           options.onProgress(ctx.progress);

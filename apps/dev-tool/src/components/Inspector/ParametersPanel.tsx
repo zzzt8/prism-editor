@@ -1,7 +1,7 @@
 // ParametersPanel — parameter editing panel for Inspector
 // Includes ParamField and ImageFileField widgets (migrated from ParamPanel.tsx)
 
-import React, { useCallback, useState, useRef, useEffect } from 'react';
+import React, { useCallback, useState, useRef } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
 import type { ParamDefinition, ParamOption } from '@prism/shared-types';
 import { CircleDot } from 'lucide-react';
@@ -265,6 +265,7 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({ nodeId }) => {
   const [aliasValue, setAliasValue] = useState('');
 
   const node = nodes.find((n) => n.id === nodeId);
+  const { definition, params, label } = node?.data ?? {};
 
   const handleAliasSave = useCallback(() => {
     updateNodeData(nodeId, { label: aliasValue });
@@ -275,7 +276,7 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({ nodeId }) => {
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') handleAliasSave();
       if (e.key === 'Escape') {
-        setAliasValue(label);
+        setAliasValue(label ?? '');
         setEditingAlias(false);
       }
     },
@@ -285,7 +286,7 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({ nodeId }) => {
   const handleChange = useCallback(
     (id: string, value: unknown) => {
       updateNodeParams(nodeId, {
-        ...params,
+        ...(params ?? {}),
         [id]: value,
       });
     },
@@ -293,13 +294,6 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({ nodeId }) => {
   );
 
   if (!node) return null;
-
-  const { definition, params, label } = node.data;
-
-  // Sync aliasValue when label changes
-  useEffect(() => {
-    setAliasValue(label);
-  }, [label]);
 
   // Show image thumbnail for image-file params
   const imageFileValue = params['imageFile'];
