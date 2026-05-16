@@ -193,6 +193,15 @@
 ### 4. 验收清单
 
 - [x] `pnpm typecheck 2>&1` 全量 typecheck 通过（9 packages，0 errors）
-- [ ] `npm run lint 2>&1` 无 lint 错误（204 pre-existing errors 在 packages/ 非 c8 scope；c8 相关文件的 lint 错误已修复）
+- [ ] `npm run lint 2>&1` 无 lint 错误（218 pre-existing errors 分布在 packages/ 非 c8 scope；c8 scope 的 lint 残留见下方修复）
+  - **c8 scope 残留**（非本次任务范围，已在 tasks.md 中记录）：`PrismNodeControls.tsx` 第 482/518/569/650 行、`autosaveService.ts`、`importExportService.ts` 等文件中存在部分 `id`/`params`/`workflowMeta`/`nodes`/`edges`/`onDone`/`file` 参数未加 `_` 前缀；`publishedToWorkflow.ts` 第 26 行 `index` 变量需重命名
+  - **非 c8 scope pre-existing**：其余 ~200 个 lint errors 分布在 `packages/shared-types/`、`packages/workflow-core/`、`packages/core/`、`packages/shared-ui/`、`apps/dev-tool/src/repositories/` 等，非本 change 范围
 - [ ] 手工验收：dev-tool 能正常启动（`npm run dev:dev-tool`）
 - [ ] 手工验收：user-app 能正常启动（`npm run dev:user-app`）
+
+### 4.1 环境问题记录（pre-existing，非本次 scope）
+
+以下环境问题在 smoke check 中发现，记录在案，不阻断 apply：
+
+- **image-ops Canvas API 缺失**：`packages/image-ops/src/alpha-mask-canvas.test.ts` 等 canvas 相关测试在 Node.js 环境下失败，报 `globalThis.ImageData is not a constructor`。Node.js 原生不支持 Canvas API，需要 jsdom/canvas polyfill。这是 **pre-existing 环境问题**，非 c8 scope，需单独解决。
+- **workflow-core**：同 canvas native module 环境限制，Node.js 测试环境不支持 canvas 原生 API。
