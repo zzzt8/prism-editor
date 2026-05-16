@@ -1,13 +1,11 @@
 // RegisterPage component
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import './AuthPage.css';
 
-interface RegisterPageProps {
-  onSwitchToLogin: () => void;
-}
-
-export const RegisterPage: React.FC<RegisterPageProps> = ({ onSwitchToLogin }) => {
+export const RegisterPage: React.FC = () => {
+  const navigate = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -122,7 +120,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onSwitchToLogin }) =
 
         <div className="auth-footer">
           <span>Already have an account?</span>
-          <button type="button" className="auth-link" onClick={onSwitchToLogin}>
+          <button type="button" className="auth-link" onClick={() => navigate('/login')}>
             Sign in
           </button>
         </div>

@@ -1,6 +1,7 @@
 // Prism Editor - Developer Tool App
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ReactFlowProvider } from '@xyflow/react';
 import { DevToolLayout } from './layouts/DevToolLayout';
 import { NodePanel } from './components/NodePanel';
@@ -13,14 +14,17 @@ import { NewWorkflowModal } from './components/NewWorkflowModal';
 import { VersionHistory } from './components/VersionHistory';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
-import { PublicRoute } from './components/AuthGuard';
+import { PublicRoute, AuthGuard } from './components/AuthGuard';
 import { useAuthStore } from './store/authStore';
-import { useAppStore } from './store/appStore';
 import { useCanvasStore } from './store/canvasStore';
-import { activeStorageAdapter, indexedDBStorageAdapter, IndexedDBStorageAdapter, ApiStorageAdapter, cleanupStorage } from './storage';
+import {
+  indexedDBStorageAdapter,
+  IndexedDBStorageAdapter,
+  ApiStorageAdapter,
+  activeStorageAdapter,
+  cleanupStorage,
+} from './storage';
 import { ErrorBoundary } from '@prism/shared-ui';
-
-type AuthView = 'login' | 'register' | 'authenticated';
 
 // Wrapper component to connect VersionHistory with storage layer
 function VersionHistoryWrapper({
@@ -80,16 +84,143 @@ function VersionHistoryWrapper({
   );
 }
 
-function App() {
-  const view = useAppStore((s) => s.view);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showPublishDialog, setShowPublishDialog] = useState(false);
-  const [publishStatus, setPublishStatus] = useState<'idle' | 'loading' | 'done'>('idle');
-  const [showVersionHistory, setShowVersionHistory] = useState(false);
-  const [authView, setAuthView] = useState<AuthView>('login');
+// --- Editor page (rendered inside DevToolLayout) ---
+function EditorPage() {
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [showPublishDialog, setShowPublishDialog] = React.useState(false);
+  const [publishStatus, setPublishStatus] = React.useState<'idle' | 'loading' | 'done'>('idle');
+  const [showVersionHistory, setShowVersionHistory] = React.useState(false);
 
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const workflowMeta = useCanvasStore((s) => s.workflowMeta);
+
+  const handlePublishClick = () => {
+    setPublishStatus('loading');
+    setTimeout(() => {
+      setPublishStatus('done');
+      setShowPublishDialog(true);
+    }, 800);
+  };
+
+  return (
+    <>
+      <DevToolLayout
+        header={
+          <WorkflowHeader
+            onPublishClick={handlePublishClick}
+            publishStatus={publishStatus}
+            onVersionHistoryClick={() => setShowVersionHistory(true)}
+          />
+        }
+        left={<NodePanel />}
+        right={<Inspector />}
+      >
+        <ReactFlowProvider>
+          <WorkflowCanvas />
+        </ReactFlowProvider>
+      </DevToolLayout>
+
+      {showPublishDialog && (
+        <PublishDialog
+          onClose={() => {
+            setShowPublishDialog(false);
+            setPublishStatus('idle');
+          }}
+        />
+      )}
+
+      <NewWorkflowModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCreated={() => setIsModalOpen(false)}
+      />
+
+      {showVersionHistory && (
+        <VersionHistoryWrapper
+          workflowId={workflowMeta.id}
+          currentVersion={workflowMeta.version}
+          onClose={() => setShowVersionHistory(false)}
+          onRollbackComplete={async () => {
+            const { workflowMeta: meta } = useCanvasStore.getState();
+            if (meta.id) {
+              try {
+                const content = await activeStorageAdapter.load(meta.id);
+                useCanvasStore.getState().loadWorkflow(content);
+              } catch {
+                // If load fails, just refresh
+              }
+            }
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+// --- Root / Workflows page ---
+function HomePage() {
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+
+  return (
+    <>
+      <WorkflowsView onNewWorkflow={() => setIsModalOpen(true)} />
+      <NewWorkflowModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCreated={() => setIsModalOpen(false)}
+      />
+    </>
+  );
+}
+
+// --- App with routes ---
+function AppRoutes() {
+  return (
+    <Routes>
+      {/* Public routes — redirect to / if already authenticated */}
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <LoginPage />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          <PublicRoute>
+            <RegisterPage />
+          </PublicRoute>
+        }
+      />
+
+      {/* Protected routes */}
+      <Route
+        path="/"
+        element={
+          <AuthGuard>
+            <HomePage />
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/workflow/:workflowId"
+        element={
+          <AuthGuard>
+            <EditorPage />
+          </AuthGuard>
+        }
+      />
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+function App() {
   const fetchCurrentUser = useAuthStore((s) => s.fetchCurrentUser);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   useEffect(() => {
     fetchCurrentUser().catch(() => {});
@@ -101,129 +232,16 @@ function App() {
     };
   }, []);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      setAuthView('authenticated');
-    }
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    if (useAuthStore.persist.hasHydrated() && useAuthStore.getState().isAuthenticated) {
-      setAuthView('authenticated');
-    }
-    return useAuthStore.persist.onFinishHydration((state) => {
-      if (state.isAuthenticated) {
-        setAuthView('authenticated');
-      }
-    });
-  }, []);
-
-  // Restore last workflow when authenticated
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    const lastWorkflowId = localStorage.getItem('prism:lastWorkflowId');
-    if (lastWorkflowId) {
-      // Try to load the last opened workflow
-      indexedDBStorageAdapter.load(lastWorkflowId).then((workflow) => {
-        useCanvasStore.getState().loadWorkflow(workflow);
-        useAppStore.getState().navigateToEditor(lastWorkflowId);
-      }).catch(() => {
-        // Workflow no longer exists, clear the reference
-        localStorage.removeItem('prism:lastWorkflowId');
-      });
-    }
-  }, [isAuthenticated]);
-
-  const handlePublishClick = () => {
-    setPublishStatus('loading');
-    setTimeout(() => {
-      setPublishStatus('done');
-      setShowPublishDialog(true);
-    }, 800);
-  };
-
-  const handleVersionHistoryClick = () => {
-    setShowVersionHistory(true);
-  };
-
-  const renderAuthPage = () => {
-    if (authView === 'login') {
-      return (
-        <PublicRoute redirectTo="/editor">
-          <LoginPage onSwitchToRegister={() => setAuthView('register')} />
-        </PublicRoute>
-      );
-    }
-
-    if (authView === 'register') {
-      return (
-        <PublicRoute redirectTo="/editor">
-          <RegisterPage onSwitchToLogin={() => setAuthView('login')} />
-        </PublicRoute>
-      );
-    }
-
-    return null;
-  };
-
   return (
     <ErrorBoundary>
-      {authView !== 'authenticated' ? (
-        renderAuthPage()
-      ) : (
-        <>
-          {view === 'workflows' ? (
-            <WorkflowsView onNewWorkflow={() => setIsModalOpen(true)} />
-          ) : (
-            <DevToolLayout
-              header={
-                <WorkflowHeader
-                  onPublishClick={handlePublishClick}
-                  publishStatus={publishStatus}
-                  onVersionHistoryClick={handleVersionHistoryClick}
-                />
-              }
-              left={<NodePanel />}
-              right={<Inspector />}
-            >
-              <ReactFlowProvider>
-                <WorkflowCanvas />
-              </ReactFlowProvider>
-            </DevToolLayout>
-          )}
-
-          {showPublishDialog && (
-            <PublishDialog onClose={() => { setShowPublishDialog(false); setPublishStatus('idle'); }} />
-          )}
-
-          <NewWorkflowModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            onCreated={() => setIsModalOpen(false)}
-          />
-
-          {showVersionHistory && (
-            <VersionHistoryWrapper
-              workflowId={useCanvasStore.getState().workflowMeta.id}
-              currentVersion={useCanvasStore.getState().workflowMeta.version}
-              onClose={() => setShowVersionHistory(false)}
-              onRollbackComplete={async () => {
-                // Reload the workflow to get rolled-back content
-                const { workflowMeta } = useCanvasStore.getState();
-                if (workflowMeta.id) {
-                  try {
-                    const content = await activeStorageAdapter.load(workflowMeta.id);
-                    useCanvasStore.getState().loadWorkflow(content);
-                  } catch {
-                    // If load fails, just refresh
-                  }
-                }
-              }}
-            />
-          )}
-        </>
-      )}
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <AppRoutes />
+      </BrowserRouter>
     </ErrorBoundary>
   );
 }

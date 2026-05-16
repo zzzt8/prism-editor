@@ -1,13 +1,14 @@
 // WorkflowsView — Homepage listing all saved workflows
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Box, Search, ChevronDown, List, LayoutGrid, Plus,
   Layers, MoreHorizontal, Trash2, FolderOpen, Info, X, AlertCircle,
 } from 'lucide-react';
 import type { WorkflowMeta } from '@prism/shared-types';
 import { indexedDBStorageAdapter } from '../storage';
-import { useAppStore } from '../store/appStore';
 import { useCanvasStore } from '../store/canvasStore';
 
 const fileInputStyle: React.CSSProperties = { display: 'none' };
@@ -65,7 +66,7 @@ interface WorkflowsViewProps {
 }
 
 export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
-  const navigateToEditor = useAppStore((s) => s.navigateToEditor);
+  const navigate = useNavigate();
   const loadWorkflow = useCanvasStore((s) => s.loadWorkflow);
   const importWorkflowFromFile = useCanvasStore((s) => s.importWorkflowFromFile);
 
@@ -79,7 +80,8 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
   const [deleteTarget, setDeleteTarget] = useState<WorkflowMeta | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -88,7 +90,7 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
     if (!file) return;
     try {
       await importWorkflowFromFile(file);
-      navigateToEditor('imported');
+      navigate('/workflow/imported');
     } catch (err) {
       console.error('Import failed:', err);
     } finally {
@@ -108,9 +110,10 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
   // Close context menu on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setOpenMenuId(null);
-      }
+      const target = e.target as HTMLElement;
+      if (target.closest('.home-context-menu')) return;
+      setOpenMenuId(null);
+      setMenuPosition(null);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -144,7 +147,7 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
     try {
       const content = await indexedDBStorageAdapter.load(wf.id);
       loadWorkflow(content);
-      navigateToEditor(wf.id);
+      navigate(`/workflow/${wf.id}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load workflow';
       setLoadError(message);
@@ -164,6 +167,7 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
     setEditValue(wf.name);
     setEditingId(wf.id);
     setOpenMenuId(null);
+    setMenuPosition(null);
     setTimeout(() => editInputRef.current?.select(), 0);
   };
 
@@ -371,52 +375,30 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
                     </span>
 
                     {/* Context menu trigger */}
-                    <div ref={openMenuId === wf.id ? menuRef : undefined}>
-                      <button
-                        className="home-more-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenMenuId(openMenuId === wf.id ? null : wf.id);
-                        }}
-                      >
-                        <MoreHorizontal size={16} />
-                      </button>
-
-                      {openMenuId === wf.id && (
-                        <div className="home-context-menu">
-                          <button
-                            className="home-context-menu-item"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpen(wf);
-                            }}
-                          >
-                            <FolderOpen size={14} />
-                            Open
-                          </button>
-                          <button
-                            className="home-context-menu-item"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              startEditName(wf, e);
-                            }}
-                          >
-                            <Info size={14} />
-                            Rename
-                          </button>
-                          <button
-                            className="home-context-menu-item home-context-menu-item--danger"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteTarget(wf);
-                            }}
-                          >
-                            <Trash2 size={14} />
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    <button
+                      ref={openMenuId === wf.id ? menuTriggerRef : undefined}
+                      className="home-more-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (openMenuId === wf.id) {
+                          setOpenMenuId(null);
+                          setMenuPosition(null);
+                        } else {
+                          const MENU_MIN_WIDTH = 140;
+                          const MENU_ITEM_HEIGHT = 34;
+                          const MENU_ITEMS = 3;
+                          const MENU_HEIGHT = MENU_ITEMS * MENU_ITEM_HEIGHT;
+                          let x = e.clientX;
+                          let y = e.clientY;
+                          if (x + MENU_MIN_WIDTH > window.innerWidth) x = window.innerWidth - MENU_MIN_WIDTH - 8;
+                          if (y + MENU_HEIGHT > window.innerHeight) y = y - MENU_HEIGHT;
+                          setOpenMenuId(wf.id);
+                          setMenuPosition({ x, y });
+                        }
+                      }}
+                    >
+                      <MoreHorizontal size={16} />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -467,6 +449,52 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
           onConfirm={handleDelete}
           onCancel={() => setDeleteTarget(null)}
         />
+      )}
+
+      {/* Context menu — portal to body so it's never clipped */}
+      {openMenuId && menuPosition && createPortal(
+        <div
+          className="home-context-menu"
+          style={{ position: 'fixed', left: menuPosition.x, top: menuPosition.y }}
+        >
+          <button
+            className="home-context-menu-item"
+            onClick={() => {
+              const wf = allWorkflows.find((w) => w.id === openMenuId);
+              if (wf) handleOpen(wf);
+              setOpenMenuId(null);
+              setMenuPosition(null);
+            }}
+          >
+            <FolderOpen size={14} />
+            Open
+          </button>
+          <button
+            className="home-context-menu-item"
+            onClick={(e) => {
+              const wf = allWorkflows.find((w) => w.id === openMenuId);
+              if (wf) startEditName(wf, e);
+              setOpenMenuId(null);
+              setMenuPosition(null);
+            }}
+          >
+            <Info size={14} />
+            Rename
+          </button>
+          <button
+            className="home-context-menu-item home-context-menu-item--danger"
+            onClick={() => {
+              const wf = allWorkflows.find((w) => w.id === openMenuId);
+              if (wf) setDeleteTarget(wf);
+              setOpenMenuId(null);
+              setMenuPosition(null);
+            }}
+          >
+            <Trash2 size={14} />
+            Delete
+          </button>
+        </div>,
+        document.body
       )}
 
     </div>

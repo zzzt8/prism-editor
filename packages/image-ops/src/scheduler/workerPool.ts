@@ -399,8 +399,10 @@ export class WorkerPool {
 
   /**
    * Execute a function on the next available worker.
-   * This is the main method used to call worker methods directly.
-   * Polls until an idle worker is available.
+   * Uses a promise-based queue so the main thread is never blocked by polling.
+   * When no workers are available, the task is queued and will be executed
+   * when a worker becomes free.
+   *
    * Uses Comlink.transfer() to move ImageData buffers without copying.
    */
   async execute<T>(fn: (_worker: ImageWorker) => Promise<T>): Promise<T> {
@@ -408,24 +410,48 @@ export class WorkerPool {
       throw new Error('WorkerPool has been terminated');
     }
 
-    const MAX_ATTEMPTS = parseInt(process.env['WORKER_POOL_MAX_ATTEMPTS'] ?? '200', 10);
-    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-      const worker = this.selectWorker();
-      if (worker?.proxy) {
-        worker.status = 'busy';
-        worker.lastUsed = Date.now();
-        try {
-          const result = await fn(worker.proxy);
-          // Transfer any ImageData in the result (moves buffer ownership, no copy)
-          return this.transferResult(result);
-        } finally {
-          worker.status = 'idle';
-        }
+    // Try to get an idle worker immediately
+    const worker = this.selectWorker();
+    if (worker?.proxy) {
+      worker.status = 'busy';
+      worker.lastUsed = Date.now();
+      try {
+        const result = await fn(worker.proxy);
+        return this.transferResult(result);
+      } finally {
+        worker.status = 'idle';
+        this.processQueue();
       }
-      await new Promise<void>((r) => setTimeout(r, 50));
     }
 
-    throw new Error('No available workers after waiting');
+    // No idle worker — queue the task
+    return new Promise<T>((resolve, reject) => {
+      const task: WorkerTask<T> = {
+        id: `task-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        execute: async () => {
+          const w = this.selectWorker();
+          if (!w?.proxy) throw new Error('No worker available for queued task');
+          w.status = 'busy';
+          w.lastUsed = Date.now();
+          try {
+            return await fn(w.proxy);
+          } finally {
+            w.status = 'idle';
+            this.processQueue();
+          }
+        },
+      };
+
+      this.taskQueue.push({
+        task,
+        resolve: (value: unknown) => resolve(value as T),
+        reject,
+        queuedAt: Date.now(),
+      });
+
+      // Trigger queue processing (non-blocking — just schedules processQueue)
+      this.processQueue();
+    });
   }
 
   /**

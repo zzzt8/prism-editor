@@ -12,6 +12,7 @@ model User {
   email     String   @unique
   name      String?
   password  String
+  role      String   @default("user") // "user" | "admin"
   workflows Workflow[]
   nodePackages NodePackage[]
   createdAt DateTime @default(now())

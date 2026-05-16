@@ -1,13 +1,11 @@
 // LoginPage component
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import './AuthPage.css';
 
-interface LoginPageProps {
-  onSwitchToRegister: () => void;
-}
-
-export const LoginPage: React.FC<LoginPageProps> = ({ onSwitchToRegister }) => {
+export const LoginPage: React.FC = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -81,7 +79,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSwitchToRegister }) => {
 
         <div className="auth-footer">
           <span>Don't have an account?</span>
-          <button type="button" className="auth-link" onClick={onSwitchToRegister}>
+          <button type="button" className="auth-link" onClick={() => navigate('/register')}>
             Create account
           </button>
         </div>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { topologicalSort, wouldCreateCycle, getUpstreamNodes, getDownstreamNodes } from '../src/topo-sort';
+import { topologicalSort, wouldCreateCycle, getUpstreamNodes, getDownstreamNodes, getTopologicalLevels } from '../src/topo-sort';
 import type { WorkflowNode, Connection } from '@prism/shared-types';
 
 function makeNode(id: string): WorkflowNode {
@@ -127,5 +127,104 @@ describe('getDownstreamNodes', () => {
   it('returns empty array when no downstream nodes', () => {
     const connections: Connection[] = [];
     expect(getDownstreamNodes('a', connections)).toEqual([]);
+  });
+});
+
+describe('getTopologicalLevels', () => {
+  it('returns single level for linear chain', () => {
+    const nodes = [makeNode('a'), makeNode('b'), makeNode('c')];
+    const connections = [makeConnection('1', 'a', 'b'), makeConnection('2', 'b', 'c')];
+
+    const result = getTopologicalLevels(nodes, connections);
+
+    expect(result.hasCycle).toBe(false);
+    expect(result.levels).toEqual([['a'], ['b'], ['c']]);
+  });
+
+  it('groups parallel nodes into same level (diamond)', () => {
+    const nodes = [makeNode('a'), makeNode('b'), makeNode('c'), makeNode('d')];
+    const connections = [
+      makeConnection('1', 'a', 'b'),
+      makeConnection('2', 'a', 'c'),
+      makeConnection('3', 'b', 'd'),
+      makeConnection('4', 'c', 'd'),
+    ];
+
+    const result = getTopologicalLevels(nodes, connections);
+
+    expect(result.hasCycle).toBe(false);
+    expect(result.levels).toHaveLength(3);
+    expect(result.levels[0]).toEqual(['a']);
+    expect(new Set(result.levels[1])).toEqual(new Set(['b', 'c']));
+    expect(result.levels[2]).toEqual(['d']);
+  });
+
+  it('groups independent nodes into level 0', () => {
+    const nodes = [makeNode('a'), makeNode('b'), makeNode('c')];
+    const connections: Connection[] = [];
+
+    const result = getTopologicalLevels(nodes, connections);
+
+    expect(result.hasCycle).toBe(false);
+    expect(result.levels).toHaveLength(1);
+    expect(new Set(result.levels[0])).toEqual(new Set(['a', 'b', 'c']));
+  });
+
+  it('detects cycle and returns cycle nodes', () => {
+    const nodes = [makeNode('a'), makeNode('b'), makeNode('c')];
+    const connections = [
+      makeConnection('1', 'a', 'b'),
+      makeConnection('2', 'b', 'c'),
+      makeConnection('3', 'c', 'a'),
+    ];
+
+    const result = getTopologicalLevels(nodes, connections);
+
+    expect(result.hasCycle).toBe(true);
+    expect(result.levels).toEqual([]);
+    expect(result.cycleNodes).toBeDefined();
+  });
+
+  it('returns empty levels on self-loop', () => {
+    const nodes = [makeNode('a')];
+    const connections = [makeConnection('1', 'a', 'a')];
+
+    const result = getTopologicalLevels(nodes, connections);
+
+    expect(result.hasCycle).toBe(true);
+    expect(result.levels).toEqual([]);
+  });
+
+  it('handles complex multi-level graph', () => {
+    //     a
+    //    / \
+    //   b   c
+    //    \ /
+    //     d
+    //    / \
+    //   e   f
+    //    \ /
+    //     g
+    const nodes = [makeNode('a'), makeNode('b'), makeNode('c'), makeNode('d'), makeNode('e'), makeNode('f'), makeNode('g')];
+    const connections = [
+      makeConnection('1', 'a', 'b'),
+      makeConnection('2', 'a', 'c'),
+      makeConnection('3', 'b', 'd'),
+      makeConnection('4', 'c', 'd'),
+      makeConnection('5', 'd', 'e'),
+      makeConnection('6', 'd', 'f'),
+      makeConnection('7', 'e', 'g'),
+      makeConnection('8', 'f', 'g'),
+    ];
+
+    const result = getTopologicalLevels(nodes, connections);
+
+    expect(result.hasCycle).toBe(false);
+    expect(result.levels).toHaveLength(5);
+    expect(result.levels[0]).toEqual(['a']);
+    expect(new Set(result.levels[1])).toEqual(new Set(['b', 'c']));
+    expect(result.levels[2]).toEqual(['d']);
+    expect(new Set(result.levels[3])).toEqual(new Set(['e', 'f']));
+    expect(result.levels[4]).toEqual(['g']);
   });
 });

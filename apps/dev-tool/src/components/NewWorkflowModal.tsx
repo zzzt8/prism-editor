@@ -1,11 +1,11 @@
 // NewWorkflowModal — Create a new blank workflow
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   X, PlusCircle, CheckCircle2, Copy, Info, ChevronDown,
 } from 'lucide-react';
 import { indexedDBStorageAdapter } from '../storage';
-import { useAppStore } from '../store/appStore';
 import { useCanvasStore } from '../store/canvasStore';
 
 interface NewWorkflowModalProps {
@@ -20,7 +20,7 @@ const ENVIRONMENTS = ['Staging', 'Production', 'Development'] as const;
 type SelectCard = 'blank' | 'template';
 
 export function NewWorkflowModal({ isOpen, onClose, onCreated }: NewWorkflowModalProps) {
-  const navigateToEditor = useAppStore((s) => s.navigateToEditor);
+  const navigate = useNavigate();
   const loadWorkflow = useCanvasStore((s) => s.loadWorkflow);
 
   const [selectedCard, setSelectedCard] = useState<SelectCard>('blank');
@@ -71,7 +71,7 @@ export function NewWorkflowModal({ isOpen, onClose, onCreated }: NewWorkflowModa
         category === 'Uncategorized' ? undefined : category
       );
       loadWorkflow(content);
-      navigateToEditor(meta.id);
+      navigate(`/workflow/${meta.id}`);
       onClose();
       onCreated();
     } catch (err) {

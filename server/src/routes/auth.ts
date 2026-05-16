@@ -4,6 +4,10 @@ import rateLimit from '@fastify/rate-limit';
 import { prisma } from '../db/client.js';
 import { registerSchema, loginSchema } from '../schemas/auth.js';
 
+const isDev = process.env.NODE_ENV !== 'production';
+
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
+
 interface RefreshTokenPayload {
   userId: string;
   type: 'refresh';
@@ -65,12 +69,29 @@ function parseDurationToMs(duration: string): number {
   }
 }
 
+async function isAdminRequest(email: string): Promise<boolean> {
+  const normalized = email.toLowerCase();
+  if (ADMIN_EMAILS.includes(normalized)) return true;
+  const user = await prisma.user.findUnique({ where: { email: normalized }, select: { role: true } });
+  return user?.role === 'admin';
+}
+
 const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   // Register rate limiting for auth endpoints
+  // Dev: 120 req/15min (StrictMode doubles effect calls on mount)
+  // Prod: 10 req/15min (brute-force protection)
   await fastify.register(rateLimit, {
-    max: 10,
+    max: isDev ? 120 : 10,
     timeWindow: '15 minutes',
-    keyGenerator: (req) => req.ip,
+    keyGenerator: async (req) => {
+      const body = req.body as Record<string, unknown> | undefined;
+      const email = body?.email as string | undefined;
+      if (email) {
+        const admin = await isAdminRequest(email);
+        if (admin) return `admin:${email}`;
+      }
+      return req.ip;
+    },
     errorResponseBuilder: (_req, context) => ({
       statusCode: 429,
       error: 'Too Many Requests',

@@ -8,7 +8,7 @@ import type {
   NodeDefinition,
 } from '@prism/shared-types';
 import type { LaneConfig } from '@prism/shared-types';
-import { topologicalSort } from './topo-sort';
+import { topologicalSort, getTopologicalLevels } from './topo-sort';
 import { createExecutionContext, recordNodeResult, checkAborted } from './context';
 import type { ExecutionContext } from './context';
 import { createCache } from './cache';
@@ -66,6 +66,106 @@ export class WorkflowExecutor {
     return this.executors.get(type);
   }
 
+  /**
+   * Execute a single node and record its result.
+   * Returns the node result and outputs.
+   */
+  private async executeNode(
+    nodeId: string,
+    node: Workflow['nodes'][0],
+    nodeInputs: Record<string, unknown>,
+    ctx: ExecutionContext,
+    options: WorkflowExecutorOptions,
+    cache: ExecutionCache | null,
+    typeErrors: string[]
+  ): Promise<{ outputs: Record<string, unknown>; failed: boolean }> {
+    const executor = this.executors.get(node.type);
+
+    if (!executor) {
+      const result: NodeResult = {
+        nodeId,
+        status: 'error',
+        outputs: {},
+        error: `No executor registered for node type: ${node.type}`,
+        startTime: Date.now(),
+        endTime: Date.now(),
+      };
+      recordNodeResult(ctx, result);
+      return { outputs: {}, failed: true };
+    }
+
+    // Type validation and auto-conversion
+    if (this.typeValidator) {
+      try {
+        const validated = await this.typeValidator.validateInputs(nodeId, node.type, nodeInputs);
+        Object.assign(nodeInputs, validated);
+      } catch (err) {
+        if (err instanceof TypeMismatchError) {
+          typeErrors.push(err.nodeId);
+          const result: NodeResult = {
+            nodeId,
+            status: 'error',
+            outputs: {},
+            error: err.message,
+            startTime: Date.now(),
+            endTime: Date.now(),
+          };
+          recordNodeResult(ctx, result);
+          return { outputs: {}, failed: true };
+        }
+        throw err;
+      }
+    }
+
+    // Cache lookup
+    const inputsHash = hashInputs(nodeInputs);
+    if (cache) {
+      const cached = cache.get(ctx.workflowId, nodeId, inputsHash);
+      if (cached) {
+        const result: NodeResult = {
+          nodeId,
+          status: 'done',
+          outputs: cached.result,
+          startTime: Date.now(),
+          endTime: Date.now(),
+        };
+        recordNodeResult(ctx, result);
+        return { outputs: cached.result, failed: false };
+      }
+    }
+
+    const startTime = Date.now();
+
+    try {
+      const outputs = await executor(nodeInputs, node.params, ctx as ExecutionContext);
+
+      if (cache) {
+        cache.set(ctx.workflowId, nodeId, inputsHash, outputs);
+      }
+
+      const result: NodeResult = {
+        nodeId,
+        status: 'done',
+        outputs,
+        startTime,
+        endTime: Date.now(),
+      };
+      recordNodeResult(ctx, result);
+      return { outputs, failed: false };
+    } catch (err) {
+      const result: NodeResult = {
+        nodeId,
+        status: 'error',
+        outputs: {},
+        error: err instanceof Error ? err.message : String(err),
+        startTime,
+        endTime: Date.now(),
+      };
+      recordNodeResult(ctx, result);
+      return { outputs: {}, failed: true };
+    }
+  }
+
   async execute(
     workflow: Workflow,
     options: WorkflowExecutorOptions = {}
@@ -76,7 +176,18 @@ export class WorkflowExecutor {
       this.typeValidator = new TypeValidator(options.nodeDefinitions, options.typeChecking);
     }
 
-    // Topological sort
+    // Topological levels for parallel execution
+    const levelResult = getTopologicalLevels(workflow.nodes, workflow.connections);
+    if (levelResult.hasCycle) {
+      return {
+        workflowId: workflow.id,
+        status: 'error',
+        results: {},
+        error: `Cycle detected involving nodes: ${levelResult.cycleNodes?.join(', ')}`,
+      };
+    }
+
+    // Also keep the order-based sort for the legacy single-threaded path
     const sortResult = topologicalSort(workflow.nodes, workflow.connections);
     if (sortResult.hasCycle) {
       return {
@@ -117,141 +228,67 @@ export class WorkflowExecutor {
 
     const nodeResults = new Map<string, Record<string, unknown>>();
     const cancelledNodes: string[] = [];
-    const resultsMap = new Map<string, NodeResult>();
 
-    // Execute in topological order
-    for (const nodeId of sortResult.order) {
+    // ─── Parallel execution by levels ─────────────────────────────────────────
+    for (const level of levelResult.levels) {
       if (checkAborted(ctx)) {
-        cancelledNodes.push(nodeId);
-        continue;
-      }
-
-      const node = nodeById.get(nodeId)!;
-      const executor = this.executors.get(node.type);
-
-      if (!executor) {
-        const result: NodeResult = {
-          nodeId,
-          status: 'error',
-          outputs: {},
-          error: `No executor registered for node type: ${node.type}`,
-          startTime: Date.now(),
-          endTime: Date.now(),
-        };
-        recordNodeResult(ctx, result);
-        resultsMap.set(nodeId, result);
-        nodeResults.set(nodeId, {});
-        ctx.progress.currentNodeId = nodeId;
-        if (options.onProgress) options.onProgress(ctx.progress);
-        continue;
-      }
-
-      ctx.nodeId = nodeId;
-      ctx.progress.currentNodeId = nodeId;
-      if (options.onProgress) options.onProgress(ctx.progress);
-
-      // Gather inputs from upstream nodes
-      const nodeInputs: Record<string, unknown> = {};
-      const incomingConns = connectionsByTo.get(nodeId) ?? [];
-      for (const conn of incomingConns) {
-        const sourceResult = nodeResults.get(conn.from.nodeId);
-        if (sourceResult && conn.from.port in sourceResult) {
-          nodeInputs[conn.to.port] = sourceResult[conn.from.port];
+        for (const nodeId of level) {
+          cancelledNodes.push(nodeId);
         }
+        continue;
       }
 
-      // Populate ctx.inputs so ctx.requireInput() can read the populated data.
-      // Reset first to avoid stale data from the previous node.
-      ctx.inputs = nodeInputs;
+      // Gather inputs and fire all nodes in this level concurrently
+      const promises: Promise<{ nodeId: string; outputs: Record<string, unknown>; failed: boolean }>[] = [];
 
-      // Type validation and auto-conversion
-      if (this.typeValidator) {
-        try {
-          const validated = await this.typeValidator.validateInputs(nodeId, node.type, nodeInputs);
-          // Replace with validated (potentially converted) inputs
-          Object.assign(nodeInputs, validated);
-        } catch (err) {
-          if (err instanceof TypeMismatchError) {
-            typeErrors.push(err.nodeId);
-            const result: NodeResult = {
-              nodeId,
-              status: 'error',
-              outputs: {},
-              error: err.message,
-              startTime: Date.now(),
-              endTime: Date.now(),
-            };
-            recordNodeResult(ctx, result);
-            resultsMap.set(nodeId, result);
-            nodeResults.set(nodeId, {});
-            if (options.onProgress) options.onProgress(ctx.progress);
-            continue;
+      for (const nodeId of level) {
+        const node = nodeById.get(nodeId)!;
+
+        // Gather inputs from upstream nodes
+        const nodeInputs: Record<string, unknown> = {};
+        const incomingConns = connectionsByTo.get(nodeId) ?? [];
+        for (const conn of incomingConns) {
+          const sourceResult = nodeResults.get(conn.from.nodeId);
+          if (sourceResult && conn.from.port in sourceResult) {
+            nodeInputs[conn.to.port] = sourceResult[conn.from.port];
           }
-          // Re-throw unexpected errors
-          throw err;
         }
+
+        ctx.nodeId = nodeId;
+        ctx.progress.currentNodeId = nodeId;
+        ctx.inputs = nodeInputs;
+
+        if (options.onProgress) {
+          options.onProgress(ctx.progress);
+        }
+
+        promises.push(
+          this.executeNode(nodeId, node, nodeInputs, ctx, options, cache, typeErrors).then(
+            ({ outputs, failed }) => ({ nodeId, outputs, failed })
+          )
+        );
       }
 
-      // Cache lookup
-      const inputsHash = hashInputs(nodeInputs);
-      if (cache) {
-        const cached = cache.get(workflow.id, nodeId, inputsHash);
-        if (cached) {
-          nodeResults.set(nodeId, cached.result);
-          const result: NodeResult = {
-            nodeId,
-            status: 'done',
-            outputs: cached.result,
-            startTime: Date.now(),
-            endTime: Date.now(),
-          };
-          recordNodeResult(ctx, result);
-          resultsMap.set(nodeId, result);
-          ctx.progress.currentNodeId = nodeId;
-          if (options.onProgress) options.onProgress(ctx.progress);
-          continue;
-        }
-      }
+      // Wait for all nodes in this level to complete
+      const levelResults = await Promise.all(promises);
 
-      const startTime = Date.now();
-
-      try {
-        // Pass concrete ExecutionContext — aligned with @prism/shared-types definition
-        const outputs = await executor(nodeInputs, node.params, ctx as ExecutionContext);
-
+      // Record results
+      for (const { nodeId, outputs, failed } of levelResults) {
         nodeResults.set(nodeId, outputs);
 
-        if (cache) {
-          cache.set(workflow.id, nodeId, inputsHash, outputs);
+        // Update currentNodeId for progress tracking (point to last node in level)
+        ctx.progress.currentNodeId = nodeId;
+        if (options.onProgress) {
+          options.onProgress(ctx.progress);
         }
-
-        const result: NodeResult = {
-          nodeId,
-          status: 'done',
-          outputs,
-          startTime,
-          endTime: Date.now(),
-        };
-        recordNodeResult(ctx, result);
-        resultsMap.set(nodeId, result);
-      } catch (err) {
-        nodeResults.set(nodeId, {});
-        const result: NodeResult = {
-          nodeId,
-          status: 'error',
-          outputs: {},
-          error: err instanceof Error ? err.message : String(err),
-          startTime,
-          endTime: Date.now(),
-        };
-        recordNodeResult(ctx, result);
-        resultsMap.set(nodeId, result);
       }
     }
 
     if (checkAborted(ctx)) {
       ctx.progress.status = 'cancelled';
-      if (options.onProgress) options.onProgress(ctx.progress);
+      if (options.onProgress) {
+        options.onProgress(ctx.progress);
+      }
       return {
         workflowId: workflow.id,
         status: 'cancelled',
@@ -262,7 +299,9 @@ export class WorkflowExecutor {
 
     const hasError = [...ctx.results.values()].some((r) => r.status === 'error');
     ctx.progress.status = hasError ? 'error' : 'done';
-    if (options.onProgress) options.onProgress(ctx.progress);
+    if (options.onProgress) {
+      options.onProgress(ctx.progress);
+    }
 
     return {
       workflowId: workflow.id,
