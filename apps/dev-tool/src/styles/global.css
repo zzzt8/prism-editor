@@ -6,6 +6,8 @@
 /* Set viewport height on html/body so flex children can fill 100% */
 html,
 body {
+  display: flex;
+  flex-direction: column;
   height: 100vh;
   min-height: 0; /* override browser default min-height so flex:1 children can shrink below content size */
   overflow: hidden;
