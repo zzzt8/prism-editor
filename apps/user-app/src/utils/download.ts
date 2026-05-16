@@ -101,7 +101,7 @@ async function resizeDataUrl(
   const img = await loadImage(dataUrl);
   const canvas = document.createElement('canvas');
   canvas.width = width;
-  canvas.height = height;
+  canvas.height = height || Math.round(width * (img.naturalHeight / img.naturalWidth));
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Failed to get canvas context');
   ctx.drawImage(img, 0, 0, width, height);
@@ -147,6 +147,24 @@ export async function downloadSingleImage(
   const ext = mimeToExt(extracted.mimeType);
   const blob = await dataUrlToBlob(extracted.dataUrl);
   downloadBlob(blob, `${filename}.${ext}`);
+}
+
+/**
+ * Download an image at a single specified width (height derived from aspect ratio).
+ * @param resultValue  Node executor output value
+ * @param filename     Base filename
+ * @param width        Target width in pixels
+ */
+export async function downloadResizedImage(
+  resultValue: unknown,
+  filename: string,
+  width: number
+): Promise<void> {
+  const extracted = extractImageData(resultValue);
+  if (!extracted) throw new Error('无可用图片数据');
+  const ext = mimeToExt(extracted.mimeType);
+  const blob = await resizeDataUrl(extracted.dataUrl, width, 0);
+  downloadBlob(blob, `${filename}_${width}w.${ext}`);
 }
 
 /**

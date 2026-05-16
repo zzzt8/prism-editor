@@ -30,6 +30,7 @@ import type { RunState } from '../../modules/runner/runStore';
 import {
   downloadSingleImage,
   downloadMultiSize,
+  downloadResizedImage,
   downloadZipPack,
   extractImageData,
 } from '../../utils/download';
@@ -134,19 +135,17 @@ function ResultSummary({ progress, runStatus }: { progress?: ExecutionProgress; 
     return (
       <div className="ua-result-summary">
         <div className="ua-result-summary-check">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <polyline points="20 6 9 17 4 12" />
           </svg>
         </div>
-        <div className="ua-result-summary-text">
-          <span className="ua-result-summary-title">执行完成</span>
-          {totalMs !== null && (
-            <span className="ua-result-summary-meta">耗时 {totalMs}ms · {nodeCount} 个节点</span>
-          )}
-          {totalMs === null && nodeCount > 0 && (
-            <span className="ua-result-summary-meta">{nodeCount} 个节点</span>
-          )}
-        </div>
+        <span className="ua-result-summary-title">已完成</span>
+        {totalMs !== null && (
+          <span className="ua-result-summary-meta">· {totalMs}ms · {nodeCount} 个节点</span>
+        )}
+        {totalMs === null && nodeCount > 0 && (
+          <span className="ua-result-summary-meta">· {nodeCount} 个节点</span>
+        )}
       </div>
     );
   }
@@ -154,22 +153,20 @@ function ResultSummary({ progress, runStatus }: { progress?: ExecutionProgress; 
   return (
     <div className="ua-result-summary ua-result-summary--error">
       <div className="ua-result-summary-check">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <line x1="18" y1="6" x2="6" y2="18" />
           <line x1="6" y1="6" x2="18" y2="18" />
         </svg>
       </div>
-      <div className="ua-result-summary-text">
-        <span className="ua-result-summary-title">执行出错</span>
-        {hasNodeErrors && (
-          <span className="ua-result-summary-meta">
-            {progress!.results.filter((r) => r.status === 'error').length} 个节点执行失败
-          </span>
-        )}
-        {progress?.error && (
-          <span className="ua-result-summary-meta">{progress.error}</span>
-        )}
-      </div>
+      <span className="ua-result-summary-title">执行出错</span>
+      {hasNodeErrors && (
+        <span className="ua-result-summary-meta">
+          · {progress!.results.filter((r) => r.status === 'error').length} 个节点失败
+        </span>
+      )}
+      {progress?.error && (
+        <span className="ua-result-summary-meta">· {progress.error}</span>
+      )}
     </div>
   );
 }
@@ -307,6 +304,7 @@ function OutputPreview({ out, resultValue, workflowName }: OutputPreviewProps) {
   const [imgError, setImgError] = useState(false);
   const [multiDownloading, setMultiDownloading] = useState(false);
   const [singleDownloading, setSingleDownloading] = useState(false);
+  const [downloadingSize, setDownloadingSize] = useState<number | null>(null);
   const [downloadMsg, setDownloadMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
@@ -362,6 +360,18 @@ function OutputPreview({ out, resultValue, workflowName }: OutputPreviewProps) {
       setDownloadMsg({ type: 'error', text: `下载失败：${err instanceof Error ? err.message : String(err)}` });
     } finally {
       setMultiDownloading(false);
+    }
+  };
+
+  const handleSizeDownload = async (width: number) => {
+    setDownloadingSize(width);
+    try {
+      await downloadResizedImage(resultValue, baseFilename, width);
+      setDownloadMsg({ type: 'success', text: `${width}w 下载完成` });
+    } catch (err) {
+      setDownloadMsg({ type: 'error', text: `下载失败：${err instanceof Error ? err.message : String(err)}` });
+    } finally {
+      setDownloadingSize(null);
     }
   };
 
@@ -423,21 +433,53 @@ function OutputPreview({ out, resultValue, workflowName }: OutputPreviewProps) {
           </button>
 
           <div className="ua-download-sizes">
-            <span className="ua-download-sizes-label">多尺寸下载：</span>
-            <div className="ua-download-size-btns">
+            <span className="ua-download-sizes-label">多尺寸下载</span>
+            <div className="ua-download-size-links">
               {multiDownloading ? (
                 <span className="ua-download-sizes-loading">
                   <span className="ua-spinner ua-spinner--sm" />
                   生成中…
                 </span>
               ) : (
-                <button
-                  className="ua-download-size-btn"
-                  onClick={handleMultiSizeDownload}
-                  title="下载 512w / 1024w / 2048w 三种尺寸"
-                >
-                  512 / 1024 / 2048
-                </button>
+                <>
+                  <button
+                    className="ua-download-size-link"
+                    onClick={() => handleSizeDownload(512)}
+                    disabled={downloadingSize !== null}
+                    title="下载 512w 尺寸"
+                  >
+                    {downloadingSize === 512 ? (
+                      <span className="ua-spinner ua-spinner--sm" />
+                    ) : '512'}
+                  </button>
+                  <button
+                    className="ua-download-size-link"
+                    onClick={() => handleSizeDownload(1024)}
+                    disabled={downloadingSize !== null}
+                    title="下载 1024w 尺寸"
+                  >
+                    {downloadingSize === 1024 ? (
+                      <span className="ua-spinner ua-spinner--sm" />
+                    ) : '1024'}
+                  </button>
+                  <button
+                    className="ua-download-size-link"
+                    onClick={() => handleSizeDownload(2048)}
+                    disabled={downloadingSize !== null}
+                    title="下载 2048w 尺寸"
+                  >
+                    {downloadingSize === 2048 ? (
+                      <span className="ua-spinner ua-spinner--sm" />
+                    ) : '2048'}
+                  </button>
+                  <button
+                    className="ua-download-all-link"
+                    onClick={handleMultiSizeDownload}
+                    title="下载 512w / 1024w / 2048w 三种尺寸"
+                  >
+                    全部
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -489,12 +531,27 @@ export interface OutputSectionProps {
     result?: Record<string, unknown>;
     error?: string;
   };
+  /** Batch results keyed by image index (0-based) */
+  batchResults?: Record<number, Record<string, unknown>>;
+  /** Total images in batch */
+  batchTotal?: number;
+  /** Currently executing image index */
+  batchCurrent?: number;
+  /** Whether batch mode is active */
+  hasBatch?: boolean;
+  /** ZIP download handler — only provided when batch completed */
+  onDownloadZip?: () => Promise<void>;
 }
 
 export const OutputSection: React.FC<OutputSectionProps> = ({
   outputs,
   workflowName,
   runState,
+  batchResults,
+  batchTotal = 0,
+  batchCurrent = 0,
+  hasBatch = false,
+  onDownloadZip,
 }) => {
   const executionLogs = useRunStore((s) => s.executionLogs);
   const downloadExecutionLogs = useRunStore((s) => s.downloadExecutionLogs);
@@ -502,24 +559,102 @@ export const OutputSection: React.FC<OutputSectionProps> = ({
 
   return (
     <>
-      <h2 className="ua-section-title">执行结果</h2>
+      <div className="ua-output-header-row">
+        <h2 className="ua-section-title">执行结果</h2>
+        {hasLogs && (
+          <button
+            className="ua-export-icon-btn"
+            onClick={downloadExecutionLogs}
+            title="导出执行日志"
+            aria-label="导出执行日志"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </button>
+        )}
+        {hasBatch && runState.status === 'done' && onDownloadZip && (
+          <button
+            className="ua-export-icon-btn"
+            onClick={onDownloadZip}
+            title="下载全部结果 ZIP"
+            aria-label="下载全部结果 ZIP"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </button>
+        )}
+      </div>
 
-      {hasLogs && (
-        <button
-          className="ua-export-logs-btn"
-          onClick={downloadExecutionLogs}
-          title="导出执行日志"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7 10 12 15 17 10" />
-            <line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
-          导出日志
-        </button>
+      {/* Batch progress bar */}
+      {hasBatch && runState.status === 'running' && batchTotal > 0 && (
+        <div className="ua-batch-progress">
+          <div className="ua-batch-progress-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="18" height="18" rx="3" />
+              <path d="M8 12h8M8 8h8M8 16h5" />
+            </svg>
+            <span>批量处理中</span>
+            <span className="ua-batch-progress-count">{batchCurrent + 1} / {batchTotal}</span>
+          </div>
+          <div className="ua-progress-bar">
+            <div
+              className="ua-progress-fill"
+              style={{ width: `${Math.round(((batchCurrent) / batchTotal) * 100)}%` }}
+            />
+          </div>
+        </div>
       )}
 
-      {runState.status === 'idle' && (
+      {/* Batch results summary */}
+      {hasBatch && runState.status === 'done' && Object.keys(batchResults ?? {}).length > 0 && (
+        <div className="ua-batch-summary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          <span>{Object.keys(batchResults ?? {}).length} 张图片处理完成</span>
+          <button className="ua-batch-zip-btn" onClick={onDownloadZip}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            下载 ZIP
+          </button>
+        </div>
+      )}
+
+      {/* Batch result grid */}
+      {hasBatch && runState.status === 'done' && Object.keys(batchResults ?? {}).length > 0 && (
+        <div className="ua-batch-grid">
+          {Object.entries(batchResults ?? {}).map(([idxStr, result]) => {
+            const idx = Number(idxStr);
+            return (
+              <div key={idxStr} className="ua-batch-card">
+                <div className="ua-batch-card-header">
+                  <span className="ua-batch-card-num">#{Number(idx) + 1}</span>
+                </div>
+                {outputs.map((out) => (
+                  <OutputPreview
+                    key={`${idxStr}-${out.id}`}
+                    out={out}
+                    resultValue={resolveOutputValue(out.id, result)}
+                    workflowName={`${workflowName}_${String(idx + 1).padStart(3, '0')}`}
+                  />
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Single execution idle state */}
+      {!hasBatch && runState.status === 'idle' && (
         <div className="ua-result-empty">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <rect x="3" y="3" width="18" height="18" rx="3" />
@@ -529,30 +664,29 @@ export const OutputSection: React.FC<OutputSectionProps> = ({
         </div>
       )}
 
-      {runState.status === 'running' && (
+      {runState.status === 'running' && !hasBatch && (
         <ProgressDisplay progress={runState.progress} />
       )}
 
-      {(runState.status === 'cancelling' || runState.status === 'cancelled') && (
+      {(runState.status === 'cancelling' || runState.status === 'cancelled') && !hasBatch && (
         <div className="ua-result-summary ua-result-summary--cancelled">
           <div className="ua-result-summary-check">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <circle cx="12" cy="12" r="10" />
               <line x1="8" y1="12" x2="16" y2="12" />
             </svg>
           </div>
-          <div className="ua-result-summary-text">
-            <span className="ua-result-summary-title">执行已取消</span>
-            <span className="ua-result-summary-meta">部分节点结果可能不完整</span>
-          </div>
+          <span className="ua-result-summary-title">已取消</span>
+          <span className="ua-result-summary-meta">· 部分节点结果可能不完整</span>
         </div>
       )}
 
-      {runState.status === 'done' && (
+      {/* Single execution result */}
+      {runState.status === 'done' && !hasBatch && (
         <ResultSummary progress={runState.progress} runStatus={runState.status} />
       )}
 
-      {runState.status === 'done' && runState.result && (
+      {runState.status === 'done' && !hasBatch && runState.result && (
         <div className="ua-result-grid">
           {outputs.length >= 2 && (
             <ZipPackBar
@@ -579,9 +713,15 @@ export const OutputSection: React.FC<OutputSectionProps> = ({
         </div>
       )}
 
-      {runState.status === 'done' && !runState.result && (
+      {runState.status === 'done' && !hasBatch && !runState.result && (
         <div className="ua-result-empty">
           <span>执行完成，无输出结果</span>
+        </div>
+      )}
+
+      {runState.status === 'error' && !hasBatch && (
+        <div className="ua-result-empty">
+          <span>执行出错：{runState.error}</span>
         </div>
       )}
     </>

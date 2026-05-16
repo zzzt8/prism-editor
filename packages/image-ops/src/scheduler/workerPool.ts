@@ -155,11 +155,13 @@ export class WorkerPool {
   }
 
   /**
-   * Create a new worker and add it to the pool
+   * Create a new worker and add it to the pool.
+   * Performs a health ping on startup; marks as 'error' and triggers
+   * async replacement if the ping times out or fails.
    */
   private createWorker(index: number): PooledWorker {
     const id = `worker-${index}`;
-    
+
     const pooledWorker: PooledWorker = {
       id,
       instance: null,
@@ -186,6 +188,8 @@ export class WorkerPool {
         pooledWorker.lastError = event.message || 'Unknown error';
         pooledWorker.errorCount++;
         pooledWorker.status = 'error';
+        // Trigger async replacement so future tasks get a working worker
+        this.replaceWorker(pooledWorker).catch(() => {/* ignore */});
       };
 
       workerInstance.onmessageerror = (event) => {
@@ -194,17 +198,44 @@ export class WorkerPool {
         pooledWorker.errorCount++;
       };
 
-      workerInstance.onmessage = (_event) => {
-        // Comlink handles its own message protocol
-        // This is for any custom messages we might add later
-      };
+      // Ping health check: verify the worker API is actually callable.
+      // In some environments (Cursor, Electron w/ sandbox), Worker creation succeeds
+      // but Comlink.expose() never runs, leaving proxy as a dead end.
+      // Without this check the pool silently marks the worker 'idle' and then every
+      // task on it immediately fails — which only triggers replacement after
+      // maxErrors rejections, making startup extremely slow.
+      const pingTimeout = setTimeout(() => {
+        if (pooledWorker.status === 'initializing') {
+          pooledWorker.lastError = 'Health ping timeout — worker likely not exposing API';
+          pooledWorker.errorCount++;
+          pooledWorker.status = 'error';
+          workerInstance.terminate();
+          // Replace asynchronously so the pool eventually recovers
+          this.replaceWorker(pooledWorker).catch(() => {/* ignore */});
+        }
+      }, this.config.initTimeout);
 
-      // Mark as idle after a brief initialization delay
-      setTimeout(() => {
+      // Ping: try calling a method on the proxy.
+      // In Comlink 4.x this is synchronous — if the worker hasn't exposed
+      // its API the call throws immediately (Comlink tries to transfer but
+      // nobody is listening).  We guard with a timeout so a slow worker
+      // doesn't block pool startup indefinitely.
+      try {
+        void proxy.getStatus();
+        clearTimeout(pingTimeout);
         if (pooledWorker.status === 'initializing') {
           pooledWorker.status = 'idle';
         }
-      }, 100);
+      } catch {
+        clearTimeout(pingTimeout);
+        if (pooledWorker.status === 'initializing') {
+          pooledWorker.lastError = 'Health ping failed — worker API not reachable';
+          pooledWorker.errorCount++;
+          pooledWorker.status = 'error';
+          workerInstance.terminate();
+          this.replaceWorker(pooledWorker).catch(() => {/* ignore */});
+        }
+      }
 
       this.workers.push(pooledWorker);
     } catch (err) {

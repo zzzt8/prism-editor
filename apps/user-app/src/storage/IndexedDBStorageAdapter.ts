@@ -109,4 +109,27 @@ export class IndexedDBStorageAdapter {
       tx.oncomplete = () => db.close();
     });
   }
+
+  async updateWorkflowMeta(sourceId: string, patch: { name?: string; description?: string }): Promise<void> {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const getRequest = store.get(sourceId);
+
+      getRequest.onsuccess = () => {
+        const record = getRequest.result as PublishedWorkflow | undefined;
+        if (!record) {
+          reject(new Error('Workflow not found'));
+          return;
+        }
+        const updated: PublishedWorkflow = { ...record, ...patch };
+        const putRequest = store.put(updated);
+        putRequest.onsuccess = () => resolve();
+        putRequest.onerror = () => reject(putRequest.error);
+      };
+      getRequest.onerror = () => reject(getRequest.error);
+      tx.oncomplete = () => db.close();
+    });
+  }
 }

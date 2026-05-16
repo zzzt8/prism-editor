@@ -22,6 +22,10 @@ export class PublishedWorkflowRepository implements IPublishedWorkflowRepository
   async deletePublished(sourceId: string): Promise<void> {
     await userAppStorage.deletePublished(sourceId);
   }
+
+  async updateWorkflowMeta(sourceId: string, patch: { name?: string; description?: string }): Promise<void> {
+    await userAppStorage.updateWorkflowMeta(sourceId, patch);
+  }
 }
 
 export async function syncWorkflowToLocal(workflow: ValidatedPublishedWorkflow): Promise<string> {

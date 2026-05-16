@@ -1,7 +1,7 @@
-// workflowCatalogStore - workflow list loading and catalog
+// workflowCatalogStore - workflow list loading, rename, delete
 //
-// State: workflows, isLoading, loadError
-// Actions: loadWorkflows
+// State: workflows (raw list), isLoading, loadError
+// Actions: loadWorkflows, renameWorkflow, deleteWorkflow, updateLocalMeta
 
 import { create } from 'zustand';
 import type { PublishedWorkflowMeta } from '../../modules/repositories/interfaces';
@@ -14,9 +14,11 @@ export interface WorkflowCatalogState {
   isLoading: boolean;
   loadError?: string;
   loadWorkflows: () => void;
+  renameWorkflow: (sourceId: string, name: string) => Promise<void>;
+  deleteWorkflow: (sourceId: string) => Promise<void>;
 }
 
-export const useWorkflowCatalogStore = create<WorkflowCatalogState>((set) => {
+export const useWorkflowCatalogStore = create<WorkflowCatalogState>((set, get) => {
   return {
     workflows: [],
     isLoading: false,
@@ -32,5 +34,23 @@ export const useWorkflowCatalogStore = create<WorkflowCatalogState>((set) => {
         set({ loadError: String(err), isLoading: false });
       }
     },
+
+    renameWorkflow: async function renameWorkflow(sourceId: string, name: string) {
+      await workflowRepo.updateWorkflowMeta(sourceId, { name });
+      set((state) => ({
+        workflows: state.workflows.map((w) =>
+          w.sourceId === sourceId ? { ...w, name } : w
+        ),
+      }));
+    },
+
+    deleteWorkflow: async function deleteWorkflow(sourceId: string) {
+      await workflowRepo.deletePublished(sourceId);
+      set((state) => ({
+        workflows: state.workflows.filter((w) => w.sourceId !== sourceId),
+      }));
+    },
   };
 });
+
+export type SortKey = 'Recent' | 'Name';

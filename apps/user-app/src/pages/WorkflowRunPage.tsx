@@ -2,8 +2,14 @@
 //
 // Refactored to use the UserLayout + section components architecture
 // from the UI Design System (Chapter 10).
+//
+// ## Batch Mode
+//
+// When any image/mask input has multiple values (string[]), the page enters
+// batch mode: images are processed sequentially, results aggregated, and a
+// ZIP download button appears.
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useSelectedWorkflowStore } from '../modules/selection/selectedWorkflowStore';
 import { useRunStore } from '../modules/runner/runStore';
 import { execute as runWorkflowExecute, cancel as cancelWorkflow } from '../modules/runner/runWorkflow';
@@ -13,29 +19,41 @@ import { WorkflowHeader } from '../components/WorkflowHeader';
 import { InputSection } from '../components/InputSection';
 import { RunSection } from '../components/RunSection';
 import { OutputSection } from '../components/OutputSection';
+import { downloadZipPack } from '../utils/download';
+
+/** Resolve output value from node results — mirrors OutputSection.resolveOutputValue */
+function resolveOutputValueForZip(outputId: string, results: Record<string, unknown>): unknown {
+  if (!results) return undefined;
+  if (outputId in results) return results[outputId];
+  const [nodeId] = outputId.split(':');
+  if (nodeId in results) return results[nodeId];
+  return undefined;
+}
 
 // ── Workflow not found / loading ─────────────────────────────────────────────
 function WorkflowErrorState() {
   return (
     <div className="ua-page ua-run-page">
       <div className="ua-run-header">
-        {/* Logo — dev-tool style */}
-        <div className="wf-logo-group" style={{ flexShrink: 0 }}>
-          <div className="wf-logo-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-              <polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5" />
-              <circle cx="12" cy="12" r="3" fill="white" stroke="none" />
+        <div className="wf-header-left">
+          <button className="ua-back-btn" onClick={navigateToList}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="15 18 9 12 15 6" />
             </svg>
+            返回
+          </button>
+          <div className="wf-logo-group">
+            <div className="wf-logo-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                <polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5" />
+                <circle cx="12" cy="12" r="3" fill="white" stroke="none" />
+              </svg>
+            </div>
+            <span className="wf-logo-text">Prism Editor</span>
           </div>
-          <span className="wf-logo-text">Prism Editor</span>
+          <span className="wf-sep">/</span>
+          <span className="wf-workflow-name">工作流不存在</span>
         </div>
-        <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: 15, flexShrink: 0 }}>/</span>
-        <button className="ua-back-btn" onClick={navigateToList}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-          返回
-        </button>
       </div>
       <div className="ua-run-body">
         <div className="ua-result-empty">
@@ -57,15 +75,29 @@ export const WorkflowRunPage: React.FC = () => {
   const { selectedWorkflow } = useSelectedWorkflowStore();
   const { runState, setRunState, addExecutionLog } = useRunStore();
 
-  // User input values: keyed by PublishedInput.id
-  const [inputValues, setInputValues] = useState<Record<string, string>>({});
+  // User input values: keyed by PublishedInput.id.
+  // Image/mask fields hold string[] for batch mode; other fields hold string.
+  const [inputValues, setInputValues] = useState<Record<string, string | string[]>>({});
   // Exposed params values: keyed by nodeIndex → paramId → value
   const [paramValues, setParamValues] = useState<Record<string, Record<string, unknown>>>({});
 
-  // Reset input values when workflow changes
+  // ── Batch results ──────────────────────────────────────────────────────────────
+  /** Set by batch execution; contains per-image results keyed by image index */
+  const [batchResults, setBatchResults] = useState<Record<number, Record<string, unknown>>>({});
+  /** Number of images in the current batch */
+  const [batchTotal, setBatchTotal] = useState(0);
+  /** Index of currently executing image in batch (0-based) */
+  const [batchCurrent, setBatchCurrent] = useState(0);
+
+  // Determine if any image field has batch values
+  const hasBatch = useMemo(() => {
+    return Object.values(inputValues).some((v) => Array.isArray(v) && v.length > 0);
+  }, [inputValues]);
+
+  // ── Reset inputs when workflow changes ────────────────────────────────────────
   useEffect(() => {
     if (selectedWorkflow) {
-      const defaults: Record<string, string> = {};
+      const defaults: Record<string, string | string[]> = {};
 
       // New v2 format: inputs are in config.inputs (PublishedInputConfig[])
       const configInputs = selectedWorkflow.config.inputs;
@@ -85,11 +117,9 @@ export const WorkflowRunPage: React.FC = () => {
       }
       setInputValues(defaults);
 
-      // Initialize param values from nodeConfigs (values come from developer-set defaults)
+      // Initialize param values from nodeConfigs
       const pvs: Record<string, Record<string, unknown>> = {};
       const nodeConfigs = selectedWorkflow.config.nodeConfigs ?? {};
-
-      // New v2: only show whitelisted params (config.exposedParams)
       const exposedParamList = selectedWorkflow.config.exposedParams;
       if (exposedParamList && exposedParamList.length > 0) {
         for (const ep of exposedParamList) {
@@ -100,7 +130,6 @@ export const WorkflowRunPage: React.FC = () => {
           }
         }
       } else {
-        // Legacy: show all params from nodeConfigs
         for (const [nodeKey, config] of Object.entries(nodeConfigs)) {
           if (config?.params) {
             pvs[nodeKey] = { ...config.params };
@@ -108,13 +137,16 @@ export const WorkflowRunPage: React.FC = () => {
         }
       }
       setParamValues(pvs);
+
+      // Reset batch state
+      setBatchResults({});
+      setBatchTotal(0);
+      setBatchCurrent(0);
     }
     setRunState({ status: 'idle', progress: undefined });
-    // Use sourceId instead of selectedWorkflow object to avoid re-initialization
-    // when IndexedDB reload creates a new object reference for the same workflow.
   }, [selectedWorkflow?.sourceId, setRunState]);
 
-  const updateInput = useCallback((id: string, value: string) => {
+  const updateInput = useCallback((id: string, value: string | string[]) => {
     setInputValues((prev) => ({ ...prev, [id]: value }));
   }, []);
 
@@ -140,11 +172,99 @@ export const WorkflowRunPage: React.FC = () => {
   const handleRun = useCallback(async () => {
     if (!selectedWorkflow) return;
 
-    // Validate required visible inputs
+    // Determine max batch size across all inputs
+    let maxBatch = 0;
+    for (const [, val] of Object.entries(inputValues)) {
+      if (Array.isArray(val)) {
+        maxBatch = Math.max(maxBatch, val.length);
+      }
+    }
+
+    // ── Batch execution ──────────────────────────────────────────────────────────
+    if (maxBatch > 0) {
+      setBatchResults({});
+      setBatchTotal(maxBatch);
+      setBatchCurrent(0);
+      setRunState({ status: 'running', progress: undefined, result: undefined, error: undefined });
+
+      for (let idx = 0; idx < maxBatch; idx++) {
+        setBatchCurrent(idx);
+
+        // Build inputs for this index
+        const idxInputs: Record<string, unknown> = {};
+        for (const [key, val] of Object.entries(inputValues)) {
+          idxInputs[key] = Array.isArray(val) ? (val[idx] ?? '') : val;
+        }
+
+        // Validate required fields
+        const configInputs = selectedWorkflow.config.inputs;
+        let valid = true;
+        let errorMsg = '';
+
+        if (configInputs && configInputs.length > 0) {
+          for (const ci of configInputs) {
+            const key = `${ci.nodeId}:out`;
+            const v = idxInputs[key] as string;
+            // Image and mask fields are always required in batch mode
+            if ((ci.type === 'image' || ci.type === 'mask') && !String(v).trim()) {
+              valid = false;
+              errorMsg = `第 ${idx + 1} 张：缺少 ${ci.label}`;
+            }
+          }
+        } else {
+          for (const inp of selectedWorkflow.inputs) {
+            if (!inp.visible || !inp.required) continue;
+            const v = idxInputs[inp.id] as string;
+            if ((inp.type === 'image' || inp.type === 'mask') && !String(v).trim()) {
+              valid = false;
+              errorMsg = `第 ${idx + 1} 张：缺少 ${inp.name}`;
+            }
+          }
+        }
+
+        if (!valid) {
+          setRunState({ status: 'error', error: errorMsg });
+          return;
+        }
+
+        // Execute with a dedicated setRunState that also stores in batchResults
+        await new Promise<void>((resolve) => {
+          runWorkflowExecute(
+            selectedWorkflow,
+            idxInputs,
+            (updater) => {
+              setRunState(updater);
+              // Capture final result after execution
+              const state = typeof updater === 'function' ? updater(useRunStore.getState().runState) : updater;
+              if (state.status === 'done' && state.result) {
+                setBatchResults((prev) => ({ ...prev, [idx]: state.result as Record<string, unknown> }));
+              }
+              if (state.status === 'done' || state.status === 'error' || state.status === 'cancelled') {
+                resolve();
+              }
+            },
+            paramValues,
+            { onLog: addExecutionLog }
+          );
+        });
+
+        // Check if cancelled via AbortSignal — stop the batch
+        const currentState = useRunStore.getState().runState;
+        if (currentState.status === 'cancelled' || currentState.status === 'error') {
+          return;
+        }
+      }
+
+      setRunState((prev) => ({ ...prev, status: 'done' }));
+      return;
+    }
+
+    // ── Single execution ──────────────────────────────────────────────────────────
     const configInputs = selectedWorkflow.config.inputs;
     if (configInputs && configInputs.length > 0) {
       for (const ci of configInputs) {
-        const effectiveValue = inputValues[`${ci.nodeId}:out`] ?? '';
+        const v = inputValues[`${ci.nodeId}:out`];
+        const effectiveValue: string = typeof v === 'string' ? v : '';
         if (!effectiveValue.trim()) {
           setRunState({ status: 'error', error: `请填写必填项：${ci.label}` });
           return;
@@ -152,17 +272,19 @@ export const WorkflowRunPage: React.FC = () => {
       }
     } else {
       for (const inp of selectedWorkflow.inputs) {
-        if (inp.required && inp.visible) {
-          const effectiveValue = inputValues[inp.id] ?? (inp.defaultValue != null ? String(inp.defaultValue) : '');
-          if (!effectiveValue.trim()) {
-            setRunState({ status: 'error', error: `请填写必填项：${inp.name}` });
-            return;
-          }
+        if (!inp.required || !inp.visible) continue;
+        const v = inputValues[inp.id];
+        const effectiveValue: string = typeof v === 'string' ? v : (v != null ? String(v) : '');
+        if (!effectiveValue.trim()) {
+          setRunState({ status: 'error', error: `请填写必填项：${inp.name}` });
+          return;
         }
       }
     }
 
-    // Delegate to shared runWorkflow module
+    setBatchResults({});
+    setBatchTotal(0);
+    setBatchCurrent(0);
     await runWorkflowExecute(
       selectedWorkflow,
       inputValues as Record<string, unknown>,
@@ -179,6 +301,29 @@ export const WorkflowRunPage: React.FC = () => {
       status: prev.status === 'running' ? 'cancelling' : prev.status,
     }));
   }, [setRunState]);
+
+  // ── Batch ZIP download ──────────────────────────────────────────────────────────
+  const handleDownloadZip = useCallback(async () => {
+    if (!selectedWorkflow || Object.keys(batchResults).length === 0 || !effectiveOutputs.length) return;
+    const items: { resultValue: unknown; filename: string }[] = [];
+    for (const [idxStr, nodeResult] of Object.entries(batchResults)) {
+      const idx = Number(idxStr);
+      for (const out of effectiveOutputs) {
+        const resolved = resolveOutputValueForZip(out.id, nodeResult);
+        if (resolved) {
+          items.push({
+            resultValue: resolved,
+            filename: `${selectedWorkflow.name}_${String(idx + 1).padStart(3, '0')}_${out.name}`,
+          });
+        }
+      }
+    }
+    if (items.length === 0) {
+      console.warn('[handleDownloadZip] No valid image data found in batch results');
+      return;
+    }
+    await downloadZipPack(items, `${selectedWorkflow.name}_批量结果`);
+  }, [selectedWorkflow, batchResults, effectiveOutputs]);
 
   // Guard: no workflow loaded
   if (!selectedWorkflow) {
@@ -219,6 +364,11 @@ export const WorkflowRunPage: React.FC = () => {
           result: runState.result as Record<string, unknown> | undefined,
           error: runState.error,
         }}
+        batchResults={batchResults}
+        batchTotal={batchTotal}
+        batchCurrent={batchCurrent}
+        hasBatch={hasBatch}
+        onDownloadZip={hasBatch && runState.status === 'done' ? handleDownloadZip : undefined}
       />
     </UserLayout>
   );

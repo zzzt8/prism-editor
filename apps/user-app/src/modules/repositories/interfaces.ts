@@ -18,6 +18,7 @@ export interface IPublishedWorkflowRepository {
   listPublished(): Promise<PublishedWorkflowMeta[]>;
   getPublished(_sourceId: string): Promise<PublishedWorkflow>;
   savePublished(_published: PublishedWorkflow): Promise<void>;
+  updateWorkflowMeta(_sourceId: string, _patch: { name?: string; description?: string }): Promise<void>;
   deletePublished(_sourceId: string): Promise<void>;
 }
 

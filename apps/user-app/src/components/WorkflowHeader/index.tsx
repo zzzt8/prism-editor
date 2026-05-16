@@ -8,6 +8,7 @@
  */
 
 import React from 'react';
+import { Box } from 'lucide-react';
 
 interface WorkflowHeaderProps {
   title: string;
@@ -24,38 +25,41 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
 }) => {
   return (
     <>
-      {/* Back button */}
-      <button className="ua-back-btn" onClick={onBack}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <polyline points="15 18 9 12 15 6" />
-        </svg>
-        返回
-      </button>
-
-      {/* Logo — dev-tool style */}
-      <div className="wf-logo-group" style={{ flexShrink: 0 }}>
-        <div className="wf-logo-icon">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-            <polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5" />
-            <circle cx="12" cy="12" r="3" fill="white" stroke="none" />
+      {/* ── Left Zone ─────────────────────────── */}
+      <div className="wf-header-left">
+        {/* Back button */}
+        <button className="ua-back-btn" onClick={onBack}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="15 18 9 12 15 6" />
           </svg>
+          返回
+        </button>
+
+        {/* Logo — dev-tool style */}
+        <div className="wf-logo-group">
+          <div className="wf-logo-icon">
+            <Box size={16} />
+          </div>
+          <span className="wf-logo-text">Prism Editor</span>
         </div>
-        <span className="wf-logo-text">Prism Editor</span>
-      </div>
 
-      {/* Separator */}
-      <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: 15, flexShrink: 0 }}>/</span>
+        {/* Separator */}
+        <span className="wf-sep">/</span>
 
-      {/* Title group */}
-      <div className="ua-run-title-group">
-        <h1 className="ua-run-title">{title}</h1>
+        {/* Title */}
+        <span className="wf-workflow-name">{title}</span>
+
+        {/* Version badge */}
         {version && (
           <span className="ua-run-version">v{version}</span>
         )}
       </div>
 
+      {/* ── Right Zone ────────────────────────── */}
       {description && (
-        <p className="ua-run-desc">{description}</p>
+        <div className="wf-header-right">
+          <span className="ua-run-desc">{description}</span>
+        </div>
       )}
     </>
   );
