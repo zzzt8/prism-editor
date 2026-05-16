@@ -64,10 +64,9 @@ export const DebugTab: React.FC<DebugTabProps> = ({ nodeId }) => {
   const _executionStatus = useCanvasStore((s) => s._executionStatus);
   const _currentNodeId = useCanvasStore((s) => s._currentNodeId);
 
+  // Hooks must be called before any early returns
   const node = nodes.find((n) => n.id === nodeId);
-  if (!node) return null;
-
-  const { executionResult, executionError } = node.data;
+  const { executionResult, executionError } = node?.data ?? {};
   const isRunning = _currentNodeId === nodeId && _executionStatus === 'running';
 
   // Determine execution state
@@ -86,7 +85,7 @@ export const DebugTab: React.FC<DebugTabProps> = ({ nodeId }) => {
     error:   { label: '错误',    color: '#f87171', dot: '#f87171' },
   }[execState];
 
-  // Timing data
+  // Timing data - always called, handle null case inside
   const timingData = useMemo((): { durationMs: number } | null => {
     if (!executionResult) return null;
     const r = executionResult as Record<string, unknown>;
@@ -97,10 +96,10 @@ export const DebugTab: React.FC<DebugTabProps> = ({ nodeId }) => {
     return { durationMs: duration as number };
   }, [executionResult]);
 
-  // Input snapshot
+  // Input snapshot - always called
   const inputSnapshot = useMemo((): Record<string, unknown> => {
-    return (node.data.params as Record<string, unknown>) ?? {};
-  }, [node.data.params]);
+    return (node?.data.params as Record<string, unknown>) ?? {};
+  }, [node?.data.params]);
 
   // Output snapshot
   const outputSnapshot: Record<string, unknown> | null = (executionResult as Record<string, unknown>) ?? null;
@@ -109,6 +108,8 @@ export const DebugTab: React.FC<DebugTabProps> = ({ nodeId }) => {
   const errorInfo: { message: string } | null = executionError ? { message: String(executionError) } : null;
 
   const hasAnyData = timingData || Object.keys(inputSnapshot).length > 0 || outputSnapshot || errorInfo;
+
+  if (!node) return null;
 
   return (
     <div className="inspector-panel-body debug-tab">
