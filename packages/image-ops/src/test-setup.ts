@@ -110,11 +110,11 @@ class FileReaderPolyfill {
   private _readyState = 0;
   private _listeners: Map<string, EventListenerOrEventListenerObject[]> = new Map();
    
-  onload: ((_this: FileReaderPolyfill, _ev: ProgressEvent<FileReaderPolyfill>) => void) | null = null;
-  
-  onerror: ((_this: FileReaderPolyfill, _ev: ProgressEvent<FileReaderPolyfill>) => void) | null = null;
-  
-  onloadend: ((_this: FileReaderPolyfill, _ev: ProgressEvent<FileReaderPolyfill>) => void) | null = null;
+  onload: ((_ev: ProgressEvent<FileReaderPolyfill>) => void) | null = null;
+ 
+  onerror: ((_ev: ProgressEvent<FileReaderPolyfill>) => void) | null = null;
+ 
+  onloadend: ((_ev: ProgressEvent<FileReaderPolyfill>) => void) | null = null;
 
   get result() { return this._result; }
   get error() { return this._error as DOMException | null; }

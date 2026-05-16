@@ -131,14 +131,14 @@ export class TaskQueue {
         .then((_result) => {
           clearTimeout(timeoutId);
           this.runningTasks.delete(taskId);
-          task.onComplete?.(result as T);
-          resolve(result as T);
+          task.onComplete?.(_result as T);
+          resolve(_result as T);
         })
         .catch((_err) => {
           clearTimeout(timeoutId);
           this.runningTasks.delete(taskId);
-          task.onError?.(err instanceof Error ? err : new Error(String(err)));
-          reject(err instanceof Error ? err : new Error(String(err)));
+          task.onError?.(_err instanceof Error ? _err : new Error(String(_err)));
+          reject(_err instanceof Error ? _err : new Error(String(_err)));
         })
         .finally(() => {
           this.processNext();

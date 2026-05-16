@@ -382,7 +382,7 @@ export const loadImageExecutor: NodeExecutor = async (
 
   // Store imageRef in execution context
   if (imageRef.type !== 'data-url') {
-    ctx.imageRefs.set(imageRef.url, imageRef);
+    _ctx.imageRefs.set(imageRef.url, imageRef);
     getImageMemoryManager().registerRef(imageRef);
   }
 

@@ -32,7 +32,7 @@ export class ImageMemoryManager {
     this.registry.set(url, { count: 1, ref });
     this.memoryUsed += estimatedSize;
 
-    if (this.memoryUsed > this.memoryLimit) {
+    if (this.memoryUsed > this._memoryLimit) {
       this.evictLargest();
     }
 
@@ -75,7 +75,7 @@ export class ImageMemoryManager {
     );
 
     for (const [url] of entries) {
-      if (this.memoryUsed <= this.memoryLimit * 0.7) break; // stop at 70% capacity
+      if (this.memoryUsed <= this._memoryLimit * 0.7) break; // stop at 70% capacity
       this.revoke(url);
     }
   }
