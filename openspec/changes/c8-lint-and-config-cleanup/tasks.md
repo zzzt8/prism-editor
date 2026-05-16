@@ -180,11 +180,11 @@
 
 #### 3.9 其他模块
 
-- [ ] T3.9a: 清理 `WorkflowsView.tsx` 中未使用的 `newWorkflow` 赋值
+- [x] T3.9a: 清理 `WorkflowsView.tsx` 中未使用的 `newWorkflow` 赋值
   - 文件: `apps/dev-tool/src/components/WorkflowsView.tsx`
   - 删除或注释 `newWorkflow` 赋值
 
-- [ ] T3.9b: 清理 `mappers/` 下未使用的导入
+- [x] T3.9b: 清理 `mappers/` 下未使用的导入
   - 文件: `apps/dev-tool/src/modules/editor/mappers/canvasToWorkflow.ts`、`workflowToCanvas.ts`、`workflowToPublished.ts`
   - 删除未使用的 `WorkflowMetadata`、`EditorWorkflowMeta`、`Connection`、`PublishedParamDefinition`、`PortDataType`、`NodeDefinition` 导入
 
