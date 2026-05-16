@@ -23,7 +23,7 @@ interface ExecutorWorker {
   worker: Worker;
   executorId: string;
   pendingRequests: Map<string, {
-    resolve: (value: unknown) => void;
+    resolve: (_value: unknown) => void;
     reject: (error: Error) => void;
     timeoutId: ReturnType<typeof setTimeout>;
   }>;

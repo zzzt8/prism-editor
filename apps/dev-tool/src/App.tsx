@@ -18,7 +18,6 @@ import { PublicRoute, AuthGuard } from './components/AuthGuard';
 import { useAuthStore } from './store/authStore';
 import { useCanvasStore } from './store/canvasStore';
 import {
-  indexedDBStorageAdapter,
   IndexedDBStorageAdapter,
   ApiStorageAdapter,
   activeStorageAdapter,

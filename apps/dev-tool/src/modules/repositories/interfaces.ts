@@ -17,10 +17,10 @@ export interface PublishedWorkflowMeta {
 
 export interface IWorkflowRepository {
   list(): Promise<WorkflowMeta[]>;
-  get(id: string): Promise<Workflow>;
+  get(_id: string): Promise<Workflow>;
   save(workflow: Workflow): Promise<void>;
-  delete(id: string): Promise<void>;
-  exists(id: string): Promise<boolean>;
+  delete(_id: string): Promise<void>;
+  exists(_id: string): Promise<boolean>;
 }
 
 export interface WorkflowVersion {

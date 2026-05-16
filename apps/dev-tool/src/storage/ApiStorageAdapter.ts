@@ -42,7 +42,7 @@ interface AuthUser {
   updatedAt?: string;
 }
 
-interface AuthTokens {
+interface _AuthTokens {
   accessToken: string;
   refreshToken: string;
 }
