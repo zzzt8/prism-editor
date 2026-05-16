@@ -14,21 +14,21 @@ opsx_meta:
   - layer: editor
   - verify: `pnpm lint --filter=@prism/dev-tool`
 
-- [ ] T2: Fix `SettingsPanel.tsx` — move 7 conditional Hook calls to top level
+- [x] T2: Fix `SettingsPanel.tsx` — move 7 conditional Hook calls to top level
   - layer: editor
   - verify: `pnpm lint --filter=@prism/dev-tool`
 
-- [ ] T3: Fix `DebugTab.tsx` — move 2 conditional useMemo calls to top level
+- [x] T3: Fix `DebugTab.tsx` — move 2 conditional useMemo calls to top level
   - layer: editor
   - verify: `pnpm lint --filter=@prism/dev-tool`
 
-- [ ] T4: Fix `InfoPanel.tsx` — move 5 conditional useMemo calls to top level
+- [x] T4: Fix `InfoPanel.tsx` — move 5 conditional useMemo calls to top level
   - layer: editor
   - verify: `pnpm lint --filter=@prism/dev-tool`
 
 ## Phase 2: Fix Unused Variables (Batch)
 
-- [ ] T5: Run `pnpm lint:fix` to auto-fix simple unused variable issues
+- [x] T5: Run `pnpm lint:fix` to auto-fix simple unused variable issues
   - layer: editor, engine, ui-skin
   - verify: Check remaining errors manually
 
