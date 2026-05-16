@@ -66,7 +66,9 @@ export const DebugTab: React.FC<DebugTabProps> = ({ nodeId }) => {
 
   // Hooks must be called before any early returns
   const node = nodes.find((n) => n.id === nodeId);
-  const { executionResult, executionError } = node?.data ?? {};
+  const nodeData = node?.data;
+  const executionResult = nodeData?.executionResult;
+  const executionError = nodeData?.executionError;
   const isRunning = _currentNodeId === nodeId && _executionStatus === 'running';
 
   // Determine execution state

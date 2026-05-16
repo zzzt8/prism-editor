@@ -92,7 +92,7 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ nodeId }) => {
     return (portId: string) => connectedSourceHandles.has(portId) || connectedTargetHandles.has(portId);
   }, [edges, nodeId]);
 
-  const category = definition?.category ?? nodeType;
+  const category = definition?.category ?? nodeType ?? '';
 
   // Format last execution time
   const lastExecutionTime = useMemo(() => {

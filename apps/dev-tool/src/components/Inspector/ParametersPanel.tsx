@@ -265,7 +265,10 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({ nodeId }) => {
   const [aliasValue, setAliasValue] = useState('');
 
   const node = nodes.find((n) => n.id === nodeId);
-  const { definition, params, label } = node?.data ?? {};
+  const nodeData = node?.data;
+  const definition = nodeData?.definition;
+  const params = nodeData?.params ?? {};
+  const label = nodeData?.label ?? '';
 
   const handleAliasSave = useCallback(() => {
     updateNodeData(nodeId, { label: aliasValue });

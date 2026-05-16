@@ -30,8 +30,13 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ nodeId }) => {
   const [displayMode, setDisplayMode] = useState<'expanded' | 'minimized'>('expanded');
 
   const node = nodes.find((n) => n.id === nodeId);
-
-  const { label, nodeType, extraInputs, minimized, bypassed, pinned } = node?.data ?? {};
+  const nodeData = node?.data;
+  const label = nodeData?.label ?? '';
+  const nodeType = nodeData?.nodeType ?? '';
+  const extraInputs = nodeData?.extraInputs;
+  const minimized = nodeData?.minimized;
+  const bypassed = nodeData?.bypassed;
+  const pinned = nodeData?.pinned;
   const isComposite = nodeType === 'composite';
 
   // Sync state when node data changes
