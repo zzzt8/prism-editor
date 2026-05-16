@@ -219,7 +219,7 @@ function AppRoutes() {
 
 function App() {
   const fetchCurrentUser = useAuthStore((s) => s.fetchCurrentUser);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const _isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   useEffect(() => {
     fetchCurrentUser().catch(() => {});
