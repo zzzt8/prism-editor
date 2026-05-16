@@ -38,7 +38,7 @@ export interface ExecutionService {
     _workflowMeta: EditorWorkflowMeta,
     _nodes: EditorCanvasNode[],
     _edges: EditorCanvasEdge[],
-    options: ExecuteOptions
+    _options: ExecuteOptions
   ) => Promise<ExecutionResult>;
   cancel: () => void;
 }
@@ -47,10 +47,10 @@ export function createExecutionService(): ExecutionService {
   let activeController: AbortController | null = null;
 
   return {
-    async execute(_workflowMeta, _nodes, _edges, options) {
+    async execute(_workflowMeta, _nodes, _edges, _options) {
       // Create a fresh AbortController for this execution run
       activeController = new AbortController();
-      const { onProgress, signal, laneConfig } = options;
+      const { onProgress, signal, laneConfig } = _options;
       const { globalRegistry } = await import('@prism/core');
       const { WorkflowExecutor } = await import('@prism/workflow-core');
 
@@ -77,16 +77,16 @@ export function createExecutionService(): ExecutionService {
 
       const executor = new WorkflowExecutor(executors);
       const _workflow = {
-        id: workflowMeta.id,
-        name: workflowMeta.name,
-        version: workflowMeta.version,
-        nodes: nodes.map((n) => ({
+        id: _workflowMeta.id,
+        name: _workflowMeta.name,
+        version: _workflowMeta.version,
+        nodes: _nodes.map((n) => ({
           id: n.id,
           type: n.data.nodeType,
           position: n.position,
           params: n.data.params,
         })),
-        connections: edges
+        connections: _edges
           .filter((e) => e.sourceHandle && e.targetHandle)
           .map((e) => ({
             id: e.id,
