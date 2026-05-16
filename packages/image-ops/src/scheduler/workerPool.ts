@@ -249,7 +249,10 @@ export class WorkerPool {
     if (this.taskQueue.length === 0) return;
 
     const worker = this.selectWorker();
-    if (!worker) return;
+    if (!worker) {
+      console.log(`[WorkerPool] processQueue: no idle worker available, ${this.taskQueue.length} tasks still queued`);
+      return;
+    }
 
     // Sort queue by priority (higher first) and then by queued time
     this.taskQueue.sort((a, b) => {
@@ -265,6 +268,7 @@ export class WorkerPool {
     this.stats.totalWaitTime += waitTime;
     this.stats.waitCount++;
 
+    console.log(`[WorkerPool] processQueue: assigning task ${item.task.id} to worker ${worker.id} (waited ${waitTime}ms)`);
     this.executeOnWorker(worker, item);
   }
 
@@ -290,8 +294,10 @@ export class WorkerPool {
     worker.status = 'busy';
     worker.lastUsed = Date.now();
 
+    console.log(`[WorkerPool] executeOnWorker: task ${item.task.id} starting on ${worker.id} (total queued: ${this.taskQueue.length})`);
     try {
       const result = await item.task.execute();
+      console.log(`[WorkerPool] executeOnWorker: task ${item.task.id} completed on ${worker.id}`);
       worker.status = 'idle';
       this.stats.totalTasksProcessed++;
       item.resolve(result);
@@ -415,15 +421,19 @@ export class WorkerPool {
     if (worker?.proxy) {
       worker.status = 'busy';
       worker.lastUsed = Date.now();
+      console.log(`[WorkerPool] execute: using worker ${worker.id} (${this.getStats().idleWorkers}/${this.getStats().totalWorkers} idle)`);
       try {
         const result = await fn(worker.proxy);
+        console.log(`[WorkerPool] execute: worker ${worker.id} completed`);
         return this.transferResult(result);
       } finally {
         worker.status = 'idle';
+        console.log(`[WorkerPool] execute: worker ${worker.id} now idle`);
         this.processQueue();
       }
     }
 
+    console.log(`[WorkerPool] execute: no idle worker, queueing task (${this.taskQueue.length} queued, ${this.getStats().busyWorkers} busy)`);
     // No idle worker — queue the task
     return new Promise<T>((resolve, reject) => {
       const task: WorkerTask<T> = {

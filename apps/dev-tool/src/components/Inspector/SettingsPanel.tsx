@@ -1,7 +1,7 @@
 // SettingsPanel — node settings panel for Inspector
 // Handles: alias edit, display mode, extra inputs (Composite), bypass, pin
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
 import type { PortDataType } from '@prism/shared-types';
 import { Image, CircleDot, Hash, Type, ToggleLeft, FileText } from 'lucide-react';
@@ -25,15 +25,20 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ nodeId }) => {
   const addExtraInput = useCanvasStore((s) => s.addExtraInput);
   const removeExtraInput = useCanvasStore((s) => s.removeExtraInput);
 
+  // Hooks must be called before any early returns
+  const [aliasValue, setAliasValue] = useState('');
+  const [displayMode, setDisplayMode] = useState<'expanded' | 'minimized'>('expanded');
+
   const node = nodes.find((n) => n.id === nodeId);
-  if (!node) return null;
 
-  const { label, nodeType, extraInputs, minimized, bypassed, pinned } = node.data;
+  const { label, nodeType, extraInputs, minimized, bypassed, pinned } = node?.data ?? {};
+  const isComposite = nodeType === 'composite';
 
-  const [aliasValue, setAliasValue] = useState(label);
-  const [displayMode, setDisplayMode] = useState<'expanded' | 'minimized'>(
-    minimized ? 'minimized' : 'expanded'
-  );
+  // Sync state when node data changes
+  useEffect(() => {
+    setAliasValue(label ?? '');
+    setDisplayMode(minimized ? 'minimized' : 'expanded');
+  }, [label, minimized]);
 
   const handleAliasBlur = useCallback(() => {
     if (aliasValue.trim() && aliasValue !== label) {
