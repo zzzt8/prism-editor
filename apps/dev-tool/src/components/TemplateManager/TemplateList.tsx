@@ -13,7 +13,7 @@ interface TemplateListProps {
   selectedId?: string;
 }
 
-export const TemplateList: React.FC<TemplateListProps> = ({ onSelect, onDelete, selectedId }) => {
+export const TemplateList: React.FC<TemplateListProps> = ({ onSelect, onDelete: _onDelete, selectedId }) => {
   const [templates, setTemplates] = useState<TemplateSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

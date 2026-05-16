@@ -39,7 +39,7 @@ interface TemplateVersionDiffResult {
   };
 }
 
-interface DiffFn {
+interface _DiffFn {
   (_fromId: string, _toId: string): Promise<TemplateVersionDiffResult>;
 }
 
