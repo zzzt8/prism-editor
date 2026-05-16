@@ -47,9 +47,11 @@ function WorkflowCard({ meta, onClick }: { meta: PublishedWorkflowMeta; onClick:
     <div className="ua-workflow-card" onClick={onClick} role="button" tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && onClick()}>
       <div className="ua-card-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <rect x="3" y="3" width="18" height="18" rx="3" />
-          <path d="M8 12h8M8 8h8M8 16h5" />
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <rect x="3" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="3" width="7" height="7" rx="1" />
+          <rect x="3" y="14" width="7" height="7" rx="1" />
+          <rect x="14" y="14" width="7" height="7" rx="1" />
         </svg>
       </div>
       <div className="ua-card-info">
@@ -182,12 +184,19 @@ export const WorkflowListPage: React.FC = () => {
       <FileInputTrigger inputRef={fileInputRef} onFile={handleFileImport} />
 
       <div className="ua-page-header">
-        <div className="ua-logo">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5" />
-          </svg>
-          <span>Prism Editor</span>
+        {/* Logo — dev-tool style */}
+        <div className="wf-logo-group">
+          <div className="wf-logo-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+              <polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5" />
+              <circle cx="12" cy="12" r="3" fill="white" stroke="none" />
+            </svg>
+          </div>
+          <span className="wf-logo-text">Prism Editor</span>
         </div>
+
+        <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: 15, flexShrink: 0 }}>/</span>
+
         <div className="ua-page-title">
           <h1>已发布工作流</h1>
           <p>选择一个工作流开始处理图像</p>
@@ -216,11 +225,13 @@ export const WorkflowListPage: React.FC = () => {
           <div className="ua-empty-state">
             <div className="ua-empty-icon">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-                <rect x="3" y="3" width="18" height="18" rx="3" />
-                <path d="M8 12h8M8 8h8M8 16h5" />
+                <rect x="3" y="3" width="7" height="7" rx="1" />
+                <rect x="14" y="3" width="7" height="7" rx="1" />
+                <rect x="3" y="14" width="7" height="7" rx="1" />
+                <rect x="14" y="14" width="7" height="7" rx="1" />
               </svg>
             </div>
-            <div className="ua-empty-title">暂无可用工作流</div>
+            <div className="ua-empty-title">创建你的第一个工作流</div>
             <div className="ua-empty-sub">请在开发者工具中创建并发布工作流</div>
             <div className="ua-empty-actions">
               <button
