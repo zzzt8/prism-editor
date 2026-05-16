@@ -26,12 +26,36 @@
 
 import React, { useState, useEffect } from 'react';
 import type { PublishedOutput, ExecutionProgress } from '@prism/shared-types';
+import type { RunState } from '../../modules/runner/runStore';
 import {
   downloadSingleImage,
   downloadMultiSize,
   downloadZipPack,
   extractImageData,
 } from '../../utils/download';
+import { useRunStore } from '../../modules/runner/runStore';
+
+// ── Resolve output value from execution result ──────────────────────────────────
+
+/**
+ * Resolve the output value for a given output ID.
+ *
+ * Dev-tool publishes outputs with {nodeId}:{portId} format (e.g. "node-4:image").
+ * The executor stores results keyed by nodeId only (e.g. "node-4").
+ * This function handles both cases for backward compatibility.
+ */
+function resolveOutputValue(outputId: string, results: Record<string, unknown> | undefined): unknown {
+  if (!results) return undefined;
+
+  // Direct match (e.g. "node-4:image")
+  if (outputId in results) return results[outputId];
+
+  // Fallback: try nodeId only (e.g. "node-4" when outputId is "node-4:image")
+  const [nodeId] = outputId.split(':');
+  if (nodeId in results) return results[nodeId];
+
+  return undefined;
+}
 
 // ── MIME → file extension map ────────────────────────────────────────────────
 
@@ -90,7 +114,7 @@ function ProgressDisplay({ progress }: { progress?: ExecutionProgress }) {
 
 // ── Result summary ────────────────────────────────────────────────────────────
 
-function ResultSummary({ progress }: { progress?: ExecutionProgress }) {
+function ResultSummary({ progress, runStatus }: { progress?: ExecutionProgress; runStatus: RunState['status'] }) {
   const totalMs = (() => {
     if (!progress?.results?.length) return null;
     const first = progress.results[0];
@@ -103,7 +127,8 @@ function ResultSummary({ progress }: { progress?: ExecutionProgress }) {
 
   const nodeCount = progress?.results?.length ?? 0;
   const hasNodeErrors = progress?.results?.some((r) => r.status === 'error') ?? false;
-  const isSuccess = progress?.status === 'done' && !hasNodeErrors;
+  // Use runState.status as source of truth; progress may be undefined after execution completes.
+  const isSuccess = runStatus === 'done' && !hasNodeErrors;
 
   if (isSuccess) {
     return (
@@ -170,7 +195,7 @@ function ZipPackBar({ outputs, results, workflowName }: ZipPackBarProps) {
 
   const validItems = outputs
     .map((out) => ({
-      resultValue: results[out.id],
+      resultValue: resolveOutputValue(out.id, results),
       filename: `${workflowName}_${out.name.replace(/[^a-z0-9\u4e00-\u9fa5]/gi, '_')}`,
     }))
     .filter((item) => extractImageData(item.resultValue) !== null);
@@ -471,9 +496,28 @@ export const OutputSection: React.FC<OutputSectionProps> = ({
   workflowName,
   runState,
 }) => {
+  const executionLogs = useRunStore((s) => s.executionLogs);
+  const downloadExecutionLogs = useRunStore((s) => s.downloadExecutionLogs);
+  const hasLogs = executionLogs.length > 0;
+
   return (
     <>
       <h2 className="ua-section-title">执行结果</h2>
+
+      {hasLogs && (
+        <button
+          className="ua-export-logs-btn"
+          onClick={downloadExecutionLogs}
+          title="导出执行日志"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          导出日志
+        </button>
+      )}
 
       {runState.status === 'idle' && (
         <div className="ua-result-empty">
@@ -505,7 +549,7 @@ export const OutputSection: React.FC<OutputSectionProps> = ({
       )}
 
       {runState.status === 'done' && (
-        <ResultSummary progress={runState.progress} />
+        <ResultSummary progress={runState.progress} runStatus={runState.status} />
       )}
 
       {runState.status === 'done' && runState.result && (
@@ -522,7 +566,7 @@ export const OutputSection: React.FC<OutputSectionProps> = ({
             <OutputPreview
               key={out.id}
               out={out}
-              resultValue={runState.result?.[out.id]}
+              resultValue={resolveOutputValue(out.id, runState.result)}
               workflowName={workflowName}
             />
           ))}

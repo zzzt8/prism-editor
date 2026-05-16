@@ -314,10 +314,13 @@ export class WorkflowExecutor {
       options.onProgress(ctx.progress);
     }
 
+    // Extract first error message for the result
+    const firstError = [...ctx.results.values()].find((r) => r.status === 'error');
     return {
       workflowId: workflow.id,
       status: hasError ? 'error' : 'done',
       results: Object.fromEntries(nodeResults),
+      error: firstError?.error,
       ...(typeErrors.length > 0 && { typeErrors }),
     };
   }

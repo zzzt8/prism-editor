@@ -44,7 +44,7 @@ function WorkflowErrorState() {
 // ── Main Run Page ────────────────────────────────────────────────────────────
 export const WorkflowRunPage: React.FC = () => {
   const { selectedWorkflow } = useSelectedWorkflowStore();
-  const { runState, setRunState } = useRunStore();
+  const { runState, setRunState, addExecutionLog } = useRunStore();
 
   // User input values: keyed by PublishedInput.id
   const [inputValues, setInputValues] = useState<Record<string, string>>({});
@@ -152,8 +152,14 @@ export const WorkflowRunPage: React.FC = () => {
     }
 
     // Delegate to shared runWorkflow module
-    await runWorkflowExecute(selectedWorkflow, inputValues as Record<string, unknown>, setRunState, paramValues);
-  }, [selectedWorkflow, inputValues, setRunState]);
+    await runWorkflowExecute(
+      selectedWorkflow,
+      inputValues as Record<string, unknown>,
+      setRunState,
+      paramValues,
+      { onLog: addExecutionLog }
+    );
+  }, [selectedWorkflow, inputValues, setRunState, addExecutionLog]);
 
   const handleCancel = useCallback(() => {
     cancelWorkflow();
