@@ -7,11 +7,12 @@ import nodeRoutes from './routes/nodes.js';
 import versionRoutes from './routes/versions.js';
 
 const appPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-  await fastify.register(authMiddleware);
-  await fastify.register(workflowRoutes);
-  await fastify.register(publishedRoutes);
-  await fastify.register(nodeRoutes);
-  await fastify.register(versionRoutes);
+  await fastify.register(authMiddleware, async () => {
+    await fastify.register(workflowRoutes);
+    await fastify.register(publishedRoutes);
+    await fastify.register(nodeRoutes);
+    await fastify.register(versionRoutes);
+  });
 };
 
 // Global error handler for validation and Prisma errors
