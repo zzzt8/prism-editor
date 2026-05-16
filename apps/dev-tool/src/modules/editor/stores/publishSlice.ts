@@ -10,14 +10,14 @@ export interface PublishSlice {
   isDialogOpen: boolean;
 
   // Actions
-  setParamDefinitions: (defs: PublishedParamDefinition[]) => void;
-  updateParamDefinition: (nodeId: string, paramId: string, patch: Partial<PublishedParamDefinition>) => void;
-  setVisibility: (nodeId: string, paramId: string, visibility: 'visible' | 'hidden' | 'locked') => void;
-  setControlType: (nodeId: string, paramId: string, controlType: ParamControlType) => void;
-  setLabel: (nodeId: string, paramId: string, label: string) => void;
-  setDefaultValue: (nodeId: string, paramId: string, defaultValue: unknown) => void;
+  setParamDefinitions: (_defs: PublishedParamDefinition[]) => void;
+  updateParamDefinition: (_nodeId: string, _paramId: string, _patch: Partial<PublishedParamDefinition>) => void;
+  setVisibility: (_nodeId: string, _paramId: string, _visibility: 'visible' | 'hidden' | 'locked') => void;
+  setControlType: (_nodeId: string, _paramId: string, _controlType: ParamControlType) => void;
+  setLabel: (_nodeId: string, _paramId: string, _label: string) => void;
+  setDefaultValue: (_nodeId: string, _paramId: string, _defaultValue: unknown) => void;
   clearParamDefinitions: () => void;
-  setDialogOpen: (open: boolean) => void;
+  setDialogOpen: (_open: boolean) => void;
 }
 
 export const usePublishStore = create<PublishSlice>((set) => ({

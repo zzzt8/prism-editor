@@ -21,16 +21,16 @@ export interface SelectionSlice {
   contextMenu: ContextMenuState | null;
 
   // Selection operations
-  selectNode: (id: string, multi?: boolean) => void;
+  selectNode: (_id: string, _multi?: boolean) => void;
   clearSelection: () => void;
-  removeSelectedNodes: (nodeIds: string[]) => EditorCanvasNode[];
-  removeSelectedEdges: (edgeIds: string[]) => void;
+  removeSelectedNodes: (_nodeIds: string[]) => EditorCanvasNode[];
+  removeSelectedEdges: (_edgeIds: string[]) => void;
 
   // Clipboard operations
-  copyNodes: (nodeIds: string[], nodes: EditorCanvasNode[]) => void;
-  cutNodes: (nodeIds: string[], nodes: EditorCanvasNode[], edges: { source: string; target: string }[]) => void;
-  pasteNodes: (position: { x: number; y: number }) => EditorCanvasNode[] | null;
+  copyNodes: (_nodeIds: string[], _nodes: EditorCanvasNode[]) => void;
+  cutNodes: (_nodeIds: string[], _nodes: EditorCanvasNode[], _edges: { source: string; target: string }[]) => void;
+  pasteNodes: (_position: { x: number; y: number }) => EditorCanvasNode[] | null;
 
   // Context menu
-  setContextMenu: (menu: ContextMenuState | null) => void;
+  setContextMenu: (_menu: ContextMenuState | null) => void;
 }

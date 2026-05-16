@@ -8,7 +8,7 @@ export interface InspectorSlice {
   inspectorTab: InspectorTab;
 
   // Operations
-  openInspector: (tab: InspectorTab, nodeId?: string) => void;
+  openInspector: (_tab: InspectorTab, _nodeId?: string) => void;
 }
 
 export function createInspectorSlice(): Pick<InspectorSlice, keyof InspectorSlice> {

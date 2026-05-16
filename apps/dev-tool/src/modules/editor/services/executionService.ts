@@ -28,16 +28,16 @@ export const DEFAULT_LANE_CONFIG: LaneConfig = {
 };
 
 export interface ExecuteOptions {
-  onProgress: (progress: ExecutionProgress) => void;
+  onProgress: (_progress: ExecutionProgress) => void;
   signal: AbortSignal;
   laneConfig?: Partial<LaneConfig>;
 }
 
 export interface ExecutionService {
   execute: (
-    workflowMeta: EditorWorkflowMeta,
-    nodes: EditorCanvasNode[],
-    edges: EditorCanvasEdge[],
+    _workflowMeta: EditorWorkflowMeta,
+    _nodes: EditorCanvasNode[],
+    _edges: EditorCanvasEdge[],
     options: ExecuteOptions
   ) => Promise<ExecutionResult>;
   cancel: () => void;
@@ -135,9 +135,9 @@ export function getExecutionService(): ExecutionService {
 
 // Default instance (lazy initialization)
 export const executionService: ExecutionService = {
-  async execute(workflowMeta, nodes, edges, options) {
+  async execute(_workflowMeta, _nodes, _edges, _options) {
     const svc = getExecutionService();
-    return svc.execute(workflowMeta, nodes, edges, options);
+    return svc.execute(_workflowMeta, _nodes, _edges, _options);
   },
   cancel() {
     const svc = getExecutionService();

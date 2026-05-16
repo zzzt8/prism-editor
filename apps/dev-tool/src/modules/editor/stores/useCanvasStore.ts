@@ -161,44 +161,44 @@ interface CanvasState {
 
   // ── Graph operations ────────────────────────────────────────────────────────
 
-  addNode: (type: string, position: { x: number; y: number }) => void;
-  removeNode: (id: string) => void;
-  updateNodePosition: (id: string, position: { x: number; y: number }) => void;
-  updateNodeParams: (id: string, params: Record<string, unknown>) => void;
-  updateNodeData: (id: string, data: Partial<EditorCanvasNode['data']>) => void;
-  setNodes: (nodes: EditorCanvasNode[]) => void;
-  setEdges: (edges: EditorCanvasEdge[]) => void;
-  onNodesChange: (changes: NodeChange[]) => void;
-  onEdgesChange: (changes: EdgeChange[]) => void;
-  onConnect: (connection: ReactFlowConnection) => ConnectionValidation;
+  addNode: (_type: string, _position: { x: number; y: number }) => void;
+  removeNode: (_id: string) => void;
+  updateNodePosition: (_id: string, _position: { x: number; y: number }) => void;
+  updateNodeParams: (_id: string, _params: Record<string, unknown>) => void;
+  updateNodeData: (_id: string, _data: Partial<EditorCanvasNode['data']>) => void;
+  setNodes: (_nodes: EditorCanvasNode[]) => void;
+  setEdges: (_edges: EditorCanvasEdge[]) => void;
+  onNodesChange: (_changes: NodeChange[]) => void;
+  onEdgesChange: (_changes: EdgeChange[]) => void;
+  onConnect: (_connection: ReactFlowConnection) => ConnectionValidation;
 
   // Group operations
-  addGroup: (label: string, nodeIds: string[]) => string;
-  removeGroup: (groupId: string) => void;
-  updateGroup: (groupId: string, updates: Partial<Omit<EditorNodeGroup, 'id'>>) => void;
-  moveGroup: (groupId: string, deltaX: number, deltaY: number) => void;
+  addGroup: (_label: string, _nodeIds: string[]) => string;
+  removeGroup: (_groupId: string) => void;
+  updateGroup: (_groupId: string, _updates: Partial<Omit<EditorNodeGroup, 'id'>>) => void;
+  moveGroup: (_groupId: string, _deltaX: number, _deltaY: number) => void;
 
   // ── Selection operations ─────────────────────────────────────────────────────
 
-  selectNode: (id: string, multi?: boolean) => void;
+  selectNode: (_id: string, _multi?: boolean) => void;
   clearSelection: () => void;
   removeSelectedNodes: () => void;
   removeSelectedEdges: () => void;
 
   // Clipboard operations
-  copyNodes: (nodeIds: string[]) => void;
-  cutNodes: (nodeIds: string[]) => void;
-  pasteNodes: (position: { x: number; y: number }) => void;
+  copyNodes: (_nodeIds: string[]) => void;
+  cutNodes: (_nodeIds: string[]) => void;
+  pasteNodes: (_position: { x: number; y: number }) => void;
 
   // Context menu
-  setContextMenu: (menu: ContextMenuState | null) => void;
+  setContextMenu: (_menu: ContextMenuState | null) => void;
 
   // ── Draft operations ─────────────────────────────────────────────────────────
 
-  setViewport: (viewport: { x: number; y: number; zoom: number }) => void;
-  setWorkflowMeta: (meta: EditorWorkflowMeta) => void;
-  renameWorkflow: (name: string) => Promise<void>;
-  setDraggingFromPanel: (dragging: boolean) => void;
+  setViewport: (_viewport: { x: number; y: number; zoom: number }) => void;
+  setWorkflowMeta: (_meta: EditorWorkflowMeta) => void;
+  renameWorkflow: (_name: string) => Promise<void>;
+  setDraggingFromPanel: (_dragging: boolean) => void;
   markDirty: () => void;
   markClean: () => void;
 
@@ -207,36 +207,36 @@ interface CanvasState {
   _triggerAutoSave: () => void;
   newWorkflow: () => void;
   toWorkflow: () => import('@prism/shared-types').Workflow;
-  loadWorkflow: (workflow: import('@prism/shared-types').Workflow) => void;
-  loadFromTemplate: (template: Template) => void;
-  saveWorkflow: (workflowName?: string) => Promise<void>;
-  loadWorkflowFromStore: (id: string) => Promise<void>;
+  loadWorkflow: (_workflow: import('@prism/shared-types').Workflow) => void;
+  loadFromTemplate: (_template: Template) => void;
+  saveWorkflow: (_workflowName?: string) => Promise<void>;
+  loadWorkflowFromStore: (_id: string) => Promise<void>;
   exportWorkflowAsJson: () => Promise<void>;
-  importWorkflowFromFile: (file: File) => Promise<void>;
+  importWorkflowFromFile: (_file: File) => Promise<void>;
 
   // ── Execution operations ─────────────────────────────────────────────────────
 
-  updateNodeExecution: (id: string, result?: Record<string, unknown>, error?: string) => void;
+  updateNodeExecution: (_id: string, _result?: Record<string, unknown>, _error?: string) => void;
   executeWorkflow: () => Promise<{ status: 'done' | 'error' | 'cancelled'; error?: string }>;
   cancelExecution: () => void;
   clearExecution: () => void;
-  recordNodeTiming: (nodeId: string, nodeType: string, duration?: number, status?: NodeTiming['status']) => void;
+  recordNodeTiming: (_nodeId: string, _nodeType: string, _duration?: number, _status?: NodeTiming['status']) => void;
 
   // ── Inspector operations ─────────────────────────────────────────────────────
 
-  openInspector: (tab: InspectorTab, nodeId?: string) => void;
+  openInspector: (_tab: InspectorTab, _nodeId?: string) => void;
 
   // ── Dynamic extra inputs ────────────────────────────────────────────────────
 
-  addExtraInput: (nodeId: string, port: { id: string; name: string; type: 'image'; dataType: PortDataType }) => void;
-  removeExtraInput: (nodeId: string, portId: string) => void;
+  addExtraInput: (_nodeId: string, _port: { id: string; name: string; type: 'image'; dataType: PortDataType }) => void;
+  removeExtraInput: (_nodeId: string, _portId: string) => void;
 
   // ── Snippet operations ──────────────────────────────────────────────────────
 
-  snippetSave: (name: string, description: string, selectedNodeIds: string[]) => Promise<void>;
+  snippetSave: (_name: string, _description: string, _selectedNodeIds: string[]) => Promise<void>;
   snippetList: () => Promise<SnippetSummary[]>;
-  insertSnippet: (snippetId: string, position: { x: number; y: number }) => Promise<void>;
-  deleteSnippet: (id: string) => Promise<void>;
+  insertSnippet: (_snippetId: string, _position: { x: number; y: number }) => Promise<void>;
+  deleteSnippet: (_id: string) => Promise<void>;
 }
 
 // ─── Initialize services ─────────────────────────────────────────────────────
@@ -246,7 +246,7 @@ const workflowRepository = new WorkflowRepository(indexedDBStorageAdapter);
 const snippetRepository = new SnippetRepository();
 
 // Initialize autosave service
-const autosave = autosaveService;
+const _autosave = autosaveService;
 initAutosaveService(workflowRepository);
 
 // ─── Store implementation ─────────────────────────────────────────────────────
@@ -620,7 +620,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   },
 
   cutNodes(nodeIds) {
-    const { nodes, edges } = get();
+    const { nodes } = get();
     const nodesToCut = nodes.filter((n) => nodeIds.includes(n.id));
     set((s) => ({
       clipboard: nodesToCut,
@@ -822,7 +822,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     }));
 
     // New workflow meta (fresh identity, independent from template snapshot)
-    const now = new Date().toISOString();
+    const _now = new Date().toISOString();
 
     set({
       nodes: canvasNodes,
@@ -910,7 +910,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
     // Note: Version is managed by the server. We send the current version as baseRevision
     // for conflict detection, but the server will generate the new version.
-    const baseRevision = workflowMeta.version;
+    const _baseRevision = workflowMeta.version;
 
     const workflow: import('@prism/shared-types').Workflow = {
       id: workflowMeta.id,
@@ -1188,7 +1188,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   openInspector(tab, nodeId) {
     set({ inspectorTab: tab });
     if (nodeId) {
-      set((s) => ({ selectedNodeIds: [nodeId] }));
+      set(() => ({ selectedNodeIds: [nodeId] }));
     }
   },
 

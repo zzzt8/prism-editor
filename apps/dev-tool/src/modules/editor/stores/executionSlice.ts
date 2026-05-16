@@ -13,11 +13,11 @@ export interface ExecutionSlice {
 
   // Operations
   startExecution: () => void;
-  updateProgress: (nodeId: string | null) => void;
-  finishExecution: (status: 'done' | 'error' | 'cancelled', error?: string) => void;
+  updateProgress: (_nodeId: string | null) => void;
+  finishExecution: (_status: 'done' | 'error' | 'cancelled', _error?: string) => void;
   cancelExecution: () => void;
   clearExecution: () => void;
-  setAbortHandler: (abort: () => void) => void;
+  setAbortHandler: (_abort: () => void) => void;
 }
 
 export function createExecutionSlice(): Pick<ExecutionSlice, keyof ExecutionSlice> {

@@ -5,9 +5,9 @@ import type { EditorWorkflowMeta } from '@prism/shared-types';
 
 export interface ImportExportService {
   exportAsJson: (
-    workflowMeta: EditorWorkflowMeta,
-    nodes: EditorCanvasNode[],
-    edges: EditorCanvasEdge[]
+    _workflowMeta: EditorWorkflowMeta,
+    _nodes: EditorCanvasNode[],
+    _edges: EditorCanvasEdge[]
   ) => Promise<void>;
   importFromFile: (_file: File) => Promise<{
     nodes: EditorCanvasNode[];
@@ -17,7 +17,7 @@ export interface ImportExportService {
 }
 
 interface JsonFileAdapterType {
-  importFromFile: (file: File) => Promise<import('@prism/shared-types').Workflow>;
+  importFromFile: (_file: File) => Promise<import('@prism/shared-types').Workflow>;
 }
 
 export function createImportExportService(

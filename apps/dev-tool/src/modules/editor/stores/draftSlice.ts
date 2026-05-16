@@ -10,11 +10,11 @@ export interface DraftSlice {
   isDraggingFromPanel: boolean;
 
   // Operations
-  setWorkflowMeta: (meta: EditorWorkflowMeta) => void;
-  renameWorkflow: (name: string) => EditorWorkflowMeta | null;
-  setViewport: (viewport: { x: number; y: number; zoom: number }) => void;
-  setDraggingFromPanel: (dragging: boolean) => void;
-  loadDraft: (meta: EditorWorkflowMeta, viewport?: { x: number; y: number; zoom: number }) => void;
+  setWorkflowMeta: (_meta: EditorWorkflowMeta) => void;
+  renameWorkflow: (_name: string) => EditorWorkflowMeta | null;
+  setViewport: (_viewport: { x: number; y: number; zoom: number }) => void;
+  setDraggingFromPanel: (_dragging: boolean) => void;
+  loadDraft: (_meta: EditorWorkflowMeta, _viewport?: { x: number; y: number; zoom: number }) => void;
   newDraft: () => void;
 }
 

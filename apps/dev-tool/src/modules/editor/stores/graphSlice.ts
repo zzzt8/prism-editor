@@ -24,25 +24,25 @@ export interface GraphSlice {
   groups: EditorNodeGroup[];
 
   // Node operations
-  addNode: (type: string, position: { x: number; y: number }) => string | undefined;
-  removeNode: (id: string) => void;
-  updateNodePosition: (id: string, position: { x: number; y: number }) => void;
-  updateNodeData: (id: string, data: Partial<EditorCanvasNode['data']>) => void;
-  setNodes: (nodes: EditorCanvasNode[]) => void;
-  setEdges: (edges: EditorCanvasEdge[]) => void;
-  onNodesChange: (changes: NodeChange[]) => void;
-  onEdgesChange: (changes: EdgeChange[]) => void;
+  addNode: (_type: string, _position: { x: number; y: number }) => string | undefined;
+  removeNode: (_id: string) => void;
+  updateNodePosition: (_id: string, _position: { x: number; y: number }) => void;
+  updateNodeData: (_id: string, _data: Partial<EditorCanvasNode['data']>) => void;
+  setNodes: (_nodes: EditorCanvasNode[]) => void;
+  setEdges: (_edges: EditorCanvasEdge[]) => void;
+  onNodesChange: (_changes: NodeChange[]) => void;
+  onEdgesChange: (_changes: EdgeChange[]) => void;
 
   // Connection validation
-  onConnect: (connection: ReactFlowConnection) => ConnectionValidation;
+  onConnect: (_connection: ReactFlowConnection) => ConnectionValidation;
 
   // Group operations
-  addGroup: (label: string, nodeIds: string[]) => string;
-  removeGroup: (groupId: string) => void;
-  updateGroup: (groupId: string, updates: Partial<Omit<EditorNodeGroup, 'id'>>) => void;
-  moveGroup: (groupId: string, deltaX: number, deltaY: number) => void;
+  addGroup: (_label: string, _nodeIds: string[]) => string;
+  removeGroup: (_groupId: string) => void;
+  updateGroup: (_groupId: string, _updates: Partial<Omit<EditorNodeGroup, 'id'>>) => void;
+  moveGroup: (_groupId: string, _deltaX: number, _deltaY: number) => void;
 
   // Bulk operations (for loading workflow)
-  loadGraph: (nodes: EditorCanvasNode[], edges: EditorCanvasEdge[], groups?: EditorNodeGroup[]) => void;
+  loadGraph: (_nodes: EditorCanvasNode[], _edges: EditorCanvasEdge[], _groups?: EditorNodeGroup[]) => void;
   clearGraph: () => void;
 }
