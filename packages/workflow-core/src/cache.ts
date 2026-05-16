@@ -11,18 +11,18 @@ export interface CacheEntry extends CacheConfig {
 
 export interface ExecutionCache {
   get(
-    _workflowId: string,
-    _nodeId: string,
-    _inputsHash: string
+    workflowId: string,
+    nodeId: string,
+    inputsHash: string
   ): CacheEntry | undefined;
   set(
-    _workflowId: string,
-    _nodeId: string,
-    _inputsHash: string,
-    _result: Record<string, unknown>
+    workflowId: string,
+    nodeId: string,
+    inputsHash: string,
+    result: Record<string, unknown>
   ): void;
   clear(): void;
-  clearWorkflow(_workflowId: string): void;
+  clearWorkflow(workflowId: string): void;
 }
 
 export interface CacheOptions {
@@ -62,8 +62,8 @@ export function createCache(options: CacheOptions = {}): ExecutionCache {
   }
 
   return {
-    get(_workflowId: string, _nodeId: string, _inputsHash: string): CacheEntry | undefined {
-      const key = makeKey(_workflowId, _nodeId, _inputsHash);
+    get(workflowId: string, nodeId: string, inputsHash: string): CacheEntry | undefined {
+      const key = makeKey(workflowId, nodeId, inputsHash);
       const found = store.get(key);
       if (!found) return undefined;
       const now = Date.now();
@@ -76,17 +76,17 @@ export function createCache(options: CacheOptions = {}): ExecutionCache {
     },
 
     set(
-      _workflowId: string,
-      _nodeId: string,
-      _inputsHash: string,
+      workflowId: string,
+      nodeId: string,
+      inputsHash: string,
       result: Record<string, unknown>
     ): void {
-      const key = makeKey(_workflowId, _nodeId, _inputsHash);
+      const key = makeKey(workflowId, nodeId, inputsHash);
       const now = Date.now();
       evictStale(now);
       evictLRU();
       store.set(key, {
-        entry: { result, timestamp: now, accessCount: ++accessCounter, inputsHash: _inputsHash },
+        entry: { result, timestamp: now, accessCount: ++accessCounter, inputsHash },
         key,
       });
     },
@@ -95,7 +95,7 @@ export function createCache(options: CacheOptions = {}): ExecutionCache {
       store.clear();
     },
 
-    clearWorkflow(_workflowId: string): void {
+    clearWorkflow(workflowId: string): void {
       for (const key of store.keys()) {
         if (key.startsWith(`${workflowId}:`)) {
           store.delete(key);

@@ -275,7 +275,7 @@ export class WorkflowExecutor {
 
         promises.push(
           this.executeNode(nodeId, node, nodeInputs, ctx, options, cache, typeErrors).then(
-            ({ outputs }) => ({ nodeId, outputs })
+            ({ outputs, failed }) => ({ nodeId, outputs, failed })
           )
         );
       }
