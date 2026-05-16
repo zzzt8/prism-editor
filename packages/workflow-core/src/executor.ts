@@ -11,7 +11,6 @@ import type { LaneConfig } from '@prism/shared-types';
 import { topologicalSort, getTopologicalLevels } from './topo-sort';
 import { createExecutionContext, recordNodeResult, checkAborted } from './context';
 import type { ExecutionContext } from './context';
-import { createCache } from './cache';
 import type { ExecutionCache } from './cache';
 import { TypeValidator, TypeMismatchError, type TypeCheckingOptions } from './type-validator';
 

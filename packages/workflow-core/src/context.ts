@@ -20,14 +20,14 @@ export interface ExecutionContext {
   progress: ExecutionProgress;
   signal?: AbortSignal;
   /** Register an async task and return a cancel function */
-  registerAsyncTask?: (task: AsyncTask) => () => void;
+  registerAsyncTask?: (_task: AsyncTask) => () => void;
   /** Check if an async task is still pending */
-  isTaskPending?: (taskId: string) => boolean;
+  isTaskPending?: (_taskId: string) => boolean;
   /**
    * Assert a required input is present. Throws with a descriptive message if missing.
    * Use this at the top of any executor that has required input ports.
    */
-  requireInput: <T>(key: string, nodeName: string) => T;
+  requireInput: <T>(_key: string, _nodeName: string) => T;
 }
 
 export interface ExecutionContextOptions {

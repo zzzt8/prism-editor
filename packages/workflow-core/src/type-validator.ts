@@ -38,7 +38,7 @@ export interface TypeCheckingOptions {
    * Called for each type warning/diagnostic.
    * Defaults to console.warn in dev, no-op in prod.
    */
-  onDiagnostic?: (msg: string) => void;
+  onDiagnostic?: (_msg: string) => void;
 }
 
 /** Internal error thrown when type validation fails */
