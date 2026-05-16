@@ -10,7 +10,7 @@ opsx_meta:
 
 ## Phase 1: Fix React Hook Conditional Calls (Critical)
 
-- [ ] T1: Fix `ParametersPanel.tsx` — move 4 conditional Hook calls to top level
+- [x] T1: Fix `ParametersPanel.tsx` — move 4 conditional Hook calls to top level
   - layer: editor
   - verify: `pnpm lint --filter=@prism/dev-tool`
 
