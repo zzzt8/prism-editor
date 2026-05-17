@@ -35,7 +35,7 @@
 ## Phase 3: 验证
 
 - [x] T9: 运行 `npx tsc --noEmit`，确认 exit code 0
-- [ ] T10: 运行 `pnpm test`，确认测试仍然通过
+- [x] T10: 运行 `pnpm test`，确认测试仍然通过
 
 ## Rollback
 
