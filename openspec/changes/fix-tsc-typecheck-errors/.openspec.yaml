@@ -1,0 +1,7 @@
+schema: prism-workflow
+created: 2026-05-17
+change_class: medium
+artifacts:
+  - proposal.md
+  - design.md
+  - tasks.md
