@@ -294,6 +294,7 @@ prism-editor/
 
 查看 `git log` 获取完整历史。主要更新：
 
+- **2026-05**: 修复 TypeScript 类型检查错误，优化代码库质量
 - **IndexedDB 存储**：替换 localStorage，支持更大存储容量
 - **自定义节点支持**：导入和运行自定义节点包
 - **用户认证系统**：JWT 认证，注册/登录/登出流程
@@ -304,8 +305,14 @@ prism-editor/
 
 ---
 
+## 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+---
+
 ## 许可证
 
 MIT License
 
-Copyright (c) 2024 Prism Editor
+Copyright (c) 2024-2026 Prism Editor
