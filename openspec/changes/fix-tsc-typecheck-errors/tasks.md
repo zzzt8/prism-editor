@@ -9,8 +9,8 @@
 
 ### vendor/openspec-cli
 
-- [ ] T3: 如果 vendor 需独立安装，执行 `cd vendor/openspec-cli && pnpm install`
-- [ ] T4: 如果 vendor 依赖 workspace，确认 pnpm workspace 配置
+- [x] T3: 如果 vendor 需独立安装，执行 `cd vendor/openspec-cli && pnpm install`
+- [x] T4: 如果 vendor 依赖 workspace，确认 pnpm workspace 配置
 
 ### apps/dev-tool
 
