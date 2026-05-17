@@ -1,0 +1,17 @@
+[phases.setup]
+nixPkgs = ["nodejs_24", "pnpm"]
+
+[phases.install]
+cmds = [
+  "corepack enable",
+  "corepack prepare pnpm@9.1.0 --activate",
+  "pnpm install"
+]
+
+[phases.build]
+cmds = [
+  "pnpm -r build"
+]
+
+[start]
+cmd = "pnpm --filter ./apps/dev-tool run preview -- --host 0.0.0.0 --port ${PORT:-4173}"
