@@ -1,7 +1,7 @@
 import type { PublishedWorkflow } from '@prism/shared-types';
 import type { ValidatedPublishedWorkflow } from '../utils/workflowImport';
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 interface ApiPublishedWorkflowRecord {
   id: string;

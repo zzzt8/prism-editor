@@ -77,15 +77,23 @@ export class CanvasPool {
     if (existing && !existing.inUse) {
       // Check TTL
       if (now - existing.lastUsed <= this.config.ttlMs) {
-        existing.inUse = true;
-        existing.lastUsed = now;
-        this.moveToFront(key);
-        this.stats.hits++;
-        this.stats.availableCanvases--;
-        this.stats.activeCanvases++;
-        // CRITICAL: Clear canvas immediately to prevent stale data from previous use
-        existing.ctx.clearRect(0, 0, width, height);
-        return existing.canvas;
+          // Validate dimensions match - if not, evict and recreate
+          if (existing.canvas.width !== width || existing.canvas.height !== height) {
+            console.warn('[CanvasPool] Canvas dimensions mismatch, evicting:', 
+              existing.canvas.width, existing.canvas.height, 'vs requested', width, height);
+            this.removeCanvas(key);
+          } else {
+            console.log('[CanvasPool] Reusing canvas from pool:', width, 'x', height);
+            existing.inUse = true;
+            existing.lastUsed = now;
+            this.moveToFront(key);
+            this.stats.hits++;
+            this.stats.availableCanvases--;
+            this.stats.activeCanvases++;
+            // CRITICAL: Clear canvas immediately to prevent stale data from previous use
+            existing.ctx.clearRect(0, 0, width, height);
+            return existing.canvas;
+          }
       } else {
         // TTL expired, remove and recreate
         this.removeCanvas(key);
@@ -97,6 +105,7 @@ export class CanvasPool {
     this.evictIfNeeded();
 
     const canvas = new OffscreenCanvas(width, height);
+    console.log('[CanvasPool] Created new canvas:', width, 'x', height, 'actual:', canvas.width, canvas.height);
     const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
 
     const pooled: PooledCanvas = {

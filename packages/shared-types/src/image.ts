@@ -46,6 +46,7 @@ export interface TransformOptions {
   cropY?: number;
   cropWidth?: number;
   cropHeight?: number;
+  cropMode?: 'center' | 'top-left';
 }
 
 export interface ExportOptions {

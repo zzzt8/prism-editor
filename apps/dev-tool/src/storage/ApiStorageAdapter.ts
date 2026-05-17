@@ -1,7 +1,7 @@
 import type { StorageAdapter, WorkflowMeta, NodeDefinition, Connection } from '@prism/shared-types';
 import type { Workflow } from '@prism/shared-types';
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 interface ApiWorkflow {
   id: string;

@@ -781,43 +781,86 @@ export class ImageWorker {
         cropY = 0,
         cropWidth = 0,
         cropHeight = 0,
+        cropMode = 'top-left',
       } = options;
 
-      const srcWidth = cropWidth > 0 ? cropWidth : image.width;
-      const srcHeight = cropHeight > 0 ? cropHeight : image.height;
-      const dstWidth = Math.round(srcWidth * scaleX);
-      const dstHeight = Math.round(srcHeight * scaleY);
+      console.log('[Worker Transform] options:', JSON.stringify(options));
+      console.log('[Worker Transform] image:', image.width, 'x', image.height);
 
-      srcCanvas = this.getCanvas(srcWidth, srcHeight);
+      // Scale first, then crop (user's desired order)
+      // Full image dimensions after scaling
+      const scaledWidth = Math.round(image.width * scaleX);
+      const scaledHeight = Math.round(image.height * scaleY);
+
+      // Determine final output dimensions
+      // If cropWidth/cropHeight specified, use those as output size; otherwise use scaled dimensions
+      const finalWidth = cropWidth > 0 ? cropWidth : scaledWidth;
+      const finalHeight = cropHeight > 0 ? cropHeight : scaledHeight;
+
+      // Calculate crop offset based on cropMode
+      let effectiveCropX: number;
+      let effectiveCropY: number;
+      if (cropMode === 'center') {
+        effectiveCropX = cropX !== 0 ? cropX : Math.round((scaledWidth - finalWidth) / 2);
+        effectiveCropY = cropY !== 0 ? cropY : Math.round((scaledHeight - finalHeight) / 2);
+      } else {
+        effectiveCropX = cropX;
+        effectiveCropY = cropY;
+      }
+
+      console.log('[Worker Transform] scaled:', scaledWidth, 'x', scaledHeight);
+      console.log('[Worker Transform] final:', finalWidth, 'x', finalHeight);
+      console.log('[Worker Transform] crop:', effectiveCropX, 'x', effectiveCropY, '(mode:', cropMode, ')');
+
+      // Create scaled canvas and load image
+      srcCanvas = this.getCanvas(scaledWidth, scaledHeight);
       const srcCtx = srcCanvas.getContext('2d')!;
-      srcCtx.putImageData(image, cropX > 0 || cropY > 0 ? -cropX : 0, cropY > 0 || cropY > 0 ? -cropY : 0);
+      // First put image data, then create bitmap for scaling
+      const tempCanvas = this.getCanvas(image.width, image.height);
+      const tempCtx = tempCanvas.getContext('2d')!;
+      tempCtx.putImageData(image, 0, 0);
+      const tempBitmap = await createImageBitmap(tempCanvas);
+      this.releaseCanvas(image.width, image.height);
 
-      dstCanvas = this.getCanvas(dstWidth, dstHeight);
+      srcCtx.imageSmoothingEnabled = true;
+      srcCtx.imageSmoothingQuality = 'high';
+      srcCtx.clearRect(0, 0, scaledWidth, scaledHeight);
+      srcCtx.drawImage(tempBitmap, 0, 0, scaledWidth, scaledHeight);
+      tempBitmap.close();
+
+      // Create final output canvas
+      dstCanvas = this.getCanvas(finalWidth, finalHeight);
       const dstCtx = dstCanvas.getContext('2d', { willReadFrequently: true })!;
 
       // Apply transformations
       dstCtx.save();
-      dstCtx.clearRect(0, 0, dstWidth, dstHeight);
+      dstCtx.clearRect(0, 0, finalWidth, finalHeight);
 
       if (rotation !== 0) {
-        dstCtx.translate(dstWidth / 2, dstHeight / 2);
+        dstCtx.translate(finalWidth / 2, finalHeight / 2);
         dstCtx.rotate((rotation * Math.PI) / 180);
-        dstCtx.translate(-dstWidth / 2, -dstHeight / 2);
+        dstCtx.translate(-finalWidth / 2, -finalHeight / 2);
       }
 
       if (translateX !== 0 || translateY !== 0) {
         dstCtx.translate(translateX, translateY);
       }
 
+      // Draw the cropped region from scaled image to final canvas
       dstCtx.imageSmoothingEnabled = true;
       dstCtx.imageSmoothingQuality = 'high';
-      dstCtx.drawImage(srcCanvas, 0, 0, dstWidth, dstHeight);
+      dstCtx.drawImage(
+        srcCanvas,
+        effectiveCropX, effectiveCropY, finalWidth, finalHeight,  // source rect (from scaled image)
+        0, 0, finalWidth, finalHeight                              // dest rect
+      );
       dstCtx.restore();
 
-      const result = dstCtx.getImageData(0, 0, dstWidth, dstHeight);
+      const result = dstCtx.getImageData(0, 0, finalWidth, finalHeight);
+      console.log('[Worker Transform] result:', finalWidth, 'x', finalHeight);
       this.processedCount++;
 
-      return { data: result, width: dstWidth, height: dstHeight, colorSpace: result.colorSpace };
+      return { data: result, width: finalWidth, height: finalHeight, colorSpace: result.colorSpace };
     } catch (err) {
       this.lastError = err instanceof Error ? err.message : 'Transform failed';
       this.errorCount++;

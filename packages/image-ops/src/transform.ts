@@ -49,7 +49,10 @@ export function transformImage(
     scaleX !== 1 ||
     scaleY !== 1 ||
     rotation !== 0 ||
-    (cropWidth > 0 && cropHeight > 0);
+    cropX !== 0 ||
+    cropY !== 0 ||
+    cropWidth !== 0 ||
+    cropHeight !== 0;
 
   if (!needsTransform) {
     return imageData;
@@ -254,6 +257,9 @@ export const transformExecutor: NodeExecutor = async (
   const cropWidth = (params['cropWidth'] as number) ?? 0;
   const cropHeight = (params['cropHeight'] as number) ?? 0;
 
+  console.log('[Transform] params:', JSON.stringify(params));
+  console.log('[Transform] extracted values:', { scaleX, scaleY, cropWidth, cropHeight, translateX, translateY, rotation });
+
   const workerRunner = getTransformWorkerRunner();
   const transformOptions: TransformOptions = {
     scaleX,
@@ -269,6 +275,7 @@ export const transformExecutor: NodeExecutor = async (
   let transformed: ImageData;
   if (workerRunner.isWorkerAvailable()) {
     const workerResult = await workerRunner.transform(image, transformOptions);
+    console.log('[Transform] worker result:', workerResult);
     transformed = workerResult.data;
   } else {
     transformed = transformImage(image, transformOptions);
@@ -300,6 +307,7 @@ export const transformExecutor: NodeExecutor = async (
   previewCtx.putImageData(finalData, 0, 0);
   const previewRef = await generatePreviewUrl(finalData, finalW, finalH);
 
+  console.log('[Transform] finalW, finalH:', finalW, finalH, 'transformed.size:', transformed.width, transformed.height);
   return {
     type: 'transform',
     image: {

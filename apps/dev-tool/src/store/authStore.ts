@@ -4,8 +4,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { syncStorageTokens } from '../storage';
 
-const API_BASE = '/api';
 const AUTH_FETCH_TIMEOUT_MS = 20_000;
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 async function authFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const controller = new AbortController();
