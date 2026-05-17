@@ -26,7 +26,7 @@
 
 ### vendor/openspec-cli/test
 
-- [ ] T12: 修复 vendor/openspec-cli/test/ 中的 5 个 TS 类型错误
+- [x] T12: 修复 vendor/openspec-cli/test/ 中的 5 个 TS 类型错误
   - config-profile.test.ts (行 133, 147)
   - config.test.ts (行 259)
   - instruction-loader.test.ts (行 478)
@@ -34,7 +34,7 @@
 
 ## Phase 3: 验证
 
-- [ ] T9: 运行 `npx tsc --noEmit`，确认 exit code 0
+- [x] T9: 运行 `npx tsc --noEmit`，确认 exit code 0
 - [ ] T10: 运行 `pnpm test`，确认测试仍然通过
 
 ## Rollback
