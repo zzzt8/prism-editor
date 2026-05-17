@@ -17,3 +17,4 @@ export * from './snippet';
 export * from './execution-log';
 export * from './auth';
 export * from './runtime-protocol';
+export { createId } from './createId';

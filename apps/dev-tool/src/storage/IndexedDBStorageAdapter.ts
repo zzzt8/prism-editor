@@ -3,6 +3,7 @@
 
 import type { StorageAdapter, WorkflowMeta, NodeDefinition, Connection } from '@prism/shared-types';
 import type { Workflow } from '@prism/shared-types';
+import { createId } from '@prism/shared-types';
 
 const DB_NAME = 'prism-editor';
 const DB_VERSION = 2; // Bump version for new stores
@@ -151,7 +152,7 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
     description?: string,
     category?: string
   ): Promise<{ meta: WorkflowMeta; content: Workflow }> {
-    const id = crypto.randomUUID();
+    const id = createId();
     const now = new Date().toISOString();
 
     const meta: WorkflowMeta = {
@@ -241,7 +242,7 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
 
   // Save a new version of the workflow
   private async saveVersion(workflow: Workflow): Promise<void> {
-    const id = crypto.randomUUID();
+    const id = createId();
     const version: VersionRecord = {
       id,
       workflowId: workflow.id,

@@ -6,6 +6,7 @@
 
 import type { PublishedWorkflow, ExecutionLog, NodeTiming } from '@prism/shared-types';
 import type { ExecutionProgress } from '@prism/shared-types';
+import { createId } from '@prism/shared-types';
 import type { RunState } from './runStore';
 
 export type RunStateSetter = (_state: RunState | ((_prev: RunState) => RunState)) => void;
@@ -35,7 +36,7 @@ export async function execute(
   // Initialize execution log
   const startedAt = Date.now();
   _currentLog = {
-    runId: crypto.randomUUID(),
+    runId: createId(),
     workflowId: workflow.id,
     inputs,
     outputs: {},

@@ -119,7 +119,7 @@ export class TemplateVersionRepository implements ITemplateVersionRepository {
   }
 
   async create(templateId: string, content: Template): Promise<TemplateVersion> {
-    const id = crypto.randomUUID();
+    const id = createId();
     const record: IndexedDBVersion = {
       id,
       templateId,

@@ -1,4 +1,4 @@
-// PublishDialog - configure and publish a workflow for the user-facing app
+﻿// PublishDialog - configure and publish a workflow for the user-facing app
 //
 // Refactored v3:
 // - Manual selection: developer explicitly toggles which nodes are exposed as user inputs.
@@ -11,6 +11,7 @@ import { useCanvasStore } from '../../store/canvasStore';
 import type { CanvasNode } from '../../store/canvasStore';
 import { usePublishStore } from '../../modules/editor/stores/publishSlice';
 import type { ParamControlType } from '@prism/shared-types';
+import { createId } from '@prism/shared-types';
 import type {
   PublishedWorkflow,
   PublishedInput,
@@ -24,6 +25,9 @@ import type {
 import { Check, Copy, Download, Upload, X, Plus, ChevronDown, ChevronRight, Pencil, CircleDot, Eye, EyeOff, Lock } from 'lucide-react';
 import { copyWorkflowToClipboard, downloadWorkflowAsFile } from '../../utils/workflowExport';
 import { inferControlType, inferOptions } from '../../modules/editor/mappers/workflowToPublished';
+import { useAuthStore } from '../../store/authStore';
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 const CHANNEL_NAME = 'prism-publish-channel';
 
@@ -386,6 +390,37 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     setEditingEntryKey(null);
     setEditingLabel('');
   };
+  // ── Publish to server ────────────────────────────────────────────────────────
+  const publishToServer = async (pw: PublishedWorkflow, workflowId: string): Promise<void> => {
+    const { accessToken } = useAuthStore.getState();
+    if (!accessToken) {
+      throw new Error('请先登录后再发布');
+    }
+
+    const response = await fetch(`${API_BASE}/published`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        workflowId,
+        publishedBy: pw.name,
+        content: JSON.stringify(pw),
+      }),
+    });
+
+    if (!response.ok) {
+      let msg = `发布失败: ${response.status}`;
+      try {
+        const body = await response.json();
+        if (body.error) msg = body.error;
+      } catch { /* ignore */ }
+      throw new Error(msg);
+    }
+  };
+
+
 
   // ── Validation & publish ────────────────────────────────────────────────
   const handlePublish = async () => {
@@ -470,7 +505,7 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     type: 'image' as PublishedOutput['type'],
   }));
   const pw: PublishedWorkflow = {
-    id: crypto.randomUUID(),
+    id: createId(),
     sourceId: workflowMeta.id,
     name: publishName.trim(),
     description: publishDesc.trim() || undefined,
@@ -481,6 +516,9 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     config,
     publishedAt: new Date().toISOString(),
   };
+
+      // Write to server (requires auth); user sees error if not logged in
+      await publishToServer(pw, workflowMeta.id);
 
       broadcastPublish(pw);
       setLastPublished(pw);

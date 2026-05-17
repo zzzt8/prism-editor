@@ -45,7 +45,7 @@ interface ApiListResponse {
   };
 }
 
-interface PublishedWorkflowListItem {
+export interface PublishedWorkflowMeta {
   sourceId: string;
   name: string;
   description?: string;
@@ -54,7 +54,6 @@ interface PublishedWorkflowListItem {
   publishedAt: string;
   inputCount: number;
   outputCount: number;
-  content: string;
 }
 
 export class UserAppStorageAdapter {
@@ -66,7 +65,7 @@ export class UserAppStorageAdapter {
 
   private async request<T>(url: string, options?: RequestInit): Promise<T> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     try {
       const response = await fetch(`${this.baseUrl}${url}`, {
@@ -105,7 +104,7 @@ export class UserAppStorageAdapter {
     }
   }
 
-  private parseWorkflowMeta(item: ApiPublishedWorkflowRecord): PublishedWorkflowListItem {
+  private parseWorkflowMeta(item: ApiPublishedWorkflowRecord): PublishedWorkflowMeta {
     let sourceName = item.workflow.name;
     let inputCount = 0;
     let outputCount = 0;
@@ -128,20 +127,17 @@ export class UserAppStorageAdapter {
       publishedAt: item.publishedAt,
       inputCount,
       outputCount,
-      content: item.content,
     };
   }
 
-  async listPublished(): Promise<PublishedWorkflowListItem[]> {
+  async listPublished(): Promise<PublishedWorkflowMeta[]> {
     const response = await this.request<ApiListResponse>('/published?limit=100');
     return response.data.map((item) => this.parseWorkflowMeta(item));
   }
 
   async loadPublished(sourceId: string): Promise<PublishedWorkflow> {
-    // Fetch all published workflows (list includes content)
     const response = await this.request<ApiListResponse>('/published?limit=100');
 
-    // Find the published workflow that references this workflow ID
     const published = response.data.find(
       (p) => p.workflowId === sourceId || p.workflow.id === sourceId
     );
@@ -149,11 +145,7 @@ export class UserAppStorageAdapter {
       throw new Error('Published workflow not found');
     }
 
-    // Parse the content stored in PublishedWorkflow.content
-    // The content should be a complete PublishedWorkflow JSON
     const workflow = JSON.parse(published.content) as PublishedWorkflow;
-
-    // Merge with metadata from the record if needed
     if (!workflow.sourceId) {
       workflow.sourceId = published.workflow.id;
     }
@@ -164,12 +156,7 @@ export class UserAppStorageAdapter {
     return workflow;
   }
 
-  /**
-   * Import a validated published workflow to the server.
-   * Saves and publishes the workflow via POST /api/published/import.
-   */
   async importWorkflow(workflow: ValidatedPublishedWorkflow): Promise<{ id: string }> {
-    // Serialize the complete PublishedWorkflow as the content
     const content = JSON.stringify(workflow);
 
     const response = await this.request<{ data: { id: string; workflowId: string } }>('/published/import', {
@@ -184,5 +171,13 @@ export class UserAppStorageAdapter {
     });
 
     return { id: response.data.workflowId };
+  }
+
+  async deletePublished(_sourceId: string): Promise<void> {
+    throw new Error('Delete is not available on the public API');
+  }
+
+  async updateWorkflowMeta(_sourceId: string, _patch: { name?: string; description?: string }): Promise<void> {
+    throw new Error('Update meta is not available on the public API');
   }
 }

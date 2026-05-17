@@ -2,6 +2,7 @@
 // Persistence-focused state that maps to EditorDraft
 
 import type { EditorWorkflowMeta } from '@prism/shared-types';
+import { createId } from '@prism/shared-types';
 
 export interface DraftSlice {
   // State
@@ -22,7 +23,7 @@ export function createDraftSlice(): Pick<DraftSlice, keyof DraftSlice> {
   return {
     // Initial state
     workflowMeta: {
-      id: crypto.randomUUID(),
+      id: createId(),
       name: 'Untitled Workflow',
       version: '1.0.0',
     },
@@ -59,7 +60,7 @@ export function createDraftSlice(): Pick<DraftSlice, keyof DraftSlice> {
     newDraft() {
       return {
         meta: {
-          id: crypto.randomUUID(),
+          id: createId(),
           name: 'Untitled Workflow',
           version: '1.0.0',
         },

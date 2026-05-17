@@ -9,16 +9,14 @@ import {
 } from '../schemas/published.js';
 
 const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-  // GET /api/published - List published workflows for current user
-  fastify.get('/published', { onRequest: [authenticate] }, async (request, reply) => {
+  // GET /api/published - List all published workflows (public read)
+  fastify.get('/published', async (request, reply) => {
     const query = PublishedWorkflowQuerySchema.parse(request.query);
     const { page, limit } = query;
     const skip = (page - 1) * limit;
-    const userId = (request.user as { userId: string }).userId;
 
     const [publishedWorkflows, total] = await Promise.all([
       prisma.publishedWorkflow.findMany({
-        where: { workflow: { userId } },
         skip,
         take: limit,
         orderBy: { publishedAt: 'desc' },
@@ -36,7 +34,7 @@ const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
           },
         },
       }),
-      prisma.publishedWorkflow.count({ where: { workflow: { userId } } }),
+      prisma.publishedWorkflow.count(),
     ]);
 
     return {
@@ -57,10 +55,9 @@ const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
     };
   });
 
-  // GET /api/published/:id - Get published workflow by id (owner only)
-  fastify.get('/published/:id', { onRequest: [authenticate] }, async (request, reply) => {
+  // GET /api/published/:id - Get published workflow by id (public read)
+  fastify.get('/published/:id', async (request, reply) => {
     const { id } = PublishedWorkflowParamsSchema.parse(request.params);
-    const userId = (request.user as { userId: string }).userId;
 
     const published = await prisma.publishedWorkflow.findUnique({
       where: { id },
@@ -69,7 +66,7 @@ const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
       },
     });
 
-    if (!published || published.workflow.userId !== userId) {
+    if (!published) {
       return reply.status(404).send({ error: 'Published workflow not found' });
     }
 

@@ -18,6 +18,7 @@ import { globalRegistry } from '@prism/core';
 import { PORT_TYPE_COLORS } from '../../../utils/portTypeStyles';
 import type { ContextMenuState } from './selectionSlice';
 import type { ExecutionLog, NodeTiming } from '@prism/shared-types';
+import { createId } from '@prism/shared-types';
 import { autosaveService, initAutosaveService, getAutosaveService } from '../services/autosaveService';
 import { getExecutionService } from '../services/executionService';
 import { indexedDBStorageAdapter } from '../../../storage';
@@ -267,10 +268,10 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   inspectorTab: 'parameters',
 
   // Initial state - draftSlice
-  workflowMeta: { id: crypto.randomUUID(), name: 'Untitled Workflow', version: '1.0.0' },
-  viewport: { x: 0, y: 0, zoom: 1 },
-  isDraggingFromPanel: false,
-  isDirty: false,
+      workflowMeta: { id: createId(), name: 'Untitled Workflow', version: '1.0.0' },
+      viewport: { x: 0, y: 0, zoom: 1 },
+      isDraggingFromPanel: false,
+      isDirty: false,
 
   // Initial state - executionSlice
   _executionStatus: 'idle',
@@ -472,7 +473,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const edgeColor = PORT_TYPE_COLORS[sourceType] ?? '#6b7280';
 
     const newEdge: EditorCanvasEdge = {
-      id: `edge-${crypto.randomUUID()}`,
+      id: `edge-${createId()}`,
       source: sourceId,
       sourceHandle: sourcePortId,
       target: targetId,
@@ -723,7 +724,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       groups: [],
       selectedNodeIds: [],
       selectedEdgeIds: [],
-      workflowMeta: { id: crypto.randomUUID(), name: 'Untitled Workflow', version: '1.0.0' },
+      workflowMeta: { id: createId(), name: 'Untitled Workflow', version: '1.0.0' },
       isDirty: false,
       isDraggingFromPanel: false,
       _executionStatus: 'idle',
@@ -829,7 +830,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       edges: canvasEdges,
       groups: remappedGroups,
       workflowMeta: {
-        id: crypto.randomUUID(),
+        id: createId(),
         name: template.name,
         version: '1.0.0',
       },
@@ -1009,7 +1010,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     // ── ExecutionLog: create record on start ─────────────────────────────────
     const startedAt = Date.now();
     _currentLog = {
-      runId: crypto.randomUUID(),
+      runId: createId(),
       workflowId: workflowMeta.id,
       inputs: {},
       outputs: {},
@@ -1245,7 +1246,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     );
 
     const fragment: SnippetFragment = {
-      id: crypto.randomUUID(),
+      id: createId(),
       name: name.trim(),
       description: description.trim() || undefined,
       createdAt: new Date().toISOString(),

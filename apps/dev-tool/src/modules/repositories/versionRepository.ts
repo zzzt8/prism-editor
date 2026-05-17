@@ -3,6 +3,7 @@
 
 import type { Workflow } from '@prism/shared-types';
 import type { IVersionRepository, WorkflowVersion } from './interfaces';
+import { createId } from '@prism/shared-types';
 
 interface VersionAdapter {
   getVersions(workflowId: string, page?: number, limit?: number): Promise<{
@@ -33,7 +34,7 @@ export class VersionRepository implements IVersionRepository {
   }
 
   async create(_workflowId: string, content: Workflow): Promise<WorkflowVersion> {
-    const id = crypto.randomUUID();
+    const id = createId();
     const version: WorkflowVersion = {
       id,
       version: content.version,

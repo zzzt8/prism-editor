@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
 import { TemplateRepository } from '../../modules/repositories/templateRepository';
 import type { Template } from '@prism/shared-types';
+import { createId } from '@prism/shared-types';
 import { X } from 'lucide-react';
 
 const templateRepo = new TemplateRepository();
@@ -82,7 +83,7 @@ export const SaveDialog: React.FC<SaveDialogProps> = ({ onClose, onSavedAsTempla
         }));
 
         const template: Template = {
-          id: crypto.randomUUID(),
+          id: createId(),
           name: trimmedName,
           version: '1.0.0',
           metadata: {
@@ -94,7 +95,7 @@ export const SaveDialog: React.FC<SaveDialogProps> = ({ onClose, onSavedAsTempla
           createdAt: now,
           updatedAt: now,
           workflowMeta: {
-            id: crypto.randomUUID(),
+            id: createId(),
             name: trimmedName,
             version: '1.0.0',
           },

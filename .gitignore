@@ -166,3 +166,6 @@ test/
 # SQLite databases
 **/prisma/*.db
 **/*.db
+
+# Build artifacts (zips, etc.)
+*.zip
