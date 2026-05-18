@@ -138,7 +138,7 @@ dependencies:
     refs: ["T1"]
 estimated_time: 2h
 -->
-- [ ] T4: Editor — 切换 activeStorageAdapter 为 ApiStorageAdapter
+- [x] T4: Editor — 切换 activeStorageAdapter 为 ApiStorageAdapter
   - layer: editor
   - **涉及文件**: `apps/dev-tool/src/storage/index.ts`
   - **验收标准**: `pnpm typecheck --filter=@prism/dev-tool` 无错误；`pnpm build --filter=@prism/dev-tool` 构建成功
