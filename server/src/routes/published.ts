@@ -6,6 +6,7 @@ import {
   PublishedWorkflowParamsSchema,
   PublishedWorkflowQuerySchema,
   ImportPublishWorkflowSchema,
+  PatchPublishedWorkflowSchema,
 } from '../schemas/published.js';
 
 const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
@@ -80,6 +81,31 @@ const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
         content: published.content,
       },
     };
+  });
+
+  // PATCH /api/published/:id - Update published workflow metadata (e.g., rename)
+  fastify.patch('/published/:id', { onRequest: [authenticate] }, async (request, reply) => {
+    const { id } = PublishedWorkflowParamsSchema.parse(request.params);
+    const input = PatchPublishedWorkflowSchema.parse(request.body);
+    const userId = (request.user as { userId: string }).userId;
+
+    const published = await prisma.publishedWorkflow.findUnique({
+      where: { id },
+      include: { workflow: true },
+    });
+
+    if (!published || published.workflow.userId !== userId) {
+      return reply.status(404).send({ error: 'Published workflow not found' });
+    }
+
+    if (input.name !== undefined) {
+      await prisma.workflow.update({
+        where: { id: published.workflowId },
+        data: { name: input.name },
+      });
+    }
+
+    return { success: true };
   });
 
   // POST /api/published - Publish a workflow

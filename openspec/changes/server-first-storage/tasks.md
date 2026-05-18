@@ -58,7 +58,7 @@ dependencies:
   - type: task
     refs: []
 -->
-- [ ] T1: 扩展 GET /api/published/:id 返回 content 字段
+- [x] T1: 扩展 GET /api/published/:id 返回 content 字段
   - layer: backend
   - **验收标准**：`GET /api/published/:id` 响应包含 `content` 字段（JSON 字符串），格式与 `POST /api/published` 传入的 body 一致
 ```
@@ -86,7 +86,7 @@ dependencies:
     refs: []
 estimated_time: 30m
 -->
-- [ ] T1: Backend — 扩展 GET /api/published/:id 返回 content 字段
+- [x] T1: Backend — 扩展 GET /api/published/:id 返回 content 字段
   - layer: backend
   - **涉及文件**: `server/src/routes/published.ts`
   - **验收标准**: `GET /api/published/:id` 响应 body 中包含 `content` 字段（JSON string），且格式与 `POST /api/published` 传入的 content 一致
