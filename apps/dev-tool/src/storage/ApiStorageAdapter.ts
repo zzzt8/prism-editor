@@ -153,22 +153,42 @@ export class ApiStorageAdapter implements StorageAdapter {
   }
 
   async save(workflow: Workflow): Promise<void> {
-    await this.request<{ data: ApiWorkflow }>(`/workflows/${workflow.id}`, {
-      method: 'PUT',
-      body: JSON.stringify({
+    const body = {
+      name: workflow.name,
+      content: JSON.stringify({
+        id: workflow.id,
         name: workflow.name,
-        content: JSON.stringify({
-          id: workflow.id,
-          name: workflow.name,
-          version: workflow.version,
-          nodes: workflow.nodes,
-          connections: workflow.connections,
-          inputs: workflow.inputs,
-          outputs: workflow.outputs,
-          metadata: workflow.metadata,
-        }),
+        version: workflow.version,
+        nodes: workflow.nodes,
+        connections: workflow.connections,
+        inputs: workflow.inputs,
+        outputs: workflow.outputs,
+        metadata: workflow.metadata,
       }),
-    });
+      version: workflow.version,
+    };
+
+    try {
+      // Try update first
+      await this.request<{ data: ApiWorkflow }>(`/workflows/${workflow.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(body),
+      });
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('not found')) {
+        // Workflow doesn't exist on server yet — create it
+        await this.request<{ data: ApiWorkflow }>('/workflows', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: workflow.name,
+            content: body.content,
+            version: workflow.version,
+          }),
+        });
+      } else {
+        throw err;
+      }
+    }
   }
 
   async load(id: string): Promise<Workflow> {
