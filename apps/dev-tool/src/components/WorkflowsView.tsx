@@ -10,6 +10,7 @@ import {
 import type { WorkflowMeta } from '@prism/shared-types';
 import {
   activeStorageAdapter,
+  indexedDBStorageAdapter,
 } from '../storage';
 import { useCanvasStore } from '../store/canvasStore';
 
@@ -86,6 +87,7 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -101,8 +103,20 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
   };
 
   const load = useCallback(async () => {
-    const list = await activeStorageAdapter.list();
-    setAllWorkflows(list);
+    setLoadError(null);
+    try {
+      const list = await activeStorageAdapter.list();
+      setAllWorkflows(list);
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('401')) {
+        // Not logged in — show empty list, user must log in
+        setAllWorkflows([]);
+      } else {
+        const msg = err instanceof Error ? err.message : 'Failed to load workflows';
+        setLoadError(msg);
+        setAllWorkflows([]);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -141,13 +155,21 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const paginated = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const [loadError, setLoadError] = useState<string | null>(null);
-
   const handleOpen = async (wf: WorkflowMeta) => {
     setOpenMenuId(null);
     setLoadError(null);
     try {
-      const content = await activeStorageAdapter.load(wf.id);
+      let content;
+      try {
+        content = await activeStorageAdapter.load(wf.id);
+      } catch (err) {
+        if (err instanceof Error && (err.message.includes('not found') || err.message.includes('404'))) {
+          // Workflow not on server yet (legacy local workflow) — fallback to IndexedDB
+          content = await indexedDBStorageAdapter.load(wf.id);
+        } else {
+          throw err;
+        }
+      }
       loadWorkflow(content);
       navigate(`/workflow/${wf.id}`);
     } catch (err) {
