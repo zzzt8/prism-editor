@@ -173,7 +173,7 @@ dependencies:
     refs: ["T5"]
 estimated_time: 1h
 -->
-- [ ] T6: Editor — Publish 操作路由到 server API
+- [x] T6: Editor — Publish 操作路由到 server API
   - layer: editor
   - **涉及文件**: `apps/dev-tool/src/modules/repositories/publishRepository.ts`
   - **验收标准**: `publishToServer()` 调用 `POST /api/published`；`unpublish()` 调用 `DELETE /api/published/:id`；未登录时给出明确提示
