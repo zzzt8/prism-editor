@@ -5,12 +5,75 @@
 //
 // Architecture:
 //   - loadWorkflows: fetches directly from GET /api/published (no auth required)
-//   - rename/delete: requires IndexedDB-only mode (server doesn't support these)
+//   - rename/delete: call PATCH/DELETE /api/published/:id (requires auth)
 
 import { create } from 'zustand';
 import type { PublishedWorkflowMeta } from '../../modules/repositories/interfaces';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
+
+interface AuthTokens {
+  accessToken: string | null;
+  refreshToken: string | null;
+}
+
+function getAuthTokens(): AuthTokens {
+  const state = document.cookie;
+  const refreshMatch = state.match(/refreshToken=([^;]+)/);
+  return {
+    accessToken: null,
+    refreshToken: refreshMatch ? refreshMatch[1] : null,
+  };
+}
+
+async function apiRequest<T>(
+  url: string,
+  options?: RequestInit,
+  tokens?: AuthTokens
+): Promise<T> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (tokens?.accessToken) {
+    headers['Authorization'] = `Bearer ${tokens.accessToken}`;
+  }
+
+  const response = await fetch(`${API_BASE}${url}`, {
+    ...options,
+    headers: { ...headers, ...(options?.headers || {}) },
+  });
+
+  if (response.status === 401 && tokens?.refreshToken) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      const newTokens = getAuthTokens();
+      if (newTokens.accessToken) {
+        return apiRequest<T>(url, options, newTokens);
+      }
+    }
+    throw new Error('Session expired. Please log in again.');
+  }
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Request failed: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+async function refreshAccessToken(): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
 
 interface ApiRecord {
   id: string;
@@ -80,16 +143,33 @@ export const useWorkflowCatalogStore = create<WorkflowCatalogState>((set) => {
       }
     },
 
-    renameWorkflow: async function renameWorkflow(_sourceId: string, _name: string) {
-      // Server does not support rename; this is a no-op for server-fetched workflows.
-      // Rename only works for locally-imported workflows (IndexedDB) via the repository.
-      console.warn('[workflowCatalogStore] renameWorkflow: server mode does not support rename');
+    renameWorkflow: async function renameWorkflow(sourceId: string, name: string) {
+      const tokens = getAuthTokens();
+      await apiRequest<{ success: boolean }>(
+        `/published/${sourceId}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ name }),
+        },
+        tokens
+      );
+      set((state) => ({
+        workflows: state.workflows.map((w) =>
+          w.sourceId === sourceId ? { ...w, name } : w
+        ),
+      }));
     },
 
-    deleteWorkflow: async function deleteWorkflow(_sourceId: string) {
-      // Server does not support delete via public API.
-      // Only locally-imported workflows can be deleted.
-      console.warn('[workflowCatalogStore] deleteWorkflow: server mode does not support delete');
+    deleteWorkflow: async function deleteWorkflow(sourceId: string) {
+      const tokens = getAuthTokens();
+      await apiRequest<{ success: boolean }>(
+        `/published/${sourceId}`,
+        { method: 'DELETE' },
+        tokens
+      );
+      set((state) => ({
+        workflows: state.workflows.filter((w) => w.sourceId !== sourceId),
+      }));
     },
   };
 });
