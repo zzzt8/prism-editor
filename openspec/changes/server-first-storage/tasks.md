@@ -208,7 +208,7 @@ dependencies:
     refs: ["T2", "T3"]
 estimated_time: 1h
 -->
-- [ ] T8: Runtime — 实现 rename 和 delete 操作调用 server API
+- [x] T8: Runtime — 实现 rename 和 delete 操作调用 server API
   - layer: runtime
   - **涉及文件**: `apps/user-app/src/store/workflowCatalogStore.ts`, `apps/user-app/src/pages/WorkflowRunPage.tsx`
   - **验收标准**: `renameWorkflow(sourceId, name)` 调用 `PATCH /api/published/:sourceId`；`deleteWorkflow(sourceId)` 调用 `DELETE /api/published/:sourceId`；UI 反馈及时更新
