@@ -2,10 +2,11 @@
 //
 // State: selectedWorkflow, nodeLoadErrors
 // Actions: selectWorkflow, clearSelection
+//
+// selectWorkflow fetches the full workflow content directly from the server.
 
 import { create } from 'zustand';
 import type { PublishedWorkflow } from '@prism/shared-types';
-import { PublishedWorkflowRepository } from '../../modules/repositories';
 import { loadRequiredNodes } from '../node-runtime/nodePackageLoader';
 
 export interface NodeLoadError {
@@ -21,21 +22,33 @@ export interface SelectedWorkflowState {
   clearNodeLoadErrors: () => void;
 }
 
-const workflowRepo = new PublishedWorkflowRepository();
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
 
 export const useSelectedWorkflowStore = create<SelectedWorkflowState>((set) => {
   return {
     selectedWorkflow: null,
     nodeLoadErrors: [],
 
-    selectWorkflow: async function selectWorkflow(_sourceId: string) {
+    selectWorkflow: async function selectWorkflow(sourceId: string) {
       try {
-        const workflow = await workflowRepo.getPublished(_sourceId);
+        const resp = await fetch(`${API_BASE}/published?limit=100`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const body: { data: Array<{
+          workflowId: string;
+          workflow: { id: string; name: string; description?: string; version: string };
+          content: string;
+        }> } = await resp.json();
 
-        set({
-          selectedWorkflow: workflow,
-          nodeLoadErrors: [],
-        });
+        const published = body.data.find(
+          (p) => p.workflowId === sourceId || p.workflow.id === sourceId
+        );
+        if (!published) throw new Error('Published workflow not found');
+
+        const workflow = JSON.parse(published.content) as PublishedWorkflow;
+        if (!workflow.sourceId) workflow.sourceId = published.workflow.id;
+        if (!workflow.name) workflow.name = published.workflow.name;
+
+        set({ selectedWorkflow: workflow, nodeLoadErrors: [] });
 
         const errors = await loadRequiredNodes(workflow);
         if (errors.length > 0) {
@@ -49,10 +62,7 @@ export const useSelectedWorkflowStore = create<SelectedWorkflowState>((set) => {
     },
 
     clearSelection: function clearSelection() {
-      set({
-        selectedWorkflow: null,
-        nodeLoadErrors: [],
-      });
+      set({ selectedWorkflow: null, nodeLoadErrors: [] });
     },
 
     clearNodeLoadErrors: function clearNodeLoadErrors() {

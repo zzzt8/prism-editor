@@ -77,6 +77,7 @@ const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
         publishedBy: published.publishedBy,
         publishedAt: published.publishedAt,
         workflow: published.workflow,
+        content: published.content,
       },
     };
   });

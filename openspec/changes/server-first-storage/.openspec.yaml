@@ -1,0 +1,6 @@
+---
+name: server-first-storage
+change_class: high
+change_profile: high
+reason: "彻底解决 IndexedDB 单机存储导致的跨设备数据丢失和发布流程断裂问题，需要同时改动 backend / editor / runtime 三层"
+---

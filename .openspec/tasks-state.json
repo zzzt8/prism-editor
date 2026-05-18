@@ -1,0 +1,67 @@
+{
+  "change": "server-first-storage",
+  "spec_level": "Full-Spec",
+  "created_at": "2026-05-18T12:35:00Z",
+  "tasks": {
+    "T1": {
+      "status": "todo",
+      "files_modified": [],
+      "error_count": 0,
+      "last_error": null
+    },
+    "T2": {
+      "status": "todo",
+      "files_modified": [],
+      "error_count": 0,
+      "last_error": null
+    },
+    "T3": {
+      "status": "todo",
+      "files_modified": [],
+      "error_count": 0,
+      "last_error": null
+    },
+    "T4": {
+      "status": "todo",
+      "files_modified": [],
+      "error_count": 0,
+      "last_error": null
+    },
+    "T5": {
+      "status": "todo",
+      "files_modified": [],
+      "error_count": 0,
+      "last_error": null
+    },
+    "T6": {
+      "status": "todo",
+      "files_modified": [],
+      "error_count": 0,
+      "last_error": null
+    },
+    "T7": {
+      "status": "todo",
+      "files_modified": [],
+      "error_count": 0,
+      "last_error": null
+    },
+    "T8": {
+      "status": "todo",
+      "files_modified": [],
+      "error_count": 0,
+      "last_error": null
+    },
+    "T9": {
+      "status": "todo",
+      "files_modified": [],
+      "error_count": 0,
+      "last_error": null
+    },
+    "T10": {
+      "status": "todo",
+      "files_modified": [],
+      "error_count": 0,
+      "last_error": null
+    }
+  }
+}
