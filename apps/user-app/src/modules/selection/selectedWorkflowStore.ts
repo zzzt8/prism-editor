@@ -31,19 +31,16 @@ export const useSelectedWorkflowStore = create<SelectedWorkflowState>((set) => {
 
     selectWorkflow: async function selectWorkflow(sourceId: string) {
       try {
-        const resp = await fetch(`${API_BASE}/published?limit=100`);
+        // Call GET /api/published/:id directly - single endpoint, no list iteration
+        const resp = await fetch(`${API_BASE}/published/${sourceId}`);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const body: { data: Array<{
+        const body: { data: {
           workflowId: string;
           workflow: { id: string; name: string; description?: string; version: string };
           content: string;
-        }> } = await resp.json();
+        } } = await resp.json();
 
-        const published = body.data.find(
-          (p) => p.workflowId === sourceId || p.workflow.id === sourceId
-        );
-        if (!published) throw new Error('Published workflow not found');
-
+        const published = body.data;
         const workflow = JSON.parse(published.content) as PublishedWorkflow;
         if (!workflow.sourceId) workflow.sourceId = published.workflow.id;
         if (!workflow.name) workflow.name = published.workflow.name;
