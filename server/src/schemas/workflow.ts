@@ -5,7 +5,7 @@ export const WorkflowStatusSchema = z.enum(['DRAFT', 'PUBLISHED']);
 export const CreateWorkflowSchema = z.object({
   name: z.string().min(1).max(255),
   description: z.string().optional(),
-  content: z.string().min(1).max(1024 * 1024), // Max 1MB
+  content: z.string().min(1).max(10 * 1024 * 1024), // Max 10MB (supports workflows with base64 images)
   category: z.string().optional(),
   version: z.string().default('1.0.0'),
 });
@@ -13,7 +13,7 @@ export const CreateWorkflowSchema = z.object({
 export const UpdateWorkflowSchema = z.object({
   name: z.string().min(1).max(255).optional(),
   description: z.string().optional(),
-  content: z.string().max(1024 * 1024).optional(), // Max 1MB
+  content: z.string().max(10 * 1024 * 1024).optional(), // Max 10MB
   category: z.string().optional(),
   version: z.string().optional(),
 });
@@ -37,7 +37,7 @@ export const WorkflowQuerySchema = z.object({
 export const ImportWorkflowSchema = z.object({
   name: z.string().min(1).max(255),
   description: z.string().optional(),
-  content: z.string(),
+  content: z.string().min(1).max(10 * 1024 * 1024), // Max 10MB
   category: z.string().optional(),
   version: z.string().optional(),
   overwrite: z.boolean().default(false),
@@ -45,7 +45,7 @@ export const ImportWorkflowSchema = z.object({
 
 // Version creation schema - server-side version generation
 export const CreateVersionSchema = z.object({
-  content: z.string().min(1).max(1024 * 1024),
+  content: z.string().min(1).max(10 * 1024 * 1024), // Max 10MB
   baseRevision: z.string().optional(), // For conflict detection
 });
 
