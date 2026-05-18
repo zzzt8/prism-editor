@@ -12,13 +12,11 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, ChevronDown, List, LayoutGrid, Plus, Layers, MoreHorizontal, Trash2, FolderOpen, Info, X, AlertCircle } from 'lucide-react';
+import { Search, ChevronDown, List, LayoutGrid, Layers, MoreHorizontal, Trash2, FolderOpen, Info, X, AlertCircle } from 'lucide-react';
 import { type PublishedWorkflowMeta } from '../modules/repositories/interfaces';
 import { type SortKey } from '../modules/catalog/workflowCatalogStore';
 import { useWorkflowCatalogStore } from '../modules/catalog/workflowCatalogStore';
 import { navigateToWorkflow } from '../router';
-import { importWorkflowFromFile, importWorkflowFromClipboard } from '../utils/workflowImport';
-import { syncWorkflowToLocal } from '../modules/repositories';
 import { Box } from 'lucide-react';
 
 const PAGE_SIZE = 10;
@@ -90,31 +88,6 @@ function DeleteConfirm({ name, onConfirm, onCancel }: DeleteConfirmProps) {
   );
 }
 
-// ─── File upload trigger ────────────────────────────────────────────────────
-
-interface FileInputTriggerProps {
-  inputRef: React.RefObject<HTMLInputElement>;
-  onFile: (file: File) => void;
-}
-
-function FileInputTrigger({ inputRef, onFile }: FileInputTriggerProps) {
-  return (
-    <input
-      ref={inputRef}
-      type="file"
-      accept=".json,application/json"
-      style={{ display: 'none' }}
-      onChange={(e) => {
-        const file = e.target.files?.[0];
-        if (file) {
-          onFile(file);
-          e.target.value = '';
-        }
-      }}
-    />
-  );
-}
-
 // ─── Main page ──────────────────────────────────────────────────────────────
 
 export const WorkflowListPage: React.FC = () => {
@@ -130,11 +103,9 @@ export const WorkflowListPage: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
-  const [pasteHint, setPasteHint] = useState(false);
 
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const showToast = useCallback((message: string, type: ToastState['type'] = 'success') => {
     setToast({ message, type });
@@ -145,12 +116,6 @@ export const WorkflowListPage: React.FC = () => {
   useEffect(() => {
     loadWorkflows();
   }, [loadWorkflows]);
-
-  useEffect(() => {
-    if (!isLoading && !loadError && workflows.length === 0) {
-      setPasteHint(true);
-    }
-  }, [isLoading, loadError, workflows.length]);
 
   // Close context menu on outside click
   useEffect(() => {
@@ -163,51 +128,6 @@ export const WorkflowListPage: React.FC = () => {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
-
-  const handleFileImport = useCallback(async (file: File) => {
-    const result = await importWorkflowFromFile(file);
-    if (result.success) {
-      try {
-        await syncWorkflowToLocal(result.workflow);
-        loadWorkflows();
-        showToast(`已导入「${result.workflow.name}」`, 'success');
-      } catch (err) {
-        showToast(`保存失败：${err instanceof Error ? err.message : String(err)}`, 'error');
-      }
-    } else {
-      showToast(`导入失败：${result.reason}`, 'error');
-    }
-  }, [loadWorkflows, showToast]);
-
-  // Ctrl+V paste import
-  useEffect(() => {
-    if (!pasteHint) return;
-
-    const handleKeyDown = async (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
-        const target = e.target as HTMLElement;
-        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
-        e.preventDefault();
-
-        const result = await importWorkflowFromClipboard();
-        if (result.success) {
-          try {
-            await syncWorkflowToLocal(result.workflow);
-            loadWorkflows();
-            setPasteHint(false);
-            showToast(`已从剪贴板导入「${result.workflow.name}」`, 'success');
-          } catch (err) {
-            showToast(`保存失败：${err instanceof Error ? err.message : String(err)}`, 'error');
-          }
-        } else {
-          showToast(`剪贴板内容无效：${result.reason}`, 'error');
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [pasteHint, loadWorkflows, showToast]);
 
   const filtered = workflows.filter((w) =>
     w.name.toLowerCase().includes(search.toLowerCase())
@@ -270,8 +190,6 @@ export const WorkflowListPage: React.FC = () => {
 
   return (
     <div className="home-layout">
-      <FileInputTrigger inputRef={fileInputRef} onFile={handleFileImport} />
-
       {/* Header */}
       <header className="home-header">
         <div className="home-header-logo">
@@ -282,15 +200,6 @@ export const WorkflowListPage: React.FC = () => {
             <span className="home-logo-text">Prism Editor</span>
             <span className="home-header-subtitle">已发布工作流</span>
           </div>
-        </div>
-        <div className="home-header-actions">
-          <button
-            className="home-new-btn"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Plus size={16} />
-            Import
-          </button>
         </div>
       </header>
 
@@ -376,19 +285,8 @@ export const WorkflowListPage: React.FC = () => {
             <p className="home-empty-subtitle">
               {search
                 ? 'No workflows match your current filters.'
-                : pasteHint
-                ? '还没有保存的工作流。按 Ctrl+V 粘贴或点击下方按钮导入。'
-                : '还没有保存的工作流。点击下方按钮导入。'}
+                : '还没有保存的工作流。'}
             </p>
-            {search ? null : (
-              <button
-                className="home-empty-btn"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Plus size={16} />
-                导入工作流文件
-              </button>
-            )}
           </section>
         )}
 
