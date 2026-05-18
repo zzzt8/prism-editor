@@ -243,7 +243,7 @@ dependencies:
     refs: []
 estimated_time: 1h
 -->
-- [ ] T10: Editor — 验证 IndexedDB 作为 autosave 缓存仍可用
+- [x] T10: Editor — 验证 IndexedDB 作为 autosave 缓存仍可用
   - layer: editor
   - **涉及文件**: `apps/dev-tool/src/storage/IndexedDBStorageAdapter.ts`
   - **验收标准**: autosaveService 的 `setTimeout` 回调中同时调用 `indexedDbAdapter.save()` 写入本地缓存；dev-tool 重启后 IndexedDB 中的草稿仍可恢复（手工验收）
@@ -255,12 +255,12 @@ estimated_time: 1h
 > 机器能做的先让机器做：E2E 测试 > 单元测试 > 命令行验证 > 人工验收。
 > 填写时按上述优先级选择验证方式，人工验收仅作为兜底。
 
-- [ ] `pnpm typecheck --filter=@prism/server` 无错误
-- [ ] `pnpm typecheck --filter=@prism/dev-tool` 无错误
-- [ ] `pnpm typecheck --filter=@prism/user-app` 无错误
-- [ ] `pnpm build --filter=@prism/server` 构建成功
-- [ ] `pnpm build --filter=@prism/dev-tool` 构建成功
-- [ ] `pnpm build --filter=@prism/user-app` 构建成功
+- [x] `pnpm typecheck --filter=@prism/server` 无错误
+- [x] `pnpm typecheck --filter=@prism/dev-tool` 无错误
+- [x] `pnpm typecheck --filter=@prism/user-app` 无错误
+- [x] `pnpm build --filter=@prism/server` 构建成功
+- [x] `pnpm build --filter=@prism/dev-tool` 构建成功
+- [x] `pnpm build --filter=@prism/user-app` 构建成功
 - [ ] API 验证（curl）：`GET /api/published/:id` 包含 `content` 字段
 - [ ] API 验证（curl）：`PATCH /api/published/:id` 更新名称
 - [ ] 手工验收（dev-tool）：Save 后 server 有记录
@@ -288,7 +288,7 @@ estimated_time: 1h
 
 ### N.5 安全与类型
 
-- [ ] N.5.1 `as any` 使用检查（仅测试文件例外）
+- [x] N.5.1 `as any` 使用检查（仅测试文件例外）
 - [ ] N.5.2 API 输入 Zod 验证覆盖（PATCH body schema 验证存在）
 
 ---
