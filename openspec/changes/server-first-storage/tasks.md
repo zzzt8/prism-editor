@@ -103,7 +103,7 @@ dependencies:
     refs: ["T1"]
 estimated_time: 1h
 -->
-- [ ] T2: Backend — 新增 PATCH /api/published/:id 支持重命名
+- [x] T2: Backend — 新增 PATCH /api/published/:id 支持重命名
   - layer: backend
   - **涉及文件**: `server/src/routes/published.ts`
   - **验收标准**: `PATCH /api/published/:id` 接收 `{ name: string }` body，返回 200，且 `GET /api/published/:id` 的 workflow.name 更新为新名称；未登录返回 401；非 owner 返回 404
@@ -120,7 +120,7 @@ dependencies:
     refs: []
 estimated_time: 30m
 -->
-- [ ] T3: Backend — 验证 DELETE /api/published/:id 实现正确
+- [x] T3: Backend — 验证 DELETE /api/published/:id 实现正确
   - layer: backend
   - **涉及文件**: `server/src/routes/published.ts`
   - **验收标准**: `DELETE /api/published/:id` 已存在且可正常工作（非 owner 返回 404，已登录用户可删除自己发布的 workflow）；验证后可标记为 `[x]`
