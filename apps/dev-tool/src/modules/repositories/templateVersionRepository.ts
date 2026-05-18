@@ -2,6 +2,7 @@
 // Dedicated store (template_versions) per design decision 1: Template is NOT a workflow alias.
 
 import type { Template } from '@prism/shared-types';
+import { createId } from '@prism/shared-types';
 import type { ITemplateVersionRepository, TemplateVersion } from './interfaces';
 
 const DB_NAME = 'prism-editor';

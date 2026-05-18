@@ -31,15 +31,11 @@ function getOrCreateIndexedDbAdapter(): IndexedDBStorageAdapter {
   return _indexedDbAdapterInstance;
 }
 
-// Use IndexedDB as the primary local storage adapter (better than localStorage quota limits)
+// Use ApiStorageAdapter as the primary storage (server-first: Save/New/Publish all go to server)
+// IndexedDB is used as autosave cache only (for crash recovery)
 let activeStorageAdapter: import('@prism/shared-types').StorageAdapter;
 
-if (isProduction || strictApi) {
-  activeStorageAdapter = getOrCreateApiAdapter();
-} else {
-  // Use IndexedDB for local storage (no 5-10MB quota limit)
-  activeStorageAdapter = getOrCreateIndexedDbAdapter();
-}
+activeStorageAdapter = getOrCreateApiAdapter();
 
 // Token sync helper - call this after login/register to update adapter tokens
 export function syncStorageTokens() {
