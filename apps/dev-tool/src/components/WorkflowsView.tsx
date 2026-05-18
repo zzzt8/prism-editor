@@ -8,7 +8,9 @@ import {
   Layers, MoreHorizontal, Trash2, FolderOpen, Info, X, AlertCircle,
 } from 'lucide-react';
 import type { WorkflowMeta } from '@prism/shared-types';
-import { indexedDBStorageAdapter } from '../storage';
+import {
+  activeStorageAdapter,
+} from '../storage';
 import { useCanvasStore } from '../store/canvasStore';
 
 const fileInputStyle: React.CSSProperties = { display: 'none' };
@@ -99,7 +101,7 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
   };
 
   const load = useCallback(async () => {
-    const list = await indexedDBStorageAdapter.list();
+    const list = await activeStorageAdapter.list();
     setAllWorkflows(list);
   }, []);
 
@@ -145,7 +147,7 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
     setOpenMenuId(null);
     setLoadError(null);
     try {
-      const content = await indexedDBStorageAdapter.load(wf.id);
+      const content = await activeStorageAdapter.load(wf.id);
       loadWorkflow(content);
       navigate(`/workflow/${wf.id}`);
     } catch (err) {
@@ -156,7 +158,7 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    await indexedDBStorageAdapter.delete(deleteTarget.id);
+    await activeStorageAdapter.delete(deleteTarget.id);
     setAllWorkflows((prev) => prev.filter((w) => w.id !== deleteTarget.id));
     setDeleteTarget(null);
     setOpenMenuId(null);
@@ -175,7 +177,7 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
     if (!editingId) return;
     const trimmed = editValue.trim();
     if (trimmed) {
-      await indexedDBStorageAdapter.updateWorkflowMeta(editingId, { name: trimmed });
+      await activeStorageAdapter.updateWorkflowMeta(editingId, { name: trimmed });
       setAllWorkflows((prev) =>
         prev.map((w) => w.id === editingId ? { ...w, name: trimmed } : w)
       );

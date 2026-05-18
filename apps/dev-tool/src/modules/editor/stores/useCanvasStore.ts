@@ -21,7 +21,7 @@ import type { ExecutionLog, NodeTiming } from '@prism/shared-types';
 import { createId } from '@prism/shared-types';
 import { autosaveService, initAutosaveService, getAutosaveService } from '../services/autosaveService';
 import { getExecutionService } from '../services/executionService';
-import { indexedDBStorageAdapter } from '../../../storage';
+import { indexedDBStorageAdapter, activeStorageAdapter } from '../../../storage';
 import { WorkflowRepository } from '../../repositories/workflowRepository';
 import { SnippetRepository } from '../../repositories/snippetRepository';
 import {
@@ -242,8 +242,8 @@ interface CanvasState {
 
 // ─── Initialize services ─────────────────────────────────────────────────────
 
-// Create workflow repository for autosave
-const workflowRepository = new WorkflowRepository(indexedDBStorageAdapter);
+// Create workflow repository for autosave (use activeStorageAdapter for server-first)
+const workflowRepository = new WorkflowRepository(activeStorageAdapter);
 const snippetRepository = new SnippetRepository();
 
 // Initialize autosave service
