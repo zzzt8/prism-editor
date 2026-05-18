@@ -190,7 +190,7 @@ dependencies:
     refs: ["T1"]
 estimated_time: 1h
 -->
-- [ ] T7: Runtime — 重写 selectWorkflow 直接调用 GET /api/published/:id
+- [x] T7: Runtime — 重写 selectWorkflow 直接调用 GET /api/published/:id
   - layer: runtime
   - **涉及文件**: `apps/user-app/src/store/workflowCatalogStore.ts`
   - **验收标准**: `pnpm typecheck --filter=@prism/user-app` 无错误；详情页打开时 Network tab 只有 1 次 XHR 请求
