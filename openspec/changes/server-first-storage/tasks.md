@@ -156,7 +156,7 @@ dependencies:
     refs: ["T4"]
 estimated_time: 1h
 -->
-- [ ] T5: Editor — Save/New/Delete 操作路由到 server API
+- [x] T5: Editor — Save/New/Delete 操作路由到 server API
   - layer: editor
   - **涉及文件**: `apps/dev-tool/src/storage/ApiStorageAdapter.ts`
   - **验收标准**: `save()` → `PUT /api/workflows/:id`，`create()` → `POST /api/workflows`，`delete()` → `DELETE /api/workflows/:id`；网络不可达时优雅降级（console.warn + 不阻断）
