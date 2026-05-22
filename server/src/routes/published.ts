@@ -45,7 +45,6 @@ const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
         publishedBy: pw.publishedBy,
         publishedAt: pw.publishedAt,
         workflow: pw.workflow,
-        content: pw.content,
       })),
       pagination: {
         page,
@@ -98,14 +97,37 @@ const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
       return reply.status(404).send({ error: 'Published workflow not found' });
     }
 
-    if (input.name !== undefined) {
-      await prisma.workflow.update({
+    if (input.name === undefined) {
+      return {
+        data: {
+          id: published.id,
+          workflowId: published.workflowId,
+          publishedBy: published.publishedBy,
+          publishedAt: published.publishedAt,
+          workflow: published.workflow,
+        },
+      };
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.workflow.update({
         where: { id: published.workflowId },
         data: { name: input.name },
       });
-    }
+      return tx.workflow.findUnique({
+        where: { id: published.workflowId },
+      });
+    });
 
-    return { success: true };
+    return {
+      data: {
+        id: published.id,
+        workflowId: published.workflowId,
+        publishedBy: published.publishedBy,
+        publishedAt: published.publishedAt,
+        workflow: updated,
+      },
+    };
   });
 
   // POST /api/published - Publish a workflow
