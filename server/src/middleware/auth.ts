@@ -2,8 +2,23 @@ import { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } fro
 
 interface AuthUser {
   userId: string;
-  type: string;
+  type: 'access' | 'refresh';
+  jti: string;
 }
+
+interface RefreshTokenPayload {
+  userId: string;
+  type: 'refresh';
+  jti: string;
+}
+
+interface AccessTokenPayload {
+  userId: string;
+  type: 'access';
+  jti: string;
+}
+
+export type { AccessTokenPayload, RefreshTokenPayload };
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -13,14 +28,14 @@ declare module 'fastify' {
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {
-    payload: AuthUser;
-    user: AuthUser;
+    payload: AccessTokenPayload;
+    user: AccessTokenPayload;
   }
 }
 
 async function authenticate(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {
-    const payload = await request.jwtVerify<AuthUser>();
+    const payload = await request.jwtVerify<AccessTokenPayload>();
 
     if (payload.type !== 'access') {
       return reply.status(401).send({ error: 'Invalid token type, expected access token' });

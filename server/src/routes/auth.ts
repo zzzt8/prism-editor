@@ -3,27 +3,15 @@ import bcrypt from 'bcryptjs';
 import rateLimit from '@fastify/rate-limit';
 import { prisma } from '../db/client.js';
 import { registerSchema, loginSchema } from '../schemas/auth.js';
+import type { AccessTokenPayload, RefreshTokenPayload } from '../middleware/auth.js';
 
 const isDev = process.env.NODE_ENV !== 'production';
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
 
-interface RefreshTokenPayload {
-  userId: string;
-  type: 'refresh';
-}
-
 interface AuthTokens {
   accessToken: string;
   refreshToken: string;
-}
-
-interface TokenPayload {
-  userId: string;
-  type: 'access' | 'refresh';
-  jti: string;
-  iat?: number;
-  exp?: number;
 }
 
 const REFRESH_COOKIE_NAME = 'refreshToken';
@@ -169,7 +157,7 @@ const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     }
 
     try {
-      const payload = await fastify.jwt.verify<TokenPayload>(refreshToken);
+      const payload = await fastify.jwt.verify<RefreshTokenPayload>(refreshToken);
 
       if (payload.type !== 'refresh') {
         return reply.status(401).send({ error: 'Invalid token type' });
@@ -214,7 +202,7 @@ const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
     if (refreshToken) {
       try {
-        const payload = await fastify.jwt.verify<TokenPayload>(refreshToken);
+        const payload = await fastify.jwt.verify<RefreshTokenPayload>(refreshToken);
         await addToBlacklist(payload.jti);
       } catch {
         // Token invalid/expired, nothing to blacklist
@@ -233,7 +221,7 @@ const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   // GET /api/auth/me
   fastify.get('/auth/me', async (request, reply) => {
     try {
-      const payload = await request.jwtVerify<TokenPayload>();
+      const payload = await request.jwtVerify<AccessTokenPayload>();
 
       if (payload.type !== 'access') {
         return reply.status(401).send({ error: 'Invalid token type' });
@@ -269,12 +257,12 @@ async function generateTokens(fastify: FastifyInstance, userId: string): Promise
   const jti = crypto.randomUUID();
 
   const accessToken = await fastify.jwt.sign(
-    { userId, type: 'access', jti } as any,
+    { userId, type: 'access', jti } as AccessTokenPayload,
     { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
   );
 
   const refreshToken = await fastify.jwt.sign(
-    { userId, type: 'refresh', jti } as any,
+    { userId, type: 'refresh', jti } as RefreshTokenPayload,
     { expiresIn: REFRESH_TOKEN_EXPIRES_IN }
   );
 

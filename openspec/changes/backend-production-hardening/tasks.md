@@ -34,7 +34,7 @@ dependencies:
     refs: ["backend-stability-fixes"]
 estimated_time: 1h
 -->
-- [ ] T1: Backend — 统一 JWT payload 类型，移除 `as any`
+- [x] T1: Backend — 统一 JWT payload 类型，移除 `as any`
   - layer: backend
   - **涉及文件**: `server/src/routes/auth.ts`, `server/src/middleware/auth.ts`
   - **验收标准**: `tsc --noEmit` 无错误；`auth.ts` 和 `middleware/auth.ts` 使用统一的 `TokenPayload` 类型
