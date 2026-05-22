@@ -1,0 +1,6 @@
+---
+name: backend-production-hardening
+change_class: medium
+change_profile: medium
+reason: "后端生产环境工程化改进：JWT 类型安全、CORS 配置、节点版本原子性"
+---

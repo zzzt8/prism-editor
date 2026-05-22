@@ -1,0 +1,6 @@
+---
+name: backend-stability-fixes
+change_class: high
+change_profile: high
+reason: "修复后端数据一致性、原子性、返回格式等严重 bug，防止数据丢失和不一致，backend 层直接暴露给所有前端调用方，修复优先级最高"
+---
