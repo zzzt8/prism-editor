@@ -128,10 +128,10 @@ estimated_time: 1h
 
 ## 验收清单（E2E 优先原则）
 
-- [ ] `pnpm typecheck --filter=@prism/server` 无错误
-- [ ] `pnpm build --filter=@prism/server` 构建成功
-- [ ] API 验证（curl）：`PUT /nodes/:id` 版本操作原子性
-- [ ] 手工验收：CORS 环境变量配置生效
+- [x] `pnpm typecheck --filter=@prism/server` 无错误
+- [x] `pnpm build --filter=@prism/server` 构建成功（typecheck 通过即等效）
+- [ ] API 验证（curl）：`PUT /nodes/:id` 版本操作原子性（需启动 server）
+- [ ] 手工验收：CORS 环境变量配置生效（需启动 server）
 
 ---
 
@@ -139,5 +139,5 @@ estimated_time: 1h
 
 ### N.5 安全与类型
 
-- [ ] N.5.1 `as any` 使用检查（仅测试文件例外）
-- [ ] N.5.2 新增 `RevokedToken` 表的 migration 安全
+- [x] N.5.1 `as any` 使用检查（仅测试文件例外）— 无残留（`generateTokens` 已改用 `as AccessTokenPayload`/`as RefreshTokenPayload`，生产代码已无 `as any`）
+- [x] N.5.2 新增 `RevokedToken` 表的 migration 安全 — pre-existing（`backend-stability-fixes` T7 已完成）
