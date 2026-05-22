@@ -32,15 +32,10 @@ const ImageClass = canvas.Image as unknown as typeof Image;
 // all instances (including those created inside source code) have both APIs.
 const proto = canvas.Canvas.prototype as unknown as Record<string, unknown>;
 
-// Capture toBuffer with correct `this` binding using a factory per-call.
-function makeToBuffer(_c: canvas.Canvas) {
-  return canvas.Canvas.prototype.toBuffer.bind({} as canvas.Canvas);
-}
-
 function canvasToBlob(c: canvas.Canvas, type: string, quality?: number): Blob {
   const mimeType: 'image/png' | 'image/jpeg' =
     type === 'image/jpeg' ? 'image/jpeg' : 'image/png';
-  const toBuffer = makeToBuffer(c);
+  const toBuffer = canvas.Canvas.prototype.toBuffer.bind(c);
   let buf: Buffer;
   if (mimeType === 'image/jpeg') {
     buf = toBuffer(mimeType, { quality: quality ?? 0.92 } as canvas.JpegConfig) as Buffer;
@@ -53,7 +48,7 @@ function canvasToBlob(c: canvas.Canvas, type: string, quality?: number): Blob {
 function canvasToDataURL(c: canvas.Canvas, type: string, quality?: number): string {
   const mimeType: 'image/png' | 'image/jpeg' =
     type === 'image/jpeg' ? 'image/jpeg' : 'image/png';
-  const toBuffer = makeToBuffer(c);
+  const toBuffer = canvas.Canvas.prototype.toBuffer.bind(c);
   let buf: Buffer;
   if (mimeType === 'image/jpeg') {
     buf = toBuffer(mimeType, { quality: quality ?? 0.92 } as canvas.JpegConfig) as Buffer;
