@@ -133,14 +133,21 @@ const nodeRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     }
 
     if (input.manifest && input.version) {
-      await prisma.nodePackageVersion.create({
-        data: {
-          packageId: id,
-          version: input.version,
-          manifest: JSON.stringify(input.manifest),
-          storageType: 'database',
-        },
+      const nodePackage = await prisma.$transaction(async (tx) => {
+        await tx.nodePackageVersion.create({
+          data: {
+            packageId: id,
+            version: input.version!,
+            manifest: JSON.stringify(input.manifest!),
+            storageType: 'database',
+          },
+        });
+        return tx.nodePackage.update({
+          where: { id },
+          data: updateData,
+        });
       });
+      return { data: nodePackage };
     }
 
     const nodePackage = await prisma.nodePackage.update({

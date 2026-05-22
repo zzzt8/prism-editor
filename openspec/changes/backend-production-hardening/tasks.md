@@ -68,7 +68,7 @@ dependencies:
     refs: []
 estimated_time: 1h
 -->
-- [ ] T3: Backend — PUT /nodes/:id 版本记录与主表更新纳入事务
+- [x] T3: Backend — PUT /nodes/:id 版本记录与主表更新纳入事务
   - layer: backend
   - **涉及文件**: `server/src/routes/nodes.ts`
   - **验收标准**: 模拟中间失败时（版本创建成功但主表更新失败），全部回滚
