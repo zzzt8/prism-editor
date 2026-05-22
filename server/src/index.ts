@@ -4,6 +4,7 @@ import cookie from '@fastify/cookie';
 import jwt from '@fastify/jwt';
 import { app, errorHandler } from './app.js';
 import authRoutes from './routes/auth.js';
+import { prisma } from './db/client.js';
 
 const fastify = Fastify({
   logger: true,
@@ -52,6 +53,17 @@ const start = async () => {
     const port = parseInt(process.env.PORT || '3001', 10);
     await fastify.listen({ port, host: '0.0.0.0' });
     console.log(`Server running at http://localhost:${port}`);
+
+    // Graceful shutdown: close Fastify first, then disconnect Prisma
+    const shutdown = async (signal: string) => {
+      console.log(`\nReceived ${signal}, shutting down gracefully...`);
+      await fastify.close();
+      await prisma.$disconnect();
+      console.log('Shutdown complete.');
+      process.exit(0);
+    };
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT'));
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
