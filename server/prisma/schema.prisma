@@ -96,6 +96,14 @@ model PublishedWorkflow {
   publishedAt DateTime @default(now())
 }
 
+model RevokedToken {
+  id        String   @id @default(cuid())
+  jti       String   @unique
+  revokedAt DateTime @default(now())
+
+  @@index([jti])
+}
+
 enum WorkflowStatus {
   DRAFT
   PUBLISHED

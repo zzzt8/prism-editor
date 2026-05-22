@@ -30,27 +30,18 @@ const REFRESH_COOKIE_NAME = 'refreshToken';
 const ACCESS_TOKEN_EXPIRES_IN = process.env.ACCESS_TOKEN_EXPIRES_IN || '15m';
 const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
 
-// Token blacklist for revocation (in-memory)
-const tokenBlacklist = new Set<string>();
-const blacklistTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
-function addToBlacklist(jti: string, expiresInMs: number): void {
-  tokenBlacklist.add(jti);
-  const timer = setTimeout(() => {
-    tokenBlacklist.delete(jti);
-    blacklistTimers.delete(jti);
-  }, expiresInMs);
-  blacklistTimers.set(jti, timer);
+async function isTokenBlacklisted(jti: string): Promise<boolean> {
+  const revoked = await prisma.revokedToken.findUnique({ where: { jti } });
+  return revoked !== null;
 }
 
-function isTokenBlacklisted(jti: string): boolean {
-  return tokenBlacklist.has(jti);
-}
-
-function safeParseInt(value: string | undefined, fallback: number): number {
-  if (!value) return fallback;
-  const parsed = parseInt(value, 10);
-  return isNaN(parsed) ? fallback : parsed;
+async function addToBlacklist(jti: string): Promise<void> {
+  await prisma.revokedToken.upsert({
+    where: { jti },
+    create: { jti },
+    update: {},
+  });
 }
 
 function parseDurationToMs(duration: string): number {
@@ -184,7 +175,7 @@ const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
         return reply.status(401).send({ error: 'Invalid token type' });
       }
 
-      if (isTokenBlacklisted(payload.jti)) {
+      if (await isTokenBlacklisted(payload.jti)) {
         return reply.status(401).send({ error: 'Token has been revoked' });
       }
 
@@ -197,10 +188,7 @@ const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       }
 
       // Revoke old refresh token
-      const ttlMs = (payload.exp! * 1000) - Date.now();
-      if (ttlMs > 0) {
-        addToBlacklist(payload.jti, ttlMs);
-      }
+      await addToBlacklist(payload.jti);
 
       const tokens = await generateTokens(fastify, user.id);
 
@@ -227,10 +215,7 @@ const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     if (refreshToken) {
       try {
         const payload = await fastify.jwt.verify<TokenPayload>(refreshToken);
-        const ttlMs = (payload.exp! * 1000) - Date.now();
-        if (ttlMs > 0) {
-          addToBlacklist(payload.jti, ttlMs);
-        }
+        await addToBlacklist(payload.jti);
       } catch {
         // Token invalid/expired, nothing to blacklist
       }
@@ -254,7 +239,7 @@ const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
         return reply.status(401).send({ error: 'Invalid token type' });
       }
 
-      if (isTokenBlacklisted(payload.jti)) {
+      if (await isTokenBlacklisted(payload.jti)) {
         return reply.status(401).send({ error: 'Token has been revoked' });
       }
 
