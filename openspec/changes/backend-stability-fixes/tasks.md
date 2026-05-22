@@ -88,7 +88,7 @@ dependencies:
     refs: []
 estimated_time: 30m
 -->
-- [ ] T1: Backend — 修复 PATCH /api/published/:id（事务保护 + 返回完整 workflow 数据）
+- [x] T1: Backend — 修复 PATCH /api/published/:id（事务保护 + 返回完整 workflow 数据）
   - layer: backend
   - **涉及文件**: `server/src/routes/published.ts`
   - **验收标准**: `PATCH /api/published/:id` 响应 body 中包含 `data` 对象，内含 `workflow` 字段，值为更新后的完整 workflow 记录
@@ -105,7 +105,7 @@ dependencies:
     refs: []
 estimated_time: 15m
 -->
-- [ ] T2: Backend — 统一 DELETE /api/published/:id 返回格式
+- [x] T2: Backend — 统一 DELETE /api/published/:id 返回格式
   - layer: backend
   - **涉及文件**: `server/src/routes/published.ts`
   - **验收标准**: `DELETE /api/published/:id` 响应 body 为 `{ success: true }`
@@ -122,7 +122,7 @@ dependencies:
     refs: []
 estimated_time: 15m
 -->
-- [ ] T3: Backend — GET /api/published 列表接口移除 content 字段
+- [x] T3: Backend — GET /api/published 列表接口移除 content 字段
   - layer: backend
   - **涉及文件**: `server/src/routes/published.ts`
   - **验收标准**: `GET /api/published` 响应 body 的每个 item 不包含 `content` 字段
