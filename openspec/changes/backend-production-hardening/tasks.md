@@ -119,7 +119,7 @@ dependencies:
     refs: []
 estimated_time: 1h
 -->
-- [ ] T6: Backend — 统一各路由认证中间件使用方式
+- [x] T6: Backend — 统一各路由认证中间件使用方式
   - layer: backend
   - **涉及文件**: `server/src/routes/workflow.ts`, `server/src/routes/versions.ts`, `server/src/routes/nodes.ts`
   - **验收标准**: 所有路由使用统一的 `fastify.authenticate` 装饰器或 `authenticate` 中间件；无内联 `jwtVerify` 调用

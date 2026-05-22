@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../db/client.js';
+import authMiddleware from '../middleware/auth.js';
 
 const VersionParamsSchema = z.object({
   id: z.string().min(1),
@@ -22,33 +23,13 @@ const RollbackBodySchema = z.object({
   newVersion: z.string().optional(),
 });
 
-interface AuthUser {
-  userId: string;
-  type: string;
-}
-
-declare module 'fastify' {
-  interface FastifyRequest {
-    user: AuthUser;
-  }
-}
-
 const versionRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   const getCurrentUserId = (request: FastifyRequest): string => {
     return request.user.userId;
   };
 
-  const requireAuth = async (request: any, reply: any) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      return reply.status(401).send({ error: 'Unauthorized' });
-    }
-  };
-
   // GET /api/workflows/:id/versions - List versions
-  fastify.get('/workflows/:id/versions', async (request: any, reply: any) => {
-    await requireAuth(request, reply);
+  fastify.get('/workflows/:id/versions', { onRequest: [fastify.authenticate] }, async (request: any, reply: any) => {
     const userId = getCurrentUserId(request);
     const { id } = VersionParamsSchema.parse(request.params);
     const query = VersionQuerySchema.parse(request.query);
@@ -91,8 +72,7 @@ const versionRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   });
 
   // GET /api/workflows/:id/versions/:versionId - Get specific version content
-  fastify.get('/workflows/:id/versions/:versionId', async (request: any, reply: any) => {
-    await requireAuth(request, reply);
+  fastify.get('/workflows/:id/versions/:versionId', { onRequest: [fastify.authenticate] }, async (request: any, reply: any) => {
     const userId = getCurrentUserId(request);
     const { id, versionId } = VersionParamsSchema.parse(request.params);
 
@@ -115,8 +95,7 @@ const versionRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   });
 
   // POST /api/workflows/:id/rollback - Rollback to a specific version
-  fastify.post('/workflows/:id/rollback', async (request: any, reply: any) => {
-    await requireAuth(request, reply);
+  fastify.post('/workflows/:id/rollback', { onRequest: [fastify.authenticate] }, async (request: any, reply: any) => {
     const userId = getCurrentUserId(request);
     const { id } = VersionParamsSchema.parse(request.params);
     const { versionId, newVersion: customVersion } = RollbackBodySchema.parse(request.body);
@@ -170,8 +149,7 @@ const versionRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   });
 
   // GET /api/workflows/:id/diff - Compare two versions
-  fastify.get('/workflows/:id/diff', async (request: any, reply: any) => {
-    await requireAuth(request, reply);
+  fastify.get('/workflows/:id/diff', { onRequest: [fastify.authenticate] }, async (request: any, reply: any) => {
     const userId = getCurrentUserId(request);
     const { id } = VersionParamsSchema.parse(request.params);
     const { from: fromId, to: toId } = DiffQuerySchema.parse(request.query);
