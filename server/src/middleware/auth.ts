@@ -28,7 +28,7 @@ declare module 'fastify' {
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {
-    payload: AccessTokenPayload;
+    payload: AccessTokenPayload | RefreshTokenPayload;
     user: AccessTokenPayload;
   }
 }
@@ -40,6 +40,8 @@ async function authenticate(request: FastifyRequest, reply: FastifyReply): Promi
     if (payload.type !== 'access') {
       return reply.status(401).send({ error: 'Invalid token type, expected access token' });
     }
+
+    request.user = payload;
   } catch {
     return reply.status(401).send({ error: 'Unauthorized' });
   }

@@ -9,17 +9,7 @@ import {
   ImportWorkflowSchema,
   CreateVersionSchema,
 } from '../schemas/workflow.js';
-
-interface AuthUser {
-  userId: string;
-  type: string;
-}
-
-declare module 'fastify' {
-  interface FastifyRequest {
-    user: AuthUser;
-  }
-}
+import authMiddleware from '../middleware/auth.js';
 
 const workflowRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   // Helper to get current user ID from JWT
@@ -39,13 +29,7 @@ const workflowRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   }
 
   // POST /api/workflows/:id/versions - Create new version (server-side version generation)
-  fastify.post('/workflows/:id/versions', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      return reply.status(401).send({ error: 'Unauthorized' });
-    }
-
+  fastify.post('/workflows/:id/versions', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const userId = getCurrentUserId(request);
     const { id } = WorkflowParamsSchema.parse(request.params);
     const input = CreateVersionSchema.parse(request.body);
@@ -103,13 +87,7 @@ const workflowRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   });
 
   // GET /api/workflows - List workflows with pagination and search (user's own workflows)
-  fastify.get('/workflows', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      return reply.status(401).send({ error: 'Unauthorized' });
-    }
-
+  fastify.get('/workflows', { onRequest: [fastify.authenticate] }, async (request) => {
     const userId = getCurrentUserId(request);
     const query = WorkflowQuerySchema.parse(request.query);
     const { page, limit, search } = query;
@@ -155,13 +133,7 @@ const workflowRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   });
 
   // POST /api/workflows - Create workflow
-  fastify.post('/workflows', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      return reply.status(401).send({ error: 'Unauthorized' });
-    }
-
+  fastify.post('/workflows', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const userId = getCurrentUserId(request);
     const input = CreateWorkflowSchema.parse(request.body);
     const workflow = await prisma.workflow.create({
@@ -178,13 +150,7 @@ const workflowRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   });
 
   // GET /api/workflows/:id - Get workflow by id
-  fastify.get('/workflows/:id', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      return reply.status(401).send({ error: 'Unauthorized' });
-    }
-
+  fastify.get('/workflows/:id', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const userId = getCurrentUserId(request);
     const { id } = WorkflowParamsSchema.parse(request.params);
     const workflow = await prisma.workflow.findUnique({
@@ -200,13 +166,7 @@ const workflowRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   });
 
   // PUT /api/workflows/:id - Update workflow
-  fastify.put('/workflows/:id', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      return reply.status(401).send({ error: 'Unauthorized' });
-    }
-
+  fastify.put('/workflows/:id', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const userId = getCurrentUserId(request);
     const { id } = WorkflowParamsSchema.parse(request.params);
     const input = UpdateWorkflowSchema.parse(request.body);
@@ -256,16 +216,9 @@ const workflowRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   });
 
   // DELETE /api/workflows/:id - Delete workflow
-  fastify.delete('/workflows/:id', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch (err) {
-      request.log.error({ err }, 'DELETE /workflows/:id - JWT verification failed');
-      return reply.status(401).send({ error: 'Unauthorized' });
-    }
-
+  fastify.delete('/workflows/:id', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const userId = getCurrentUserId(request);
-    
+
     let id: string;
     try {
       const parsed = WorkflowParamsSchema.parse(request.params);
@@ -288,13 +241,7 @@ const workflowRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   });
 
   // PATCH /api/workflows/:id/meta - Update workflow metadata
-  fastify.patch('/workflows/:id/meta', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      return reply.status(401).send({ error: 'Unauthorized' });
-    }
-
+  fastify.patch('/workflows/:id/meta', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const userId = getCurrentUserId(request);
     const { id } = WorkflowParamsSchema.parse(request.params);
     const input = UpdateWorkflowMetaSchema.parse(request.body);
@@ -319,13 +266,7 @@ const workflowRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   });
 
   // POST /api/workflows/import - Import workflow from JSON
-  fastify.post('/workflows/import', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      return reply.status(401).send({ error: 'Unauthorized' });
-    }
-
+  fastify.post('/workflows/import', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const userId = getCurrentUserId(request);
     const input = ImportWorkflowSchema.parse(request.body);
 
@@ -343,13 +284,7 @@ const workflowRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   });
 
   // GET /api/workflows/:id/export - Export workflow as JSON
-  fastify.get('/workflows/:id/export', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      return reply.status(401).send({ error: 'Unauthorized' });
-    }
-
+  fastify.get('/workflows/:id/export', { onRequest: [fastify.authenticate] }, async (request, reply) => {
     const userId = getCurrentUserId(request);
     const { id } = WorkflowParamsSchema.parse(request.params);
     const workflow = await prisma.workflow.findUnique({
