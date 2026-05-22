@@ -139,7 +139,7 @@ dependencies:
     refs: []
 estimated_time: 1h
 -->
-- [ ] T4: Backend — PUT /api/workflows/:id 服务端控制版本号
+- [x] T4: Backend — PUT /api/workflows/:id 服务端控制版本号
   - layer: backend
   - **涉及文件**: `server/src/routes/workflow.ts`, `server/src/schemas/workflow.ts`
   - **验收标准**: `UpdateWorkflowSchema` 移除 `version` 字段；版本号由服务端自动递增
@@ -156,7 +156,7 @@ dependencies:
     refs: ["T4"]
 estimated_time: 1h
 -->
-- [ ] T5: Backend — PUT /api/workflows/:id 版本快照与 update 原子化（事务）
+- [x] T5: Backend — PUT /api/workflows/:id 版本快照与 update 原子化（事务）
   - layer: backend
   - **涉及文件**: `server/src/routes/workflow.ts`
   - **验收标准**: `workflowVersion.create` 和 `workflow.update` 在同一 `prisma.$transaction` 中；模拟中间失败场景时全部回滚
