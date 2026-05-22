@@ -56,6 +56,7 @@ export const NodePackageParamsSchema = z.object({
 export const NodePackageQuerySchema = z.object({
   category: z.string().optional(),
   search: z.string().optional(),
+  /** 'newest' = order by createdAt desc, 'name' = order by name asc */
   sort: z.enum(['newest', 'name']).default('newest'),
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),

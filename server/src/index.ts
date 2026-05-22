@@ -11,8 +11,13 @@ const fastify = Fastify({
   bodyLimit: 10 * 1024 * 1024, // 10MB
 });
 
+const CORS_ORIGINS = (process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:3002')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 await fastify.register(cors, {
-  origin: ['http://localhost:3000', 'http://localhost:3002'],
+  origin: CORS_ORIGINS,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 });

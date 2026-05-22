@@ -51,7 +51,7 @@ dependencies:
     refs: []
 estimated_time: 30m
 -->
-- [ ] T2: Backend — CORS origin 支持环境变量配置
+- [x] T2: Backend — CORS origin 支持环境变量配置
   - layer: backend
   - **涉及文件**: `server/src/index.ts`
   - **验收标准**: `CORS_ORIGINS=http://localhost:3000 node dist/index.js` 启动后只有指定 origin 可访问；未设置时默认 localhost
@@ -85,7 +85,7 @@ dependencies:
     refs: []
 estimated_time: 30m
 -->
-- [ ] T4: Backend — sort 枚举值语义明确化
+- [x] T4: Backend — sort 枚举值语义明确化
   - layer: backend
   - **涉及文件**: `server/src/schemas/node-package.ts`
   - **验收标准**: 枚举值语义明确，代码与 schema 对应关系直观
@@ -102,7 +102,7 @@ dependencies:
     refs: []
 estimated_time: 30m
 -->
-- [ ] T5: Backend — 配置 Prisma 查询日志
+- [x] T5: Backend — 配置 Prisma 查询日志
   - layer: backend
   - **涉及文件**: `server/src/db/client.ts`
   - **验收标准**: 开发环境启动时输出 Prisma 查询日志；生产环境静默
