@@ -173,7 +173,7 @@ dependencies:
     refs: []
 estimated_time: 30m
 -->
-- [ ] T6: Backend — 添加 Prisma graceful shutdown hook
+- [x] T6: Backend — 添加 Prisma graceful shutdown hook
   - layer: backend
   - **涉及文件**: `server/src/index.ts`
   - **验收标准**: 进程收到 SIGTERM/SIGINT 后，先调用 `fastify.close()` 再调用 `prisma.$disconnect()`，无报错
