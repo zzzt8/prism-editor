@@ -119,7 +119,7 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
     });
   }
 
-  async save(workflow: Workflow): Promise<void> {
+  async save(workflow: Workflow): Promise<Workflow> {
     const existingMeta = await this.loadMeta(workflow.id).catch(() => null);
     const now = new Date().toISOString();
 
@@ -145,6 +145,8 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
     if (!ids.includes(workflow.id)) {
       await this.put(STORE_INDEX, { key: 'ids', ids: [...ids, workflow.id] });
     }
+
+    return workflow;
   }
 
   async createWorkflow(

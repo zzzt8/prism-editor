@@ -905,6 +905,10 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     autosaveSvc.cancel();
 
     const { workflowMeta, nodes, edges } = get();
+    const beforeId = workflowMeta.id;
+    const beforeName = workflowName ?? workflowMeta.name;
+
+    fetch('http://127.0.0.1:7745/ingest/1dfd8968-d7f6-41c4-b597-b0489a728631',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8e8cfe'},body:JSON.stringify({sessionId:'8e8cfe',location:'useCanvasStore.ts:saveWorkflow:enter',message:'saveWorkflow start',data:{beforeId,beforeName},timestamp:Date.now()})}).catch(()=>{});
 
     const existing = await workflowRepository.get(workflowMeta.id).catch(() => null);
     const createdAt = existing?.metadata?.createdAt ?? new Date().toISOString();
@@ -944,10 +948,15 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       },
     };
 
-    await workflowRepository.save(workflow);
-    // Note: isDirty is reset, but version is not changed here - server will return the new version
+    const saved = await workflowRepository.save(workflow);
+    // Sync server-assigned ID back to local state (happens when workflow is created on server)
+    const newId = saved?.id ?? workflowMeta.id;
+    const idChanged = newId !== beforeId;
+
+    fetch('http://127.0.0.1:7745/ingest/1dfd8968-d7f6-41c4-b597-b0489a728631',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8e8cfe'},body:JSON.stringify({sessionId:'8e8cfe',location:'useCanvasStore.ts:saveWorkflow:exit',message:'saveWorkflow done',data:{beforeId,newId,idChanged,savedId:saved?.id,name:workflow.name},timestamp:Date.now()})}).catch(()=>{});
+
     set({
-      workflowMeta: { ...workflowMeta, name: workflow.name },
+      workflowMeta: { ...workflowMeta, id: newId, name: workflow.name },
       isDirty: false,
       isDraggingFromPanel: false,
     });

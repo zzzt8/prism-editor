@@ -248,12 +248,21 @@ const workflowRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   fastify.delete('/workflows/:id', async (request, reply) => {
     try {
       await request.jwtVerify();
-    } catch {
+    } catch (err) {
+      request.log.error({ err }, 'DELETE /workflows/:id - JWT verification failed');
       return reply.status(401).send({ error: 'Unauthorized' });
     }
 
     const userId = getCurrentUserId(request);
-    const { id } = WorkflowParamsSchema.parse(request.params);
+    
+    let id: string;
+    try {
+      const parsed = WorkflowParamsSchema.parse(request.params);
+      id = parsed.id;
+    } catch (err) {
+      request.log.error({ err, params: request.params }, 'DELETE /workflows/:id - Invalid params');
+      return reply.status(400).send({ error: 'Invalid workflow ID', details: err });
+    }
 
     const existing = await prisma.workflow.findUnique({ where: { id } });
     if (!existing) {

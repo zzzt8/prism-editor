@@ -16,7 +16,7 @@ export class WorkflowRepository implements IWorkflowRepository {
     return this._adapter.load(id);
   }
 
-  async save(workflow: Workflow): Promise<void> {
+  async save(workflow: Workflow): Promise<Workflow> {
     return this._adapter.save(workflow);
   }
 

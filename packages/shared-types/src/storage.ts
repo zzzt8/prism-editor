@@ -15,7 +15,7 @@ export interface WorkflowMeta {
 }
 
 export interface StorageAdapter {
-  save(workflow: Workflow): Promise<void>;
+  save(workflow: Workflow): Promise<Workflow>;
   load(id: string): Promise<Workflow>;
   list(): Promise<WorkflowMeta[]>;
   delete(id: string): Promise<void>;

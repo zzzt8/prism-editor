@@ -18,7 +18,7 @@ export interface PublishedWorkflowMeta {
 export interface IWorkflowRepository {
   list(): Promise<WorkflowMeta[]>;
   get(_id: string): Promise<Workflow>;
-  save(workflow: Workflow): Promise<void>;
+  save(workflow: Workflow): Promise<Workflow>;
   delete(_id: string): Promise<void>;
   exists(_id: string): Promise<boolean>;
 }
