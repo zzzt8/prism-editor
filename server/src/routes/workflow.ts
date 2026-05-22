@@ -219,29 +219,40 @@ const workflowRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       return reply.status(403).send({ error: 'Access denied' });
     }
 
-    // Create a new version snapshot whenever content is saved
-    if (input.content !== undefined) {
-      await prisma.workflowVersion.create({
+    // Version snapshot and workflow update are always atomic
+    const updated = await prisma.$transaction(async (tx) => {
+      if (input.content !== undefined) {
+        const newVersion = generateNextVersion(existing.version);
+        await tx.workflowVersion.create({
+          data: {
+            workflowId: id,
+            version: newVersion,
+            content: input.content,
+            createdBy: userId,
+          },
+        });
+        return tx.workflow.update({
+          where: { id },
+          data: {
+            ...(input.name !== undefined && { name: input.name }),
+            ...(input.description !== undefined && { description: input.description }),
+            ...(input.content !== undefined && { content: input.content }),
+            ...(input.category !== undefined && { category: input.category }),
+            version: newVersion,
+          },
+        });
+      }
+      return tx.workflow.update({
+        where: { id },
         data: {
-          workflowId: id,
-          version: input.version || existing.version,
-          content: input.content,
-          createdBy: userId,
+          ...(input.name !== undefined && { name: input.name }),
+          ...(input.description !== undefined && { description: input.description }),
+          ...(input.category !== undefined && { category: input.category }),
         },
       });
-    }
-
-    const workflow = await prisma.workflow.update({
-      where: { id },
-      data: {
-        ...(input.name !== undefined && { name: input.name }),
-        ...(input.description !== undefined && { description: input.description }),
-        ...(input.content !== undefined && { content: input.content }),
-        ...(input.category !== undefined && { category: input.category }),
-        ...(input.version !== undefined && { version: input.version }),
-      },
     });
-    return { data: workflow };
+
+    return { data: updated };
   });
 
   // DELETE /api/workflows/:id - Delete workflow

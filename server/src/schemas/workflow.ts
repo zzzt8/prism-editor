@@ -15,7 +15,6 @@ export const UpdateWorkflowSchema = z.object({
   description: z.string().optional(),
   content: z.string().max(10 * 1024 * 1024).optional(), // Max 10MB
   category: z.string().optional(),
-  version: z.string().optional(),
 });
 
 export const UpdateWorkflowMetaSchema = z.object({
