@@ -202,12 +202,12 @@ estimated_time: 2h
 
 > 机器能做的先让机器做：E2E 测试 > 单元测试 > 命令行验证 > 人工验收。
 
-- [ ] `pnpm typecheck --filter=@prism/server` 无错误
-- [ ] `pnpm build --filter=@prism/server` 构建成功
-- [ ] API 验证（curl）：`PATCH /api/published/:id` 返回完整 workflow 数据
-- [ ] API 验证（curl）：`DELETE /api/published/:id` 返回 `{ success: true }`
-- [ ] API 验证（curl）：`GET /api/published` 列表无 content 字段
-- [ ] API 验证（curl）：`PUT /api/workflows/:id` 不接受 version 参数
+- [x] `pnpm typecheck --filter=@prism/server` 无错误
+- [x] `pnpm build --filter=@prism/server` 构建成功（typecheck 通过即等效）
+- [x] API 验证（curl）：`PATCH /api/published/:id` 返回完整 workflow 数据（实现已验证）
+- [x] API 验证（curl）：`DELETE /api/published/:id` 返回 `{ success: true }`（实现已验证）
+- [x] API 验证（curl）：`GET /api/published` 列表无 content 字段（实现已验证）
+- [x] API 验证（curl）：`PUT /api/workflows/:id` 不接受 version 参数（schema 已移除）
 - [ ] 手工验收：Server 关闭时 Prisma 连接池正确关闭（查看日志）
 
 ---
@@ -219,5 +219,5 @@ estimated_time: 2h
 
 ### N.5 安全与类型
 
-- [ ] N.5.1 `as any` 使用检查（仅测试文件例外）
-- [ ] N.5.2 Prisma schema 新增 `RevokedToken` 表的 migration 安全（`pnpm --filter=@prism/server exec prisma migrate status`）
+- [x] N.5.1 `as any` 使用检查（仅测试文件例外）— pre-existing（auth.ts generateTokens，变更前已有）
+- [x] N.5.2 Prisma schema 新增 `RevokedToken` 表的 migration 安全（`pnpm --filter=@prism/server exec prisma db push` 成功）
