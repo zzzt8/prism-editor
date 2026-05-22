@@ -190,7 +190,7 @@ dependencies:
     refs: []
 estimated_time: 2h
 -->
-- [ ] T7: Backend — refresh token 黑名单持久化到数据库
+- [x] T7: Backend — refresh token 黑名单持久化到数据库
   - layer: backend
   - **涉及文件**: `server/src/routes/auth.ts`, `server/src/db/client.ts`
   - **涉及文件**: `server/prisma/schema.prisma`（新增 RevokedToken 表）
