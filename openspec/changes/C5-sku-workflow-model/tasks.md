@@ -39,7 +39,7 @@
 
 ---
 
-- [ ] **Task 3: Prisma migration 生成**
+- [x] **Task 3: Prisma migration 生成**
 
   ```yaml
   opsx-meta:
