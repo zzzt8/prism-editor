@@ -1,16 +1,16 @@
 # tasks: image-ops-runtime-core-foundation
 
-- [ ] **Task 1: 创建 core 目录结构和 alpha-format 纯函数**
+- [x] **Task 1: 创建 core 目录结构和 alpha-format 纯函数**
   - 从 `composite.ts` 提取 `detectAlphaFormat` 和 `unPremultiply` 为独立纯函数，写入 `packages/image-ops/src/core/alpha-format.ts`
   - 要求：函数签名不变；移除所有 canvas-util 依赖；纯 TypeScript，无任何平台 API 调用；附带 JSDoc 说明 premultiplied alpha 检测原理
   - 验收：`Test-Path "packages/image-ops/src/core/alpha-format.ts"`
 
-- [ ] **Task 2: 创建 blend-modes.ts 纯函数**
+- [x] **Task 2: 创建 blend-modes.ts 纯函数**
   - 从 `composite.ts` 提取 `blendPixel` 函数及其 switch 内的 10 种 blend mode 公式，写入 `packages/image-ops/src/core/blend-modes.ts`
   - 要求：保持所有 blend mode 公式不变（normal/multiply/screen/overlay/darken/lighten/color-dodge/color-burn/hard-light/soft-light/difference/exclusion）；`clamp` 函数一并提取；纯函数，无副作用
   - 验收：`Test-Path "packages/image-ops/src/core/blend-modes.ts"`
 
-- [ ] **Task 3: 创建 porter-duff.ts 纯函数**
+- [x] **Task 3: 创建 porter-duff.ts 纯函数**
   - 将 Porter-Duff Source-Over compositing 的核心 lerp 逻辑提取，写入 `packages/image-ops/src/core/porter-duff.ts`
   - 要求：提取 `compositePixel(base, overlay, opacity) → [r,g,b,a]` 纯函数；包含 premultiplied RGB lerp + straight alpha lerp 逻辑；保持原有注释和公式说明；纯函数，无任何 API 依赖
   - 验收：`Test-Path "packages/image-ops/src/core/porter-duff.ts"`
