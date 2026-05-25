@@ -41,6 +41,7 @@ export const loadImageDefinition: NodeDefinition = {
   label: 'Load Image',
   description: 'Load an image from a local file (like ComfyUI Load Image)',
   version: '1.0.0',
+  platforms: ['browser'],
   inputs: [],
   outputs: [
     {
@@ -68,6 +69,7 @@ export const loadMaskDefinition: NodeDefinition = {
   label: 'Load Mask',
   description: 'Load a mask image from a local file',
   version: '1.0.0',
+  platforms: ['browser'],
   inputs: [],
   outputs: [
     {
@@ -95,6 +97,7 @@ export const applyMaskDefinition: NodeDefinition = {
   label: 'Apply Mask',
   description: 'Apply a mask to an image (alpha, brightness, or luminance)',
   version: '1.0.0',
+  platforms: ['browser'],
   inputs: [
     {
       id: 'image',
@@ -161,6 +164,7 @@ export const compositeDefinition: NodeDefinition = {
   label: 'Composite',
   description: 'Composite two images with blend modes',
   version: '1.0.0',
+  platforms: ['browser'],
   inputs: [
     {
       id: 'base',
@@ -255,6 +259,7 @@ export const transformDefinition: NodeDefinition = {
   label: 'Transform',
   description: 'Transform image (translate, scale, rotate, crop)',
   version: '1.0.0',
+  platforms: ['browser'],
   inputs: [
     {
       id: 'image',
@@ -357,6 +362,7 @@ export const exportDefinition: NodeDefinition = {
   label: 'Export',
   description: 'Export and preview image output',
   version: '1.0.0',
+  platforms: ['browser'],
   inputs: [
     {
       id: 'image',
@@ -377,6 +383,7 @@ export const emptyInputDefinition: NodeDefinition = {
   label: 'Empty Image',
   description: 'Generate a blank image with specified dimensions and background color',
   version: '1.0.0',
+  platforms: ['browser'],
   inputs: [],
   outputs: [
     {

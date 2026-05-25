@@ -8,7 +8,7 @@
   - 在 `packages/shared-types/src/workflow.ts` 的 `WorkflowMetadata` 新增 `targetPlatform?: 'browser' | 'nodejs'`
   - 验收：`npm run typecheck --workspace=@prism/shared-types`
 
-- [ ] **Task 3: registry 新增 `listByPlatform` 函数**
+- [x] **Task 3: registry 新增 `listByPlatform` 函数**
   - 在 `packages/node-definitions/src/registry.ts` 新增 `listByPlatform(registry, platform) → NodeDefinition[]`
   - 过滤逻辑：返回 `platforms` 包含 `both` 或包含目标平台的节点
   - 验收：`npm run typecheck --workspace=@prism/node-definitions`
