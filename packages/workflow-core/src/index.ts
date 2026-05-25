@@ -10,3 +10,6 @@ export * from './type-converter-registry';
 export * from './type-validator';
 export type { TypeConverterFn } from '@prism/shared-types';
 
+// Node.js specific executor for server-side production rendering
+export * from './executor-nodejs';
+
