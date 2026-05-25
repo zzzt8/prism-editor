@@ -1,19 +1,11 @@
 // Repository interfaces - define the contract for data access
 
-import type { Workflow, WorkflowMeta, PublishedWorkflow } from '@prism/shared-types';
+import type { Workflow, WorkflowMeta, PublishedWorkflow, PublishedWorkflowMeta } from '@prism/shared-types';
 import type { Template, TemplateSummary } from '@prism/shared-types';
 import type { SnippetFragment, SnippetSummary } from '@prism/shared-types';
 
-export interface PublishedWorkflowMeta {
-  sourceId: string;
-  name: string;
-  description?: string;
-  sourceName: string;
-  version: string;
-  publishedAt: string;
-  inputCount: number;
-  outputCount: number;
-}
+// Re-export PublishedWorkflowMeta for backward compatibility
+export type { PublishedWorkflowMeta } from '@prism/shared-types';
 
 export interface IWorkflowRepository {
   list(): Promise<WorkflowMeta[]>;

@@ -8,7 +8,7 @@ export interface ExecutionResult {
   error?: string;
 }
 
-export type ExecutionLane = 'main-thread' | 'worker';
+type ExecutionLane = 'main-thread' | 'worker';
 
 export interface LaneConfig {
   /**

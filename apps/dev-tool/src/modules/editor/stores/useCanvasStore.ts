@@ -17,6 +17,7 @@ import type { SnippetFragment, SnippetSummary } from '@prism/shared-types';
 import { globalRegistry } from '@prism/core';
 import { PORT_TYPE_COLORS } from '../../../utils/portTypeStyles';
 import type { ContextMenuState } from './selectionSlice';
+import { ExecutionStatus } from './executionSlice';
 import type { ExecutionLog, NodeTiming } from '@prism/shared-types';
 import { createId } from '@prism/shared-types';
 import { autosaveService, initAutosaveService, getAutosaveService } from '../services/autosaveService';
@@ -31,6 +32,9 @@ import {
   syncCountersFromWorkflow,
 } from './idCounter';
 
+// Re-export ExecutionStatus for backward compatibility (used by store/canvasStore.ts)
+export type { ExecutionStatus } from './executionSlice';
+
 type ReactFlowConnection = RfConnection;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -43,7 +47,6 @@ export interface ConnectionValidation {
 }
 
 export type InspectorTab = 'parameters' | 'preview' | 'debug' | 'settings' | 'info';
-export type ExecutionStatus = 'idle' | 'running' | 'done' | 'error' | 'cancelled';
 
 // ─── Port lookup helpers ─────────────────────────────────────────────────────
 

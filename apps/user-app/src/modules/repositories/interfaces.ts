@@ -1,18 +1,10 @@
 // Repository interfaces for user-app
 
-import type { PublishedWorkflow } from '@prism/shared-types';
+import type { PublishedWorkflow, PublishedWorkflowMeta } from '@prism/shared-types';
 import type { NodePackageManifest } from '@prism/shared-types';
 
-export interface PublishedWorkflowMeta {
-  sourceId: string;
-  name: string;
-  description?: string;
-  sourceName: string;
-  version: string;
-  publishedAt: string;
-  inputCount: number;
-  outputCount: number;
-}
+// Re-export PublishedWorkflowMeta for backward compatibility
+export type { PublishedWorkflowMeta } from '@prism/shared-types';
 
 export interface IPublishedWorkflowRepository {
   listPublished(): Promise<PublishedWorkflowMeta[]>;
