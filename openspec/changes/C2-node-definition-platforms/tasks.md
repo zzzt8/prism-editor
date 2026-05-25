@@ -13,7 +13,7 @@
   - 过滤逻辑：返回 `platforms` 包含 `both` 或包含目标平台的节点
   - 验收：`npm run typecheck --workspace=@prism/node-definitions`
 
-- [ ] **Task 4: 所有现有节点添加 `platforms: ['browser']`**
+- [x] **Task 4: 所有现有节点添加 `platforms: ['browser']`**
   - 在 `packages/node-definitions/src/definitions.ts` 的 7 个节点定义全部添加 `platforms: ['browser']`
   - 验收：`npm run typecheck --workspace=@prism/node-definitions`
 
