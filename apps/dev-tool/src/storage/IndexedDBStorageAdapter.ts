@@ -152,7 +152,8 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
   async createWorkflow(
     name: string,
     description?: string,
-    category?: string
+    category?: string,
+    targetPlatform?: 'browser' | 'nodejs'
   ): Promise<{ meta: WorkflowMeta; content: Workflow }> {
     const id = createId();
     const now = new Date().toISOString();
@@ -176,7 +177,7 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
       connections: [],
       inputs: [],
       outputs: [],
-      metadata: { createdAt: now, updatedAt: now },
+      metadata: { createdAt: now, updatedAt: now, targetPlatform },
     };
 
     await this.put(STORE_WORKFLOWS, content);

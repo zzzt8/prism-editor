@@ -16,6 +16,10 @@ interface NewWorkflowModalProps {
 
 const CATEGORIES = ['Uncategorized', 'Data Pipeline', 'Infrastructure'] as const;
 const ENVIRONMENTS = ['Staging', 'Production', 'Development'] as const;
+const TARGET_PLATFORMS = [
+  { value: 'browser', label: 'Frontend Preview Workflow' },
+  { value: 'nodejs', label: 'Backend Production Workflow' },
+] as const;
 
 type SelectCard = 'blank' | 'template';
 
@@ -27,6 +31,7 @@ export function NewWorkflowModal({ isOpen, onClose, onCreated }: NewWorkflowModa
   const [name, setName] = useState('');
   const [category, setCategory] = useState<string>(CATEGORIES[0]);
   const [environment, setEnvironment] = useState<string>(ENVIRONMENTS[0]);
+  const [targetPlatform, setTargetPlatform] = useState<'browser' | 'nodejs'>('browser');
   const [description, setDescription] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
@@ -46,6 +51,7 @@ export function NewWorkflowModal({ isOpen, onClose, onCreated }: NewWorkflowModa
       setSelectedCard('blank');
       setCategory(CATEGORIES[0]);
       setEnvironment(ENVIRONMENTS[0]);
+      setTargetPlatform('browser');
       setDescription('');
       setIsCreating(false);
     }
@@ -68,7 +74,8 @@ export function NewWorkflowModal({ isOpen, onClose, onCreated }: NewWorkflowModa
       const { meta, content } = await indexedDBStorageAdapter.createWorkflow(
         name.trim(),
         description.trim() || undefined,
-        category === 'Uncategorized' ? undefined : category
+        category === 'Uncategorized' ? undefined : category,
+        targetPlatform
       );
       loadWorkflow(content);
       navigate(`/workflow/${meta.id}`);
@@ -186,6 +193,28 @@ export function NewWorkflowModal({ isOpen, onClose, onCreated }: NewWorkflowModa
                   ))}
                 </select>
                 <ChevronDown size={14} className="new-select-icon" />
+              </div>
+            </div>
+
+            {/* Target Platform */}
+            <div className="new-field new-field--full">
+              <label className="new-label">Target Platform</label>
+              <div className="new-radio-group">
+                {TARGET_PLATFORMS.map((p) => (
+                  <label
+                    key={p.value}
+                    className={`new-radio${targetPlatform === p.value ? ' new-radio--selected' : ''}`}
+                  >
+                    <input
+                      type="radio"
+                      name="targetPlatform"
+                      value={p.value}
+                      checked={targetPlatform === p.value}
+                      onChange={() => setTargetPlatform(p.value)}
+                    />
+                    <span>{p.label}</span>
+                  </label>
+                ))}
               </div>
             </div>
 
