@@ -5,7 +5,12 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "browser": "./src/index.ts",
+      "node": "./src/nodejs/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./sharp-utils": "./src/nodejs/sharp-utils.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -18,7 +23,8 @@
   },
   "dependencies": {
     "@prism/shared-types": "workspace:*",
-    "comlink": "^4.4.2"
+    "comlink": "^4.4.2",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@vitest/browser": "^1.6.0",
