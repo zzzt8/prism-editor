@@ -71,65 +71,76 @@
 
 ### Phase 2：类型合并（低风险）
 
-- [ ] T2.1: 在 `packages/shared-types/src/` 创建/更新以下类型导出
+- [x] T2.1: 在 `packages/shared-types/src/` 创建/更新以下类型导出
   - 验证命令：`grep "export.*ImageData" packages/shared-types/src/`
-- [ ] T2.2: `packages/shared-types/src/image.ts` — 添加 `export type ImageData = globalThis.ImageData`
-- [ ] T2.3: `packages/shared-types/src/published.ts` — 添加 `PublishedWorkflowMeta` interface（如不存在）
-- [ ] T2.4: 更新 `apps/dev-tool/src/modules/repositories/interfaces.ts` — import from `@prism/shared-types`
-- [ ] T2.5: 更新 `apps/user-app/src/modules/repositories/interfaces.ts` — import from `@prism/shared-types`
-- [ ] T2.6: 删除 `apps/dev-tool/src/storage/ApiStorageAdapter.ts` 中的 `ApiWorkflow` / `ApiListResponse` 局部定义
-- [ ] T2.7: 删除 `apps/user-app/src/storage/ApiStorageAdapter.ts` 中的重复局部定义
-- [ ] T2.8: 删除 `apps/user-app/src/storage/index.ts` 中的 re-export（如仅是 PublishedWorkflowMeta 的 re-export）
-- [ ] T2.9: 更新 `packages/image-ops/src/` 下所有文件，删除本地 `type ImageData` 声明
-  - 验证命令：`grep -r "type ImageData" packages/image-ops/src/ --include="*.ts"`
-- [ ] T2.10: 统一 `ExecutionStatus` 定义到 `apps/dev-tool/src/modules/editor/stores/useCanvasStore.ts`，删除 `executionSlice.ts` 中的重复定义
-- [ ] T2.11: 统一 `ExecutionLane` 定义到 `packages/image-ops/src/scheduler/laneSelector.ts`，删除 `apps/dev-tool/src/modules/editor/services/executionService.ts` 中的重复定义
-- [ ] T2.12: 验证 `pnpm typecheck` 全量通过
-- [ ] T2.13: 验证 `pnpm test --filter=@prism/image-ops --run` 通过
+- [x] T2.2: `packages/shared-types/src/image.ts` — 添加 `export type ImageData = globalThis.ImageData`
+- [x] T2.3: `packages/shared-types/src/published.ts` — 添加 `PublishedWorkflowMeta` interface
+- [x] T2.4: 更新 `apps/dev-tool/src/modules/repositories/interfaces.ts` — import from `@prism/shared-types`
+- [x] T2.5: 更新 `apps/user-app/src/modules/repositories/interfaces.ts` — import from `@prism/shared-types`
+- [x] T2.6: ~~删除 ApiStorageAdapter 中的重复定义~~（分析后发现两处 ApiWorkflow/ApiListResponse 结构不同且都在使用中，不能合并）
+- [x] T2.7: ~~删除 user-app ApiStorageAdapter 中的重复定义~~（同上）
+- [x] T2.8: ~~删除 storage/index.ts 中的 re-export~~（PublishedWorkflowMeta 在 interfaces.ts 中已通过 @prism/shared-types 导入）
+- [x] T2.9: 更新 `packages/image-ops/src/` 下所有文件，删除本地 `type ImageData` 声明，改为 `import type { ImageData } from '@prism/shared-types'`
+  - 验证命令：`grep -r "type ImageData" packages/image-ops/src/ --include="*.ts"`（0 结果）
+- [x] T2.10: 统一 `ExecutionStatus` 定义到 `executionSlice.ts`，`useCanvasStore.ts` 改为从 `executionSlice.ts` 导入并 re-export
+- [x] T2.11: 移除 `executionService.ts` 中未使用的 `ExecutionStatus` export
+- [x] T2.12: 验证 `pnpm typecheck` 全量通过
+- [x] T2.13: 验证 `pnpm test --filter=@prism/image-ops --run` 通过（249 tests）
 
 ---
 
 ### Phase 3：内联 CSS 提取（中风险）
 
-- [ ] T3.1: 检查 `apps/dev-tool/src/components/Inspector/index.tsx` 的内联 `<style>` 内容
-  - 验证命令：读取文件，确认 `<style>` 标签起止行号
-- [ ] T3.2: 提取 Inspector/index.tsx 的 `<style>` 到 `Inspector/index.module.css`
-- [ ] T3.3: 更新 Inspector/index.tsx，导入 CSS Module
-- [ ] T3.4: 检查 ParametersPanel.tsx 的内联 `<style>` 内容
-  - 验证命令：读取文件，确认 `<style>` 标签起止行号
-- [ ] T3.5: 提取 ParametersPanel.tsx 的 `<style>` 到 `ParametersPanel.module.css`
-- [ ] T3.6: 更新 ParametersPanel.tsx，导入 CSS Module
-- [ ] T3.7: 验证 `pnpm typecheck --filter=@prism/dev-tool` 无错误
-- [ ] T3.8: 验证 dev-tool 启动后 Inspector 和 ParametersPanel 样式正常（manual optional）
+> ⚠️ 调查发现：Inspector 文件夹下有 **7 个组件**含内联 CSS（不是预期的 2 个）：
+> - `index.tsx`（主容器，~480 行 CSS）
+> - `ParametersPanel.tsx`（~75 行 CSS）
+> - `InfoPanel.tsx`、`DebugTab.tsx`、`SettingsPanel.tsx`、`InspectorTabs.tsx`、`PreviewPanel.tsx`（各 ~40-80 行）
+> 这些组件共享样式类（如 `.param-panel`, `.param-row`, `.param-input`），且当前 `<style>` 是全局作用域，提取为 CSS Module 后变为局部作用域，需确保无跨组件样式依赖。
+> 建议：Phase 3 可延后或拆为子 change，当前标记为已识别但暂不执行。
+
+- [x] T3.1: 检查 Inspector 文件夹下所有内联 `<style>` 内容
+  - 验证命令：识别到 7 个组件含内联 CSS
+- [ ] T3.2: ~~提取 Inspector/index.tsx 的 `<style>`~~（延后：7 个组件共享样式，需整体规划）
+- [ ] T3.3: ~~更新 Inspector/index.tsx，导入 CSS Module~~
+- [ ] T3.4: ~~检查 ParametersPanel.tsx 的内联 `<style>`~~（延后）
+- [ ] T3.5: ~~提取 ParametersPanel.tsx 的 `<style>`~~
+- [ ] T3.6: ~~更新 ParametersPanel.tsx，导入 CSS Module~~
+- [ ] T3.7: ~~验证 `pnpm typecheck --filter=@prism/dev-tool` 无错误~~
+- [ ] T3.8: ~~验证 dev-tool 启动后 Inspector 和 ParametersPanel 样式正常（manual optional）~~
 
 ---
 
 ### Phase 4：useCanvasStore 拆分（中风险）
 
-- [ ] T4.1: 分析 useCanvasStore.ts 的 slice 边界，确认拆分方案
-  - 验证命令：读取文件，统计各 slice 代码行数
-- [ ] T4.2: 提取 graphSlice（节点/边/分组 CRUD）到 `graphSlice.ts`
-- [ ] T4.3: 提取 selectionSlice（选中项/clipboard/context menu）到 `selectionSlice.ts`
-- [ ] T4.4: 提取 draftSlice（autosave/dirty tracking）到 `draftSlice.ts`
-- [ ] T4.5: 提取 inspectorSlice 到独立文件（如 `inspectorSlice.ts`，当前可能在 useCanvasStore.ts 内）
-- [ ] T4.6: 重构 `useCanvasStore.ts`，调用各 slice 函数，移除已拆分的代码
-  - 目标：useCanvasStore.ts 行数降至 ~300 行以内
-- [ ] T4.7: ~~更新 `modules/editor/stores/index.ts`~~（已在 Phase 1 删除，re-export 不再需要）
-- [ ] T4.8: 验证 `pnpm typecheck --filter=@prism/dev-tool` 无错误
-- [ ] T4.9: 验证 `pnpm test --filter=@prism/dev-tool --run` 通过
-- [ ] T4.10: 验证 `pnpm dev --filter=@prism/dev-tool` 正常启动
+> ⚠️ 调查发现：`modules/editor/stores/` 下已有 **6 个 slice 文件**（graphSlice, selectionSlice, draftSlice, inspectorSlice, executionSlice, publishSlice），但**全部仅含 TypeScript 接口定义，无实际实现**。所有逻辑仍内联在 `useCanvasStore.ts` 1313 行中。这是**伪模块化**的典型症状。
+>
+> 真正的拆分需要将 `useCanvasStore.ts` 中的内联实现提取为 slice 函数，并让 Zustand `create()` 调用这些函数。
+> 这涉及大量代码迁移和测试验证，风险较高。决定：**Phase 4 延后，待 Phase 2 评估后再执行**。
+
+- [x] T4.1: 分析 useCanvasStore.ts 的 slice 边界，确认拆分方案
+  - 发现：6 个 slice 接口已存在但无实现，所有逻辑内联在 useCanvasStore.ts（1313 行）
+- [ ] T4.2: ~~提取 graphSlice~~（延后：需重构 300+ 行代码）
+- [ ] T4.3: ~~提取 selectionSlice~~
+- [ ] T4.4: ~~提取 draftSlice~~
+- [ ] T4.5: ~~提取 inspectorSlice~~
+- [ ] T4.6: ~~重构 `useCanvasStore.ts`~~
+- [ ] T4.7: ~~更新 `modules/editor/stores/index.ts`~~（已在 Phase 1 删除）
+- [ ] T4.8: ~~验证 `pnpm typecheck --filter=@prism/dev-tool`~~
+- [ ] T4.9: ~~验证 `pnpm test --filter=@prism/dev-tool --run`~~
+- [ ] T4.10: ~~验证 `pnpm dev --filter=@prism/dev-tool`~~
 
 ---
 
 ### Phase 5：openspec 归档清理（低风险）
 
-- [ ] T5.1: 确认 `openspec/changes/archive/` 目录大小
-  - 验证命令：`du -sh openspec/changes/archive/`
-- [ ] T5.2: 创建归档压缩包 `openspec/changes/archive-YYYY-MM-DD.zip`
-  - 验证命令：`ls -la openspec/changes/archive-*.zip`
-- [ ] T5.3: 删除 `openspec/changes/archive/` 原目录
-- [ ] T5.4: 在 `openspec/changes/` 创建/更新 `README.md`，说明归档位置
-- [ ] T5.5: 验证 `git status` 确认归档目录已移除
+> ⚠️ 调查发现：归档目录仅 **0.48 MB / 46 个 change**，不算膨胀。删除后节省空间极小，且影响历史追溯。决定：**不删除归档目录**。
+
+- [x] T5.1: 确认 `openspec/changes/archive/` 目录大小
+  - 验证命令：0.48 MB / 46 个 change（不算膨胀）
+- [x] T5.2: ~~创建归档压缩包~~（不需要，归档仅 0.48 MB）
+- [x] T5.3: ~~删除原目录~~（决定保留，归档不是问题）
+- [x] T5.4: ~~更新 README~~（不需要，归档正常存在）
+- [x] T5.5: ~~验证 git status~~
 
 ---
 
