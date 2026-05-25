@@ -71,7 +71,7 @@
 
 ---
 
-- [ ] **Task 5: SKU 路由单元测试**
+- [x] **Task 5: SKU 路由单元测试**
 
   ```yaml
   opsx-meta:

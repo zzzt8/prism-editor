@@ -1,7 +1,7 @@
 // Server test setup - configure environment for API testing
 
 import { readFileSync, existsSync } from 'fs';
-import { resolve, join } from 'path';
+import { resolve } from 'path';
 
 // Load .env file if exists (for test database)
 // Use process.cwd() which points to server/ directory when running tests
@@ -20,14 +20,7 @@ if (existsSync(envPath)) {
 // Ensure OSS is disabled during tests (no real cloud calls)
 process.env.OSS_ENABLED = 'false';
 
-// Set test database URL if needed (SQLite path for local dev testing)
+// Set test database URL (SQLite path for local dev testing)
 // Must use absolute path with file: protocol for Prisma
 const dbPath = resolve(process.cwd(), 'prisma', 'dev.db');
-const dbUrl = `file:${dbPath}`;
-process.env.DATABASE_URL = dbUrl;
-
-// Debug output
-console.log('[test-setup] DATABASE_URL:', process.env.DATABASE_URL);
-console.log('[test-setup] process.cwd():', process.cwd());
-console.log('[test-setup] dbPath:', dbPath);
-console.log('[test-setup] db exists:', existsSync(dbPath));
+process.env.DATABASE_URL = `file:${dbPath}`;
