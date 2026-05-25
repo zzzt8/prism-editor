@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { globalRegistry } from '@prism/core';
 import type { NodeDefinition, NodePackageManifest } from '@prism/shared-types';
+import { useCanvasStore } from '../modules/editor/stores/useCanvasStore';
 import { Download, RefreshCw, VenetianMask, Image, Upload, Search, X, Hexagon, CircleDot, ChevronDown, Plus, Package } from 'lucide-react';
 import './NodePanel.css';
 import { ImportModal } from './NodePackageManager/ImportModal';
@@ -122,6 +123,10 @@ export const NodePanel: React.FC = () => {
   const allDefinitions = useMemo(() => {
     try {
       globalRegistry.initialize();
+      const targetPlatform = useCanvasStore.getState().workflowMeta.targetPlatform;
+      if (targetPlatform) {
+        return globalRegistry.listByPlatform(targetPlatform);
+      }
       return globalRegistry.listNodes();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to initialize node registry';

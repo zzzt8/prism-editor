@@ -70,6 +70,7 @@ export interface EditorWorkflowMeta {
   id: string;
   name: string;
   version: string;
+  targetPlatform?: 'browser' | 'nodejs';
 }
 
 /**

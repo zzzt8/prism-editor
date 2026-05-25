@@ -818,7 +818,12 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       nodes: canvasNodes,
       edges: canvasEdges,
       groups: [],
-      workflowMeta: { id: workflow.id, name: workflow.name, version: workflow.version },
+      workflowMeta: {
+        id: workflow.id,
+        name: workflow.name,
+        version: workflow.version,
+        targetPlatform: workflow.metadata?.targetPlatform,
+      },
       selectedNodeIds: [],
       isDirty: true,
       isDraggingFromPanel: false,

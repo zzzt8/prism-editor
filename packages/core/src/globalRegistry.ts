@@ -29,6 +29,7 @@ export interface GlobalRegistry {
   listNodes(): NodeDefinition[];
   listBuiltInNodes(): NodeDefinition[];
   listCustomNodes(): NodeDefinition[];
+  listByPlatform(platform: 'browser' | 'nodejs'): NodeDefinition[];
   isCustomNode(type: string): boolean;
   unregisterCustomNode(type: string): boolean;
   getExecutors(): NodeExecutorMap;
@@ -97,6 +98,12 @@ export const globalRegistry: GlobalRegistry = {
 
   listCustomNodes(): NodeDefinition[] {
     return Array.from(_definitions.values()).filter((d) => _customNodeTypes.has(d.type));
+  },
+
+  listByPlatform(platform: 'browser' | 'nodejs'): NodeDefinition[] {
+    return Array.from(_definitions.values()).filter(
+      (d) => !d.platforms || d.platforms.includes('both') || d.platforms.includes(platform)
+    );
   },
 
   isCustomNode(_type: string): boolean {
