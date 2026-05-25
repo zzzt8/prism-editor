@@ -1,6 +1,6 @@
 # tasks: node-definition-platforms
 
-- [ ] **Task 1: shared-types 新增 `platforms` 字段到 `NodeDefinition`**
+- [x] **Task 1: shared-types 新增 `platforms` 字段到 `NodeDefinition`**
   - 在 `packages/shared-types/src/node.ts` 的 `NodeDefinition` 接口新增 `platforms?: ('browser' | 'nodejs' | 'both')[]`
   - 验收：`npm run typecheck --workspace=@prism/shared-types`
 

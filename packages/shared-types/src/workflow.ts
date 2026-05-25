@@ -45,6 +45,8 @@ export interface WorkflowMetadata {
   tags?: string[];
   createdAt: string;
   updatedAt: string;
+  /** Target platform for this workflow. */
+  targetPlatform?: 'browser' | 'nodejs';
 }
 
 export interface Workflow {
