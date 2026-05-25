@@ -24,12 +24,12 @@
   - 创建 `packages/image-ops/src/core/index.ts`，导出所有 core 模块
   - 验收：`npm run typecheck --workspace=@prism/image-ops`
 
-- [ ] **Task 6: 改造 composite.ts 调用 core 层**
+- [x] **Task 6: 改造 composite.ts 调用 core 层**
   - 改造 `packages/image-ops/src/composite.ts`，将 executor 函数内部的像素计算替换为调用 `core/composite-math.ts`
   - 要求：保持 `compositeExecutor` 函数签名不变（NodeExecutor 接口）；保持 `serialComposite` 和 `parallelComposite` 在此文件（不移动）；保持 `compositeImages` 函数的存在（作为 browser 专用 wrapper，但内部调用 core）；保持所有 preview 生成逻辑（`OffscreenCanvas`/`generatePreviewUrl`）；保持所有 IRO 封装逻辑；移除已迁移到 core 的函数实现（`blendPixel`、`detectAlphaFormat`、`unPremultiply`、`clamp`）；`import { compositeImages } from './core/composite-math'` 替代内联实现
   - 验收：`npm run test -- packages/image-ops/src/composite.test.ts`
 
-- [ ] **Task 7: 端到端像素级 diff 验证**
+- [x] **Task 7: 端到端像素级 diff 验证**
   - 运行 `packages/image-ops/src/composite.test.ts` 的全部用例，确保像素级 diff 为 0
   - 验收：`npm run test -- packages/image-ops/src/composite.test.ts`
   - 期望：全部用例通过，无 regression
