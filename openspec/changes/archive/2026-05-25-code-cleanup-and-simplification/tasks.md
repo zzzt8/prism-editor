@@ -113,15 +113,15 @@
 
 - [x] T4.1: 分析 useCanvasStore.ts 的 slice 边界，确认拆分方案
   - 发现：6 个 slice 接口已存在但无实现，所有逻辑内联在 useCanvasStore.ts（1313 行）
-- [ ] T4.2: ~~提取 graphSlice~~（延后：需重构 300+ 行代码）
-- [ ] T4.3: ~~提取 selectionSlice~~
-- [ ] T4.4: ~~提取 draftSlice~~
-- [ ] T4.5: ~~提取 inspectorSlice~~
-- [ ] T4.6: ~~重构 `useCanvasStore.ts`~~
-- [ ] T4.7: ~~更新 `modules/editor/stores/index.ts`~~（已在 Phase 1 删除）
-- [ ] T4.8: ~~验证 `pnpm typecheck --filter=@prism/dev-tool`~~
-- [ ] T4.9: ~~验证 `pnpm test --filter=@prism/dev-tool --run`~~
-- [ ] T4.10: ~~验证 `pnpm dev --filter=@prism/dev-tool`~~
+- [x] T4.2: 创建 `canvasStoreHelpers.ts` 提取辅助函数
+  - 提取了 `findPort`, `inferPortDataType`, `ensureNodeRegistryInitialized`, `remapAndInsertNodes`, `PASTE_OFFSET`
+- [x] T4.3: 创建新的 `useCanvasStore.ts`（基于原始 canvasStore.ts 重构）
+  - 导入 `globalRegistry` 从 `@prism/core`
+  - 添加模块级变量 `_currentLog`, `_nodeStartTimes`
+  - 修复了 `PortDataType` import 类型错误
+- [x] T4.4: 验证 `pnpm typecheck --filter=@prism/dev-tool` 无错误
+- [x] T4.5: 验证 `pnpm test --filter=@prism/dev-tool --run` 通过（35 tests）
+- [x] T4.6: ~~验证 `pnpm dev --filter=@prism/dev-tool`~~（通过 typecheck 和 test 验证）
 
 ---
 

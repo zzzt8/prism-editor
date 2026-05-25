@@ -14,12 +14,12 @@ import type {
 import type { Template } from '@prism/shared-types';
 import { canConnectByDataType, PortDataType } from '@prism/shared-types';
 import type { SnippetFragment, SnippetSummary } from '@prism/shared-types';
-import { globalRegistry } from '@prism/core';
 import { PORT_TYPE_COLORS } from '../../../utils/portTypeStyles';
 import type { ContextMenuState } from './selectionSlice';
 import { ExecutionStatus } from './executionSlice';
 import type { ExecutionLog, NodeTiming } from '@prism/shared-types';
 import { createId } from '@prism/shared-types';
+import { globalRegistry } from '@prism/core';
 import { autosaveService, initAutosaveService, getAutosaveService } from '../services/autosaveService';
 import { getExecutionService } from '../services/executionService';
 import { indexedDBStorageAdapter, activeStorageAdapter } from '../../../storage';
@@ -31,11 +31,23 @@ import {
   resetCounters,
   syncCountersFromWorkflow,
 } from './idCounter';
+import {
+  findPort,
+  inferPortDataType,
+  ensureNodeRegistryInitialized,
+  remapAndInsertNodes,
+  PASTE_OFFSET,
+} from './canvasStoreHelpers';
 
 // Re-export ExecutionStatus for backward compatibility (used by store/canvasStore.ts)
 export type { ExecutionStatus } from './executionSlice';
 
 type ReactFlowConnection = RfConnection;
+
+// ─── Module-level state for execution ─────────────────────────────────────────
+
+let _currentLog: ExecutionLog | null = null;
+const _nodeStartTimes = new Map<string, number>();
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,93 +59,6 @@ export interface ConnectionValidation {
 }
 
 export type InspectorTab = 'parameters' | 'preview' | 'debug' | 'settings' | 'info';
-
-// ─── Port lookup helpers ─────────────────────────────────────────────────────
-
-function findPort<T extends { id: string; name: string; label?: string; dataType?: string }>(
-  ports: T[],
-  portId: string
-): T | undefined {
-  return ports.find((p) => p.id === portId || p.name === portId || p.label === portId);
-}
-
-function inferPortDataType(portName: string): PortDataType | undefined {
-  const lower = portName.toLowerCase();
-  if (lower === 'image' || lower === 'img' || lower === 'result') return PortDataType.IMAGE;
-  if (lower === 'mask' || lower === 'msk' || lower === 'alpha') return PortDataType.MASK;
-  if (lower === 'number' || lower === 'num') return PortDataType.NUMBER;
-  if (lower === 'string' || lower === 'str' || lower === 'text') return PortDataType.STRING;
-  if (lower === 'boolean' || lower === 'bool') return PortDataType.BOOLEAN;
-  return undefined;
-}
-
-function ensureNodeRegistryInitialized(): void {
-  try {
-    globalRegistry.initialize();
-  } catch (err) {
-    console.error('[canvasStore] globalRegistry.initialize() failed:', err);
-  }
-}
-
-const PASTE_OFFSET = 40;
-
-// Module-level execution log state
-let _currentLog: import('@prism/shared-types').ExecutionLog | null = null;
-const _nodeStartTimes = new Map<string, number>();
-
-/**
- * Remaps node IDs and positions for snippet insertion or clipboard paste.
- * - Assigns fresh IDs via module-level counters
- * - Offsets positions by PASTE_OFFSET (40px)
- * - Resets runtime state (executionResult, executionError, etc.)
- * - Filters edges to only those where both endpoints are in oldToNewIdMap
- * - Returns new nodes, new edges, and the oldToNewIdMap for callers that need it
- */
-function remapAndInsertNodes(
-  fragmentNodes: EditorCanvasNode[],
-  fragmentEdges: EditorCanvasEdge[],
-  basePosition: { x: number; y: number }
-): {
-  newNodes: EditorCanvasNode[];
-  newEdges: EditorCanvasEdge[];
-  oldToNewIdMap: Map<string, string>;
-} {
-  const oldToNewIdMap = new Map<string, string>();
-
-  const newNodes = fragmentNodes.map((origNode) => {
-    const newId = createNodeId();
-    oldToNewIdMap.set(origNode.id, newId);
-    return {
-      ...origNode,
-      id: newId,
-      position: {
-        x: origNode.position.x + basePosition.x + PASTE_OFFSET,
-        y: origNode.position.y + basePosition.y + PASTE_OFFSET,
-      },
-      data: {
-        ...origNode.data,
-        executionResult: undefined,
-        executionError: undefined,
-        bypassed: false,
-        minimized: false,
-      },
-    };
-  });
-
-  const fragmentNodeIds = new Set(fragmentNodes.map((n) => n.id));
-  const newEdges = fragmentEdges
-    .filter((edge) => fragmentNodeIds.has(edge.source) && fragmentNodeIds.has(edge.target))
-    .map((edge) => ({
-      ...edge,
-      id: createEdgeId(),
-      source: oldToNewIdMap.get(edge.source) ?? edge.source,
-      target: oldToNewIdMap.get(edge.target) ?? edge.target,
-    }));
-
-  return { newNodes, newEdges, oldToNewIdMap };
-}
-
-// ─── Store interface ─────────────────────────────────────────────────────────
 
 interface CanvasState {
   // Graph state (graphSlice)
@@ -645,7 +570,10 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       (e) => clipboardNodeIds.has(e.source) && clipboardNodeIds.has(e.target)
     );
 
-    const { newNodes, newEdges } = remapAndInsertNodes(state.clipboard, clipboardEdges, position);
+    const { newNodes, newEdges } = remapAndInsertNodes(state.clipboard, clipboardEdges, position, {
+      createNodeId,
+      createEdgeId,
+    });
 
     set((s) => ({
       nodes: [...s.nodes, ...newNodes],
@@ -1301,7 +1229,12 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       y: position.y - PASTE_OFFSET,
     };
 
-    const { newNodes, newEdges } = remapAndInsertNodes(availableNodes, snippetEdges, basePosition);
+    const { newNodes, newEdges } = remapAndInsertNodes(
+      availableNodes,
+      snippetEdges,
+      basePosition,
+      { createNodeId, createEdgeId }
+    );
 
     set((s) => ({
       nodes: [...s.nodes, ...newNodes],
