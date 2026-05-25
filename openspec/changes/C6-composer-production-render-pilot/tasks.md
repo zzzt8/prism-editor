@@ -19,7 +19,7 @@
 
 ---
 
-- [ ] **Task 2: server 新增 `/api/sku/:id/render` 端点**
+- [x] **Task 2: server 新增 `/api/sku/:id/render` 端点**
 
   ```yaml
   opsx-meta:

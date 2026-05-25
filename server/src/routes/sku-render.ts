@@ -4,6 +4,7 @@ import { SKURenderParamsSchema, SKURenderBodySchema } from '../schemas/sku-rende
 import { nodeExecutors } from '@prism/image-ops/nodejs';
 import type { Workflow, WorkflowNode } from '@prism/shared-types';
 import { createRequire } from 'module';
+import { saveRenderedImage, type StoredFile } from '../services/file-storage.js';
 
 const require = createRequire(import.meta.url);
 
@@ -13,15 +14,8 @@ function getWorkflowExecutor() {
   return WorkflowExecutorNodeJs;
 }
 
-interface RenderFile {
-  name: string;
-  url: string;
-  mimeType: string;
-  size: number;
-}
-
 interface RenderResult {
-  files: RenderFile[];
+  files: StoredFile[];
   renderedAt: string;
 }
 
@@ -81,7 +75,7 @@ const skuRenderRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
       });
     }
 
-    const files: RenderFile[] = [];
+        const files: StoredFile[] = [];
     const renderedAt = new Date().toISOString();
 
     for (const sw of workflowsToRender) {
@@ -116,8 +110,8 @@ const skuRenderRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
           });
         }
 
-        // Extract output images from results
-        const workflowFiles = extractOutputFiles(result.results, sw.workflow.name);
+        // Extract output images from results and save to storage
+        const workflowFiles = await extractAndSaveOutputFiles(result.results, sw.workflow.name);
         files.push(...workflowFiles);
       } catch (err) {
         request.log.error({
@@ -216,16 +210,16 @@ function injectUserInputs(
 }
 
 /**
- * Extract output files from workflow execution results.
+ * Extract output files from workflow execution results and save them to storage.
  * Currently extracts image outputs from composite and export nodes.
  */
-function extractOutputFiles(
+async function extractAndSaveOutputFiles(
   results: Record<string, Record<string, unknown>>,
   workflowName: string
-): RenderFile[] {
-  const files: RenderFile[] = [];
+): Promise<StoredFile[]> {
+  const files: StoredFile[] = [];
 
-  for (const [_nodeId, nodeResult] of Object.entries(results)) {
+  for (const [nodeId, nodeResult] of Object.entries(results)) {
     // Check for image output format (from compositeExecutor or exportExecutor)
     if (nodeResult && typeof nodeResult === 'object') {
       const resultObj = nodeResult as Record<string, unknown>;
@@ -239,15 +233,34 @@ function extractOutputFiles(
           previewUrl?: string;
         } | undefined;
 
-        if (imageData?.data) {
-          // For now, include placeholder URL since we're not persisting yet
-          // Task 3 will implement actual file storage
-          files.push({
-            name: `${workflowName}-${_nodeId}.png`,
-            url: imageData.previewUrl ?? `data:image/png;base64,`,
-            mimeType: 'image/png',
-            size: 0, // Will be computed when file is actually saved
-          });
+        if (imageData?.previewUrl) {
+          // Extract base64 data from previewUrl (data:image/png;base64,...)
+          const storedFile = await saveRenderedImage(
+            workflowName,
+            { data: Buffer.from([]), width: 0, height: 0 }, // Placeholder, will be overridden
+            'image/png'
+          );
+
+          // For now, use the previewUrl directly since we have base64 data
+          const base64Match = imageData.previewUrl.match(/^data:([^;]+);base64,(.+)$/);
+          if (base64Match) {
+            const mimeType = base64Match[1];
+            const base64Data = base64Match[2];
+            const savedFile = await saveRenderedImage(
+              workflowName,
+              { data: Buffer.from(base64Data, 'base64'), width: imageData.width ?? 0, height: imageData.height ?? 0 },
+              mimeType
+            );
+            files.push(savedFile);
+          } else {
+            // Non-base64 URL, pass through directly
+            files.push({
+              name: `${workflowName}-${nodeId}.png`,
+              url: imageData.previewUrl,
+              mimeType: 'image/png',
+              size: 0,
+            });
+          }
         }
       }
     }

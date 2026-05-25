@@ -8,6 +8,7 @@ import versionRoutes from './routes/versions.js';
 import renderRoutes from './routes/render.js';
 import skuRoutes from './routes/sku.js';
 import skuRenderRoutes from './routes/sku-render.js';
+import assetsRoutes from './routes/assets.js';
 
 const appPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   await fastify.register(authMiddleware, async () => {
@@ -18,6 +19,7 @@ const appPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     await fastify.register(renderRoutes);
     await fastify.register(skuRoutes);
     await fastify.register(skuRenderRoutes);
+    await fastify.register(assetsRoutes);
   });
 };
 
