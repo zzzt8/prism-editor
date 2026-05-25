@@ -49,6 +49,13 @@ export interface NodeDefinition {
   /** Optional executor ID override. Defaults to node type if not specified. */
   executor?: string;
   /**
+   * Supported platforms for this node definition.
+   * 'browser' = client-side only, 'nodejs' = server-side only,
+   * 'both' = works on both platforms.
+   * Omit to indicate no platform constraint.
+   */
+  platforms?: ('browser' | 'nodejs' | 'both')[];
+  /**
    * Structured parameter schema for runtime type inference.
    * Maps paramId → type descriptor for control-type inference at publish time.
    */
