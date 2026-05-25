@@ -5,6 +5,7 @@ import React, { useCallback, useState, useRef } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
 import type { ParamDefinition, ParamOption } from '@prism/shared-types';
 import { CircleDot } from 'lucide-react';
+import './Inspector.module.css';
 
 // ── ParamField ──────────────────────────────────────────────────────────────
 
@@ -386,90 +387,6 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({ nodeId }) => {
         </div>
       )}
 
-      <style>{`
-        /* ParametersPanel body — no padding, let Inspector container handle scroll */
-        .inspector-panel-body {
-          /* flex/overflow inherited from Inspector container */
-        }
-
-        .inspector-panel-empty {
-          /* empty styles removed — base from Inspector */
-        }
-
-        .inspector-alias-row {
-          margin-bottom: 12px;
-        }
-
-        .inspector-alias-display {
-          font-size: 14px;
-          font-weight: 600;
-          color: var(--color-text);
-          cursor: text;
-          padding: 4px 6px;
-          border-radius: 6px;
-          transition: background 0.12s;
-          display: inline-block;
-        }
-
-        .inspector-alias-display:hover {
-          background: var(--color-surface-2);
-        }
-
-        .inspector-alias-input {
-          font-size: 14px;
-          font-weight: 600;
-          padding: 4px 8px;
-          width: 100%;
-          box-sizing: border-box;
-        }
-
-        .inspector-image-thumb {
-          border: 1px solid var(--color-border);
-          border-radius: 8px;
-          overflow: hidden;
-          background: var(--color-surface-2);
-          margin-top: 8px;
-        }
-
-        .inspector-image-thumb-img {
-          display: block;
-          width: 100%;
-          max-height: 120px;
-          object-fit: contain;
-          background: repeating-conic-gradient(#1a1a1a 0% 25%, #222 0% 50%) 0 0 / 16px 16px;
-        }
-
-        .inspector-image-thumb-meta {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 8px;
-          padding: 6px 10px;
-          background: var(--bg-surface);
-          border-top: 1px solid var(--color-border);
-        }
-
-        .inspector-image-thumb-name {
-          font-size: 11px;
-          color: var(--color-text-muted);
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          flex: 1;
-          min-width: 0;
-        }
-
-        .inspector-image-thumb-resolution {
-          font-size: 11px;
-          font-family: 'SF Mono', 'Cascadia Code', monospace;
-          color: var(--color-accent);
-          white-space: nowrap;
-          flex-shrink: 0;
-          background: rgba(99, 102, 241, 0.1);
-          border-radius: 4px;
-          padding: 1px 6px;
-        }
-      `}</style>
     </div>
   );
 };

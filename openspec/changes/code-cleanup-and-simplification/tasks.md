@@ -91,22 +91,16 @@
 
 ### Phase 3：内联 CSS 提取（中风险）
 
-> ⚠️ 调查发现：Inspector 文件夹下有 **7 个组件**含内联 CSS（不是预期的 2 个）：
-> - `index.tsx`（主容器，~480 行 CSS）
-> - `ParametersPanel.tsx`（~75 行 CSS）
-> - `InfoPanel.tsx`、`DebugTab.tsx`、`SettingsPanel.tsx`、`InspectorTabs.tsx`、`PreviewPanel.tsx`（各 ~40-80 行）
-> 这些组件共享样式类（如 `.param-panel`, `.param-row`, `.param-input`），且当前 `<style>` 是全局作用域，提取为 CSS Module 后变为局部作用域，需确保无跨组件样式依赖。
-> 建议：Phase 3 可延后或拆为子 change，当前标记为已识别但暂不执行。
+> ✅ 完成：所有 7 个 Inspector 组件的内联 CSS 已提取到 `Inspector.module.css`，使用 `:global()` 保留原有全局作用域。
 
 - [x] T3.1: 检查 Inspector 文件夹下所有内联 `<style>` 内容
   - 验证命令：识别到 7 个组件含内联 CSS
-- [ ] T3.2: ~~提取 Inspector/index.tsx 的 `<style>`~~（延后：7 个组件共享样式，需整体规划）
-- [ ] T3.3: ~~更新 Inspector/index.tsx，导入 CSS Module~~
-- [ ] T3.4: ~~检查 ParametersPanel.tsx 的内联 `<style>`~~（延后）
-- [ ] T3.5: ~~提取 ParametersPanel.tsx 的 `<style>`~~
-- [ ] T3.6: ~~更新 ParametersPanel.tsx，导入 CSS Module~~
-- [ ] T3.7: ~~验证 `pnpm typecheck --filter=@prism/dev-tool` 无错误~~
-- [ ] T3.8: ~~验证 dev-tool 启动后 Inspector 和 ParametersPanel 样式正常（manual optional）~~
+- [x] T3.2: 提取所有 Inspector 组件的内联 `<style>` 到 `Inspector.module.css`
+  - 已提取：index.tsx, ParametersPanel.tsx, InfoPanel.tsx, DebugTab.tsx, SettingsPanel.tsx, InspectorTabs.tsx, PreviewPanel.tsx
+- [x] T3.3: 更新所有 Inspector 组件，导入 CSS Module
+- [x] T3.4: 验证 `pnpm typecheck --filter=@prism/dev-tool` 无错误
+- [x] T3.5: 验证 `pnpm test --filter=@prism/dev-tool` 通过（35 tests）
+- [x] T3.6: ~~验证 dev-tool 启动后 Inspector 和 ParametersPanel 样式正常（manual optional）~~
 
 ---
 
