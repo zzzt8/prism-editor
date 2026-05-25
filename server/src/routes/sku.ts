@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyRequest } from 'fastify';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
 import {
   CreateSKUSchema,
@@ -288,71 +289,83 @@ const skuRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     const { id } = SKUWorkflowsParamsSchema.parse(request.params);
     const { workflowId } = AddWorkflowToSKUSchema.parse(request.body);
 
-    // Check existing SKU and access
-    const existingSku = await prisma.sKU.findUnique({
-      where: { id },
-      include: {
-        workflows: {
-          include: {
-            workflow: {
-              select: { userId: true },
+    try {
+      // Check existing SKU and access
+      const existingSku = await prisma.sKU.findUnique({
+        where: { id },
+        include: {
+          workflows: {
+            include: {
+              workflow: {
+                select: { userId: true },
+              },
             },
           },
         },
-      },
-    });
+      });
 
-    if (!existingSku) {
-      return reply.status(404).send({ error: 'SKU not found' });
-    }
+      if (!existingSku) {
+        return reply.status(404).send({ error: 'SKU not found' });
+      }
 
-    const hasAccess = existingSku.workflows.some((w) => w.workflow.userId === userId);
-    if (!hasAccess) {
-      return reply.status(403).send({ error: 'Access denied' });
-    }
+      const hasAccess = existingSku.workflows.some((w) => w.workflow.userId === userId);
+      if (!hasAccess) {
+        return reply.status(403).send({ error: 'Access denied' });
+      }
 
-    // Check workflow exists and belongs to user
-    const workflow = await prisma.workflow.findUnique({
-      where: { id: workflowId },
-    });
+      // Check workflow exists and belongs to user
+      const workflow = await prisma.workflow.findUnique({
+        where: { id: workflowId },
+      });
 
-    if (!workflow) {
-      return reply.status(404).send({ error: 'Workflow not found' });
-    }
+      if (!workflow) {
+        return reply.status(404).send({ error: 'Workflow not found' });
+      }
 
-    if (workflow.userId !== userId) {
-      return reply.status(403).send({ error: 'Access denied' });
-    }
+      if (workflow.userId !== userId) {
+        return reply.status(403).send({ error: 'Access denied' });
+      }
 
-    // Check if association already exists
-    const existingAssociation = await prisma.sKUWorkflow.findUnique({
-      where: {
-        skuId_workflowId: {
+      // Check if association already exists
+      const existingAssociation = await prisma.sKUWorkflow.findUnique({
+        where: {
+          skuId_workflowId: {
+            skuId: id,
+            workflowId,
+          },
+        },
+      });
+
+      if (existingAssociation) {
+        return reply.status(409).send({ error: 'Workflow already associated with SKU' });
+      }
+
+      // Create association
+      await prisma.sKUWorkflow.create({
+        data: {
           skuId: id,
           workflowId,
         },
-      },
-    });
+      });
 
-    if (existingAssociation) {
-      return reply.status(409).send({ error: 'Workflow already associated with SKU' });
+      return {
+        data: {
+          skuId: id,
+          workflowId,
+          success: true,
+        },
+      };
+    } catch (err: unknown) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        if (err.code === 'P2025') {
+          return reply.status(404).send({ error: 'Resource not found' });
+        }
+        if (err.code === 'P2002') {
+          return reply.status(409).send({ error: 'Workflow already associated with SKU' });
+        }
+      }
+      throw err;
     }
-
-    // Create association
-    await prisma.sKUWorkflow.create({
-      data: {
-        skuId: id,
-        workflowId,
-      },
-    });
-
-    return {
-      data: {
-        skuId: id,
-        workflowId,
-        success: true,
-      },
-    };
   });
 
   // DELETE /api/skus/:id/workflows/:workflowId - Remove workflow from SKU
@@ -360,40 +373,49 @@ const skuRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     const userId = getCurrentUserId(request);
     const { id, workflowId } = SKUWorkflowsParamsSchema.parse(request.params);
 
-    // Check existing SKU and access
-    const existingSku = await prisma.sKU.findUnique({
-      where: { id },
-      include: {
-        workflows: {
-          include: {
-            workflow: {
-              select: { userId: true },
+    try {
+      // Check existing SKU and access
+      const existingSku = await prisma.sKU.findUnique({
+        where: { id },
+        include: {
+          workflows: {
+            include: {
+              workflow: {
+                select: { userId: true },
+              },
             },
           },
         },
-      },
-    });
+      });
 
-    if (!existingSku) {
-      return reply.status(404).send({ error: 'SKU not found' });
-    }
+      if (!existingSku) {
+        return reply.status(404).send({ error: 'SKU not found' });
+      }
 
-    const hasAccess = existingSku.workflows.some((w) => w.workflow.userId === userId);
-    if (!hasAccess) {
-      return reply.status(403).send({ error: 'Access denied' });
-    }
+      const hasAccess = existingSku.workflows.some((w) => w.workflow.userId === userId);
+      if (!hasAccess) {
+        return reply.status(403).send({ error: 'Access denied' });
+      }
 
-    // Delete association
-    await prisma.sKUWorkflow.delete({
-      where: {
-        skuId_workflowId: {
-          skuId: id,
-          workflowId,
+      // Delete association
+      await prisma.sKUWorkflow.delete({
+        where: {
+          skuId_workflowId: {
+            skuId: id,
+            workflowId,
+          },
         },
-      },
-    });
+      });
 
-    return { success: true };
+      return { success: true };
+    } catch (err: unknown) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        if (err.code === 'P2025') {
+          return reply.status(404).send({ error: 'Resource not found' });
+        }
+      }
+      throw err;
+    }
   });
 };
 

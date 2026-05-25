@@ -54,7 +54,7 @@
 
 ---
 
-- [ ] **Task 4: server 新增 SKU CRUD 路由**
+- [x] **Task 4: server 新增 SKU CRUD 路由**
 
   ```yaml
   opsx-meta:
