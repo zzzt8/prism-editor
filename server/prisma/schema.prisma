@@ -69,9 +69,36 @@ model Workflow {
   publishedAt DateTime?
   published   PublishedWorkflow?
   versions    WorkflowVersion[]
+  skus        SKUWorkflow[]
 
   @@index([userId])
   @@index([status])
+}
+
+model SKU {
+  id          String         @id @default(cuid())
+  code        String         @unique
+  name        String
+  description String?
+  inputSchema String         // JSON serialized SKUInputSchema
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  workflows   SKUWorkflow[]
+
+  @@index([code])
+}
+
+model SKUWorkflow {
+  id         String   @id @default(cuid())
+  skuId      String
+  sku        SKU      @relation(fields: [skuId], references: [id], onDelete: Cascade)
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([skuId, workflowId])
+  @@index([skuId])
+  @@index([workflowId])
 }
 
 model WorkflowVersion {

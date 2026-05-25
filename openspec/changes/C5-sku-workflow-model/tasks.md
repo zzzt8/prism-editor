@@ -2,7 +2,7 @@
 
 ---
 
-- [ ] **Task 1: shared-types 新增 `sku.ts` 类型定义**
+- [x] **Task 1: shared-types 新增 `sku.ts` 类型定义**
 
   ```yaml
   opsx-meta:
