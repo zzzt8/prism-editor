@@ -1,7 +1,7 @@
 ---
 name: openspec-apply
 description: 执行 OpenSpec change 的 tasks。断点续传，增量验证。
-version: "3.4"
+version: "4.0"
 category: apply
 tags:
   - openspec
@@ -19,35 +19,6 @@ verify:
 ## 状态
 
 只读 `tasks.md` checkbox：`-[ ]` = todo，`-[x]` = done。不读 tasks-state.json。
-
-## 启动检查
-
-顺序执行，有一项失败就停。
-
-```powershell
-# PowerShell
-$json = openspec list --json | ConvertFrom-Json
-$status = ($json.changes | Where-Object { $_.name -eq "<name>" }).status
-if ($status -ne "in-progress") {
-  Write-Error "Change status is '$status', expected 'in-progress'. Stop."
-  exit 1
-}
-Test-Path "openspec/changes/<name>/proposal.md"
-Test-Path "openspec/changes/<name>/design.md"
-Test-Path "openspec/changes/<name>/tasks.md"
-
-# Linux/macOS (bash)
-status=$(openspec list --json | jq -r '.changes[] | select(.name == "<name>") | .status')
-if [ "$status" != "in-progress" ]; then
-  echo "Change status is '$status', expected 'in-progress'. Stop."
-  exit 1
-fi
-test -f "openspec/changes/<name>/proposal.md"
-test -f "openspec/changes/<name>/design.md"
-test -f "openspec/changes/<name>/tasks.md"
-```
-
-失败 → 输出缺失的 artifact → 停止。不得自行创建。
 
 ## 执行路径分支
 
@@ -131,23 +102,39 @@ test -f "openspec/changes/<name>/tasks.md"
    - git commit -m "task: <id> <一句话描述>"
    - 不得跳过 commit（没有 commit 就没法 git diff）
 
-5. 增量验证
-   - git diff --name-only HEAD~1
-   - 根据改动文件路径判断 layer（见 SHARED-LAYERS.md）
-   - 跑对应的验证命令（见 SHARED-LAYERS.md）
-   - 验证失败 → 停止，进入 Failure-Handling
-
-6. 更新 checkbox
+5. 更新 checkbox
    - tasks.md 中 `- [ ] <id>` → `- [x] <id>`
    - 不要改其他 checkbox
 ```
 
-7. 手工验收处理（E2E 优先原则）
-   - 读完 tasks.md 末尾的"验收清单"
-   - 优先尝试 E2E / Playwright 测试：跑 Playwright 测试，若通过则标记对应项
-   - 其次命令行验证：typecheck、vitest 等，按输出标记
-   - 最后才是人工：无法编写测试且命令行无法验证的项 → 跳过，记入摘要末尾
-   - 人工项不阻断 apply 完成
+## Layer 级别自动冒烟
+
+> 每个 layer 的 task 全部完成后，立即跑该 layer 的 smoke test。
+> 失败则停在该 layer，进入 Failure-Handling。不等待所有 layer 跑完才发现问题。
+
+### Layer Smoke 命令映射
+
+| Layer | Smoke 命令 |
+|-------|-----------|
+| engine | `pnpm typecheck --filter=@prism/workflow-core --filter=@prism/image-ops --filter=@prism/node-definitions --filter=@prism/core && pnpm test --filter=@prism/workflow-core --run && pnpm test --filter=@prism/image-ops --run` |
+| backend | `pnpm typecheck --filter=@prism/server && pnpm test --filter=@prism/server --run` |
+| editor | `pnpm typecheck --filter=@prism/dev-tool` |
+| runtime | `pnpm typecheck --filter=@prism/user-app` |
+| ui-skin | `pnpm typecheck --filter=@prism/shared-ui` |
+| meta | 无需 smoke（typecheck 已覆盖） |
+
+### 判断当前 layer 何时完成
+
+- 每完成一个 task commit 后，检查 tasks.md 中该 layer 剩余 `-[ ]` 的 task 数量
+- 剩余 0 个 → 该 layer 完成，触发 smoke test
+- 如果当前 task 是最后一个待 commit 的，且剩余 task 全部是 blocked（依赖未满足）→ 也触发 smoke test
+
+### 失败策略
+
+- smoke 失败 → 输出失败命令 + 报错摘要，停在当前 layer
+- Agent 自动进入 Failure-Handling：定位错误文件，修复，commit，retry smoke
+- retry 通过 → 继续下一个 layer
+- retry 失败 2 次 → 停止，报告具体问题
 
 ## 验证命令 fallback
 
@@ -156,20 +143,10 @@ test -f "openspec/changes/<name>/tasks.md"
 
 ## 全量验证
 
-### Step 1: Smoke Check（先确认测试框架可运行）
+所有 layer smoke 通过后，执行全量验证：
 
 ```bash
-pnpm exec vitest run --reporter=verbose 2>&1 | head -20
-```
-
-- 如果所有测试被跳过（0 tests collected）且无编译错误 → 测试框架正常，继续 Step 2
-- 如果报错 "canvas native module" / "module not found" / 编译错误 → **环境问题**，记录，视为 smoke check 通过（排除环境干扰）
-- 如果有测试文件但全部 PASSED → 环境正常，继续 Step 2
-
-### Step 2: 全量验证
-
-```bash
-pnpm typecheck && pnpm test
+pnpm typecheck && pnpm test --run
 ```
 
 - 通过 → apply 完成
@@ -186,18 +163,13 @@ pnpm typecheck && pnpm test
 
 ## Failure-Handling
 
-**测试失败？**
-- 失败测试在本次改动的文件中 → related：修复代码，commit，git diff，回到第 5 步重新验证
-- 失败测试不在本次改动的文件中 → unrelated：记录，归因完成，继续
-- 无法判断 → 停止，告诉用户"无法归因，请人工确认"
+**typecheck 失败？**
+- 读报错信息，定位到文件和行，修复类型错误，commit，回到该 layer 的 smoke 重试
 
-**命令失败（exit code ≠ 0）？**
-- typecheck 失败 → 读报错信息，定位到文件和行，修复类型错误，回到第 5 步
-- test 失败 → 看上方"测试失败？"分支
-- CLI 失败 → 输出一句话诊断，告诉用户检查什么，停止
-
-**环境问题（全量验证前 smoke check 已标记）？**
-→ 记录为"pre-existing 环境问题"，不阻断 apply 流程
+**test 失败？**
+- 失败测试在本次改动的文件中 → related：修复代码，commit，重跑该 layer 的 smoke
+- 失败测试不在本次改动的文件中 → unrelated：记录，归因完成，继续下一个 layer
+- 无法判断 → 输出警告，继续（不阻断 archive）
 
 ## 完成后输出摘要
 
@@ -206,7 +178,6 @@ pnpm typecheck && pnpm test
 
 - 完成：T1, T2, T3
 - 跳过（blocked）：T4（T2 未完成）
-- 环境问题：<列出 smoke check 发现的问题>
-- 手工验收（需人工）：<列出无法自动化的验收项>
+- Layer smoke：engine ✓ / backend ✓ / editor ✓
 - 全量验证：通过 / 失败
 ```

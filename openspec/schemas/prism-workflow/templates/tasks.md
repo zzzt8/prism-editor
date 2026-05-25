@@ -7,12 +7,15 @@
 
 ### 测试策略
 
+> **验证命令必须可执行**。禁止写"手工验收"作为验证方式（除非标记为 optional）。
+> 机器能做的先让机器做：命令行验证 > 单元测试 > API 测试。
+
 | 层级 | 测试类型 | 验证命令 |
 |------|----------|----------|
-| engine | 单元测试 + golden fixture | `pnpm test --filter=@prism/workflow-core` |
-| backend | API 验证 + 数据迁移测试 | 手工测试 + 脚本验证 |
-| editor | Smoke test | 手工验收 |
-| runtime | 集成测试 | 手工验收 |
+| engine | 单元测试 | `pnpm test --filter=@prism/workflow-core --run && pnpm test --filter=@prism/image-ops --run` |
+| backend | API 验证 + 数据迁移 | `pnpm test --filter=@prism/server --run && pnpm --filter=@prism/server exec prisma migrate status` |
+| editor | 类型检查 | `pnpm typecheck --filter=@prism/dev-tool` |
+| runtime | Smoke test | `pnpm typecheck --filter=@prism/user-app` |
 
 ### Test Cases
 
@@ -38,12 +41,14 @@
 
 ```markdown
 - [ ] T1: <描述>
+  - 验证命令：<具体命令>
 - [ ] T2: <描述>
+  - 验证命令：<具体命令>
 ```
 
 ### change_class = high
 
-使用 opsx-meta 块（保留完整格式）：
+使用 opsx-meta 块：
 
 ```html
 <!-- opsx-meta
@@ -59,43 +64,25 @@ dependencies:
 ```
 
 > **layer 取值**：editor | runtime | backend | engine | ui-skin | meta
-> **verify 取值**：unit-tests | golden-fixture | api-tests | smoke-test | visual-check | manual
+>
+> **verify 取值**：
+> - `command: <具体命令>` — 命令行验证，如 `pnpm typecheck --filter=@prism/server`
+> - `unit-tests` — 单元测试覆盖
+> - `golden-fixture` — Golden fixture 验证
+> - `api-tests` — API 测试覆盖
+> - `smoke-test` — Smoke test 覆盖
+> - `manual (optional)` — **仅限**纯 UI/纯主观判断，不阻断任何流程
 
-> **验收标准写法规则**：必须写成**可观测、可验证**的条件，禁止写需要运行时状态才能验证的句子。
+> **禁止**：不带 `(optional)` 的 `manual`。不带具体命令的 `verify`。
+>
+> **验收标准写法规则**：必须写成**可观测、可验证**的条件。
 > - 好：`pnpm exec tsc --noEmit 无错误`
-> - 好：`clipboard 字段存在于 canvasStore.ts 且类型为 NodeOrEdge[]`
-> - 差：`复制节点后刷新页面，粘贴仍可用`（需要 persist middleware，属于额外 scope）
-> - 差：`两个 store 共享同一个 adapter 实例`（需要对象身份测试，属于额外 scope）
-> 如果验收标准涉及运行时行为，拆成两个 sub-task：代码可验证的 + 标记为手工验收的。
-
----
-
-### 验收清单（E2E 优先原则）
-
-> 机器能做的先让机器做：E2E 测试 > 单元测试 > 命令行验证 > 人工验收。
-> 填写时按上述优先级选择验证方式，人工验收仅作为兜底。
-
-- [ ] E2E / Playwright 测试覆盖（如有）
-- [ ] 单元/集成测试通过（如有）
-- [ ] `pnpm typecheck` 无错误
-- [ ] 手工验收（上述均无法覆盖时）
-
-> 若某个验收项已有测试覆盖，则不加人工验收项。
-> 只有"无法编写测试"且"命令行无法验证"时才加人工验收。
-
----
-
-## change_class = low 测试指南
-
-> 适用于 change_class = low 的测试设计。
-> 测试并入 tasks 验证命令，不保留独立测试章节。
-
-### Low-change 验证命令标准写法
-
-```markdown
-- [ ] T1.1: [任务名]
-  - 验证命令：`pnpm test --filter=<package> -- --grep "TC-xxx"`
-```
+> - 好：`pnpm test --filter=@prism/workflow-core --run`
+> - 好：`grep "getPublishedWorkflow" server/src/routes/` → 确认端点存在
+> - 差：`用户保存后数据不丢失`（需要运行时验证 → 拆成子任务或标为 manual (optional)）
+> - 差：`保持原有行为`（什么叫"原有行为"？）
+>
+> 如果验收标准涉及运行时行为，拆成两个 sub-task：代码可验证的 + 标记为 `manual (optional)` 的。
 
 ---
 
@@ -108,34 +95,35 @@ dependencies:
 > - N.3 Registry 与 API 契约 → 仅 backend / server / API 改动
 > - N.4 交互完整性 → 仅 UI 组件 / 前端交互改动
 > - N.5 安全与类型 → 仅 security / API / type 系统改动
-> 例如：纯 backend 安全 change 只加 N.3 + N.5；UX cleanup 只加 N.4。
 
 ### N.1 执行引擎完整性
 
-- [ ] N.1.1 拓扑排序测试覆盖（含 cycle detection）
-- [ ] N.1.2 节点 executor 错误隔离测试
-- [ ] N.1.3 AbortController 链路测试（取消后结果保留）
+- [ ] N.1.1 拓扑排序测试覆盖：`pnpm test --filter=@prism/workflow-core --run -- --grep "topo"`
+- [ ] N.1.2 节点 executor 错误隔离测试：`pnpm test --filter=@prism/workflow-core --run -- --grep "error"`
+- [ ] N.1.3 AbortController 链路测试：`pnpm test --filter=@prism/workflow-core --run -- --grep "abort"`
 
 ### N.2 状态一致性
 
-- [ ] N.2.1 Canvas 执行状态机转换测试
-- [ ] N.2.2 取消后 Zustand store 状态检查
+- [ ] N.2.1 Canvas 执行状态机转换测试：`pnpm test --filter=@prism/dev-tool --run -- --grep "execution"`
+- [ ] N.2.2 取消后 Zustand store 状态检查：`pnpm test --filter=@prism/dev-tool --run -- --grep "cancel"`
 
 ### N.3 Registry 与 API 契约
 
-- [ ] N.3.1 Node Registry 重复注册报错验证
-- [ ] N.3.2 Prisma migration 验证（`pnpm --filter=@prism/server exec prisma migrate status`）
+- [ ] N.3.1 Node Registry 重复注册报错验证：`grep -r "already registered" packages/core/src/`
+- [ ] N.3.2 Prisma migration 验证：`pnpm --filter=@prism/server exec prisma migrate status`
 - [ ] N.3.3 现有 workflow JSON 向后兼容验证（如涉及格式变更）
 
 ### N.4 交互完整性
 
-- [ ] N.4.1 无 `onClick={() => {}}` 占位交互
-- [ ] N.4.2 错误文案可读性检查
+> 仅涉及 UI/交互时填写。纯逻辑改动不需要。
+
+- [ ] N.4.1 无 `onClick={() => {}}` 占位交互：`grep -r "onClick={() => {}" apps/dev-tool/src/`
+- [ ] N.4.2 错误文案可读性检查：手动（optional）
 
 ### N.5 安全与类型
 
-- [ ] N.5.1 `as any` 使用检查（仅测试文件例外）
-- [ ] N.5.2 API 输入 Zod 验证覆盖（如涉及 API 变更）
+- [ ] N.5.1 `as any` 使用检查（仅测试文件例外）：`grep -r " as any" --include="*.ts" --include="*.tsx" --exclude="*.test.ts" --exclude="*.spec.ts" packages/ apps/`
+- [ ] N.5.2 API 输入 Zod 验证覆盖：`grep -r "z\.object\|z\.string\|z\.number" server/src/schemas/`
 
 ---
 

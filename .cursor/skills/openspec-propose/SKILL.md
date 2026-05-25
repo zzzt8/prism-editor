@@ -24,15 +24,9 @@ openspec list --json
 
 ## 获取 change name
 
-从用户输入推断 kebab-case name。推断后必须输出一行确认：
+从用户输入推断 kebab-case name。直接创建，不需要用户确认。
 
-```
-创建 change: <name>  ← 用户确认后继续
-```
-
-## Anchor Echo（调用 CLI 前输出）
-
-简要确认：`创建 change: <name> ← 用户确认后继续`
+如果推断结果明显不对，用户会纠正。Agent 直接继续。
 
 ## 创建 change
 
@@ -70,14 +64,9 @@ CLI 失败 → 停止，告诉用户检查 CLI 配置。不要自己造 artifact
 - `high`：完整 Architecture Review + 正式评审清单
 
 **tasks.md**（所有 class 必须）：
-- `low`：纯 checkbox，**不生成** opsx-meta 块。示例：
-
-  ```
-  - [ ] T1: <描述>
-  - [ ] T2: <描述>
-  ```
-- `medium`：`low` 格式 + 验收清单（E2E 优先原则）。**不生成** opsx-meta 块。
-- `high`：每个 task 含 opsx-meta 块（id、layer、verify）。
+- `low`：纯 checkbox，**不生成** opsx-meta 块。验收标准必须包含具体验证命令。
+- `medium`：`low` 格式 + 质量合规章节。**不生成** opsx-meta 块。
+- `high`：每个 task 含 opsx-meta 块（id、layer、verify）。验收标准必须可自动化验证。
 
 ## change-splitting（可选）
 

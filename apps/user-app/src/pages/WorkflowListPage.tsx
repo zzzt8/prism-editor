@@ -17,6 +17,8 @@ import { type PublishedWorkflowMeta } from '../modules/repositories/interfaces';
 import { type SortKey } from '../modules/catalog/workflowCatalogStore';
 import { useWorkflowCatalogStore } from '../modules/catalog/workflowCatalogStore';
 import { navigateToWorkflow } from '../router';
+import { type FileImport, importWorkflowFromFile } from '../utils/workflowImport';
+import { userAppStorage } from '../storage';
 import { Box } from 'lucide-react';
 
 const PAGE_SIZE = 10;
@@ -106,10 +108,31 @@ export const WorkflowListPage: React.FC = () => {
 
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const showToast = useCallback((message: string, type: ToastState['type'] = 'success') => {
     setToast({ message, type });
   }, []);
+
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const result: FileImport = await importWorkflowFromFile(file);
+    if (result.success) {
+      try {
+        await userAppStorage.importWorkflow(result.workflow);
+        showToast(`已导入「${result.workflow.name}」`, 'success');
+        loadWorkflows();
+      } catch {
+        showToast(`保存失败，请重试`, 'error');
+      }
+    } else {
+      showToast(`导入失败：${result.reason}`, 'error');
+    }
+
+    e.target.value = '';
+  }, [loadWorkflows, showToast]);
 
   const dismissToast = useCallback(() => setToast(null), []);
 
@@ -252,6 +275,20 @@ export const WorkflowListPage: React.FC = () => {
                 <LayoutGrid size={16} />
               </button>
             </div>
+
+            <button
+              className="home-import-btn"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Import
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json,application/json"
+              style={{ display: 'none' }}
+              onChange={handleFileChange}
+            />
           </div>
         </section>
 

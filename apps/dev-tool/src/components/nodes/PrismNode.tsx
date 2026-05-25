@@ -16,7 +16,7 @@
 import React, { type FC, useMemo, useState } from 'react';
 import { type NodeProps } from '@xyflow/react';
 import { useCanvasStore } from '../../store/canvasStore';
-import type { CanvasNodeData } from '../../store/canvasStore';
+import type { CanvasNodeData } from '../../modules/editor/stores/types';
 import { NodePreviewModal } from '../canvas/NodePreviewModal';
 import type { PortDataType } from '@prism/shared-types';
 import { PrismNodeHeader, CATEGORY_COLORS } from './PrismNodeHeader';

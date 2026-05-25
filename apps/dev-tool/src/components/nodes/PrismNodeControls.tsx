@@ -7,7 +7,7 @@ import {
   unwrapImageData,
   unwrapPreviewUrl,
 } from '@prism/shared-types';
-import type { CanvasNodeData } from '../../store/canvasStore';
+import type { CanvasNodeData } from '../../modules/editor/stores/types';
 
 interface ImageFileValue {
   dataUrl: string;

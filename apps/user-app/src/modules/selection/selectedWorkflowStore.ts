@@ -3,11 +3,12 @@
 // State: selectedWorkflow, nodeLoadErrors
 // Actions: selectWorkflow, clearSelection
 //
-// selectWorkflow fetches the full workflow content directly from the server.
+// selectWorkflow reads from userAppStorage (IndexedDB).
 
 import { create } from 'zustand';
 import type { PublishedWorkflow } from '@prism/shared-types';
 import { loadRequiredNodes } from '../node-runtime/nodePackageLoader';
+import { userAppStorage } from '../../storage';
 
 export interface NodeLoadError {
   packageName: string;
@@ -22,8 +23,6 @@ export interface SelectedWorkflowState {
   clearNodeLoadErrors: () => void;
 }
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
-
 export const useSelectedWorkflowStore = create<SelectedWorkflowState>((set) => {
   return {
     selectedWorkflow: null,
@@ -31,20 +30,7 @@ export const useSelectedWorkflowStore = create<SelectedWorkflowState>((set) => {
 
     selectWorkflow: async function selectWorkflow(sourceId: string) {
       try {
-        // Call GET /api/published/:id directly - single endpoint, no list iteration
-        const resp = await fetch(`${API_BASE}/published/${sourceId}`);
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const body: { data: {
-          workflowId: string;
-          workflow: { id: string; name: string; description?: string; version: string };
-          content: string;
-        } } = await resp.json();
-
-        const published = body.data;
-        const workflow = JSON.parse(published.content) as PublishedWorkflow;
-        if (!workflow.sourceId) workflow.sourceId = published.workflow.id;
-        if (!workflow.name) workflow.name = published.workflow.name;
-
+        const workflow = await userAppStorage.loadPublished(sourceId);
         set({ selectedWorkflow: workflow, nodeLoadErrors: [] });
 
         const errors = await loadRequiredNodes(workflow);
@@ -54,7 +40,7 @@ export const useSelectedWorkflowStore = create<SelectedWorkflowState>((set) => {
         }
       } catch (err) {
         console.error('[selectedWorkflowStore] error:', err);
-        set({ nodeLoadErrors: [{ packageName: 'system', message: String(err) }] });
+        set({ selectedWorkflow: null, nodeLoadErrors: [{ packageName: 'system', message: String(err) }] });
       }
     },
 

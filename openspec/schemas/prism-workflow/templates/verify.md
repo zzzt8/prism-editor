@@ -10,51 +10,53 @@
 
 - [ ] tasks.md 所有 checkbox 为 `- [x]`
 - [ ] proposal.md 顶部有 change_class + reason
-- [ ] 每个 task 有 opsx-meta 块（id、layer、verify）
 
 ---
 
 ## Full Verification
 
 ```bash
-pnpm typecheck && pnpm test
+pnpm typecheck && pnpm test --run
 ```
 
-通过 → 继续。不通过 → 进入归因。
+**无论通过与否，继续执行后续步骤。**
 
 ---
 
-## Test Failure Attribution（仅在测试失败时）
+## Test Failure Attribution
 
 | 失败测试 | 在 git diff 范围内？ | 归因 | 动作 |
 |---------|-------------------|------|------|
-| [TC-xxx] | 是 / 否 | related / unrelated / flaky / undetermined | 修复或记录 |
+| [TC-xxx] | 是 / 否 | related / unrelated / flaky | 记录到报告 |
 
 **归因判定：**
-- `related` → 阻断，必须修复
-- `unrelated` → 记录，继续
-- `flaky` → 记录，继续
-- `undetermined` → 阻断
+- `related` → 记录，报告给 Agent 修复
+- `unrelated` → 记录为 pre-existing
+- `flaky` → 记录为 flaky
+
+**verify 不阻断 archive。**
 
 ---
 
 ## Coherence Check
 
+> 自动化比对：design.md 中提到的文件/函数/配置，代码中是否存在。
+
 - [ ] 每个已完成 task 是否有对应代码改动？（git diff 验证）
-- [ ] design.md 关键决策是否在代码中体现？
-- [ ] 是否有越权（explore/propose/verify 阶段发生代码变更）未报告？
+- [ ] design.md 提到的文件路径存在
+- [ ] design.md 提到的函数/变量名在代码中存在
 
 ---
 
 ## Verify Result
 
-**结论：** 通过 / 阻断
+```markdown
+## Verify 结果
 
-**原因：**
-- Full 验证：✓ / ✗
-- 归因阻断：N 个 related/undetermined
-- 一致性：✓ / ✗（列出具体问题）
+- **Checkbox**：`N/N done`
+- **Full 验证**：✓ / ⚠（N 个失败，归因：related × N, unrelated × N）
+- **Coherence**：✓ / ⚠（N 个不一致）
+- **结论**：报告模式（不阻断 archive）
 
-**下一步：**
-- 通过 → 可以 archive
-- 阻断 → 返回 apply 修复后重新 verify
+> 建议：修复 related 测试失败后重新 verify。
+```

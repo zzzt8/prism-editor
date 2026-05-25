@@ -1,0 +1,6 @@
+---
+name: code-cleanup-and-simplification
+change_class: medium
+change_profile: medium
+reason: 基于代码库分析，发现类型重复（18处 ImageData、4处 PublishedWorkflowMeta）、useCanvasStore.ts 达 1313 行含 6 种混杂 slice、多文件内联 CSS（480+ 行）、4 个伪模块化 re-export 文件、openspec 归档 277+ 目录待清理
+---

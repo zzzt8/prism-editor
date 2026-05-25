@@ -32,17 +32,4 @@ export type {
 // CanvasNodeData with runtime state (executionResult, executionError, etc.)
 // This type is used by components that need to access runtime state.
 // The old store exported this type; we recreate it for backward compatibility.
-export interface CanvasNodeData extends Record<string, unknown> {
-  label: string;
-  nodeType: string;
-  params: Record<string, unknown>;
-  definition?: import('@prism/shared-types').NodeDefinition;
-  executionResult?: Record<string, unknown>;
-  executionError?: string;
-  _executingNodeId?: string;
-  extraInputs?: Array<{ id: string; name: string; type: 'image'; dataType: import('@prism/shared-types').PortDataType }>;
-  extraOutputs?: Array<{ id: string; name: string; type: 'image'; dataType: import('@prism/shared-types').PortDataType }>;
-  bypassed?: boolean;
-  minimized?: boolean;
-  pinned?: boolean;
-}
+export type { CanvasNodeData } from '../modules/editor/stores/types';
