@@ -15,12 +15,12 @@
   - 要求：提取 `compositePixel(base, overlay, opacity) → [r,g,b,a]` 纯函数；包含 premultiplied RGB lerp + straight alpha lerp 逻辑；保持原有注释和公式说明；纯函数，无任何 API 依赖
   - 验收：`Test-Path "packages/image-ops/src/core/porter-duff.ts"`
 
-- [ ] **Task 4: 创建 composite-math.ts 纯函数**
+- [x] **Task 4: 创建 composite-math.ts 纯函数**
   - 将 `composite.ts` 中的 `compositeImages` 函数提取并改造，写入 `packages/image-ops/src/core/composite-math.ts`
   - 要求：接受 `(baseData: ImageData, overlayData: ImageData, options: CompositeOptions) => ImageData`；内部调用 `alpha-format.ts`、`blend-modes.ts`、`porter-duff.ts` 的纯函数；**不创建任何 canvas 或 ImageData**；保持与现有 `compositeImages` 完全相同的像素级行为；导出 `CompositeOptions` 接口
   - 验收：`Test-Path "packages/image-ops/src/core/composite-math.ts"`
 
-- [ ] **Task 5: 创建 core/index.ts 统一导出**
+- [x] **Task 5: 创建 core/index.ts 统一导出**
   - 创建 `packages/image-ops/src/core/index.ts`，导出所有 core 模块
   - 验收：`npm run typecheck --workspace=@prism/image-ops`
 
@@ -34,12 +34,12 @@
   - 验收：`npm run test -- packages/image-ops/src/composite.test.ts`
   - 期望：全部用例通过，无 regression
 
-- [ ] **Task 8: 完整 typecheck 验证**
+- [x] **Task 8: 完整 typecheck 验证**
   - 运行 `image-ops` package 的完整类型检查
   - 验收：`npm run typecheck --workspace=@prism/image-ops`
   - 期望：无类型错误
 
-- [ ] **Task 9: 上游 package typecheck**
+- [x] **Task 9: 上游 package typecheck**
   - 验证依赖 `image-ops` 的上游 package 仍能正常类型检查（`workflow-core`、`dev-tool`）
   - 验收：`npm run typecheck --workspace=@prism/workflow-core && npm run typecheck --workspace=@prism/dev-tool`
 
