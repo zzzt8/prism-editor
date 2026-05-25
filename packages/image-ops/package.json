@@ -10,6 +10,7 @@
       "node": "./src/nodejs/index.ts",
       "default": "./src/index.ts"
     },
+    "./nodejs": "./src/nodejs/index.ts",
     "./sharp-utils": "./src/nodejs/sharp-utils.ts"
   },
   "scripts": {

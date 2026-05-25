@@ -2,7 +2,7 @@
 
 ---
 
-- [ ] **Task 1: workflow-core 新增 `WorkflowExecutorNodeJs` 类**
+- [x] **Task 1: workflow-core 新增 `WorkflowExecutorNodeJs` 类**
 
   ```yaml
   opsx-meta:
