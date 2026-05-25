@@ -4,7 +4,7 @@
   - 在 `packages/shared-types/src/node.ts` 的 `NodeDefinition` 接口新增 `platforms?: ('browser' | 'nodejs' | 'both')[]`
   - 验收：`npm run typecheck --workspace=@prism/shared-types`
 
-- [ ] **Task 2: shared-types 新增 `targetPlatform` 到 `WorkflowMetadata`**
+- [x] **Task 2: shared-types 新增 `targetPlatform` 到 `WorkflowMetadata`**
   - 在 `packages/shared-types/src/workflow.ts` 的 `WorkflowMetadata` 新增 `targetPlatform?: 'browser' | 'nodejs'`
   - 验收：`npm run typecheck --workspace=@prism/shared-types`
 

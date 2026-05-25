@@ -61,6 +61,15 @@ export function listByCategory(
   return [...registry.values()].filter((d) => d.category === category);
 }
 
+export function listByPlatform(
+  registry: NodeDefinitionRegistry,
+  platform: 'browser' | 'nodejs'
+): NodeDefinition[] {
+  return [...registry.values()].filter(
+    (d) => !d.platforms || d.platforms.includes('both') || d.platforms.includes(platform)
+  );
+}
+
 export function listAll(registry: NodeDefinitionRegistry): NodeDefinition[] {
   return [...registry.values()];
 }
