@@ -3,7 +3,7 @@ import { compositeImages, compositeExecutor, serialComposite, parallelComposite 
 import { ImageData as CanvasImageData } from 'canvas';
 import { WorkerRunner } from '../src/scheduler/workerRunner';
 
-type ImageData = globalThis.ImageData;
+import type { ImageData } from '@prism/shared-types';
 
 function pixelsMatch(a: ImageData, b: ImageData): boolean {
   if (a.width !== b.width || a.height !== b.height) return false;

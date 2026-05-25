@@ -3,6 +3,18 @@
 import type { PortType } from './node';
 import type { Connection } from './workflow';
 
+/** Minimal metadata for listing published workflows */
+export interface PublishedWorkflowMeta {
+  sourceId: string;
+  name: string;
+  description?: string;
+  sourceName: string;
+  version: string;
+  publishedAt: string;
+  inputCount: number;
+  outputCount: number;
+}
+
 /** Export format options for published output nodes */
 export type ExportFormat = 'png' | 'jpeg' | 'webp';
 

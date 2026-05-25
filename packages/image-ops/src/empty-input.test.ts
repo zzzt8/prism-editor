@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { parseColor } from '../src/empty-input';
 import { ImageData as CanvasImageData } from 'canvas';
 
-type ImageData = globalThis.ImageData;
+import type { ImageData } from '@prism/shared-types';
 
 /** Create a test ImageData with specified RGBA */
 function makeImage(

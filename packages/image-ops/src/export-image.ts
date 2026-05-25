@@ -1,7 +1,7 @@
 // Image export operations
 
 // ImageData is a browser built-in
-type ImageData = globalThis.ImageData;
+import type { ImageData } from '@prism/shared-types';
 import type { ExportOptions } from '@prism/shared-types';
 import { resizeImageData } from './transform';
 import { unwrapImageData } from '@prism/shared-types';

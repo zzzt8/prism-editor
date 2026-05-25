@@ -8,6 +8,7 @@ import {
   PortDataType,
   type PipelineData,
   type TypeConverterFn,
+  type ImageData,
   toPipeline,
 } from '@prism/shared-types';
 
@@ -90,8 +91,6 @@ export const typeConverterRegistry = new TypeConverterRegistry();
  * IMAGE → MASK: extracts the alpha channel and produces a single-channel mask.
  * Pixels with alpha > 127 become white (255), others become black (0).
  */
-type ImageData = globalThis.ImageData;
-
 function extractAlphaChannel(imageData: ImageData): ImageData {
   const { width, height, data } = imageData;
   const maskData = new Uint8ClampedArray(width * height);

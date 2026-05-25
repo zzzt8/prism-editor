@@ -7,7 +7,7 @@
 
 import { getImageMemoryManager } from './memory-manager';
 
-type ImageData = globalThis.ImageData;
+import type { ImageData } from '@prism/shared-types';
 
 export interface PreviewStrategy {
   /**

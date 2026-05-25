@@ -1,6 +1,6 @@
 // Image compositing with blend modes
 // ImageData is a browser built-in
-type ImageData = globalThis.ImageData;
+import type { ImageData } from '@prism/shared-types';
 import type { BlendMode } from '@prism/shared-types';
 import { createCanvas, makeImageData } from './canvas-util';
 import { unwrapImageData, type ImageRuntimeObject } from '@prism/shared-types';

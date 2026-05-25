@@ -7,7 +7,7 @@ import {
 } from '../src/apply-mask';
 import { ImageData as CanvasImageData } from 'canvas';
 
-type ImageData = globalThis.ImageData;
+import type { ImageData } from '@prism/shared-types';
 
 /** Create a 4x4 RGBA ImageData with all pixels = (r, g, b, a) */
 function makeImage(

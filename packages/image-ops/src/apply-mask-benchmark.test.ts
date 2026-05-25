@@ -11,7 +11,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 
 // Test types
-type ImageData = globalThis.ImageData;
+import type { ImageData } from '@prism/shared-types';
 
 // ─── Performance Measurement Types ─────────────────────────────────────────────
 

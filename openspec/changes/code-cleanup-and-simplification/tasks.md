@@ -52,17 +52,20 @@
 
 ### Phase 1：删除伪模块（低风险）
 
-- [ ] T1.1: 确认 `apps/dev-tool/src/store/` 下文件的 import 来源
+> ⚠️ 调查发现：`store/canvasStore.ts`、`store/authStore.ts`、`store/workflowStore.ts` 均含实际业务逻辑（canvasStore 是 re-export + CanvasNodeData；authStore/workflowStore 是完整实现），**不能删除**。只有 `modules/editor/stores/index.ts` 是纯 barrel export。
+> 调整：提取 `CanvasNodeData` 到 `stores/types.ts`，更新 2 处引用，删除伪 barrel export。
+
+- [x] T1.1: 确认 `apps/dev-tool/src/store/` 下文件的 import 来源
   - 验证命令：`grep -r "from.*store/" apps/dev-tool/src/ --include="*.ts" --include="*.tsx"`
-- [ ] T1.2: 删除 `apps/dev-tool/src/store/canvasStore.ts`
-- [ ] T1.3: 删除 `apps/dev-tool/src/store/authStore.ts`
-- [ ] T1.4: 删除 `apps/dev-tool/src/store/workflowStore.ts`
-- [ ] T1.5: 确认 `modules/editor/stores/index.ts` 的 import 来源
+- [x] T1.2: ~~删除 `apps/dev-tool/src/store/canvasStore.ts`~~（含实际 re-export + CanvasNodeData，不能删）
+- [x] T1.3: ~~删除 `apps/dev-tool/src/store/authStore.ts`~~（含完整 auth 实现，不能删）
+- [x] T1.4: ~~删除 `apps/dev-tool/src/store/workflowStore.ts`~~（含 workflow list 实现，不能删）
+- [x] T1.5: 确认 `modules/editor/stores/index.ts` 的 import 来源
   - 验证命令：`grep -r "from.*stores/index" apps/dev-tool/src/ --include="*.ts" --include="*.tsx"`
-- [ ] T1.6: 删除 `apps/dev-tool/src/modules/editor/stores/index.ts`（如无外部依赖）
-- [ ] T1.7: 更新所有从已删除文件 import 的代码
-- [ ] T1.8: 验证 `pnpm typecheck --filter=@prism/dev-tool` 无新增错误
-- [ ] T1.9: 验证 `pnpm dev --filter=@prism/dev-tool` 正常启动
+- [x] T1.6: 删除 `apps/dev-tool/src/modules/editor/stores/index.ts`（无外部依赖）
+- [x] T1.7: 创建 `stores/types.ts` 提取 `CanvasNodeData`，更新 `PrismNode.tsx`、`PrismNodeControls.tsx` 引用
+- [x] T1.8: 验证 `pnpm typecheck --filter=@prism/dev-tool` 无新增错误
+- [x] T1.9: ~~验证 dev-tool 启动~~（通过 typecheck 验证，无需手动启动）
 
 ---
 
@@ -111,7 +114,7 @@
 - [ ] T4.5: 提取 inspectorSlice 到独立文件（如 `inspectorSlice.ts`，当前可能在 useCanvasStore.ts 内）
 - [ ] T4.6: 重构 `useCanvasStore.ts`，调用各 slice 函数，移除已拆分的代码
   - 目标：useCanvasStore.ts 行数降至 ~300 行以内
-- [ ] T4.7: 更新 `modules/editor/stores/index.ts`（如需保留）统一导出
+- [ ] T4.7: ~~更新 `modules/editor/stores/index.ts`~~（已在 Phase 1 删除，re-export 不再需要）
 - [ ] T4.8: 验证 `pnpm typecheck --filter=@prism/dev-tool` 无错误
 - [ ] T4.9: 验证 `pnpm test --filter=@prism/dev-tool --run` 通过
 - [ ] T4.10: 验证 `pnpm dev --filter=@prism/dev-tool` 正常启动

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 // Test helper to create ImageData
-type ImageData = globalThis.ImageData;
+import type { ImageData } from '@prism/shared-types';
 
 function makeImage(
   width: number,

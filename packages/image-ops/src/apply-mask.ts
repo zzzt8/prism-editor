@@ -1,7 +1,7 @@
 // Mask application operations
 
 // ImageData is a browser built-in, used as interface-only
-type ImageData = globalThis.ImageData;
+import type { ImageData } from '@prism/shared-types';
 import type { MaskOptions } from '@prism/shared-types';
 import { resizeImageData } from './transform';
 import { unwrapImageData } from '@prism/shared-types';

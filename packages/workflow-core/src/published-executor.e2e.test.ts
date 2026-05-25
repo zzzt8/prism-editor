@@ -19,12 +19,10 @@ import type {
   CompositeExecutorOutput,
   ExportExecutorOutput,
 } from '@prism/shared-types';
-import { unwrapImageData, type ExportFormat } from '@prism/shared-types';
+import { unwrapImageData, type ExportFormat, type ImageData } from '@prism/shared-types';
 import { WorkflowExecutor } from '../src/executor';
 import { PublishedWorkflowExecutor } from '../src/published-executor';
 import { applyMask, compositeImages, exportImage } from '@prism/image-ops';
-
-type ImageData = globalThis.ImageData;
 
 // ─── Synthetic image helpers ───────────────────────────────────────────────────
 

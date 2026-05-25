@@ -8,7 +8,7 @@ import {
   type PreviewRef,
 } from '../src/preview-strategy';
 
-type ImageData = globalThis.ImageData;
+import type { ImageData } from '@prism/shared-types';
 
 /** Create a test ImageData with specified dimensions and pixel color */
 function makeImage(

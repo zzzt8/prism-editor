@@ -1,5 +1,5 @@
 // Shared canvas factory — works in both browser (OffscreenCanvas) and Node.js (canvas npm)
-type ImageData = globalThis.ImageData;
+import type { ImageData } from '@prism/shared-types';
 
 let _canvasModule: typeof import('canvas') | null = null;
 function getCanvasModule(): typeof import('canvas') | null {

@@ -3,7 +3,7 @@
 import type { NodeExecutor, EmptyInputExecutorOutput } from '@prism/shared-types';
 import { generatePreviewUrl } from './preview-strategy';
 
-type ImageData = globalThis.ImageData;
+import type { ImageData } from '@prism/shared-types';
 
 interface RGBA { r: number; g: number; b: number; alpha: number; }
 

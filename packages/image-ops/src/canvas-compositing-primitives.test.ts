@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { MaskOptions } from '@prism/shared-types';
 
 // Test helper to create ImageData
-type ImageData = globalThis.ImageData;
+import type { ImageData } from '@prism/shared-types';
 
 function makeImage(
   width: number,

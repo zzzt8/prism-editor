@@ -1,5 +1,8 @@
 // Image reference types
 
+/** Canonical ImageData type alias — resolves DOM vs globalThis ambiguity */
+export type ImageData = globalThis.ImageData;
+
 export type ImageRefType = 'blob-url' | 'data-url' | 'cross-origin-url';
 
 export interface ImageRef {

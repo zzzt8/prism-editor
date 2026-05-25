@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { imageDataToBlob, imageDataToDataUrl, exportImage } from '../src/export-image';
 import { ImageData as CanvasImageData } from 'canvas';
 
-type ImageData = globalThis.ImageData;
+import type { ImageData } from '@prism/shared-types';
 
 /** Create a 2x2 RGBA solid-color ImageData */
 function makeImage(r = 255, g = 0, b = 0): ImageData {

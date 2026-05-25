@@ -1,7 +1,7 @@
 // Image loading with CORS support
 
 // ImageData is a browser built-in
-type ImageData = globalThis.ImageData;
+import type { ImageData } from '@prism/shared-types';
 import type { ImageRef, ImageLoadOptions, ImageLoadResult } from '@prism/shared-types';
 
 /** Infer MIME type from URL path extension */
