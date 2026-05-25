@@ -5,6 +5,7 @@ import workflowRoutes from './routes/workflow.js';
 import publishedRoutes from './routes/published.js';
 import nodeRoutes from './routes/nodes.js';
 import versionRoutes from './routes/versions.js';
+import renderRoutes from './routes/render.js';
 
 const appPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   await fastify.register(authMiddleware, async () => {
@@ -12,6 +13,7 @@ const appPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     await fastify.register(publishedRoutes);
     await fastify.register(nodeRoutes);
     await fastify.register(versionRoutes);
+    await fastify.register(renderRoutes);
   });
 };
 

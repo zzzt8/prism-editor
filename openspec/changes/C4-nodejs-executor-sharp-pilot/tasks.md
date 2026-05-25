@@ -2,7 +2,7 @@
 
 ---
 
-- [ ] **Task 1: sharp 引入 image-ops（不进入 browser bundle）**
+- [x] **Task 1: sharp 引入 image-ops（不进入 browser bundle）**
 
   ```yaml
   opsx-meta:
@@ -19,7 +19,7 @@
 
 ---
 
-- [ ] **Task 2: 创建 `nodejs/` 目录骨架**
+- [x] **Task 2: 创建 `nodejs/` 目录骨架**
 
   ```yaml
   opsx-meta:
@@ -35,7 +35,7 @@
 
 ---
 
-- [ ] **Task 3: sharp ↔ ImageData 转换工具函数**
+- [x] **Task 3: sharp ↔ ImageData 转换工具函数**
 
   ```yaml
   opsx-meta:
@@ -53,7 +53,7 @@
 
 ---
 
-- [ ] **Task 4: nodejs composite executor**
+- [x] **Task 4: nodejs composite executor**
 
   ```yaml
   opsx-meta:
@@ -71,7 +71,7 @@
 
 ---
 
-- [ ] **Task 5: nodejs crop executor**
+- [x] **Task 5: nodejs crop executor**
 
   ```yaml
   opsx-meta:
@@ -88,7 +88,7 @@
 
 ---
 
-- [ ] **Task 6: nodejs export executor**
+- [x] **Task 6: nodejs export executor**
 
   ```yaml
   opsx-meta:
@@ -105,7 +105,7 @@
 
 ---
 
-- [ ] **Task 7: nodejs/index.ts 统一导出**
+- [x] **Task 7: nodejs/index.ts 统一导出**
 
   ```yaml
   opsx-meta:
@@ -121,7 +121,7 @@
 
 ---
 
-- [ ] **Task 8: server 新增 `/api/render/composite` 端点**
+- [x] **Task 8: server 新增 `/api/render/composite` 端点**
 
   ```yaml
   opsx-meta:
@@ -137,7 +137,7 @@
 
 ---
 
-- [ ] **Task 9: nodejs executor 像素级 diff 测试**
+- [x] **Task 9: nodejs executor 像素级 diff 测试**
 
   ```yaml
   opsx-meta:
@@ -153,7 +153,7 @@
 
 ---
 
-- [ ] **Task 10: sharp 不进入 browser bundle 验证**
+- [x] **Task 10: sharp 不进入 browser bundle 验证**
 
   ```yaml
   opsx-meta:
