@@ -22,7 +22,7 @@
 
 ---
 
-- [ ] **Task 2: Prisma schema 新增 SKU model**
+- [x] **Task 2: Prisma schema 新增 SKU model**
 
   ```yaml
   opsx-meta:
