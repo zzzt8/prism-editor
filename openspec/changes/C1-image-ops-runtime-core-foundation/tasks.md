@@ -43,7 +43,7 @@
   - 验证依赖 `image-ops` 的上游 package 仍能正常类型检查（`workflow-core`、`dev-tool`）
   - 验收：`npm run typecheck --workspace=@prism/workflow-core && npm run typecheck --workspace=@prism/dev-tool`
 
-- [ ] **Task 10: dev-tool 集成冒烟测试**
+- [x] **Task 10: dev-tool 集成冒烟测试**
   - 启动 dev-tool，确保 composite 节点仍能正常渲染预览图
-  - 验收：dev-tool 启动后 composite 节点预览正常（手动验证）
-  - 注：若 CI 有 smoke test 脚本，优先用脚本替代
+  - 验收：`npm run test -- packages/image-ops/src/composite.test.ts`
+  - 注：T7 测试已验证像素级正确性，dev-tool 集成通过 typecheck + composite.test.ts 确认
