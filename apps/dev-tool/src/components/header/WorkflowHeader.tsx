@@ -4,11 +4,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Box, Play, Square, CheckCircle2,
   Loader2, FileUp, Settings, User, Save,
-  History,
+  History, Image,
 } from 'lucide-react';
 import { useCanvasStore } from '../../store/canvasStore';
 import { useAppStore } from '../../store/appStore';
 import { PanelToggle } from './PanelToggle';
+import { RenderProductionModal } from './RenderProductionModal';
 
 interface WorkflowHeaderProps {
   onPublishClick: () => void;
@@ -39,6 +40,7 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const statusMsgTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showRenderModal, setShowRenderModal] = useState(false);
 
   const isRunning = executionStatus === 'running';
 
@@ -226,6 +228,16 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
             Publish
           </button>
 
+          {/* Render Production */}
+          <button
+            className="wf-render-btn"
+            onClick={() => setShowRenderModal(true)}
+            title="渲染生产图"
+          >
+            <Image size={14} />
+            Render
+          </button>
+
           {/* Version History */}
           {onVersionHistoryClick && (
             <button
@@ -261,6 +273,12 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
           accept=".json"
           style={{ display: 'none' }}
           onChange={handleFileChange}
+        />
+
+        <RenderProductionModal
+          isOpen={showRenderModal}
+          onClose={() => setShowRenderModal(false)}
+          workflowId={workflowMeta.id}
         />
       </header>
 
@@ -539,6 +557,26 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
           background: #27272a;
           color: #f4f4f5;
           border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .wf-render-btn {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          padding: 5px 12px;
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          border: 1px solid rgba(74, 222, 128, 0.35);
+          background: rgba(74, 222, 128, 0.08);
+          color: #4ade80;
+          font-family: inherit;
+          transition: background 0.12s, color 0.12s;
+        }
+        .wf-render-btn:hover {
+          background: rgba(74, 222, 128, 0.18);
+          color: #4ade80;
         }
 
         .wf-spin {
