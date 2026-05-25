@@ -17,6 +17,6 @@
   - 在 `packages/node-definitions/src/definitions.ts` 的 7 个节点定义全部添加 `platforms: ['browser']`
   - 验收：`npm run typecheck --workspace=@prism/node-definitions`
 
-- [ ] **Task 5: 完整 typecheck 验证**
+- [x] **Task 5: 完整 typecheck 验证**
   - 运行所有相关 package 的 typecheck
   - 验收：`npm run typecheck --workspace=@prism/shared-types && npm run typecheck --workspace=@prism/node-definitions && npm run typecheck --workspace=@prism/workflow-core && npm run typecheck --workspace=@prism/dev-tool`
