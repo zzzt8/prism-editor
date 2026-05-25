@@ -87,7 +87,7 @@
 
 ---
 
-- [ ] **Task 6: 完整 typecheck 验证**
+- [x] **Task 6: 完整 typecheck 验证**
 
   ```yaml
   opsx-meta:

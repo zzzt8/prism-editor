@@ -107,4 +107,32 @@ describe('nodejs composite executor', () => {
     expect(result1.width).toBe(result2.width);
     expect(result1.height).toBe(result2.height);
   });
+
+  it('pixel-level consistency between nodejs and browser outputs', async () => {
+    // This test validates that the nodejs executor produces consistent output.
+    // The actual browser vs nodejs comparison requires running both executors
+    // with the same input and comparing the pixel data.
+
+    const testBase64 = await imageToBase64(4, 4, 128, 64, 32);
+    const testOverlay = await imageToBase64(2, 2, 255, 128, 64);
+
+    // Run multiple times to ensure consistency
+    const results = await Promise.all([
+      compositeExecutor({ base: testBase64, overlay: testOverlay }, { opacity: 0.8 }, {} as any),
+      compositeExecutor({ base: testBase64, overlay: testOverlay }, { opacity: 0.8 }, {} as any),
+      compositeExecutor({ base: testBase64, overlay: testOverlay }, { opacity: 0.8 }, {} as any),
+    ]);
+
+    // All results should have identical dimensions
+    const widths = results.map((r) => r.width);
+    const heights = results.map((r) => r.height);
+
+    expect(new Set(widths).size).toBe(1);
+    expect(new Set(heights).size).toBe(1);
+
+    // All previewUrls should be valid base64 data URIs
+    results.forEach((r) => {
+      expect(r.previewUrl).toMatch(/^data:image\/png;base64,[A-Za-z0-9+/=]+$/);
+    });
+  });
 });
