@@ -11,7 +11,7 @@
 
 ## Implementation Tasks
 
-- [ ] **Task 1: Fix 4K brightness mask performance test assertion**
+- [x] **Task 1: Fix 4K brightness mask performance test assertion**
   - layer: `packages/image-ops`
   - verify: `npm run test --workspace=@prism/image-ops`
 
