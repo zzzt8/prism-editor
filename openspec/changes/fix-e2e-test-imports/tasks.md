@@ -20,7 +20,7 @@
 
 ## Implementation Tasks
 
-- [ ] **Task 1: Fix imports in published-executor.e2e.test.ts**
+- [x] **Task 1: Fix imports in published-executor.e2e.test.ts**
   - layer: `packages/workflow-core`
   - verify: `npm run test --workspace=@prism/workflow-core`
 

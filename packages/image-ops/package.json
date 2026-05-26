@@ -10,7 +10,9 @@
       "node": "./src/nodejs/index.ts",
       "default": "./src/index.ts"
     },
-    "./nodejs": "./src/nodejs/index.ts",
+    "./apply-mask": "./src/apply-mask.ts",
+    "./composite": "./src/composite.ts",
+    "./export-image": "./src/export-image.ts",
     "./sharp-utils": "./src/nodejs/sharp-utils.ts"
   },
   "scripts": {
