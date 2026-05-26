@@ -11,39 +11,32 @@
 
 ## Quality Checklist
 
-- [ ] 导入路径使用子路径（`@prism/image-ops/apply-mask`）而非主入口（`@prism/image-ops`）
-- [ ] 类型从 `canvas.ImageData` 正确转换为测试所需的 `ImageData` 类型
-- [ ] 测试中的 `mkImage()` helper 使用 `canvas.ImageData` 构造，兼容 `@prism/shared-types` ImageData
-- [ ] 所有 20 个失败测试恢复通过
+- [x] 导入路径使用子路径（`@prism/image-ops/apply-mask`）而非主入口（`@prism/image-ops`）
+- [x] 类型从 `canvas.ImageData` 正确转换为测试所需的 `ImageData` 类型
+- [x] 测试中的 `mkImage()` helper 使用 `canvas.ImageData` 构造，兼容 `@prism/shared-types` ImageData
+- [x] 所有 20 个失败测试恢复通过
 
 ---
 
 ## Implementation Tasks
 
-- [x] **Task 1: Fix imports in published-executor.e2e.test.ts**
+- [x] **Task 1: Fix imports in published-executor.e2e.test.ts** ✅
   - layer: `packages/workflow-core`
   - verify: `npm run test --workspace=@prism/workflow-core`
 
-  修改 `packages/workflow-core/src/published-executor.e2e.test.ts` 的导入：
+  修改 `packages/workflow-core/src/published-executor.e2e.test.ts` 的导入，使用子路径绕过 package exports 路由问题：
+  - `applyMask` → `@prism/image-ops/apply-mask`
+  - `compositeImages` → `@prism/image-ops/composite`
+  - `exportImage` → `@prism/image-ops/export-image`
 
-  ```diff
-  - import { applyMask, compositeImages, exportImage } from '@prism/image-ops';
-  + import { applyMask } from '@prism/image-ops/apply-mask';
-  + import { compositeImages } from '@prism/image-ops/composite';
-  + import { exportImage } from '@prism/image-ops/export-image';
-  ```
+  同步在 `image-ops/package.json` 添加子路径 exports，使 TypeScript 能正确解析。
 
-  验收：
-  - 所有导入函数在测试文件中可正常访问
-  - 测试中使用的 `canvas.ImageData` 类型与导入的函数参数类型兼容
-  - 运行 `npm run test --workspace=@prism/workflow-core` 确认 20 个失败测试恢复通过
+  验收：113 个测试全部通过 ✅
 
-- [ ] **Task 2: Verify test setup globals are correctly loaded**
+- [x] **Task 2: Verify test setup globals are correctly loaded** ✅
   - layer: `packages/workflow-core`
   - verify: `npm run test --workspace=@prism/workflow-core -- --reporter=verbose`
 
-  确认 `vitest.config.ts` 中的 `setupFiles: ['../image-ops/src/test-setup.ts']` 正确加载 canvas polyfill，使 `globalThis.ImageData` 指向 `canvas.ImageData`。
+  确认 `vitest.config.ts` 中的 `setupFiles: ['../image-ops/src/test-setup.ts']` 正确加载 canvas polyfill。
 
-  验收：
-  - 测试运行时无 `ReferenceError: ImageData is not defined` 错误
-  - `canvas-polyfill` 正确模拟浏览器环境
+  验收：测试运行时无 `ReferenceError: ImageData is not defined` 错误 ✅
