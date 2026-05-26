@@ -13,6 +13,7 @@
     "./apply-mask": "./src/apply-mask.ts",
     "./composite": "./src/composite.ts",
     "./export-image": "./src/export-image.ts",
+    "./nodejs": "./src/nodejs/index.ts",
     "./sharp-utils": "./src/nodejs/sharp-utils.ts"
   },
   "scripts": {
