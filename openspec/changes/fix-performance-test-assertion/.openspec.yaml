@@ -1,0 +1,4 @@
+schema: prism-workflow
+created: 2026-05-26
+name: fix-performance-test-assertion
+change_class: low
