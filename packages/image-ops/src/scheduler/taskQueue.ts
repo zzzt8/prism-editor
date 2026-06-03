@@ -22,8 +22,8 @@ export interface QueuedTask<T = unknown> {
   createdAt: number;
   timeout?: number;
   onStart?: () => void;
-  onComplete?: (result: T) => void;
-  onError?: (error: Error) => void;
+  onComplete?: (_result: T) => void;
+  onError?: (_error: Error) => void;
 }
 
 /**

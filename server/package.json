@@ -24,6 +24,7 @@
     "@fastify/jwt": "^10.0.0",
     "@fastify/rate-limit": "^10.3.0",
     "@prisma/client": "^6.6.0",
+    "@prism/image-ops": "workspace:*",
     "bcryptjs": "^3.0.3",
     "fastify": "^5.3.2",
     "sharp": "^0.34.5",

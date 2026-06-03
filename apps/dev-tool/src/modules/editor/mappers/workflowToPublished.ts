@@ -271,6 +271,7 @@ export function workflowToPublished(
     outputs,
     config: publishedConfig,
     publishedAt: new Date().toISOString(),
+    targetPlatform: workflow.metadata.targetPlatform,
   };
 }
 

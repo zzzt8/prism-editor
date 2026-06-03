@@ -24,7 +24,7 @@ interface ExecutorWorker {
   executorId: string;
   pendingRequests: Map<string, {
     resolve: (_value: unknown) => void;
-    reject: (error: Error) => void;
+    reject: (_error: Error) => void;
     timeoutId: ReturnType<typeof setTimeout>;
   }>;
 }
@@ -142,7 +142,7 @@ export async function loadRemoteExecutor(
         reject(new Error(`Executor "${executorId}" timed out after ${timeoutMs}ms`));
       }, timeoutMs);
 
-      pendingRequests.set(id, { resolve: resolve as (value: unknown) => void, reject, timeoutId });
+      pendingRequests.set(id, { resolve: resolve as (_value: unknown) => void, reject, timeoutId });
 
       const _message: WorkerExecutorMessage = {
         type: 'execute',

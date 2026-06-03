@@ -1,13 +1,14 @@
 # @prism/core
 
-自定义节点内联执行器包。
+自定义节点内联执行器包，提供全局节点注册表和内联执行器解析。
 
 ## 功能
 
-- **全局节点注册表**: `globalRegistry` - 管理所有自定义节点类型的注册
-- **内联执行器解析**: `parseInlineExecutor` - 解析和执行内联代码节点
+- **全局节点注册表**: `globalRegistry` - 管理所有内置和自定义节点类型的注册
+- **内联执行器**: `parseInlineExecutor` - 解析和执行内联代码节点
 - **代码验证**: `validateInlineCode` - 验证内联代码的有效性和安全性
 - **函数提取**: `extractFunctionName` - 从内联代码中提取函数名
+- **节点注册表接口**: `GlobalRegistry` - 统一的节点和执行器管理接口
 
 ## 核心 API
 

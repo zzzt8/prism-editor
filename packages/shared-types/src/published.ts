@@ -161,6 +161,8 @@ export interface PublishedWorkflow {
   config: PublishedConfig;
   publishedAt: string;
   publishedBy?: string;
+  /** Target platform for workflow execution */
+  targetPlatform?: 'browser' | 'nodejs';
 }
 
 // Map of output-id -> execution result value (typed as unknown, validated at runtime)

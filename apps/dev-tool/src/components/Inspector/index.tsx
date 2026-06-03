@@ -50,6 +50,7 @@ export const Inspector: React.FC = () => {
       setOriginalLabel(label ?? '');
       setHasLocalChanges(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedNodeIds[0], selectedNode]);
 
   // Detect local changes — always call; selectedNode is always defined here

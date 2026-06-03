@@ -140,8 +140,6 @@ function ImageInputField({ inp, value, onChange }: ImageInputFieldProps) {
     onChange('');
   };
 
-  const isBatch = batchMode && items.length > 0;
-
   return (
     <div className="ua-input-group">
       <div className="ua-input-label-row">
@@ -647,7 +645,6 @@ interface ExposedParamsFormProps {
 }
 
 function ExposedParamsForm({ selectedWorkflow, paramValues, onParamChange }: ExposedParamsFormProps) {
-  const nodeTypes = selectedWorkflow.config.nodeTypes ?? {};
   const nodeConfigs = selectedWorkflow.config.nodeConfigs ?? {};
   const exposedParams = selectedWorkflow.config.exposedParams ?? [];
   const paramDefinitions = selectedWorkflow.config.paramDefinitions ?? [];

@@ -4,7 +4,10 @@
 import type { EditorCanvasNode, EditorCanvasEdge } from '@prism/shared-types';
 import { PortDataType } from '@prism/shared-types';
 
-export interface Port<T extends { id: string; name: string; label?: string; dataType?: string }> {
+// Sync import to ensure registry is initialized immediately
+import { globalRegistry } from '@prism/core';
+
+export interface Port {
   id: string;
   name: string;
   label?: string;
@@ -13,10 +16,13 @@ export interface Port<T extends { id: string; name: string; label?: string; data
 
 export const PASTE_OFFSET = 40;
 
+// Module-level initialization flag
+let _registryInitialized = false;
+
 /**
  * Find a port by id, name, or label.
  */
-export function findPort<T extends Port<T>>(
+export function findPort<T extends Port>(
   ports: T[],
   portId: string
 ): T | undefined {
@@ -37,19 +43,19 @@ export function inferPortDataType(portName: string): PortDataType | undefined {
 }
 
 /**
- * Initialize the node registry. Safe to call multiple times.
+ * Ensure the global node registry is initialized.
+ * Uses synchronous initialization to avoid timing issues.
+ * Safe to call multiple times.
  */
 export function ensureNodeRegistryInitialized(): void {
-  // Dynamic import to avoid circular dependency at module load time
-  import('@prism/core').then(({ globalRegistry }) => {
-    try {
-      globalRegistry.initialize();
-    } catch (err) {
-      console.error('[canvasStore] globalRegistry.initialize() failed:', err);
-    }
-  }).catch(() => {
-    // Silently ignore import errors (registry may not be available in all contexts)
-  });
+  if (_registryInitialized) return;
+  _registryInitialized = true;
+
+  try {
+    globalRegistry.initialize();
+  } catch (err) {
+    console.error('[canvasStore] globalRegistry.initialize() failed:', err);
+  }
 }
 
 /**

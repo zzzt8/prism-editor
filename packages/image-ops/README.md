@@ -11,6 +11,7 @@
 - **图像导出**: PNG、JPEG、WebP 格式导出
 - **Worker 池**: Web Worker 并行处理，提高性能
 - **内存管理**: Canvas 对象池和内存优化
+- **任务调度**: TaskScheduler 统一管理同步/异步任务和超时
 
 ## 核心 API
 

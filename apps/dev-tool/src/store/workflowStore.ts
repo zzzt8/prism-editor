@@ -14,7 +14,7 @@ interface WorkflowState {
   error: string | null;
 
   loadSavedWorkflows: () => Promise<void>;
-  deleteSavedWorkflow: (id: string) => Promise<void>;
+  deleteSavedWorkflow: (_id: string) => Promise<void>;
   clearError: () => void;
 }
 

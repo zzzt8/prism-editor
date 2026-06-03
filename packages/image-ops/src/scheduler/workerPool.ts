@@ -124,8 +124,8 @@ export class WorkerPool {
   private workers: PooledWorker[] = [];
   private taskQueue: Array<{
     task: WorkerTask;
-    resolve: (value: unknown) => void;
-    reject: (error: Error) => void;
+    resolve: (_value: unknown) => void;
+    reject: (_error: Error) => void;
     queuedAt: number;
   }> = [];
   private currentWorkerIndex = 0;
@@ -172,7 +172,7 @@ export class WorkerPool {
     };
 
     try {
-      const workerInstance = new Worker(new URL('../worker/imageWorker.worker.ts', import.meta.url), {
+      const workerInstance = new Worker(new URL('../worker/imageWorker.worker.js', import.meta.url), {
         type: 'module',
       });
 
@@ -311,8 +311,8 @@ export class WorkerPool {
     worker: PooledWorker,
     item: {
       task: WorkerTask;
-      resolve: (value: unknown) => void;
-      reject: (error: Error) => void;
+      resolve: (_value: unknown) => void;
+      reject: (_error: Error) => void;
     }
   ): Promise<void> {
     if (!worker.proxy || !worker.instance) {
@@ -420,8 +420,8 @@ export class WorkerPool {
     return new Promise((resolve, reject) => {
       const item = {
         task,
-        resolve: resolve as (value: unknown) => void,
-        reject,
+        resolve: resolve as (_value: unknown) => void,
+        reject: reject as (_error: Error) => void,
         queuedAt: Date.now(),
       };
 

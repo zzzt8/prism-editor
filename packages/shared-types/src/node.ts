@@ -4,7 +4,7 @@ import type { PortDataType } from './port-data-types';
 
 // Canonical port type union — used for both port definitions and param definitions.
 // Only includes types that CAN be wired between nodes.
-export type PortType = 'image' | 'mask' | 'number' | 'string' | 'boolean';
+export type PortType = 'image' | 'mask' | 'number' | 'string' | 'boolean' | 'text';
 
 export type PortDefinitionType = PortType;
 

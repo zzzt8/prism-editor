@@ -169,20 +169,13 @@ export class ApiStorageAdapter implements StorageAdapter {
     };
 
     try {
-      // Try update first
-      fetch('http://127.0.0.1:7745/ingest/1dfd8968-d7f6-41c4-b597-b0489a728631',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8e8cfe'},body:JSON.stringify({sessionId:'8e8cfe',location:'ApiStorageAdapter.ts:save:put',message:'PUT /workflows/id',data:{id:workflow.id,name:workflow.name},timestamp:Date.now()})}).catch(()=>{});
       const result = await this.request<{ data: ApiWorkflow }>(`/workflows/${workflow.id}`, {
         method: 'PUT',
         body: JSON.stringify(body),
       });
-      fetch('http://127.0.0.1:7745/ingest/1dfd8968-d7f6-41c4-b597-b0489a728631',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8e8cfe'},body:JSON.stringify({sessionId:'8e8cfe',location:'ApiStorageAdapter.ts:save:put_success',message:'PUT success',data:{returnedId:result.data.id},timestamp:Date.now()})}).catch(()=>{});
       return { ...workflow, id: result.data.id };
     } catch (err) {
-      var apiErrMsg = err instanceof Error ? err.message : String(err);
-      fetch('http://127.0.0.1:7745/ingest/1dfd8968-d7f6-41c4-b597-b0489a728631',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8e8cfe'},body:JSON.stringify({sessionId:'8e8cfe',location:'ApiStorageAdapter.ts:save:put_error',message:'PUT error, checking if not found',data:{error:apiErrMsg},timestamp:Date.now()})}).catch(()=>{});
       if (err instanceof Error && err.message.includes('not found')) {
-        // Workflow doesn't exist on server yet — create it
-        fetch('http://127.0.0.1:7745/ingest/1dfd8968-d7f6-41c4-b597-b0489a728631',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8e8cfe'},body:JSON.stringify({sessionId:'8e8cfe',location:'ApiStorageAdapter.ts:save:post_create',message:'POST create workflow',data:{id:workflow.id,name:workflow.name},timestamp:Date.now()})}).catch(()=>{});
         const result = await this.request<{ data: ApiWorkflow }>('/workflows', {
           method: 'POST',
           body: JSON.stringify({
@@ -191,8 +184,6 @@ export class ApiStorageAdapter implements StorageAdapter {
             version: workflow.version,
           }),
         });
-        fetch('http://127.0.0.1:7745/ingest/1dfd8968-d7f6-41c4-b597-b0489a728631',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8e8cfe'},body:JSON.stringify({sessionId:'8e8cfe',location:'ApiStorageAdapter.ts:save:post_success',message:'POST success',data:{serverId:result.data.id,serverName:result.data.name},timestamp:Date.now()})}).catch(()=>{});
-        // Return workflow with server-assigned ID so caller can sync
         const parsedContent = JSON.parse(result.data.content);
         return {
           ...workflow,
@@ -225,11 +216,9 @@ export class ApiStorageAdapter implements StorageAdapter {
   }
 
   async delete(id: string): Promise<void> {
-    fetch('http://127.0.0.1:7745/ingest/1dfd8968-d7f6-41c4-b597-b0489a728631',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8e8cfe'},body:JSON.stringify({sessionId:'8e8cfe',location:'ApiStorageAdapter.ts:delete:start',message:'DELETE request',data:{id},timestamp:Date.now()})}).catch(()=>{});
     await this.request<{ success: boolean }>(`/workflows/${id}`, {
       method: 'DELETE',
     });
-    fetch('http://127.0.0.1:7745/ingest/1dfd8968-d7f6-41c4-b597-b0489a728631',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8e8cfe'},body:JSON.stringify({sessionId:'8e8cfe',location:'ApiStorageAdapter.ts:delete:success',message:'DELETE success',data:{id},timestamp:Date.now()})}).catch(()=>{});
   }
 
   async createWorkflow(

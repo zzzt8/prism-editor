@@ -29,6 +29,7 @@ docs/
 
 | 日期 | 变更 | 描述 |
 |------|------|------|
+| 2026-06-03 | fix-performance-test-assertion | 修复性能测试断言阈值 |
 | 2026-04-17 | prism-c2-publish-protocol | 发布协议实现 |
 | 2026-04-17 | prism-c3-editor-experience | 编辑器体验优化 |
 | 2026-04-17 | prism-c4-version-management | 版本管理系统 |

@@ -8,13 +8,14 @@
 
 ```typescript
 import type {
-  Workflow,           // 工作流定义
-  WorkflowVersion,     // 工作流版本
-  Node,               // 节点定义
-  Connection,         // 连接定义
-  Port,               // 端口定义
-  PortDataType,       // 端口数据类型
-  PortType,           // 端口类型（输入/输出）
+  Workflow,              // 工作流定义
+  WorkflowVersion,       // 工作流版本
+  WorkflowNode,         // 工作流节点
+  WorkflowMetadata,      // 工作流元数据
+  Connection,           // 连接定义
+  Port,                 // 端口定义
+  PortType,             // 端口类型 (image | mask | number | string | boolean | text)
+  PortDataType,         // 端口数据类型
 } from '@prism/shared-types';
 ```
 
@@ -33,9 +34,17 @@ import type {
 
 ```typescript
 import type {
-  PublishedWorkflow,     // 已发布工作流
-  PublishedNodeConfig,   // 已发布节点配置
-  PublishedConnection,   // 已发布连接
+  PublishedWorkflow,          // 已发布工作流
+  PublishedWorkflowMeta,     // 已发布工作流元数据
+  PublishedConfig,          // 已发布配置 (nodeTypes, nodeConfigs, connections)
+  PublishedInput,           // 已发布输入
+  PublishedOutput,          // 已发布输出
+  PublishedInputConfig,     // 输入配置
+  PublishedOutputConfig,    // 输出配置
+  PublishedParamConfig,     // 参数配置
+  PublishedParamDefinition, // 参数定义 (含 UI 元数据)
+  ExportFormat,            // 导出格式 (png | jpeg | webp)
+  ParamControlType,        // 参数控件类型
 } from '@prism/shared-types';
 ```
 

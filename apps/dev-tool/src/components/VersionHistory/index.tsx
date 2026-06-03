@@ -82,6 +82,7 @@ export function VersionHistory({
 
   useEffect(() => {
     loadVersions(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workflowId]);
 
   const loadVersions = async (page: number) => {

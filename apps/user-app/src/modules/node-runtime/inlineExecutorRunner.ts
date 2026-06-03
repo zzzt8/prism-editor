@@ -24,7 +24,7 @@ interface WorkerResponse {
 
 // Single worker instance shared across all inline executors
 let worker: Worker | null = null;
-let pendingCallbacks = new Map<string, { resolve: (value: unknown) => void; reject: (e: Error) => void }>();
+let pendingCallbacks = new Map<string, { resolve: (_value: unknown) => void; reject: (_e: Error) => void }>();
 
 function getWorker(): Worker {
   if (!worker) {
@@ -58,7 +58,7 @@ export function createInlineExecutor(executorId: string, code: string): NodeExec
       };
 
       const callback: { resolve: (_v: unknown) => void; reject: (_e: Error) => void } = {
-        resolve: promiseResolve as (v: unknown) => void,
+        resolve: promiseResolve as (_v: unknown) => void,
         reject: promiseReject,
       };
       pendingCallbacks.set(executorId, callback);

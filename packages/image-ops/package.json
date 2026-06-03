@@ -2,19 +2,20 @@
   "name": "@prism/image-ops",
   "version": "0.1.0",
   "private": true,
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
   "exports": {
     ".": {
-      "browser": "./src/index.ts",
-      "node": "./src/nodejs/index.ts",
-      "default": "./src/index.ts"
+      "browser": "./dist/src/index.js",
+      "node": "./dist/src/nodejs/index.js",
+      "default": "./dist/src/index.js"
     },
-    "./apply-mask": "./src/apply-mask.ts",
-    "./composite": "./src/composite.ts",
-    "./export-image": "./src/export-image.ts",
-    "./nodejs": "./src/nodejs/index.ts",
-    "./sharp-utils": "./src/nodejs/sharp-utils.ts"
+    "./apply-mask": "./dist/src/apply-mask.js",
+    "./composite": "./dist/src/composite.js",
+    "./export-image": "./dist/src/export-image.js",
+    "./nodejs": "./src/nodejs/index.js",
+    "./sharp-utils": "./dist/src/nodejs/sharp-utils.js"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

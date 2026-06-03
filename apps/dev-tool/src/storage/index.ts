@@ -6,29 +6,18 @@ export { IndexedDBStorageAdapter, indexedDBStorageAdapter } from './IndexedDBSto
 
 // Environment-based adapter selection
 import { ApiStorageAdapter } from './ApiStorageAdapter';
-import { IndexedDBStorageAdapter, indexedDBStorageAdapter } from './IndexedDBStorageAdapter';
 import { useAuthStore } from '../store/authStore';
 
-const isProduction = import.meta.env.PROD;
-const strictApi = import.meta.env.VITE_STRICT_API === 'true';
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // Single shared instance - avoid creating multiple instances with setInterval leaks
 let _apiAdapterInstance: ApiStorageAdapter | null = null;
-let _indexedDbAdapterInstance: IndexedDBStorageAdapter | null = null;
 
 function getOrCreateApiAdapter(): ApiStorageAdapter {
   if (!_apiAdapterInstance) {
     _apiAdapterInstance = new ApiStorageAdapter(apiBaseUrl);
   }
   return _apiAdapterInstance;
-}
-
-function getOrCreateIndexedDbAdapter(): IndexedDBStorageAdapter {
-  if (!_indexedDbAdapterInstance) {
-    _indexedDbAdapterInstance = indexedDBStorageAdapter;
-  }
-  return _indexedDbAdapterInstance;
 }
 
 // Use ApiStorageAdapter as the primary storage (server-first: Save/New/Publish all go to server)

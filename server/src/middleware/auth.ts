@@ -1,11 +1,5 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 
-interface AuthUser {
-  userId: string;
-  type: 'access' | 'refresh';
-  jti: string;
-}
-
 interface RefreshTokenPayload {
   userId: string;
   type: 'refresh';
@@ -24,12 +18,8 @@ declare module 'fastify' {
   interface FastifyInstance {
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
-}
-
-declare module '@fastify/jwt' {
-  interface FastifyJWT {
-    payload: AccessTokenPayload | RefreshTokenPayload;
-    user: AccessTokenPayload;
+  interface FastifyRequest {
+    user: AccessTokenPayload | RefreshTokenPayload;
   }
 }
 

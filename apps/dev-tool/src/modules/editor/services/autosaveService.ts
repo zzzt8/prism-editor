@@ -8,10 +8,10 @@ const AUTO_SAVE_DELAY_MS = 5 * 60 * 1000; // 5 minutes
 
 export interface AutosaveService {
   trigger: (
-    workflowMeta: EditorWorkflowMeta,
-    nodes: EditorCanvasNode[],
-    edges: EditorCanvasEdge[],
-    onDone: () => void
+    _workflowMeta: EditorWorkflowMeta,
+    _nodes: EditorCanvasNode[],
+    _edges: EditorCanvasEdge[],
+    _onDone: () => void
   ) => void;
   cancel: () => void;
 }
@@ -67,11 +67,11 @@ export function initAutosaveService(repository: IWorkflowRepository): void {
 
 // Default instance (lazy initialization)
 export const autosaveService: AutosaveService = {
-  trigger: (workflowMeta, nodes, edges, onDone) => {
+  trigger: (_workflowMeta, _nodes, _edges, _onDone) => {
     if (!_serviceInstance) {
       throw new Error('AutosaveService not initialized. Call initAutosaveService first.');
     }
-    return _serviceInstance.trigger(workflowMeta, nodes, edges, onDone);
+    return _serviceInstance.trigger(_workflowMeta, _nodes, _edges, _onDone);
   },
   cancel: () => {
     if (_serviceInstance) {

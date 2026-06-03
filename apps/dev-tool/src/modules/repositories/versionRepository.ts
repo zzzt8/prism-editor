@@ -6,18 +6,18 @@ import type { IVersionRepository, WorkflowVersion } from './interfaces';
 import { createId } from '@prism/shared-types';
 
 interface VersionAdapter {
-  getVersions(workflowId: string, page?: number, limit?: number): Promise<{
+  getVersions(_workflowId: string, _page?: number, _limit?: number): Promise<{
     data: Array<{ id: string; version: string; createdBy: string | null; createdAt: string }>;
     pagination: { page: number; limit: number; total: number; totalPages: number };
   }>;
-  getVersionContent(workflowId: string, versionId: string): Promise<{
+  getVersionContent(_workflowId: string, _versionId: string): Promise<{
     id: string;
     version: string;
     content: string;
     createdBy: string | null;
     createdAt: string;
   }>;
-  rollbackWorkflow(workflowId: string, versionId: string, newVersion?: string): Promise<void>;
+  rollbackWorkflow(_workflowId: string, _versionId: string, _newVersion?: string): Promise<void>;
 }
 
 export class VersionRepository implements IVersionRepository {

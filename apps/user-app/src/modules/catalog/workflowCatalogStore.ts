@@ -14,8 +14,8 @@ export interface WorkflowCatalogState {
   isLoading: boolean;
   loadError?: string;
   loadWorkflows: () => void;
-  renameWorkflow: (sourceId: string, name: string) => Promise<void>;
-  deleteWorkflow: (sourceId: string) => Promise<void>;
+  renameWorkflow: (_sourceId: string, _name: string) => Promise<void>;
+  deleteWorkflow: (_sourceId: string) => Promise<void>;
 }
 
 export const useWorkflowCatalogStore = create<WorkflowCatalogState>((set) => {

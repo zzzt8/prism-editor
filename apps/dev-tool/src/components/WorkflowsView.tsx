@@ -106,18 +106,11 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
     setLoadError(null);
     try {
       const list = await activeStorageAdapter.list();
-      const listItems = list.map(function(w: WorkflowMeta) { return { id: w.id, name: w.name }; });
-      fetch('http://127.0.0.1:7745/ingest/1dfd8968-d7f6-41c4-b597-b0489a728631', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '8e8cfe' }, body: JSON.stringify({ sessionId: '8e8cfe', location: 'WorkflowsView.tsx:load:success', message: 'load from API', data: { count: list.length, items: listItems }, timestamp: Date.now() }) }).catch(function() {});
       setAllWorkflows(list);
     } catch (err) {
-      var errMsg = err instanceof Error ? err.message : String(err);
-      fetch('http://127.0.0.1:7745/ingest/1dfd8968-d7f6-41c4-b597-b0489a728631', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '8e8cfe' }, body: JSON.stringify({ sessionId: '8e8cfe', location: 'WorkflowsView.tsx:load:error', message: 'load failed', data: { error: errMsg }, timestamp: Date.now() }) }).catch(function() {});
       if (err instanceof Error && (err.message.includes('401') || err.message.includes('Unauthorized'))) {
-        // Not logged in — fall back to local IndexedDB cache
         try {
           const localList = await indexedDBStorageAdapter.list();
-          const localItems = localList.map(function(w: WorkflowMeta) { return { id: w.id, name: w.name }; });
-          fetch('http://127.0.0.1:7745/ingest/1dfd8968-d7f6-41c4-b597-b0489a728631', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '8e8cfe' }, body: JSON.stringify({ sessionId: '8e8cfe', location: 'WorkflowsView.tsx:load:idb_fallback', message: 'load from IndexedDB', data: { count: localList.length, items: localItems }, timestamp: Date.now() }) }).catch(function() {});
           setAllWorkflows(localList);
         } catch {
           setAllWorkflows([]);
@@ -192,17 +185,12 @@ export function WorkflowsView({ onNewWorkflow }: WorkflowsViewProps) {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     const deleteId = deleteTarget.id;
-    const deleteName = deleteTarget.name;
-    fetch('http://127.0.0.1:7745/ingest/1dfd8968-d7f6-41c4-b597-b0489a728631', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '8e8cfe' }, body: JSON.stringify({ sessionId: '8e8cfe', location: 'WorkflowsView.tsx:handleDelete:start', message: 'handleDelete start', data: { deleteId, deleteName }, timestamp: Date.now() }) }).catch(function() {});
     try {
       await activeStorageAdapter.delete(deleteTarget.id);
-      fetch('http://127.0.0.1:7745/ingest/1dfd8968-d7f6-41c4-b597-b0489a728631', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '8e8cfe' }, body: JSON.stringify({ sessionId: '8e8cfe', location: 'WorkflowsView.tsx:handleDelete:success', message: 'delete API success', data: { deleteId }, timestamp: Date.now() }) }).catch(function() {});
       setAllWorkflows((prev) => prev.filter((w) => w.id !== deleteId));
       setDeleteTarget(null);
       setOpenMenuId(null);
     } catch (err) {
-      var delErrMsg = err instanceof Error ? err.message : String(err);
-      fetch('http://127.0.0.1:7745/ingest/1dfd8968-d7f6-41c4-b597-b0489a728631', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '8e8cfe' }, body: JSON.stringify({ sessionId: '8e8cfe', location: 'WorkflowsView.tsx:handleDelete:error', message: 'delete API error', data: { deleteId, error: delErrMsg }, timestamp: Date.now() }) }).catch(function() {});
       const msg = err instanceof Error ? err.message : 'Failed to delete workflow';
       setLoadError(msg);
       setDeleteTarget(null);

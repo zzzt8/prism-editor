@@ -100,6 +100,7 @@ export const publishedWorkflowSchema = z.object({
   config: publishedConfigSchema,
   publishedAt: z.string(),
   publishedBy: z.string().optional(),
+  targetPlatform: z.enum(['browser', 'nodejs']).optional(),
 });
 
 export type ValidatedPublishedWorkflow = z.infer<typeof publishedWorkflowSchema>;

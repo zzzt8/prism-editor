@@ -18,7 +18,7 @@ export type { CompositeOptions };
  * Used when worker returns transferred Uint8ClampedArray that needs to be
  * re-wrapped as a proper ImageData for downstream consumers.
  */
-function wrapImageData(width: number, height: number): ImageData {
+function _wrapImageData(width: number, height: number): ImageData {
   return makeImageData(width, height);
 }
 

@@ -223,6 +223,7 @@ function App() {
 
   useEffect(() => {
     fetchCurrentUser().catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

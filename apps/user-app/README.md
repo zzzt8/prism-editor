@@ -8,6 +8,7 @@
 - **参数配置**: 填写输入 URL，调整参数
 - **工作流执行**: 完全在客户端运行工作流
 - **结果导出**: 下载 PNG / JPEG / WebP 格式结果
+- **批量处理**: 支持多张图像顺序处理，ZIP 打包下载
 - **离线支持**: IndexedDB 缓存已发布工作流
 
 ## 目录结构
@@ -16,23 +17,28 @@
 apps/user-app/
 ├── src/
 │   ├── components/
-│   │   ├── ParamsSection/     # 参数配置组件
-│   │   └── RunSection/       # 运行控制组件
+│   │   ├── InputSection/        # 输入配置组件 (支持单张/批量模式)
+│   │   ├── ParamsSection/       # 参数配置组件
+│   │   ├── RunSection/          # 运行控制组件
+│   │   ├── OutputSection/       # 输出结果组件
+│   │   └── WorkflowHeader/      # 工作流头部组件
+│   ├── layouts/
+│   │   └── UserLayout.tsx      # 用户端布局
 │   ├── modules/
-│   │   ├── catalog/          # 工作流目录
-│   │   ├── node-runtime/     # 节点运行时
-│   │   ├── repositories/     # 数据仓库
-│   │   ├── runner/           # 运行器
-│   │   └── selection/        # 选择管理
+│   │   ├── catalog/             # 工作流目录
+│   │   ├── node-runtime/        # 节点运行时 (Web Worker)
+│   │   ├── repositories/        # 数据仓库
+│   │   ├── runner/              # 运行器 (runStore, runWorkflow)
+│   │   └── selection/            # 选择管理
 │   ├── pages/
-│   │   ├── WorkflowListPage.tsx    # 工作流列表页
-│   │   └── WorkflowRunPage.tsx     # 工作流运行页
-│   ├── store/                # Zustand 状态管理
-│   ├── storage/              # 存储适配器
-│   ├── styles/               # 样式文件
-│   └── utils/                # 工具函数
+│   │   ├── WorkflowListPage.tsx      # 工作流列表页
+│   │   └── WorkflowRunPage.tsx       # 工作流运行页
+│   ├── store/                   # Zustand 状态管理
+│   ├── storage/                 # 存储适配器
+│   ├── styles/                  # 样式文件
+│   └── utils/                   # 工具函数
 ├── docs/
-│   └── ui-guidelines.md       # UI 设计指南
+│   └── ui-guidelines.md         # UI 设计指南
 └── package.json
 ```
 

@@ -205,6 +205,67 @@ const publishedRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => 
     return { success: true };
   });
 
+  // PUT /api/published/:id - Re-publish (update content of existing published workflow)
+  fastify.put('/published/:id', { onRequest: [authenticate] }, async (request, reply) => {
+    const { id } = PublishedWorkflowParamsSchema.parse(request.params);
+    const input = PublishWorkflowSchema.parse(request.body);
+    const userId = (request.user as { userId: string }).userId;
+
+    const published = await prisma.publishedWorkflow.findUnique({
+      where: { id },
+      include: { workflow: true },
+    });
+
+    if (!published || published.workflow.userId !== userId) {
+      return reply.status(404).send({ error: 'Published workflow not found' });
+    }
+
+    // If workflowId is different from existing, check the new one isn't already published
+    if (input.workflowId !== published.workflowId) {
+      const newWorkflowExists = await prisma.publishedWorkflow.findUnique({
+        where: { workflowId: input.workflowId },
+      });
+      if (newWorkflowExists) {
+        return reply.status(409).send({ error: 'Target workflow is already published' });
+      }
+    }
+
+    const contentToStore = input.content ?? (await prisma.workflow.findUnique({ where: { id: input.workflowId } }))?.content;
+
+    if (!contentToStore) {
+      return reply.status(404).send({ error: 'Workflow content not found' });
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      // Update or create published workflow record
+      const updatedPublished = await tx.publishedWorkflow.update({
+        where: { id },
+        data: {
+          workflowId: input.workflowId,
+          content: contentToStore,
+          publishedBy: input.publishedBy ?? published.publishedBy,
+          publishedAt: new Date(),
+        },
+      });
+
+      // If workflowId changed, unpublish old one and publish new one
+      if (input.workflowId !== published.workflowId) {
+        await tx.workflow.update({
+          where: { id: published.workflowId },
+          data: { status: 'DRAFT', publishedAt: null },
+        });
+        await tx.workflow.update({
+          where: { id: input.workflowId },
+          data: { status: 'PUBLISHED', publishedAt: new Date() },
+        });
+      }
+
+      return updatedPublished;
+    });
+
+    return { data: updated };
+  });
+
   // POST /api/published/import - Import and publish a workflow directly
   fastify.post('/published/import', { onRequest: [authenticate] }, async (request, reply) => {
     const input = ImportPublishWorkflowSchema.parse(request.body);

@@ -71,6 +71,8 @@ export interface EditorWorkflowMeta {
   name: string;
   version: string;
   targetPlatform?: 'browser' | 'nodejs';
+  /** 已发布工作流的 ID（如果已发布） */
+  publishedId?: string;
 }
 
 /**

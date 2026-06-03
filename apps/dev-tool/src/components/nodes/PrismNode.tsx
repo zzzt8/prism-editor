@@ -45,7 +45,7 @@ interface PrismNodeProps extends Omit<NodeProps, 'data'> {
 // ---------------------------------------------------------------------------
 
 export const PrismNode: FC<PrismNodeProps> = ({ id, data, selected: _rfSelected }) => {
-  const params = data.params ?? {};
+  const params = useMemo(() => data.params ?? {}, [data.params]);
   const definition = data.definition;
   const label = data.label ?? data.nodeType ?? 'Unknown';
   const updateNodeParams = useCanvasStore((s) => s.updateNodeParams);

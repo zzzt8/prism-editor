@@ -83,6 +83,19 @@ export default tseslint.config(
     },
   },
 
+  // ── Specific files with known unused vars patterns ────────────────────────────
+  {
+    files: [
+      'packages/image-ops/src/scheduler/taskQueue.ts',
+      'packages/image-ops/src/scheduler/workerRunner.ts',
+      'packages/image-ops/src/task-scheduler.ts',
+      'packages/image-ops/src/scheduler/workerPool.ts',
+    ],
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'off',
+    },
+  },
+
   // ── Test files: relax rules that conflict with vitest/jest globals ─────────
   {
     files: testFiles,

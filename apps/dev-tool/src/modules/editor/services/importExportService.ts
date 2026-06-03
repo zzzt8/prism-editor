@@ -5,11 +5,11 @@ import type { EditorWorkflowMeta, EditorCanvasNode, EditorCanvasEdge } from '@pr
 
 export interface ImportExportService {
   exportAsJson: (
-    workflowMeta: EditorWorkflowMeta,
-    nodes: EditorCanvasNode[],
-    edges: EditorCanvasEdge[]
+    _workflowMeta: EditorWorkflowMeta,
+    _nodes: EditorCanvasNode[],
+    _edges: EditorCanvasEdge[]
   ) => Promise<void>;
-  importFromFile: (file: File) => Promise<{
+  importFromFile: (_file: File) => Promise<{
     nodes: EditorCanvasNode[];
     edges: EditorCanvasEdge[];
     workflowMeta: EditorWorkflowMeta;
@@ -17,7 +17,7 @@ export interface ImportExportService {
 }
 
 interface JsonFileAdapterType {
-  importFromFile: (file: File) => Promise<import('@prism/shared-types').Workflow>;
+  importFromFile: (_file: File) => Promise<import('@prism/shared-types').Workflow>;
 }
 
 export function createImportExportService(
@@ -65,16 +65,16 @@ export function initImportExportService(jsonFileAdapter: JsonFileAdapterType): v
 
 // Default instance (lazy initialization)
 export const importExportService: ImportExportService = {
-  async exportAsJson(workflowMeta, nodes, edges) {
+  async exportAsJson(_workflowMeta, _nodes, _edges) {
     if (!_serviceInstance) {
       throw new Error('ImportExportService not initialized. Call initImportExportService first.');
     }
-    return _serviceInstance.exportAsJson(workflowMeta, nodes, edges);
+    return _serviceInstance.exportAsJson(_workflowMeta, _nodes, _edges);
   },
-  async importFromFile(file) {
+  async importFromFile(_file) {
     if (!_serviceInstance) {
       throw new Error('ImportExportService not initialized. Call initImportExportService first.');
     }
-    return _serviceInstance.importFromFile(file);
+    return _serviceInstance.importFromFile(_file);
   },
 };

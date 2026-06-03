@@ -22,9 +22,10 @@
 - 模板管理
 
 ### 发布功能
-- Publish 对话框：手动选择用户输入节点
-- 配置参数可见性
-- 导出工作流配置
+- Publish 对话框 v2：手动选择用户输入节点和暴露参数
+- 配置参数可见性（visible / hidden / locked）
+- 自动检测叶子节点作为输出
+- 导出工作流配置为 PublishedWorkflow 格式
 
 ### 节点包管理
 - Node Package Manager：从 JSON 导入自定义节点包
@@ -36,28 +37,34 @@
 apps/dev-tool/
 ├── src/
 │   ├── components/
-│   │   ├── canvas/           # 画布组件
-│   │   ├── header/           # 头部组件
-│   │   ├── Inspector/        # 检查器面板
-│   │   ├── nodes/            # 节点组件
-│   │   ├── edges/            # 连线组件
-│   │   ├── NodePanel/        # 节点面板
-│   │   ├── NodePackageManager/ # 节点包管理
-│   │   ├── NodeMarketplace/  # 节点市场
-│   │   ├── ParamPanel/       # 参数面板
-│   │   ├── TemplateCenter/   # 模板中心
-│   │   ├── TemplateManager/  # 模板管理
-│   │   └── VersionHistory/   # 版本历史
-│   ├── layouts/              # 布局组件
+│   │   ├── canvas/              # 画布组件
+│   │   ├── header/              # 头部组件
+│   │   ├── Inspector/          # 检查器面板
+│   │   ├── nodes/               # 节点组件
+│   │   ├── edges/               # 连线组件
+│   │   ├── NodePanel/           # 节点面板
+│   │   ├── NodePackageManager/   # 节点包管理
+│   │   ├── NodeMarketplace/     # 节点市场
+│   │   ├── ParamPanel/          # 参数面板
+│   │   ├── TemplateCenter/       # 模板中心
+│   │   ├── TemplateManager/      # 模板管理
+│   │   ├── VersionHistory/       # 版本历史
+│   │   ├── WorkflowsView/        # 工作流视图
+│   │   └── WorkflowsPanel/       # 工作流面板
+│   ├── layouts/                 # 布局组件
 │   ├── modules/
-│   │   ├── editor/           # 编辑器模块
-│   │   ├── persistence/      # 持久化模块
-│   │   └── repositories/     # 数据仓库
-│   ├── pages/                # 页面组件
-│   ├── store/                # Zustand 状态管理
-│   ├── storage/              # 存储适配器
-│   ├── styles/               # 样式文件
-│   └── utils/                # 工具函数
+│   │   ├── editor/               # 编辑器模块
+│   │   │   ├── mappers/         # 格式转换 (canvas ↔ workflow ↔ published)
+│   │   │   ├── services/        # 编辑器服务 (autosave, import/export)
+│   │   │   └── stores/          # Zustand 状态管理
+│   │   ├── persistence/         # 持久化模块
+│   │   │   └── mappers/         # 数据转换映射
+│   │   └── repositories/        # 数据仓库
+│   ├── pages/                   # 页面组件
+│   ├── store/                    # Zustand 状态管理
+│   ├── storage/                 # 存储适配器
+│   ├── styles/                  # 样式文件
+│   └── utils/                   # 工具函数
 └── package.json
 ```
 

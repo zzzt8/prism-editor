@@ -479,7 +479,7 @@ export const LoadMaskBody: FC<{
 /** Transform body */
 export const TransformBody: FC<{
   params: Record<string, unknown>;
-  updateNodeParams: (id: string, params: Record<string, unknown>) => void;
+  updateNodeParams: (_id: string, _params: Record<string, unknown>) => void;
   nodeId: string;
   executionResult: CanvasNodeData['executionResult'];
   onShowPreview: () => void;
@@ -515,7 +515,7 @@ export const TransformBody: FC<{
 /** ApplyMask body */
 export const ApplyMaskBody: FC<{
   params: Record<string, unknown>;
-  updateNodeParams: (id: string, params: Record<string, unknown>) => void;
+  updateNodeParams: (_id: string, _params: Record<string, unknown>) => void;
   nodeId: string;
   executionResult: CanvasNodeData['executionResult'];
   onShowPreview: () => void;
@@ -566,7 +566,7 @@ export const ApplyMaskBody: FC<{
 /** Composite body */
 export const CompositeBody: FC<{
   params: Record<string, unknown>;
-  updateNodeParams: (id: string, params: Record<string, unknown>) => void;
+  updateNodeParams: (_id: string, _params: Record<string, unknown>) => void;
   nodeId: string;
   executionResult: CanvasNodeData['executionResult'];
   onShowPreview: () => void;
@@ -647,7 +647,7 @@ const emptyInputStyle: React.CSSProperties = {
 /** Empty Input body — inline width / height / backgroundColor controls, ref ComfyUI EmptyImage */
 export const EmptyInputBody: FC<{
   params: Record<string, unknown>;
-  updateNodeParams: (id: string, params: Record<string, unknown>) => void;
+  updateNodeParams: (_id: string, _params: Record<string, unknown>) => void;
   nodeId: string;
 }> = ({ params, updateNodeParams, nodeId }) => {
   const width = (params['width'] as number) ?? 512;

@@ -12,7 +12,7 @@ import type { RunState } from './runStore';
 export type RunStateSetter = (_state: RunState | ((_prev: RunState) => RunState)) => void;
 
 export interface ExecuteOptions {
-  onLog?: (log: ExecutionLog) => void;
+  onLog?: (_log: ExecutionLog) => void;
 }
 
 // Module-level AbortController for the current execution

@@ -23,14 +23,16 @@ function rebuildNodes(config: PublishedConfig): WorkflowNode[] {
     return parseInt(a, 10) - parseInt(b, 10);
   });
 
-  for (const [nodeId, index] of sortedEntries) {
+  for (const [nodeId, _index] of sortedEntries) {
     const nodeType = config.nodeTypes?.[nodeId];
     if (!nodeType) continue;
 
     const nodeConfig = config.nodeConfigs?.[nodeId];
+    // Merge order: params (exposed defaults) → _internalParams (developer-locked)
+    // This matches published-executor.ts for consistency
     const mergedParams = {
-      ...(nodeConfig?._internalParams ?? {}),
       ...(nodeConfig?.params ?? {}),
+      ...(nodeConfig?._internalParams ?? {}),
     };
 
     nodes.push({
@@ -77,14 +79,14 @@ export function publishedToWorkflow(published: PublishedWorkflow): Workflow {
     inputs: published.inputs.map((input) => ({
       id: input.id,
       name: input.name,
-      type: input.type as 'image' | 'mask' | 'number' | 'string' | 'boolean',
+      type: input.type,
       required: input.required,
       defaultValue: input.defaultValue,
     })),
     outputs: published.outputs.map((output) => ({
       id: output.id,
       name: output.name,
-      type: output.type as 'image' | 'mask' | 'number' | 'string' | 'boolean',
+      type: output.type,
     })),
     metadata: {
       createdAt: published.publishedAt,

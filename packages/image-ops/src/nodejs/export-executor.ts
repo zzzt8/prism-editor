@@ -5,7 +5,6 @@
 
 import type { NodeExecutor, ExportExecutorOutput } from '@prism/shared-types';
 import type { ImageData } from '@prism/shared-types';
-import sharp from 'sharp';
 import { imageDataToSharp } from './sharp-utils';
 
 export const exportExecutor: NodeExecutor = async (

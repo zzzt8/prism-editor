@@ -1,7 +1,7 @@
 // ParametersPanel — parameter editing panel for Inspector
 // Includes ParamField and ImageFileField widgets (migrated from ParamPanel.tsx)
 
-import React, { useCallback, useState, useRef } from 'react';
+import React, { useCallback, useMemo, useState, useRef } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
 import type { ParamDefinition, ParamOption } from '@prism/shared-types';
 import { CircleDot } from 'lucide-react';
@@ -268,7 +268,7 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({ nodeId }) => {
   const node = nodes.find((n) => n.id === nodeId);
   const nodeData = node?.data;
   const definition = nodeData?.definition;
-  const params = nodeData?.params ?? {};
+  const params = useMemo(() => nodeData?.params ?? {}, [nodeData?.params]);
   const label = nodeData?.label ?? '';
 
   const handleAliasSave = useCallback(() => {

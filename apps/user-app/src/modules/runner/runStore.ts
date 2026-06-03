@@ -27,7 +27,7 @@ export const useRunStore = create<RunStoreState>((set, get) => {
     runState: { status: 'idle' },
     executionLogs: [],
 
-    setRunState: function setRunState(stateOrUpdater: RunState | ((_prev: RunState) => RunState)): void {
+    setRunState: function setRunState(stateOrUpdater: RunState | ((prev: RunState) => RunState)): void {
       set((state) => ({
         runState:
           typeof stateOrUpdater === 'function'
@@ -36,9 +36,9 @@ export const useRunStore = create<RunStoreState>((set, get) => {
       }));
     },
 
-    addExecutionLog(log: ExecutionLog): void {
+    addExecutionLog(_log: ExecutionLog): void {
       set((state) => ({
-        executionLogs: [...state.executionLogs, log],
+        executionLogs: [...state.executionLogs, _log],
       }));
     },
 

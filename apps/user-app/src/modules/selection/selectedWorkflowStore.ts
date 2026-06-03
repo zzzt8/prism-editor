@@ -18,7 +18,7 @@ export interface NodeLoadError {
 export interface SelectedWorkflowState {
   selectedWorkflow: PublishedWorkflow | null;
   nodeLoadErrors: NodeLoadError[];
-  selectWorkflow: (sourceId: string) => void;
+  selectWorkflow: (_sourceId: string) => void;
   clearSelection: () => void;
   clearNodeLoadErrors: () => void;
 }

@@ -62,6 +62,7 @@ export function canvasToWorkflow(
     metadata: {
       createdAt,
       updatedAt: now,
+      targetPlatform: workflowMeta.targetPlatform ?? existingWorkflow?.metadata.targetPlatform,
     },
   };
 }

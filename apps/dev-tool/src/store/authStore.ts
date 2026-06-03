@@ -63,13 +63,13 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       isAuthenticated: false,
 
-      login: async (_email: string, _password: string) => {
-        const response = await authFetch(`${API_BASE}/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ email: _email, password: _password }),
-        });
+  login: async (email: string, password: string) => {
+    const response = await authFetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email, password }),
+    });
 
         if (!response.ok) {
           throw new Error(await parseErrorMessage(response, 'Login failed'));
@@ -84,13 +84,13 @@ export const useAuthStore = create<AuthState>()(
         syncStorageTokens();
       },
 
-      register: async (_email: string, _password: string, _name?: string) => {
-        const response = await authFetch(`${API_BASE}/auth/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ email: _email, password: _password, name: _name }),
-        });
+  register: async (email: string, password: string, name?: string) => {
+    const response = await authFetch(`${API_BASE}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email, password, name }),
+    });
 
         if (!response.ok) {
           throw new Error(await parseErrorMessage(response, 'Registration failed'));
@@ -157,6 +157,7 @@ export const useAuthStore = create<AuthState>()(
             user: data.user,
             isAuthenticated: true,
           });
+          syncStorageTokens();
         } else {
           const refreshed = await get().refreshToken().then(() => true).catch(() => false);
           if (!refreshed) {
@@ -181,6 +182,11 @@ export const useAuthStore = create<AuthState>()(
         accessToken: state.accessToken,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          syncStorageTokens();
+        }
+      },
     }
   )
 );

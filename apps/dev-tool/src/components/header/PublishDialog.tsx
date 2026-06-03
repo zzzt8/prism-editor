@@ -391,24 +391,41 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     setEditingLabel('');
   };
   // ── Publish to server ────────────────────────────────────────────────────────
-  const publishToServer = async (pw: PublishedWorkflow, workflowId: string): Promise<void> => {
+  const publishToServer = async (pw: PublishedWorkflow, workflowId: string, publishedId?: string): Promise<{ id: string } | null> => {
     const { accessToken } = useAuthStore.getState();
     if (!accessToken) {
       throw new Error('请先登录后再发布');
     }
 
-    const response = await fetch(`${API_BASE}/published`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        workflowId,
-        publishedBy: pw.name,
-        content: JSON.stringify(pw),
-      }),
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    };
+    const body = JSON.stringify({
+      workflowId,
+      publishedBy: pw.name,
+      content: JSON.stringify(pw),
     });
+
+    let response = await fetch(`${API_BASE}/published`, { method: 'POST', headers, body });
+
+    // If workflow already published (409), try PUT to update
+    if (response.status === 409) {
+      console.log('[Publish] Workflow already published, trying PUT...');
+      // Fetch published list to find the matching publishedId
+      const listRes = await fetch(`${API_BASE}/published?page=1&limit=100`, { headers });
+      if (listRes.ok) {
+        const listData = await listRes.json();
+        const existing = listData.data?.find((p: { workflowId: string }) => p.workflowId === workflowId);
+        if (existing?.id) {
+          publishedId = existing.id;
+        }
+      }
+
+      if (publishedId) {
+        response = await fetch(`${API_BASE}/published/${publishedId}`, { method: 'PUT', headers, body });
+      }
+    }
 
     if (!response.ok) {
       let msg = `发布失败: ${response.status}`;
@@ -417,6 +434,13 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
         if (body.error) msg = body.error;
       } catch { /* ignore */ }
       throw new Error(msg);
+    }
+
+    try {
+      const data = await response.json();
+      return data.data ?? null;
+    } catch {
+      return null;
     }
   };
 
@@ -518,7 +542,17 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
   };
 
       // Write to server (requires auth); user sees error if not logged in
-      await publishToServer(pw, workflowMeta.id);
+      const responseData = await publishToServer(pw, workflowMeta.id, workflowMeta.publishedId);
+
+      // Update workflowMeta with publishedId for future re-publishes
+      // Save both from response and from the list lookup (for 409->PUT fallback)
+      const newPublishedId = responseData?.id ?? workflowMeta.publishedId;
+      if (newPublishedId && !workflowMeta.publishedId) {
+        useCanvasStore.getState().setWorkflowMeta({
+          ...workflowMeta,
+          publishedId: newPublishedId,
+        });
+      }
 
       broadcastPublish(pw);
       setLastPublished(pw);

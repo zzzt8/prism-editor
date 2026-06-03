@@ -119,6 +119,13 @@ GET /health
 | GET | `/api/published/:id` | 已发布详情 |
 | DELETE | `/api/published/:id` | 取消发布 |
 
+### 数据导出
+
+| 方法 | 路径 | 描述 |
+|------|------|------|
+| GET | `/api/workflows/:id/export` | 导出工作流 JSON |
+| POST | `/api/workflows/import` | 导入工作流 JSON |
+
 ### 节点包
 
 | 方法 | 路径 | 描述 |

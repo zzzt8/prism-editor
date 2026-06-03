@@ -42,6 +42,7 @@ export interface ConnectionValidationResult {
  * - 'number' connects to 'number' (numeric parameters)
  * - 'string' connects to 'string' (text parameters)
  * - 'boolean' connects to 'boolean' (toggle parameters)
+ * - 'text' connects to 'text' (text content)
  * - No cross-type connections are allowed (e.g., image → mask is invalid)
  */
 export const PORT_COMPATIBILITY: Record<PortType, PortType[]> = {
@@ -50,6 +51,7 @@ export const PORT_COMPATIBILITY: Record<PortType, PortType[]> = {
   number:  ['number'],
   string:  ['string'],
   boolean: ['boolean'],
+  text:    ['text'],
 } as const;
 
 /**

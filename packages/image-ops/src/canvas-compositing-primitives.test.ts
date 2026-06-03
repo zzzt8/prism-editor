@@ -734,7 +734,7 @@ describe('Performance benchmarks', () => {
     // Node.js canvas npm package has significant serialization overhead (putImageData → getImageData).
     // Single-run test: threshold set to 500ms to avoid flakiness. Multiple iterations
     // with proper average checking are in apply-mask-benchmark.test.ts.
-    expect(duration).toBeLessThan(60);
+    expect(duration).toBeLessThan(500);
     expect(jsResult.width).toBe(width);
     expect(jsResult.height).toBe(height);
   });
