@@ -203,13 +203,13 @@ export function inferDataType(portName: string): PortDataType | undefined {
 export function getEffectiveDataType(
   portName: string,
   explicit: PortDataType | undefined,
-  _warn?: (msg: string) => void
+  _warn?: (_msg: string) => void
 ): PortDataType | undefined {
   if (explicit !== undefined) return explicit;
 
   const inferred = inferDataType(portName);
-  if (inferred === undefined && warn) {
-    warn(`No dataType declared for port '${portName}' and cannot infer type — connection validation skipped`);
+  if (inferred === undefined && _warn) {
+    _warn(`No dataType declared for port '${portName}' and cannot infer type — connection validation skipped`);
   }
   return inferred;
 }

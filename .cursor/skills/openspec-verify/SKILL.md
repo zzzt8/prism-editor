@@ -30,6 +30,7 @@ verify:
    - 无论通过与否，继续
    - 自动归因：related / unrelated / flaky
 3. Coherence Check（自动化比对）
+3.5 ECC review lanes（按需）
 4. 输出分级报告
 ```
 

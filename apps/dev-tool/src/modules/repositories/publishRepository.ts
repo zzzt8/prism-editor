@@ -135,6 +135,7 @@ export class PublishRepository implements IPublishRepository {
 
       return {
         sourceId: item.workflow.id,
+        publishedId: item.id,
         name: item.workflow.name,
         description: item.workflow.description,
         sourceName: item.workflow.name,

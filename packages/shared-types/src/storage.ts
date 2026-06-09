@@ -15,14 +15,14 @@ export interface WorkflowMeta {
 }
 
 export interface StorageAdapter {
-  save(workflow: Workflow): Promise<Workflow>;
-  load(id: string): Promise<Workflow>;
+  save(_workflow: Workflow): Promise<Workflow>;
+  load(_id: string): Promise<Workflow>;
   list(): Promise<WorkflowMeta[]>;
-  delete(id: string): Promise<void>;
-  createWorkflow(name: string, _description?: string, _category?: string): Promise<{ meta: WorkflowMeta; content: Workflow }>;
-  updateWorkflowMeta(id: string, patch: Partial<WorkflowMeta>): Promise<void>;
-  exportToJson(workflow: Workflow): Promise<string>;
-  importFromJson(json: string): Promise<Workflow>;
+  delete(_id: string): Promise<void>;
+  createWorkflow(_name: string, _description?: string, _category?: string): Promise<{ meta: WorkflowMeta; content: Workflow }>;
+  updateWorkflowMeta(_id: string, _patch: Partial<WorkflowMeta>): Promise<void>;
+  exportToJson(_workflow: Workflow): Promise<string>;
+  importFromJson(_json: string): Promise<Workflow>;
 }
 
 export interface LocalStorageAdapterOptions {
@@ -30,6 +30,6 @@ export interface LocalStorageAdapterOptions {
 }
 
 export interface JsonFileAdapter {
-  exportToFile(workflow: Workflow): Promise<void>;
-  importFromFile(file: File): Promise<Workflow>;
+  exportToFile(_workflow: Workflow): Promise<void>;
+  importFromFile(_file: File): Promise<Workflow>;
 }

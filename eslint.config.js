@@ -77,8 +77,8 @@ export default tseslint.config(
       // Disable no-undef for TSX files — TypeScript resolves JSX types, ESLint globals can't
       'no-undef': 'off',
 
-      'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreClassWithStaticInitBlock: true }],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreClassWithStaticInitBlock: true }],
       '@typescript-eslint/no-explicit-any': 'warn',
     },
   },
@@ -90,9 +90,12 @@ export default tseslint.config(
       'packages/image-ops/src/scheduler/workerRunner.ts',
       'packages/image-ops/src/task-scheduler.ts',
       'packages/image-ops/src/scheduler/workerPool.ts',
+      'packages/shared-types/src/execution.ts',
+      'packages/shared-types/src/port-data-types.ts',
     ],
     rules: {
       '@typescript-eslint/no-unused-vars': 'off',
+      'no-unused-vars': 'off',
     },
   },
 

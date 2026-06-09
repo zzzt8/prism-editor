@@ -14,27 +14,27 @@ export interface ImageOperations {
   /**
    * Transform image with translate, scale, rotate, crop
    */
-  transform(imageData: ImageData, options: TransformOptions): Promise<WorkerImageResult>;
+  transform(_imageData: ImageData, _options: TransformOptions): Promise<WorkerImageResult>;
   
   /**
    * Composite two images using specified blend mode
    */
   composite(
-    base: ImageData,
-    overlay: ImageData,
-    mode: BlendMode,
-    opacity: number
+    _base: ImageData,
+    _overlay: ImageData,
+    _mode: BlendMode,
+    _opacity: number
   ): Promise<WorkerImageResult>;
   
   /**
    * Apply mask to image
    */
-  applyMask(image: ImageData, mask: ImageData, options: MaskOptions): Promise<WorkerImageResult>;
+  applyMask(_image: ImageData, _mask: ImageData, _options: MaskOptions): Promise<WorkerImageResult>;
   
   /**
    * Export image to blob
    */
-  exportImage(data: ImageData, options: { format?: string; quality?: number }): Promise<WorkerExportResult>;
+  exportImage(_data: ImageData, _options: { format?: string; quality?: number }): Promise<WorkerExportResult>;
 }
 
 /**

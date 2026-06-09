@@ -1,0 +1,6 @@
+[
+  {
+    "event": "sessionStart",
+    "command": "node .cursor/scripts/ecc-session-env.js"
+  }
+]

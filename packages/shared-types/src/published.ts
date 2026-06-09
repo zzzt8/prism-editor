@@ -6,6 +6,7 @@ import type { Connection } from './workflow';
 /** Minimal metadata for listing published workflows */
 export interface PublishedWorkflowMeta {
   sourceId: string;
+  publishedId: string;
   name: string;
   description?: string;
   sourceName: string;

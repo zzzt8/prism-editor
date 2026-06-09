@@ -97,6 +97,12 @@ verify:
    - 用 str_replace 做修改
    - 不要大段重写，只改最小相关区域
 
+3.5 选择 ECC lane（推荐，复杂 task 必做）
+   - 读 task 标题、layer、verify、目标路径
+   - 依据 `ecc-openspec-bridge` 确定 lane
+   - 记录一句：`ECC lane = <lane>`
+   - 后续实现与验证遵循该 lane 的 SOP
+
 4. 提交
    - git add -A
    - git commit -m "task: <id> <一句话描述>"

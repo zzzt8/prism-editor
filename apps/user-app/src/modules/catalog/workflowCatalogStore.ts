@@ -3,7 +3,7 @@
 // State: workflows (raw list), isLoading, loadError
 // Actions: loadWorkflows, renameWorkflow, deleteWorkflow
 //
-// Architecture: All operations go through userAppStorage (IndexedDB)
+// Architecture: Published workflow list/detail now load from the public API.
 
 import { create } from 'zustand';
 import type { PublishedWorkflowMeta } from '../../modules/repositories/interfaces';
@@ -46,7 +46,7 @@ export const useWorkflowCatalogStore = create<WorkflowCatalogState>((set) => {
     deleteWorkflow: async function deleteWorkflow(sourceId: string) {
       await userAppStorage.deletePublished(sourceId);
       set((state) => ({
-        workflows: state.workflows.filter((w) => w.sourceId !== sourceId),
+        workflows: state.workflows.filter((w) => w.sourceId !== sourceId && w.publishedId !== sourceId),
       }));
     },
   };

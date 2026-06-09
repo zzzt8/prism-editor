@@ -1,9 +1,9 @@
 import React, { Component, type ReactNode } from 'react';
 
-interface Props {
+export interface Props {
   children: ReactNode;
   fallback?: ReactNode;
-  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
+  onError?: (_error: Error, _errorInfo: React.ErrorInfo) => void;
 }
 
 interface State {

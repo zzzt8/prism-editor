@@ -3,7 +3,7 @@
 // State: selectedWorkflow, nodeLoadErrors
 // Actions: selectWorkflow, clearSelection
 //
-// selectWorkflow reads from userAppStorage (IndexedDB).
+// selectWorkflow reads the published workflow detail from the public API.
 
 import { create } from 'zustand';
 import type { PublishedWorkflow } from '@prism/shared-types';

@@ -94,7 +94,7 @@ export interface ExecutionContext {
   requireInput: <T>(_key: string, _nodeName: string) => T;
 }
 
-export type ProgressCallback = (progress: ExecutionProgress) => void;
+export type ProgressCallback = (_progress: ExecutionProgress) => void;
 
 export interface ExecutorOptions {
   onProgress?: ProgressCallback;
@@ -127,8 +127,8 @@ export interface LaneConfig {
 // from '@prism/workflow-core' for the concrete type.
 export interface NodeExecutor {
   (
-    inputs: Record<string, unknown>,
-    params: Record<string, unknown>,
+    _inputs: Record<string, unknown>,
+    _params: Record<string, unknown>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     _ctx: any
   ): Promise<Record<string, unknown>>;
@@ -143,10 +143,10 @@ export interface TopologicalSortResult {
 }
 
 export interface ExecutionCache {
-  get(workflowId: string, nodeId: string, inputsHash: string): CacheConfig | undefined;
-  set(workflowId: string, nodeId: string, inputsHash: string, result: Record<string, unknown>): void;
+  get(_workflowId: string, _nodeId: string, _inputsHash: string): CacheConfig | undefined;
+  set(_workflowId: string, _nodeId: string, _inputsHash: string, _result: Record<string, unknown>): void;
   clear(): void;
-  clearWorkflow(workflowId: string): void;
+  clearWorkflow(_workflowId: string): void;
 }
 
 // ─── Executor Output Types ───────────────────────────────────────────────────

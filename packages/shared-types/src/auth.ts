@@ -6,11 +6,11 @@
  */
 export enum AuthRole {
   /** Can create, edit, and publish workflows */
-  AUTHOR = 'author',
+  _AUTHOR = 'author',
   /** Can read and execute published workflows (default for all users) */
-  OPERATOR = 'operator',
+  _OPERATOR = 'operator',
   /** Full platform administration access */
-  ADMIN = 'admin',
+  _ADMIN = 'admin',
 }
 
 /**
@@ -18,11 +18,11 @@ export enum AuthRole {
  * Roles are assigned permission sets via RolePermissions.
  */
 export enum AuthPermission {
-  READ = 'read',
-  EXECUTE = 'execute',
-  EDIT = 'edit',
-  PUBLISH = 'publish',
-  MANAGE = 'manage',
+  _READ = 'read',
+  _EXECUTE = 'execute',
+  _EDIT = 'edit',
+  _PUBLISH = 'publish',
+  _MANAGE = 'manage',
 }
 
 /**
@@ -30,9 +30,9 @@ export enum AuthPermission {
  * Maps role -> set of permissions.
  */
 export const RolePermissions: Record<AuthRole, AuthPermission[]> = {
-  [AuthRole.AUTHOR]: [AuthPermission.READ, AuthPermission.EXECUTE, AuthPermission.EDIT, AuthPermission.PUBLISH],
-  [AuthRole.OPERATOR]: [AuthPermission.READ, AuthPermission.EXECUTE],
-  [AuthRole.ADMIN]: [AuthPermission.READ, AuthPermission.EXECUTE, AuthPermission.EDIT, AuthPermission.PUBLISH, AuthPermission.MANAGE],
+  [AuthRole._AUTHOR]: [AuthPermission._READ, AuthPermission._EXECUTE, AuthPermission._EDIT, AuthPermission._PUBLISH],
+  [AuthRole._OPERATOR]: [AuthPermission._READ, AuthPermission._EXECUTE],
+  [AuthRole._ADMIN]: [AuthPermission._READ, AuthPermission._EXECUTE, AuthPermission._EDIT, AuthPermission._PUBLISH, AuthPermission._MANAGE],
 };
 
 /**

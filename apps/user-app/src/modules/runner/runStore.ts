@@ -16,8 +16,8 @@ export interface RunState {
 export interface RunStoreState {
   runState: RunState;
   executionLogs: ExecutionLog[];
-  setRunState: (state: RunState | ((prev: RunState) => RunState)) => void;
-  addExecutionLog: (log: ExecutionLog) => void;
+  setRunState: (_state: RunState | ((_prev: RunState) => RunState)) => void;
+  addExecutionLog: (_log: ExecutionLog) => void;
   exportExecutionLogs: () => string;
   downloadExecutionLogs: () => void;
 }
@@ -27,7 +27,7 @@ export const useRunStore = create<RunStoreState>((set, get) => {
     runState: { status: 'idle' },
     executionLogs: [],
 
-    setRunState: function setRunState(stateOrUpdater: RunState | ((prev: RunState) => RunState)): void {
+  setRunState: function setRunState(stateOrUpdater: RunState | ((_prev: RunState) => RunState)): void {
       set((state) => ({
         runState:
           typeof stateOrUpdater === 'function'

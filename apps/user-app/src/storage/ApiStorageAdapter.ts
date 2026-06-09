@@ -1,4 +1,4 @@
-import type { PublishedWorkflow } from '@prism/shared-types';
+import type { PublishedWorkflow, PublishedWorkflowMeta as SharedPublishedWorkflowMeta } from '@prism/shared-types';
 import type { ValidatedPublishedWorkflow } from '../utils/workflowImport';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -17,7 +17,7 @@ interface ApiPublishedWorkflowRecord {
     createdAt: string;
     updatedAt: string;
   };
-  content: string;
+  content?: string | PublishedWorkflow;
 }
 
 interface ApiListResponse {
@@ -35,7 +35,7 @@ interface ApiListResponse {
       createdAt: string;
       updatedAt: string;
     };
-    content: string;
+    content?: string | PublishedWorkflow;
   }>;
   pagination: {
     page: number;
@@ -45,16 +45,7 @@ interface ApiListResponse {
   };
 }
 
-export interface PublishedWorkflowMeta {
-  sourceId: string;
-  name: string;
-  description?: string;
-  sourceName: string;
-  version: string;
-  publishedAt: string;
-  inputCount: number;
-  outputCount: number;
-}
+export type PublishedWorkflowMeta = SharedPublishedWorkflowMeta;
 
 export class UserAppStorageAdapter {
   private baseUrl: string;
@@ -110,16 +101,17 @@ export class UserAppStorageAdapter {
     let outputCount = 0;
 
     try {
-      const content = JSON.parse(item.content);
-      if (content.sourceName) sourceName = content.sourceName;
-      if (content.config?.inputs) inputCount = content.config.inputs.length;
-      if (content.config?.outputs) outputCount = content.config.outputs.length;
+      const content = typeof item.content === 'string' ? JSON.parse(item.content) : item.content;
+      if (content?.sourceName) sourceName = content.sourceName;
+      if (content?.config?.inputs) inputCount = content.config.inputs.length;
+      if (content?.config?.outputs) outputCount = content.config.outputs.length;
     } catch {
       // Content parse failed, use defaults from workflow metadata
     }
 
     return {
       sourceId: item.workflow.id,
+      publishedId: item.id,
       name: item.workflow.name,
       description: item.workflow.description,
       sourceName,
@@ -135,25 +127,30 @@ export class UserAppStorageAdapter {
     return response.data.map((item) => this.parseWorkflowMeta(item));
   }
 
-  async loadPublished(sourceId: string): Promise<PublishedWorkflow> {
-    const response = await this.request<ApiListResponse>('/published?limit=100');
+  async loadPublished(id: string): Promise<PublishedWorkflow> {
+    const response = await this.request<{ data: ApiPublishedWorkflowRecord }>(`/published/${id}`);
+    const published = response.data;
 
-    const published = response.data.find(
-      (p) => p.workflowId === sourceId || p.workflow.id === sourceId
-    );
-    if (!published) {
-      throw new Error('Published workflow not found');
+    const workflow = typeof published.content === 'string'
+      ? JSON.parse(published.content)
+      : published.content;
+
+    if (!workflow || typeof workflow !== 'object') {
+      throw new Error('Published workflow content is missing or invalid');
     }
 
-    const workflow = JSON.parse(published.content) as PublishedWorkflow;
-    if (!workflow.sourceId) {
-      workflow.sourceId = published.workflow.id;
+    const typedWorkflow = workflow as PublishedWorkflow;
+    if (!typedWorkflow.sourceId) {
+      typedWorkflow.sourceId = published.workflow.id;
     }
-    if (!workflow.name) {
-      workflow.name = published.workflow.name;
+    if (!typedWorkflow.name) {
+      typedWorkflow.name = published.workflow.name;
+    }
+    if (!typedWorkflow.sourceName) {
+      typedWorkflow.sourceName = published.workflow.name;
     }
 
-    return workflow;
+    return typedWorkflow;
   }
 
   async importWorkflow(workflow: ValidatedPublishedWorkflow): Promise<{ id: string }> {

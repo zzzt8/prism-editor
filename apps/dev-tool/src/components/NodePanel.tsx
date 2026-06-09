@@ -118,7 +118,7 @@ export const NodePanel: React.FC = () => {
   const [toast, setToast] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [showMarketplace, setShowMarketplace] = useState(false);
-  const [, setNodeVersion] = useState(0); // 用于触发节点列表刷新
+  const [nodeVersion, setNodeVersion] = useState(0); // 用于触发节点列表刷新
 
   const allDefinitions = useMemo(() => {
     try {

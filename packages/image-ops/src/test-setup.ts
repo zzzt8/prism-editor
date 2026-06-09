@@ -32,9 +32,9 @@ const ImageClass = canvas.Image as unknown as typeof Image;
 // all instances (including those created inside source code) have both APIs.
 const proto = canvas.Canvas.prototype as unknown as Record<string, unknown>;
 
-function canvasToBlob(c: canvas.Canvas, type: string, quality?: number): Blob {
+function canvasToBlob(c: canvas.Canvas, _type: string, quality?: number): Blob {
   const mimeType: 'image/png' | 'image/jpeg' =
-    type === 'image/jpeg' ? 'image/jpeg' : 'image/png';
+    _type === 'image/jpeg' ? 'image/jpeg' : 'image/png';
   const toBuffer = canvas.Canvas.prototype.toBuffer.bind(c);
   let buf: Buffer;
   if (mimeType === 'image/jpeg') {
@@ -42,12 +42,12 @@ function canvasToBlob(c: canvas.Canvas, type: string, quality?: number): Blob {
   } else {
     buf = toBuffer(mimeType) as Buffer;
   }
-  return new Blob([buf.buffer as ArrayBuffer], { type });
+  return new Blob([buf.buffer as ArrayBuffer], { type: _type });
 }
 
-function canvasToDataURL(c: canvas.Canvas, type: string, quality?: number): string {
+function canvasToDataURL(c: canvas.Canvas, _type: string, quality?: number): string {
   const mimeType: 'image/png' | 'image/jpeg' =
-    type === 'image/jpeg' ? 'image/jpeg' : 'image/png';
+    _type === 'image/jpeg' ? 'image/jpeg' : 'image/png';
   const toBuffer = canvas.Canvas.prototype.toBuffer.bind(c);
   let buf: Buffer;
   if (mimeType === 'image/jpeg') {
@@ -55,14 +55,14 @@ function canvasToDataURL(c: canvas.Canvas, type: string, quality?: number): stri
   } else {
     buf = toBuffer(mimeType) as Buffer;
   }
-  return `data:${type};base64,${buf.toString('base64')}`;
+  return `data:${_type};base64,${buf.toString('base64')}`;
 }
 
 // Install shims on the Canvas prototype — all instances created by createCanvas
 // (including those in source code) inherit them automatically.
 (proto as Record<string, unknown>).toBlob = function (
   this: canvas.Canvas,
-  callback: (blob: Blob | null) => void,
+  callback: (_blob: Blob | null) => void,
   type = 'image/png',
   quality?: number
 ) {

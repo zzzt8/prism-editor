@@ -11,18 +11,18 @@ export interface CacheEntry extends CacheConfig {
 
 export interface ExecutionCache {
   get(
-    workflowId: string,
-    nodeId: string,
-    inputsHash: string
+    _workflowId: string,
+    _nodeId: string,
+    _inputsHash: string
   ): CacheEntry | undefined;
   set(
-    workflowId: string,
-    nodeId: string,
-    inputsHash: string,
-    result: Record<string, unknown>
+    _workflowId: string,
+    _nodeId: string,
+    _inputsHash: string,
+    _result: Record<string, unknown>
   ): void;
   clear(): void;
-  clearWorkflow(workflowId: string): void;
+  clearWorkflow(_workflowId: string): void;
 }
 
 export interface CacheOptions {

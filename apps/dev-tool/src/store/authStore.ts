@@ -43,13 +43,13 @@ interface User {
   updatedAt?: string;
 }
 
-interface AuthState {
+export interface AuthState {
   user: User | null;
   accessToken: string | null;
   isAuthenticated: boolean;
 
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name?: string) => Promise<void>;
+  login: (_email: string, _password: string) => Promise<void>;
+  register: (_email: string, _password: string, _name?: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
   fetchCurrentUser: () => Promise<void>;

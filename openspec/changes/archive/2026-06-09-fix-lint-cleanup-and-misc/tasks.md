@@ -54,7 +54,7 @@
   - 改动: 未使用 enum 值和接口参数加 `_` 前缀
   - 验证命令: `pnpm lint 2>&1 | grep -c "shared-types"`
 
-- [ ] T2: Lint 清理 — `image-ops` 包
+- [x] T2: Lint 清理 — `image-ops` 包
   - layer: meta
   - 文件: `packages/image-ops/src/scheduler/taskQueue.ts`、`workerRunner.ts`、`task-scheduler.ts`、`test-setup.ts`
   - 改动: 未使用变量加 `_` 前缀或删除
@@ -72,7 +72,7 @@
   - 改动: 未使用变量处理
   - 验证命令: `pnpm lint 2>&1 | grep -c "dev-tool"`
 
-- [ ] T5: Lint 清理 — `user-app` 包
+- [x] T5: Lint 清理 — `user-app` 包
   - layer: meta
   - 文件: `apps/user-app/src/modules/runner/runStore.ts`
   - 改动: 未使用变量处理
@@ -84,7 +84,7 @@
   - 改动: 未使用参数处理
   - 验证命令: `pnpm lint 2>&1 | grep -c "shared-ui"`
 
-- [ ] T7: Lint 清理 — `workflow-core` 包
+- [x] T7: Lint 清理 — `workflow-core` 包
   - layer: meta
   - 文件: `packages/workflow-core/src/cache.ts`
   - 改动: 未使用参数处理

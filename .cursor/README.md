@@ -1,6 +1,6 @@
 # .cursor 目录说明
 
-> **v3.2 变更：** 精简命令至 5 个（移除 opsx-plan/opsx-debug/opsx-skill）；change_class 扩展为 low/medium/high 三级并分离 change_profile；新增 verify.md 模板；debug 诊断逻辑并入 apply failure-handling section；plan 编排逻辑并入 propose change-splitting section。
+> **v4.0 变更：** 在 OpenSpec 主流程上增加 ECC Bridge 与 lane skills；`opsx-meta` 新增 `task_type`，优先驱动 apply / verify 阶段的稳定自动路由。
 
 ---
 
@@ -13,97 +13,66 @@
 │   │   ├── SHARED-LAYERS.md       # 共享层：layer 映射、验证命令
 │   │   ├── SKILL-INDEX.md         # 自动生成的 Skill 索引
 │   │   └── SKILL-SCHEMA.md        # 元数据 Schema 定义
-│   ├── openspec-explore/           # 探索代码库，澄清需求
-│   ├── openspec-propose/          # 创建 change，生成 artifacts（含 risk-triggered 模板 + change-splitting）
-│   ├── openspec-apply/            # 按 task 实现代码，断点续传基于 checkbox，内置 failure-handling
+│   ├── openspec-explore/          # 探索代码库，澄清需求
+│   ├── openspec-propose/          # 创建 change，生成 artifacts
+│   ├── openspec-apply/            # 按 task 实现代码，断点续传基于 checkbox
 │   ├── openspec-verify/           # 验证实现一致性（Full + coherence-lite）
-│   └── openspec-archive/          # 归档完成的 change
+│   ├── openspec-archive/          # 归档完成的 change
+│   ├── ecc-openspec-bridge/       # OpenSpec → ECC lane 路由层
+│   ├── ecc-api-design/            # API / schema / contract lane
+│   ├── ecc-tdd-workflow/          # 测试优先 / feature lane
+│   └── ecc-build-error-resolver/  # build / typecheck / lint / CI 修复 lane
 │
-└── commands/                       # 命令入口（触发对应 Skill）
-    └── opsx-*.md                   # 5 个核心命令
+├── commands/                      # 命令入口（触发对应 Skill）
+│   ├── opsx-*.md                  # OpenSpec 与 OpenSpec+ECC 命令
+│   └── ecc-*.md                   # 手动 lane 命令
+│
+├── rules/                         # 项目本地 Cursor 规则
+├── scripts/                       # 本地 hook / helper 脚本
+└── hooks.json                     # Cursor hooks 注册
 ```
 
 ---
 
-## 命令速查表（v3.2）
+## 命令速查表（v4.0）
 
 | 命令 | Skill | 阶段 | 作用 |
 |------|-------|------|------|
 | `/opsx-explore` | `openspec-explore` | 探索 | 扫描代码库结构，澄清需求，量化切换标准 |
 | `/opsx-propose` | `openspec-propose` | 提案 | 创建 change，生成 artifacts；change_class 推断触发 review/测试模板；支持 change-splitting |
 | `/opsx-apply` | `openspec-apply` | 实现 | 按 layer 优先级执行 task，断点续传基于 checkbox；内置 failure-handling 诊断 |
+| `/opsx-ecc-apply` | `openspec-apply` + `ecc-openspec-bridge` | 实现 | 在 OpenSpec apply 之上，为每个 task 按 `task_type` 自动匹配 ECC 专业 SOP lane |
 | `/opsx-verify` | `openspec-verify` | 验证 | Full 验证 + coherence-lite checklist |
+| `/opsx-ecc-verify` | `openspec-verify` + `ecc-openspec-bridge` | 验证 | Full 验证之外，追加 ECC review / failure attribution lanes |
 | `/opsx-archive` | `openspec-archive` | 归档 | 最终确认后归档 change |
+| `/ecc-api-design` | `ecc-api-design` | 实现 | 手动执行 API / schema / contract lane |
+| `/ecc-tdd-workflow` | `ecc-tdd-workflow` | 实现 | 手动执行测试优先 / feature lane |
+| `/ecc-build-error-resolver` | `ecc-build-error-resolver` | 调试 | 手动执行 build / typecheck / lint / CI 修复 lane |
 
 ---
 
-## v3.0 核心变更
+## Task 元数据升级
 
-### 1. 状态管理：checkbox 为主，JSON 为兼容参考
-
-> Task 状态以 tasks.md checkbox（`- [ ]` / `- [x]`）为主，tasks-state.json 仅作兼容参考。
-
-```
-冲突处理规则（必须写死）：
-- tasks.md checkbox 是唯一主真相源
-- 冲突时输出 warning：`[opsx-apply] 状态不一致：tasks.md 为准，JSON 已过时`
-- 不自动修复 JSON
-```
-
-### 2. change_class / change_profile 推断
-
-> `change_class` = 风险等级，影响 verify 强度和归档条件。
-> `change_profile` = 流程重量，记录推断依据（schema v2 固定 5 个 artifacts）。
-> 规则来源：config.yaml 的 `rules.change_class`，proposal.md 只展示推断结果。
-
-```yaml
----
-name: <change-name>
-change_class: high      # 风险等级
-change_profile: high     # 流程重量
-reason: "touches engine layer, modifies canvas API contract"
----
-```
-
-| 条件 | change_class | change_profile | 触发动作 |
-|------|-------------|---------------|---------|
-| 仅样式/文案/UI 布局，不影响逻辑 | `low` | `low` | 跳过 review checklist；测试并入 tasks |
-| 单页面交互增强、节点面板调整、局部 UI 变更 | `medium` | `medium` | 简化 review checklist；测试章节可选 |
-| 触及 store / API contract / node schema | `high` | `high` | 插入完整 review checklist + 独立测试章节 |
-| 涉及跨包接口、数据迁移、序列化格式 | `high` | `high` | 插入完整 review checklist + 独立测试章节 |
-| engine/core 层改动（任何 scope） | `high` | `high` | 插入完整 review checklist + 独立测试章节 |
-| 无法明确判断 | `high`（默认走保守路径） | `medium`（默认走中等路径） | — |
-
-### 3. 精简的 Task 元数据
-
-> v3.0 删除了 risk / priority / estimated_time（主观判断，无自动化消费方）。
+`tasks.md` 中的 `opsx-meta` 从 v4.0 开始推荐显式写 `task_type`：
 
 ```html
 <!-- opsx-meta
-id: T1
-layer: engine
-verify: unit-tests
+id: T2
+layer: backend
+task_type: api-design | tdd
+verify:
+  - typecheck
+  - api-tests
 dependencies:
   - type: task
-    refs: []
-  - type: change
-    refs: []
-    status_required: completed
+    refs: ["T1"]
 -->
 ```
 
-### 4. Coherence 降级为 coherence-lite
-
-> 三阶段（Incremental / Full / Coherence）简化为两阶段 + lite checklist。
-
-```
-Incremental verify → Full verify（含 coherence-lite checklist）
-```
-
-coherence-lite 结构：
-- **问答式 checklist**：task 是否有对应代码、design 决策是否落地、specs 语义是否有实现
-- **Traceability Map**：Proposal Goal → Design Decision → Task → Code/Test 可执行核对
-- **High-Risk 额外检查**：适用于 change_class = high
+规则：
+- `task_type` 第一项为主 lane
+- 其余项为辅助 lane
+- 未显式填写时，`ecc-openspec-bridge` 才使用 fallback 推断
 
 ---
 
@@ -112,24 +81,22 @@ coherence-lite 结构：
 ### 标准路径
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  /opsx-explore                                          │
-│  探索代码库 → 澄清需求                                   │
-│  ↓                                                      │
-│  /opsx-propose                                          │
-│  推断 change_class → 生成 artifacts                      │
-│  ↓ （如需多 change 编排：change-splitting）              │
-│  /opsx-apply                                            │
-│  按 layer 优先级执行 → 增量验证 → 断点续传               │
-│  ↓ 遇到问题                                             │
-│  failure-handling 诊断                                   │
-│  ↓ 所有 task 完成                                        │
-│  /opsx-verify                                           │
-│  Full + coherence-lite                                   │
-│  ↓ 全部通过                                              │
-│  /opsx-archive                                          │
-│  Git 检查 → 最终确认 → 归档                              │
-└─────────────────────────────────────────────────────────┘
+/opsx-explore
+  ↓
+/opsx-propose
+  ↓
+/opsx-apply 或 /opsx-ecc-apply
+  ↓
+/opsx-verify 或 /opsx-ecc-verify
+  ↓
+/opsx-archive
+```
+
+### ECC 增强路径
+
+```
+OpenSpec 负责：change / proposal / design / tasks / acceptance boundary
+ECC 负责：apply / verify 阶段的专业 SOP、lane 路由、故障归因
 ```
 
 ---
@@ -143,34 +110,24 @@ coherence-lite 结构：
 | `editor` | `apps/dev-tool/` | 开发者工具 UI |
 | `runtime` | `apps/user-app/` | 终端用户运行时 |
 | `ui-skin` | `packages/shared-ui/` | 设计系统和共享 UI 组件 |
+| `meta` | `.cursor/skills/` | OpenSpec / ECC workflow 元层 |
 
-**执行优先级：** engine > backend > editor > runtime > ui-skin > meta
-
----
-
-## 增量验证策略
-
-> 基于 `git diff --name-only HEAD~1` 获取实际改动文件。
-
-```bash
-git diff --name-only HEAD~1  # 获取本次改动的文件
-# 按文件路径判断受影响 layers → 执行增量验证
-```
-
-**全量验证（保底）：**
-```bash
-pnpm typecheck
-pnpm test
-```
+**执行优先级：** `engine > backend > editor > runtime > ui-skin > meta`
 
 ---
 
-## OpenSpec 与 Skills 的关系
+## OpenSpec 与 ECC 的关系
 
-OpenSpec（`openspec/`）是变更管理的产物系统，记录了每项变更的提案、设计、任务和验证结果。
+- **OpenSpec 是主流程**：管理 change、proposal、design、tasks、verify、archive
+- **ECC 是增强层**：只增强 apply / verify，不替代 proposal artifacts
+- **`task_type` 是路由锚点**：优先按 `task_type` 路由，减少模糊关键词猜测
+- **lane skills 是闭环**：`ecc-api-design`、`ecc-tdd-workflow`、`ecc-build-error-resolver` 已可独立执行
 
-Cursor Skills（`.cursor/skills/`）是 AI Agent 的执行逻辑，驱动 OpenSpec 工作流各阶段。
+---
 
-两者相辅相成：
-- OpenSpec **消费** Skills：`/opsx-apply` 调用 `openspec-apply` skill 执行任务
-- Skills **产出** OpenSpec：`/opsx-propose` 调用 `openspec-propose` skill 生成变更提案
+## 使用建议
+
+- 新建或维护 `tasks.md` 时，优先显式填写 `task_type`
+- 复杂任务直接用 `/opsx-ecc-apply <change-name>`
+- full verify 想要附加故障归因与 review lane 时，用 `/opsx-ecc-verify <change-name>`
+- 想单独执行某个专业 lane 时，用 `/ecc-api-design`、`/ecc-tdd-workflow`、`/ecc-build-error-resolver`

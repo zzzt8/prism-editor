@@ -24,14 +24,14 @@ export interface GlobalRegistry {
   registerNode(_def: NodeDefinition, _isCustom?: boolean): void;
   registerExecutor(_type: string, _fn: NodeExecutor): void;
   registerAll(_definitions: NodeDefinition[], _executors: NodeExecutorMap, _isCustom?: boolean): void;
-  getNode(type: string): NodeDefinition | undefined;
-  getExecutor(type: string): NodeExecutor | undefined;
+  getNode(_type: string): NodeDefinition | undefined;
+  getExecutor(_type: string): NodeExecutor | undefined;
   listNodes(): NodeDefinition[];
   listBuiltInNodes(): NodeDefinition[];
   listCustomNodes(): NodeDefinition[];
   listByPlatform(_platform: 'browser' | 'nodejs'): NodeDefinition[];
   isCustomNode(_type: string): boolean;
-  unregisterCustomNode(type: string): boolean;
+  unregisterCustomNode(_type: string): boolean;
   getExecutors(): NodeExecutorMap;
 }
 

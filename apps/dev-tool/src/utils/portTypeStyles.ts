@@ -60,7 +60,7 @@ export function getPortTypeStyle(dataType: PortDataType | undefined): PortTypeSt
 export function getEdgeColor(
   sourceHandleId: string | null | undefined,
   _targetHandleId: string | null | undefined,
-  _getNode: (id: string) => import('@xyflow/react').Node | undefined
+  _getNode: (_id: string) => import('@xyflow/react').Node | undefined
 ): string {
   // When sourceHandleId is null (default handle), use the first output port
   // of the source node

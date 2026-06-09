@@ -39,6 +39,7 @@ export class IndexedDBStorageAdapter {
       request.onsuccess = () => {
         const results: PublishedWorkflowMeta[] = (request.result as PublishedWorkflow[]).map((w) => ({
           sourceId: w.sourceId,
+          publishedId: w.id,
           name: w.name,
           description: w.description,
           sourceName: w.sourceName,

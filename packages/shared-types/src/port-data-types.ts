@@ -21,8 +21,6 @@
 // workflow-core's cache eviction — it is NOT part of the shared contract and
 // should NOT be referenced outside of packages/workflow-core/src/cache.ts.
 
-import type { PortDefinition } from './node';
-
 // ─── PortDataType Enum ────────────────────────────────────────────────────────
 
 /**
@@ -255,7 +253,7 @@ export function toPipeline<T>(
 export interface TypeConverterFn<TFrom, TTo> {
   readonly from: PortDataType;
   readonly to: PortDataType;
-  convert(data: PipelineData<TFrom>): PipelineData<TTo> | Promise<PipelineData<TTo>>;
+  convert(_data: PipelineData<TFrom>): PipelineData<TTo> | Promise<PipelineData<TTo>>;
 }
 
 /**
@@ -263,18 +261,18 @@ export interface TypeConverterFn<TFrom, TTo> {
  * The concrete class is implemented in packages/workflow-core.
  */
 export interface ITypeConverterRegistry {
-  register<TFrom, TTo>(converter: TypeConverterFn<TFrom, TTo>): void;
-  canConvert(from: PortDataType, to: PortDataType): boolean;
+  register<TFrom, TTo>(_converter: TypeConverterFn<TFrom, TTo>): void;
+  canConvert(_from: PortDataType, _to: PortDataType): boolean;
   /**
    * Convert data from one type to another.
    * Returns a Promise only if the converter is async, otherwise returns synchronously.
    */
   convert<TFrom, TTo>(
-    data: PipelineData<TFrom>,
-    to: PortDataType
+    _data: PipelineData<TFrom>,
+    _to: PortDataType
   ): PipelineData<TTo> | Promise<PipelineData<TTo> | null> | null;
   getConverter(
-    from: PortDataType,
-    to: PortDataType
+    _from: PortDataType,
+    _to: PortDataType
   ): TypeConverterFn<unknown, unknown> | null;
 }

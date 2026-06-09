@@ -7,7 +7,7 @@ description: Cursor Commands 索引，按 category 组织。v3.2 精简为 5 个
 
 ## 快速导航
 
-[explore](#explore) · [propose](#propose) · [apply](#apply) · [verify](#verify) · [archive](#archive)
+[explore](#explore) · [propose](#propose) · [apply](#apply) · [verify](#verify) · [archive](#archive) · [ecc-bridge](#ecc-bridge) · [ecc-lanes](#ecc-lanes)
 
 ---
 
@@ -79,6 +79,84 @@ description: Cursor Commands 索引，按 category 组织。v3.2 精简为 5 个
 
 ```bash
 /opsx-verify <change-name>
+```
+
+---
+
+## ecc-bridge
+
+### /opsx-ecc-apply
+
+用 OpenSpec + ECC Bridge 执行 change tasks。
+
+| 属性 | 值 |
+|------|----|
+| category | `apply` |
+| order | 3 |
+| depends_on | `openspec-apply`, `ecc-openspec-bridge` |
+
+```bash
+/opsx-ecc-apply <change-name>
+```
+
+### /opsx-ecc-verify
+
+用 OpenSpec + ECC Bridge 做 full verify。
+
+| 属性 | 值 |
+|------|----|
+| category | `verify` |
+| order | 4 |
+| depends_on | `openspec-verify`, `ecc-openspec-bridge` |
+
+```bash
+/opsx-ecc-verify <change-name>
+```
+
+---
+
+## ecc-lanes
+
+### /ecc-api-design
+
+手动执行 API / contract / schema lane。
+
+| 属性 | 值 |
+|------|----|
+| category | `apply` |
+| order | 31 |
+| depends_on | `ecc-openspec-bridge`, `ecc-api-design` |
+
+```bash
+/ecc-api-design
+```
+
+### /ecc-tdd-workflow
+
+手动执行测试优先 / feature lane。
+
+| 属性 | 值 |
+|------|----|
+| category | `apply` |
+| order | 32 |
+| depends_on | `ecc-openspec-bridge`, `ecc-tdd-workflow` |
+
+```bash
+/ecc-tdd-workflow
+```
+
+### /ecc-build-error-resolver
+
+手动执行 build / typecheck / lint / CI 修复 lane。
+
+| 属性 | 值 |
+|------|----|
+| category | `debug` |
+| order | 33 |
+| depends_on | `ecc-openspec-bridge`, `ecc-build-error-resolver` |
+
+```bash
+/ecc-build-error-resolver
 ```
 
 ---

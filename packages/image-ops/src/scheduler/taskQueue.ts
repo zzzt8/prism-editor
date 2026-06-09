@@ -6,10 +6,10 @@ import type { WorkerPool } from './workerPool';
  * Task priority levels
  */
 export enum TaskPriority {
-  LOW = 0,
-  NORMAL = 1,
-  HIGH = 2,
-  CRITICAL = 3,
+  _LOW = 0,
+  _NORMAL = 1,
+  _HIGH = 2,
+  _CRITICAL = 3,
 }
 
 /**

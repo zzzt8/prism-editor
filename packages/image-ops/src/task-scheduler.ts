@@ -19,18 +19,18 @@ export interface ScheduledTask {
   error?: string;
   result?: unknown;
   /** Rejects the scheduled promise — used by cancel() and timeout() */
-  rejectFn?: (err: Error) => void;
+  rejectFn?: (_err: Error) => void;
   /** Resolves the scheduled promise — set only on completion */
-  resolveFn?: (val: unknown) => void;
+  resolveFn?: (_val: unknown) => void;
 }
 
 export interface TaskSchedulerOptions {
   workerPool: WorkerPool;
   defaultTimeout?: number;
-  onTaskStart?: (task: ScheduledTask) => void;
-  onTaskComplete?: (task: ScheduledTask) => void;
-  onTaskError?: (task: ScheduledTask, error: Error) => void;
-  onTaskTimeout?: (task: ScheduledTask) => void;
+  onTaskStart?: (_task: ScheduledTask) => void;
+  onTaskComplete?: (_task: ScheduledTask) => void;
+  onTaskError?: (_task: ScheduledTask, _error: Error) => void;
+  onTaskTimeout?: (_task: ScheduledTask) => void;
 }
 
 const DEFAULT_TIMEOUT_MS = 30000;
@@ -85,7 +85,7 @@ export class TaskScheduler {
 
     // Wrap the user's promise so we can resolve/reject it from cancel() or timeout()
     return new Promise<T>((resolve, reject) => {
-      task.resolveFn = resolve as (val: unknown) => void;
+      task.resolveFn = resolve as (_val: unknown) => void;
       task.rejectFn = reject;
 
       // Capture start/end to avoid stale closures

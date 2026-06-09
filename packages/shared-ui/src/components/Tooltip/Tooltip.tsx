@@ -5,7 +5,7 @@
  * @description Hover-triggered floating tooltip with positioning.
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import styles from './Tooltip.module.css';
 
 export type TooltipPosition = 'top' | 'bottom' | 'left' | 'right';
@@ -44,7 +44,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
   const triggerRef = useRef<HTMLSpanElement>(null);
   const showTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const computePosition = () => {
+  const computePosition = useCallback(() => {
     if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
     const GAP = 6;
@@ -70,7 +70,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
     }
 
     setCoords({ top, left });
-  };
+  }, [position]);
 
   const handleMouseEnter = () => {
     showTimer.current = setTimeout(() => {
@@ -94,7 +94,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
       window.removeEventListener('scroll', handleUpdate, true);
       window.removeEventListener('resize', handleUpdate);
     };
-  }, [visible, position]);
+  }, [visible, computePosition]);
 
   return (
     <>

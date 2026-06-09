@@ -1,0 +1,11 @@
+---
+description: ECC agent-data home reminder
+alwaysApply: true
+---
+
+ECC 在本项目使用 Cursor 本地边界：默认从 `.cursor/ecc-agent-data.json` 读取 `ECC_AGENT_DATA_HOME`，缺省值为 `~/.cursor/ecc`。
+
+约束：
+- 不要把 ECC 的全局记忆目录切回 `~/.claude`，除非用户明确要求共享记忆。
+- 如果需要新增 ECC 相关脚本、rules、skills，优先放在项目 `.cursor/` 下，避免覆盖用户全局 Cursor 配置。
+- 本仓库把 OpenSpec 作为 change 管理层，把 ECC 作为 apply/verify 阶段的 SOP/agent bridge。

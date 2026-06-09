@@ -1,4 +1,4 @@
-// PublishedWorkflowRepository - implements IPublishedWorkflowRepository using IndexedDBStorageAdapter
+// PublishedWorkflowRepository - implements IPublishedWorkflowRepository via userAppStorage
 // Phase 1: Wraps existing IndexedDBStorageAdapter, no behavior change
 
 import type { PublishedWorkflow } from '@prism/shared-types';
@@ -15,8 +15,8 @@ export class PublishedWorkflowRepository implements IPublishedWorkflowRepository
     return userAppStorage.loadPublished(sourceId);
   }
 
-  async savePublished(published: PublishedWorkflow): Promise<void> {
-    await userAppStorage.importWorkflow(published);
+  async savePublished(_published: PublishedWorkflow): Promise<void> {
+    throw new Error('Direct save is not available on the public API');
   }
 
   async deletePublished(sourceId: string): Promise<void> {

@@ -168,7 +168,7 @@ export const WorkflowListPage: React.FC = () => {
 
   const handleOpen = (wf: PublishedWorkflowMeta) => {
     setOpenMenuId(null);
-    navigateToWorkflow(wf.sourceId);
+    navigateToWorkflow(wf.publishedId);
   };
 
   const handleDelete = async () => {
@@ -186,7 +186,7 @@ export const WorkflowListPage: React.FC = () => {
   const startEditName = (wf: PublishedWorkflowMeta, e: React.MouseEvent) => {
     e.stopPropagation();
     setEditValue(wf.name);
-    setEditingId(wf.sourceId);
+    setEditingId(wf.publishedId);
     setOpenMenuId(null);
     setMenuPosition(null);
     setTimeout(() => editInputRef.current?.select(), 0);
@@ -279,8 +279,9 @@ export const WorkflowListPage: React.FC = () => {
             <button
               className="home-import-btn"
               onClick={() => fileInputRef.current?.click()}
+              title="调试时导入本地 JSON"
             >
-              Import
+              导入 JSON
             </button>
             <input
               ref={fileInputRef}
@@ -318,11 +319,13 @@ export const WorkflowListPage: React.FC = () => {
         {!isLoading && !loadError && paginated.length === 0 && (
           <section className="home-empty">
             <Layers size={48} className="home-empty-icon" />
-            <p className="home-empty-title">创建你的第一个工作流</p>
+            <p className="home-empty-title">
+              {search ? '未找到匹配的工作流' : '暂无已发布工作流'}
+            </p>
             <p className="home-empty-subtitle">
               {search
-                ? 'No workflows match your current filters.'
-                : '还没有保存的工作流。'}
+                ? '请调整搜索条件后重试。'
+                : '暂无已发布工作流，请在 dev-tool 发布'}
             </p>
           </section>
         )}
@@ -333,7 +336,7 @@ export const WorkflowListPage: React.FC = () => {
             <section className="home-workflow-list">
               {paginated.map((wf) => (
                 <div
-                  key={wf.sourceId}
+                  key={wf.publishedId}
                   className="home-workflow-row"
                   onClick={() => handleOpen(wf)}
                 >
@@ -342,7 +345,7 @@ export const WorkflowListPage: React.FC = () => {
                       <Layers size={18} />
                     </div>
                     <div className="home-workflow-details">
-                      {editingId === wf.sourceId ? (
+                      {editingId === wf.publishedId ? (
                         <input
                           ref={editInputRef}
                           className="home-name-edit-input"

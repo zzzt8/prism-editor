@@ -21,7 +21,7 @@ function App() {
     const syncFromRoute = () => {
       const route = parseRoute();
       if (route.kind === 'run') {
-        selectWorkflow(route.sourceId);
+        selectWorkflow(route.publishedId);
       } else {
         const hasSelection = useSelectedWorkflowStore.getState().selectedWorkflow != null;
         if (hasSelection) {
