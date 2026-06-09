@@ -4,6 +4,7 @@ import rateLimit from '@fastify/rate-limit';
 import { prisma } from '../db/client.js';
 import { registerSchema, loginSchema } from '../schemas/auth.js';
 import type { AccessTokenPayload, RefreshTokenPayload } from '../middleware/auth.js';
+import { isTokenBlacklisted } from '../middleware/auth.js';
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -17,12 +18,6 @@ interface AuthTokens {
 const REFRESH_COOKIE_NAME = 'refreshToken';
 const ACCESS_TOKEN_EXPIRES_IN = process.env.ACCESS_TOKEN_EXPIRES_IN || '15m';
 const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
-
-
-async function isTokenBlacklisted(jti: string): Promise<boolean> {
-  const revoked = await prisma.revokedToken.findUnique({ where: { jti } });
-  return revoked !== null;
-}
 
 async function addToBlacklist(jti: string): Promise<void> {
   await prisma.revokedToken.upsert({

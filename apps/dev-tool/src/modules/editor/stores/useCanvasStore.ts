@@ -975,6 +975,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     ({ nodes, workflowMeta, edges } = get());
 
     // Create abort controller for cancellation
+    get()._executionAbort?.();
     const controller = new AbortController();
     set({ _executionAbort: () => controller.abort() });
 

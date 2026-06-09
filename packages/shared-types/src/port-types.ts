@@ -203,7 +203,7 @@ export function inferDataType(portName: string): PortDataType | undefined {
 export function getEffectiveDataType(
   portName: string,
   explicit: PortDataType | undefined,
-  warn?: (msg: string) => void
+  _warn?: (msg: string) => void
 ): PortDataType | undefined {
   if (explicit !== undefined) return explicit;
 

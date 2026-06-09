@@ -71,9 +71,9 @@ export const globalRegistry: GlobalRegistry = {
     _executors.set(type, fn);
   },
 
-  registerAll(definitions: NodeDefinition[], executors: NodeExecutorMap, _isCustom = false): void {
+  registerAll(definitions: NodeDefinition[], executors: NodeExecutorMap, isCustom = false): void {
     for (const def of definitions) {
-      this.registerNode(def, _isCustom);
+      this.registerNode(def, isCustom);
     }
     for (const [type, fn] of Object.entries(executors)) {
       this.registerExecutor(type, fn);

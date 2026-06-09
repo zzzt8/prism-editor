@@ -243,7 +243,9 @@ export class WorkerPool {
       pooledWorker.status = 'error';
       pooledWorker.lastError = err instanceof Error ? err.message : 'Creation failed';
       pooledWorker.errorCount++;
-      this.workers.push(pooledWorker);
+      if (!this.workers.includes(pooledWorker)) {
+        this.workers.push(pooledWorker);
+      }
     }
 
     return pooledWorker;
@@ -260,15 +262,14 @@ export class WorkerPool {
     }
 
     // Round-robin selection
-    let startIndex = this.currentWorkerIndex;
+    const initialIndex = this.currentWorkerIndex % idleWorkers.length;
     do {
       const worker = idleWorkers[this.currentWorkerIndex % idleWorkers.length];
-      this.currentWorkerIndex++;
+      this.currentWorkerIndex = (this.currentWorkerIndex + 1) % idleWorkers.length;
       if (worker.status === 'idle' && worker.proxy) {
         return worker;
       }
-      this.currentWorkerIndex++;
-    } while (this.currentWorkerIndex % idleWorkers.length !== startIndex);
+    } while (this.currentWorkerIndex % idleWorkers.length !== initialIndex);
 
     return null;
   }
@@ -379,7 +380,7 @@ export class WorkerPool {
    * Replace a failed worker with a new instance.
    * Marks old worker as recovering to block new task assignments during replacement.
    */
-  private async replaceWorker(oldWorker: PooledWorker): Promise<void> {
+  private async replaceWorker(oldWorker: PooledWorker, maxWaitMs = 30000): Promise<void> {
     const index = this.workers.indexOf(oldWorker);
     if (index === -1) return;
 
@@ -397,9 +398,13 @@ export class WorkerPool {
 
     // Wait for the new worker to reach 'idle' state before replacement is considered done
     await new Promise<void>((resolve) => {
+      const deadline = Date.now() + maxWaitMs;
       const check = () => {
         const fresh = this.workers[index];
         if (fresh && fresh.status === 'idle' && fresh.proxy) {
+          resolve();
+        } else if (Date.now() >= deadline) {
+          // Timeout — resolve anyway to avoid infinite polling
           resolve();
         } else {
           setTimeout(check, 50);

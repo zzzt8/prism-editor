@@ -7,6 +7,14 @@ import {
   NodePackageQuerySchema,
 } from '../schemas/node-package.js';
 
+function createSafeAttachmentName(name: string): string {
+  return name
+    .normalize('NFKC')
+    .replace(/[\x00-\x1F\x7F]/g, '')
+    .replace(/["'%;\\/\\?\\*:\|<>]/g, '_')
+    .trim();
+}
+
 const nodeRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   fastify.get('/nodes', { onRequest: [fastify.authenticate] }, async (request) => {
     const query = NodePackageQuerySchema.parse(request.query);
@@ -204,7 +212,7 @@ const nodeRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       return reply.status(404).send({ error: 'Node package not found' });
     }
 
-    const safeName = nodePackage.name.replace(/"/g, '\\"').replace(/[\r\n]/g, '');
+    const safeName = createSafeAttachmentName(nodePackage.name) || 'node-package';
     reply.header('Content-Type', 'application/json');
     reply.header('Content-Disposition', `attachment; filename="${safeName}.json"`);
 

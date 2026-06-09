@@ -230,7 +230,6 @@ export const ParamsSection: React.FC<ParamsSectionProps> = ({
 
   // Filter out hidden params
   const visibleFields = fields.filter((f) => f.visibility !== 'hidden');
-  if (visibleFields.length === 0) return null;
 
   const handleChange = useCallback(
     (nodeKey: string, paramId: string, value: unknown) => {
@@ -238,6 +237,8 @@ export const ParamsSection: React.FC<ParamsSectionProps> = ({
     },
     [onParamChange]
   );
+
+  if (visibleFields.length === 0) return null;
 
   return (
     <div className="ua-exposed-params">

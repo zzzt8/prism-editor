@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
+import { prisma } from '../db/client.js';
 
 interface RefreshTokenPayload {
   userId: string;
@@ -13,6 +14,11 @@ interface AccessTokenPayload {
 }
 
 export type { AccessTokenPayload, RefreshTokenPayload };
+
+export async function isTokenBlacklisted(jti: string): Promise<boolean> {
+  const revoked = await prisma.revokedToken.findUnique({ where: { jti } });
+  return revoked !== null;
+}
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -29,6 +35,10 @@ async function authenticate(request: FastifyRequest, reply: FastifyReply): Promi
 
     if (payload.type !== 'access') {
       return reply.status(401).send({ error: 'Invalid token type, expected access token' });
+    }
+
+    if (await isTokenBlacklisted(payload.jti)) {
+      return reply.status(401).send({ error: 'Token has been revoked' });
     }
 
     request.user = payload;

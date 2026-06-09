@@ -94,7 +94,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
       window.removeEventListener('scroll', handleUpdate, true);
       window.removeEventListener('resize', handleUpdate);
     };
-  }, [visible]);
+  }, [visible, position]);
 
   return (
     <>

@@ -120,11 +120,11 @@ export class PublishedWorkflowExecutor {
       const nodeType = nodeTypesEntries[nodeId];
       const nodeConfig = nodeConfigMap[nodeId];
 
-      // Merge order: _internalParams (developer-locked) → params (exposed defaults) → exposedParams (user override)
+      // Merge order: exposed defaults → developer-locked params → user-provided overrides
       const mergedParams = {
         ...(nodeConfig?.params ?? {}),
-        ...(nodeConfig?._internalParams ?? {}),
         ...(exposedParams[nodeId] ?? {}),
+        ...(nodeConfig?._internalParams ?? {}),
       };
 
       // Inject user-supplied URL for load-image and load-mask nodes.

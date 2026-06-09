@@ -11,6 +11,14 @@ import {
 } from '../schemas/workflow.js';
 import authMiddleware from '../middleware/auth.js';
 
+function createSafeAttachmentName(name: string): string {
+  return name
+    .normalize('NFKC')
+    .replace(/[\x00-\x1F\x7F]/g, '')
+    .replace(/["'%;\\/\\?\\*:\|<>]/g, '_')
+    .trim();
+}
+
 const workflowRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   // Helper to get current user ID from JWT
   const getCurrentUserId = (request: FastifyRequest): string => {
@@ -297,9 +305,7 @@ const workflowRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       return reply.status(403).send({ error: 'Access denied' });
     }
 
-    const safeName = workflow.name
-      .replace(/"/g, '\\"')
-      .replace(/[\r\n]/g, '');
+    const safeName = createSafeAttachmentName(workflow.name) || 'workflow';
     reply.header('Content-Disposition', `attachment; filename="${safeName}.json"`);
     return {
       name: workflow.name,

@@ -36,6 +36,8 @@ export function transformImage(
   options: TransformOptions = {}
 ): ImageData {
   const {
+    translateX = 0,
+    translateY = 0,
     scaleX = 1,
     scaleY = 1,
     rotation = 0,
@@ -46,6 +48,8 @@ export function transformImage(
   } = options;
 
   const needsTransform =
+    translateX !== 0 ||
+    translateY !== 0 ||
     scaleX !== 1 ||
     scaleY !== 1 ||
     rotation !== 0 ||
@@ -85,7 +89,7 @@ export function transformImage(
     throw new Error('Invalid output dimensions after transform');
   }
 
-  const { canvas: _outCanvas, ctx: outCtx } = createCanvas(outWidth, outHeight);
+  const outCtx = createCanvas(outWidth, outHeight).ctx;
 
   outCtx.save();
 
@@ -98,7 +102,10 @@ export function transformImage(
   // Step 3: Rotate around the image center
   outCtx.rotate((rotation * Math.PI) / 180);
 
-  // Step 4: Shift back so image center sits at canvas origin
+  // Step 4: Apply translation after rotation/scale in output space
+  outCtx.translate(translateX, translateY);
+
+  // Step 5: Shift back so image center sits at canvas origin
   outCtx.translate(-outWidth / 2, -outHeight / 2);
 
   // Draw with crop offset
@@ -147,7 +154,7 @@ export function cropImage(
 
   ctx.putImageData(imageData, 0, 0);
 
-  const { canvas: _outCanvas, ctx: outCtx } = createCanvas(width, height);
+  const outCtx = createCanvas(width, height).ctx;
   outCtx.drawImage(canvas, x, y, width, height, 0, 0, width, height);
 
   return outCtx.getImageData(0, 0, width, height);
@@ -179,7 +186,7 @@ export function resizeImageData(
 
   ctx.putImageData(imageData, 0, 0);
 
-  const { canvas: _outCanvas, ctx: outCtx } = createCanvas(width, height);
+  const outCtx = createCanvas(width, height).ctx;
   outCtx.drawImage(canvas, 0, 0, width, height);
 
   return outCtx.getImageData(0, 0, width, height);
@@ -239,7 +246,7 @@ function getTransformWorkerRunner(): WorkerRunner {
 }
 
 export const transformExecutor: NodeExecutor = async (
-  inputs,
+  _inputs,
   params,
   ctx: ExecutionContext
 ) => {
@@ -257,11 +264,10 @@ export const transformExecutor: NodeExecutor = async (
   const cropWidth = (params['cropWidth'] as number) ?? 0;
   const cropHeight = (params['cropHeight'] as number) ?? 0;
 
-  console.log('[Transform] params:', JSON.stringify(params));
-  console.log('[Transform] extracted values:', { scaleX, scaleY, cropWidth, cropHeight, translateX, translateY, rotation });
-
   const workerRunner = getTransformWorkerRunner();
   const transformOptions: TransformOptions = {
+    translateX,
+    translateY,
     scaleX,
     scaleY,
     rotation,
@@ -275,7 +281,6 @@ export const transformExecutor: NodeExecutor = async (
   let transformed: ImageData;
   if (workerRunner.isWorkerAvailable()) {
     const workerResult = await workerRunner.transform(image, transformOptions);
-    console.log('[Transform] worker result:', workerResult);
     transformed = workerResult.data;
   } else {
     transformed = transformImage(image, transformOptions);
@@ -307,7 +312,6 @@ export const transformExecutor: NodeExecutor = async (
   previewCtx.putImageData(finalData, 0, 0);
   const previewRef = await generatePreviewUrl(finalData, finalW, finalH);
 
-  console.log('[Transform] finalW, finalH:', finalW, finalH, 'transformed.size:', transformed.width, transformed.height);
   return {
     type: 'transform',
     image: {

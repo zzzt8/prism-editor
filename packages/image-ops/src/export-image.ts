@@ -184,11 +184,16 @@ export const exportExecutor: NodeExecutor = async (
   const image = unwrapImageData(rawImage);
   if (!image) throw new Error('image input must be ImageData for Export');
 
+  const format = _params['format'] as ExportOptions['format'] | undefined;
+  const quality = _params['quality'] as number | undefined;
+  const width = _params['width'] as number | undefined;
+  const height = _params['height'] as number | undefined;
+
   const exportResult = await exportImage(image, {
-    format: 'png',
-    quality: 0.92,
-    width: 0,
-    height: 0,
+    format,
+    quality,
+    width,
+    height,
   });
 
   const previewRef = getImageMemoryManager().createObjectURL(

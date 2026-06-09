@@ -29,9 +29,9 @@ export interface EmbedConfig {
   /** Theme to apply: 'light' | 'dark' | 'auto' */
   theme?: 'light' | 'dark' | 'auto';
   /** Callback fired when workflow execution completes */
-  onResult?: (result: unknown) => void;
+  onResult?: (_result: unknown) => void;
   /** Callback fired on execution error */
-  onError?: (error: unknown) => void;
+  onError?: (_error: unknown) => void;
 }
 
 /**

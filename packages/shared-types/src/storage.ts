@@ -19,7 +19,7 @@ export interface StorageAdapter {
   load(id: string): Promise<Workflow>;
   list(): Promise<WorkflowMeta[]>;
   delete(id: string): Promise<void>;
-  createWorkflow(name: string, description?: string, category?: string): Promise<{ meta: WorkflowMeta; content: Workflow }>;
+  createWorkflow(name: string, _description?: string, _category?: string): Promise<{ meta: WorkflowMeta; content: Workflow }>;
   updateWorkflowMeta(id: string, patch: Partial<WorkflowMeta>): Promise<void>;
   exportToJson(workflow: Workflow): Promise<string>;
   importFromJson(json: string): Promise<Workflow>;

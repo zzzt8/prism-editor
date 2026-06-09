@@ -44,7 +44,14 @@ export class ImageMemoryManager {
     if (existing) {
       existing.count++;
     } else {
+      // Estimate memory: width * height * 4 bytes (RGBA)
+      const estimatedSize = ref.width * ref.height * 4;
       this.registry.set(ref.url, { count: 1, ref });
+      this.memoryUsed += estimatedSize;
+
+      if (this.memoryUsed > this._memoryLimit) {
+        this.evictLargest();
+      }
     }
   }
 

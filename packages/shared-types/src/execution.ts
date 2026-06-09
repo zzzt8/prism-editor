@@ -130,7 +130,7 @@ export interface NodeExecutor {
     inputs: Record<string, unknown>,
     params: Record<string, unknown>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ctx: any
+    _ctx: any
   ): Promise<Record<string, unknown>>;
 }
 

@@ -118,8 +118,7 @@ export const NodePanel: React.FC = () => {
   const [toast, setToast] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [showMarketplace, setShowMarketplace] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- state variable for triggering refresh
-  const [nodeVersion, setNodeVersion] = useState(0); // 用于触发节点列表刷新
+  const [, setNodeVersion] = useState(0); // 用于触发节点列表刷新
 
   const allDefinitions = useMemo(() => {
     try {
@@ -134,7 +133,7 @@ export const NodePanel: React.FC = () => {
       console.warn('[NodePanel] globalRegistry.initialize() failed:', message);
       return [];
     }
-  }, []); // nodeVersion intentionally not in deps - refresh is triggered by handleImportSuccess
+  }, [nodeVersion]);
 
   const handleImportSuccess = (manifest: NodePackageManifest, _nodeTypes: string[]) => {
     setToast(`节点包 "${manifest.name}" 导入成功！`);
