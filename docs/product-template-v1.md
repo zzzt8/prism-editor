@@ -76,6 +76,36 @@ existing published flow into `ProductTemplate.preview.flow`.
 
 ---
 
+## 过渡期兼容：从 PublishedWorkflow 包装为 ProductTemplate
+
+当前阶段新增了一个轻量兼容桥接函数，用于把既有 `PublishedWorkflow` 视为一个
+`ProductTemplate`，但**不改变现有数据库、发布流程或运行时执行模型**。
+
+兼容策略如下：
+
+- **当前不迁移数据库** — 现有 `PublishedWorkflow` 持久化结构保持不变。
+- **当前不改变发布流程** — dev-tool 仍然发布 `PublishedWorkflow`，不会直接发布
+  `ProductTemplate`。
+- **只把旧 `PublishedWorkflow` 视为 `ProductTemplate` 的 preview flow** — 兼容函数会把
+  `preview.flow.type` 设为 `published-workflow`，并绑定 `publishedWorkflowId`。
+- **`production.flow` 暂时为空** — v1 只提供占位结构，不启用生产图链路。
+- **后续再升级发布流程** — 后续阶段再把 dev-tool 的发布模型演进为直接发布
+  `ProductTemplate`。
+
+当前桥接函数位置：
+
+```
+packages/shared-types/src/product-template-compat.ts
+```
+
+导出入口：
+
+```
+packages/shared-types/src/index.ts
+```
+
+---
+
 ## Preview Flow
 
 **Purpose:** Front-end real-time preview rendering.

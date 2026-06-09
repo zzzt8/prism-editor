@@ -19,4 +19,5 @@ export * from './auth';
 export * from './runtime-protocol';
 export * from './sku';
 export * from './product-template';
+export * from './product-template-compat';
 export { createId } from './createId';
