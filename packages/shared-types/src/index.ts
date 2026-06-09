@@ -18,4 +18,5 @@ export * from './execution-log';
 export * from './auth';
 export * from './runtime-protocol';
 export * from './sku';
+export * from './product-template';
 export { createId } from './createId';

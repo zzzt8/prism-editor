@@ -68,12 +68,33 @@ openspec/
 在 Cursor 中使用 `/opsx-*` 命令：
 
 ```bash
-/opsx-explore    # 探索代码库
-/opsx-propose    # 创建新变更
-/opsx-apply      # 实现变更
-/opsx-verify     # 验证变更
-/opsx-archive    # 归档变更
+/opsx-quick      # 轻量改动：自动选择 ECC lane，直接实现与最小验证
+/opsx-explore    # 探索代码库：结构分析，需求澄清
+/opsx-propose    # 创建新变更：生成 proposal / design / tasks artifacts
+/opsx-apply      # 实现变更：按 tasks 执行代码
+/opsx-verify     # 验证变更：检查实现一致性
+/opsx-archive    # 归档变更：完成后的整理
 ```
+
+## 命令对照
+
+| 命令 | 何时使用 | 是否建 change |
+|------|----------|--------------|
+| `/opsx-quick` | 类型/文档/局部修复，改动局部且清晰；自动选择 ECC lane 执行 | 否 |
+| `/opsx-explore` | 需求不明确，需要先理解代码结构 | 可选 |
+| `/opsx-propose` | 涉及运行逻辑、跨层契约、多阶段实施 | 是 |
+| `/opsx-apply` | 执行 `/opsx-propose` 创建的 change | — |
+| `/opsx-verify` | 验证已完成的 change 实现一致性 | — |
+| `/opsx-archive` | 归档已完成的 change | — |
+
+## `opsx-quick` 与 `ecc-openspec-bridge`
+
+- `opsx-quick` 面向轻量任务，不创建 change artifacts
+- `ecc-openspec-bridge` 面向 OpenSpec 的 `apply / verify` 阶段，为正式 change 选择更细的 ECC lane
+- 两者都可以使用 ECC 方法论，但入口不同：
+  - `opsx-quick`：先过 Quick Gate，再自动选一个主 ECC lane，直接做最小实现与验证
+  - `ecc-openspec-bridge`：在已有 `tasks.md` 和 change 边界内，为每个 task 路由 lane
+- 当 quick 任务暴露出更大影响面时，应从 `opsx-quick` 升级到 `/opsx-explore` 或 `/opsx-propose`，随后再在 `apply / verify` 中使用 bridge
 
 ## 相关资源
 

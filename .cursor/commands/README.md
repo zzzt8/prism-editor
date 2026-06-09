@@ -7,7 +7,25 @@ description: Cursor Commands 索引，按 category 组织。v3.2 精简为 5 个
 
 ## 快速导航
 
-[explore](#explore) · [propose](#propose) · [apply](#apply) · [verify](#verify) · [archive](#archive) · [ecc-bridge](#ecc-bridge) · [ecc-lanes](#ecc-lanes)
+[quick](#quick) · [explore](#explore) · [propose](#propose) · [apply](#apply) · [verify](#verify) · [archive](#archive) · [ecc-bridge](#ecc-bridge) · [ecc-lanes](#ecc-lanes)
+
+---
+
+## quick
+
+### /opsx-quick
+
+轻量任务快速执行。先过 Quick Gate，再自动选择主 ECC lane 做最小实现与验证。
+
+| 属性 | 值 |
+|------|----|
+| category | `quick` |
+| order | 0 |
+| depends_on | `openspec-quick` |
+
+```bash
+/opsx-quick
+```
 
 ---
 
@@ -84,6 +102,20 @@ description: Cursor Commands 索引，按 category 组织。v3.2 精简为 5 个
 ---
 
 ## ecc-bridge
+
+### /opsx-ecc-bridge
+
+查看或应用 OpenSpec 到 ECC lane 的路由规则。
+
+| 属性 | 值 |
+|------|----|
+| category | `meta` |
+| order | 35 |
+| depends_on | `ecc-openspec-bridge` |
+
+```bash
+/opsx-ecc-bridge
+```
 
 ### /opsx-ecc-apply
 
