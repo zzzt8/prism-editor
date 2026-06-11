@@ -4,8 +4,10 @@
 export { PublishedWorkflowRepository } from './publishedWorkflowRepository';
 export { NodePackageRepository } from './nodePackageRepository';
 export { syncWorkflowToLocal } from './publishedWorkflowRepository';
+export { ProductTemplateRepository, productTemplateRepository } from './productTemplateRepository';
 
 export type {
   IPublishedWorkflowRepository,
   INodePackageRepository,
+  IProductTemplateRepository,
 } from './interfaces';

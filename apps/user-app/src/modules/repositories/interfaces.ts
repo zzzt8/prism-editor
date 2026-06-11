@@ -19,3 +19,12 @@ export interface INodePackageRepository {
   cache(_pkg: NodePackageManifest): void;
   listCached(): NodePackageManifest[];
 }
+
+// ProductTemplate repository interface
+export interface IProductTemplateRepository {
+  list(page?: number, limit?: number, search?: string): Promise<{
+    templates: import('@prism/shared-types').ProductTemplateSummary[];
+    pagination: { page: number; limit: number; total: number; totalPages: number };
+  }>;
+  get(id: string): Promise<import('@prism/shared-types').ProductTemplate>;
+}
