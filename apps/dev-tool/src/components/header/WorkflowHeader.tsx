@@ -4,11 +4,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Box, Play, Square, CheckCircle2,
   Loader2, FileUp, Settings, User, Save,
-  Image,
 } from 'lucide-react';
 import { useCanvasStore } from '../../store/canvasStore';
 import { PanelToggle } from './PanelToggle';
-import { RenderProductionModal } from './RenderProductionModal';
 
 interface WorkflowHeaderProps {
   onPublishClick: () => void;
@@ -35,7 +33,6 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const statusMsgTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [showRenderModal, setShowRenderModal] = useState(false);
 
   const isRunning = executionStatus === 'running';
 
@@ -223,16 +220,6 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
             Publish
           </button>
 
-          {/* Render Production */}
-          <button
-            className="wf-render-btn"
-            onClick={() => setShowRenderModal(true)}
-            title="渲染生产图"
-          >
-            <Image size={14} />
-            Render
-          </button>
-
           {/* Import JSON */}
           <button className="wf-icon-btn" onClick={handleImportJson} title="导入 JSON">
             <FileUp size={14} />
@@ -257,12 +244,6 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
           accept=".json"
           style={{ display: 'none' }}
           onChange={handleFileChange}
-        />
-
-        <RenderProductionModal
-          isOpen={showRenderModal}
-          onClose={() => setShowRenderModal(false)}
-          workflowId={workflowMeta.id}
         />
       </header>
 
