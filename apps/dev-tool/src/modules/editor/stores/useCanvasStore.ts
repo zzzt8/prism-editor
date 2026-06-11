@@ -162,7 +162,7 @@ interface CanvasState {
   // ── Snippet operations ──────────────────────────────────────────────────────
 
   snippetSave: (_name: string, _description: string, _selectedNodeIds: string[]) => Promise<void>;
-  snippetList: () => Promise<unknown[]>;
+  snippetList: () => Promise<SnippetSummary[]>;
   insertSnippet: (_snippetId: string, _position: { x: number; y: number }) => Promise<void>;
   deleteSnippet: (_id: string) => Promise<void>;
 }
