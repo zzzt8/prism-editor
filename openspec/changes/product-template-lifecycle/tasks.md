@@ -139,9 +139,9 @@ cd apps/dev-tool && npx vite build
 
 #### Task 3.1 — user-app ProductTemplateRepository
 
-- [ ] 新建 `apps/user-app/src/modules/repositories/productTemplateRepository.ts`
-- [ ] 实现 `list()`、`get(id)`（从 `/product-templates` API 加载）
-- [ ] 调用 `createProductTemplateFromPublishedWorkflow()` 将已有 PublishedWorkflow 展示为 ProductTemplate
+- [x] 新建 `apps/user-app/src/modules/repositories/productTemplateRepository.ts`
+- [x] 实现 `list()`、`get(id)`（从 `/product-templates` API 加载）
+- [x] 调用 `createProductTemplateFromPublishedWorkflow()` 将已有 PublishedWorkflow 展示为 ProductTemplate
 
 ```bash
 # 验证
@@ -150,18 +150,18 @@ npx tsc --noEmit apps/user-app/src/modules/repositories/productTemplateRepositor
 
 #### Task 3.2 — ProductTemplate 列表页
 
-- [ ] user-app 新增 `ProductTemplateListPage`（模板商店）
-- [ ] 支持分类筛选（通过 `category` 字段或 tag）
-- [ ] 支持搜索（name / description）
-- [ ] 点击进入详情/运行页
+- [x] user-app 新增 `ProductTemplateListPage`（模板商店）
+- [x] 支持分类筛选（通过 `category` 字段或 tag）
+- [x] 支持搜索（name / description）
+- [x] 点击进入详情/运行页
 
 #### Task 3.3 — ProductTemplate 详情/运行页
 
-- [ ] user-app 新增 `ProductTemplateRunPage`
-- [ ] 展示 template 元信息（inputs、designParams、preview.canvas）
-- [ ] 读取并展示 `preview.flow` 引用的 `PublishedWorkflow`
-- [ ] 复用现有 `PublishedWorkflowExecutor` 运行
-- [ ] 支持 `inputs` / `designParams` 的动态表单填充
+- [x] user-app 新增 `ProductTemplateRunPage`
+- [x] 展示 template 元信息（inputs、designParams、preview.canvas）
+- [x] 读取并展示 `preview.flow` 引用的 `PublishedWorkflow`
+- [x] 复用现有 `PublishedWorkflowExecutor` 运行
+- [x] 支持 `inputs` / `designParams` 的动态表单填充
 
 ```bash
 # 验证
@@ -170,9 +170,9 @@ cd apps/user-app && npx vite build
 
 #### Task 3.4 — 文档更新
 
-- [ ] 更新 `docs/product-template-v1.md`，补充 v2 实施状态
-- [ ] 标记 v1 Non-Goals 中"dev-tool UI"、"server Prisma schema"、"user-app" 已完成
-- [ ] 补充 `ptl-3` 后的状态说明
+- [x] 更新 `docs/product-template-v1.md`，补充 v2 实施状态
+- [x] 标记 v1 Non-Goals 中"dev-tool UI"、"server Prisma schema"、"user-app" 已完成
+- [x] 补充 `ptl-3` 后的状态说明
 
 ```bash
 # 验证
