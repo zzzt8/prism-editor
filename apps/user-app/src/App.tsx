@@ -12,6 +12,7 @@ import { parseRoute, navigateToList } from './router';
 import { WorkflowListPage } from './pages/WorkflowListPage';
 import { WorkflowRunPage } from './pages/WorkflowRunPage';
 import { ProductTemplateListPage } from './pages/ProductTemplateListPage';
+import { ProductTemplateRunPage } from './pages/ProductTemplateRunPage';
 import { ErrorBoundary } from '@prism/shared-ui';
 
 function App() {
@@ -55,10 +56,6 @@ function App() {
       {route.kind === 'list' && <WorkflowListPage />}
     </ErrorBoundary>
   );
-}
-
-function ProductTemplateRunPage() {
-  return <div className="home-layout"><div className="ua-page"><p>ProductTemplate Run Page (Task 3.3)</p></div></div>;
 }
 
 export default App;
