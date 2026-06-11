@@ -3,24 +3,17 @@
 // Hash-based routing (no router library dependency):
 //   #/               → published workflow list page
 //   #/workflow/:id   → published workflow run page
-//   #/templates/     → product template list page (template store)
-//   #/template/:id    → product template run page
 
 import React, { useEffect } from 'react';
 import { useSelectedWorkflowStore } from './modules/selection/selectedWorkflowStore';
 import { parseRoute, navigateToList } from './router';
 import { WorkflowListPage } from './pages/WorkflowListPage';
 import { WorkflowRunPage } from './pages/WorkflowRunPage';
-import { ProductTemplateListPage } from './pages/ProductTemplateListPage';
-import { ProductTemplateRunPage } from './pages/ProductTemplateRunPage';
 import { ErrorBoundary } from '@prism/shared-ui';
 
 function App() {
   const { selectWorkflow, clearSelection, selectedWorkflow } = useSelectedWorkflowStore();
 
-  // Sync route → store on mount and on every hash change.
-  // Do NOT depend on selectedWorkflow: when route is #/workflow/:id, selectWorkflow()
-  // updates the store and would re-run this effect, calling selectWorkflow again in a loop.
   useEffect(() => {
     const syncFromRoute = () => {
       const route = parseRoute();
@@ -39,7 +32,6 @@ function App() {
     return () => window.removeEventListener('hashchange', syncFromRoute);
   }, [selectWorkflow, clearSelection]);
 
-  // Also sync store → route when selection changes programmatically
   useEffect(() => {
     const route = parseRoute();
     if (route.kind === 'run' && !selectedWorkflow) {
@@ -51,12 +43,9 @@ function App() {
   return (
     <ErrorBoundary>
       {route.kind === 'run' && <WorkflowRunPage />}
-      {route.kind === 'template-list' && <ProductTemplateListPage />}
-      {route.kind === 'template-run' && <ProductTemplateRunPage />}
       {route.kind === 'list' && <WorkflowListPage />}
     </ErrorBoundary>
   );
 }
 
 export default App;
-
