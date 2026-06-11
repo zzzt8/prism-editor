@@ -3,25 +3,13 @@ import cors from '@fastify/cors';
 import authMiddleware from './middleware/auth.js';
 import workflowRoutes from './routes/workflow.js';
 import publishedRoutes from './routes/published.js';
-import nodeRoutes from './routes/nodes.js';
-import versionRoutes from './routes/versions.js';
-import renderRoutes from './routes/render.js';
-import skuRoutes from './routes/sku.js';
-import skuRenderRoutes from './routes/sku-render.js';
 import assetsRoutes from './routes/assets.js';
-import productTemplateRoutes from './routes/product-template.js';
 
 const appPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   await fastify.register(authMiddleware, async () => {
     await fastify.register(workflowRoutes);
     await fastify.register(publishedRoutes);
-    await fastify.register(nodeRoutes);
-    await fastify.register(versionRoutes);
-    await fastify.register(renderRoutes);
-    await fastify.register(skuRoutes);
-    await fastify.register(skuRenderRoutes);
     await fastify.register(assetsRoutes);
-    await fastify.register(productTemplateRoutes);
   });
 };
 
