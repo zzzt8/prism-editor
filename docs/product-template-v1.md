@@ -1,7 +1,9 @@
 # Product Template v1
 
 > Established: 2026-06-09
+> Updated: 2026-06-11
 > Status: v1 — Initial business abstraction layer
+> Implementation Status: ptl-1 (dev-tool CRUD) ✓ / ptl-2 (server API) ✓ / ptl-3 (user-app) ✓
 
 ---
 
@@ -281,18 +283,24 @@ The following are explicitly **out of scope** for v1:
 - ❌ No change to `workflow-core` execution model
 - ❌ No change to node definition registry
 - ❌ No change to `image-ops` task scheduler
-- ❌ No change to dev-tool UI components
-- ❌ No change to user-app UI components
-- ❌ No change to server Prisma schema
-- ❌ No change to published API contracts
+- ✅ ~~No change to dev-tool UI components~~ → **dev-tool CRUD UI 已完成 (ptl-1)**
+- ✅ ~~No change to user-app UI components~~ → **user-app 模板商店和运行页已完成 (ptl-3)**
+- ✅ ~~No change to server Prisma schema~~ → **ProductTemplate Prisma 模型已添加 (ptl-2)**
+- ✅ ~~No change to published API contracts~~ → **ProductTemplate API routes 已实现 (ptl-2)**
 - ❌ No change to the executor
 
-This v1 is purely a **business concept and data model**. It does not yet drive
-any runtime behavior.
+This v1 is a **business concept and data model with runtime support**. The CRUD, API, and user-app consumption layers are now functional.
 
 ---
 
 ## Future Direction
+
+**v1.1 (Completed 2026-06-11):** user-app consumption layer.
+
+- ProductTemplateRepository: API adapter for loading templates from server
+- ProductTemplateListPage: Template store with search, pagination, and grid/list view
+- ProductTemplateRunPage: Run page with template metadata display and workflow execution
+- Hash-based routing: `#/templates/` and `#/template/:id`
 
 **v2 (TBD):** Bind `ProductTemplate` to the actual publishing pipeline.
 
