@@ -2,23 +2,46 @@
 //
 // Route format:
 //   #/               → list page
-//   #/workflow/:id   → run page
+//   #/workflow/:id   → published workflow run page
+//   #/templates/     → product template list page
+//   #/template/:id    → product template run page
 //
 // No external router dependency — pure URL hash manipulation.
 
-export type Route = { kind: 'list' } | { kind: 'run'; publishedId: string };
+export type Route =
+  | { kind: 'list' }
+  | { kind: 'run'; publishedId: string }
+  | { kind: 'template-list' }
+  | { kind: 'template-run'; templateId: string };
 
 export function parseRoute(): Route {
   const hash = window.location.hash;
-  const match = hash.match(/^#\/workflow\/(.+)$/);
-  if (match) {
+
+  // Template run: #/template/:id
+  const templateMatch = hash.match(/^#\/template\/(.+)$/);
+  if (templateMatch) {
     try {
-      return { kind: 'run', publishedId: decodeURIComponent(match[1]) };
+      return { kind: 'template-run', templateId: decodeURIComponent(templateMatch[1]) };
     } catch {
-      // Invalid URL encoding, treat as literal string
-      return { kind: 'run', publishedId: match[1] };
+      return { kind: 'template-run', templateId: templateMatch[1] };
     }
   }
+
+  // Template list: #/templates/
+  if (hash === '#/templates/' || hash === '#/templates') {
+    return { kind: 'template-list' };
+  }
+
+  // Workflow run: #/workflow/:id
+  const workflowMatch = hash.match(/^#\/workflow\/(.+)$/);
+  if (workflowMatch) {
+    try {
+      return { kind: 'run', publishedId: decodeURIComponent(workflowMatch[1]) };
+    } catch {
+      return { kind: 'run', publishedId: workflowMatch[1] };
+    }
+  }
+
   return { kind: 'list' };
 }
 
@@ -28,4 +51,12 @@ export function navigateToList(): void {
 
 export function navigateToWorkflow(publishedId: string): void {
   window.location.hash = `#/workflow/${encodeURIComponent(publishedId)}`;
+}
+
+export function navigateToTemplateList(): void {
+  window.location.hash = '#/templates/';
+}
+
+export function navigateToTemplate(templateId: string): void {
+  window.location.hash = `#/template/${encodeURIComponent(templateId)}`;
 }

@@ -1,14 +1,17 @@
 // Prism Editor - User App
 //
 // Hash-based routing (no router library dependency):
-//   #/               → list page
-//   #/workflow/:id   → run page
+//   #/               → published workflow list page
+//   #/workflow/:id   → published workflow run page
+//   #/templates/     → product template list page (template store)
+//   #/template/:id    → product template run page
 
 import React, { useEffect } from 'react';
 import { useSelectedWorkflowStore } from './modules/selection/selectedWorkflowStore';
 import { parseRoute, navigateToList } from './router';
 import { WorkflowListPage } from './pages/WorkflowListPage';
 import { WorkflowRunPage } from './pages/WorkflowRunPage';
+import { ProductTemplateListPage } from './pages/ProductTemplateListPage';
 import { ErrorBoundary } from '@prism/shared-ui';
 
 function App() {
@@ -46,9 +49,16 @@ function App() {
   const route = parseRoute();
   return (
     <ErrorBoundary>
-      {route.kind === 'run' ? <WorkflowRunPage /> : <WorkflowListPage />}
+      {route.kind === 'run' && <WorkflowRunPage />}
+      {route.kind === 'template-list' && <ProductTemplateListPage />}
+      {route.kind === 'template-run' && <ProductTemplateRunPage />}
+      {route.kind === 'list' && <WorkflowListPage />}
     </ErrorBoundary>
   );
+}
+
+function ProductTemplateRunPage() {
+  return <div className="home-layout"><div className="ua-page"><p>ProductTemplate Run Page (Task 3.3)</p></div></div>;
 }
 
 export default App;

@@ -16,7 +16,7 @@ import { Search, ChevronDown, List, LayoutGrid, Layers, MoreHorizontal, Trash2, 
 import { type PublishedWorkflowMeta } from '../modules/repositories/interfaces';
 import { type SortKey } from '../modules/catalog/workflowCatalogStore';
 import { useWorkflowCatalogStore } from '../modules/catalog/workflowCatalogStore';
-import { navigateToWorkflow } from '../router';
+import { navigateToWorkflow, navigateToTemplateList } from '../router';
 import { type FileImport, importWorkflowFromFile } from '../utils/workflowImport';
 import { userAppStorage } from '../storage';
 import { Box } from 'lucide-react';
@@ -258,6 +258,14 @@ export const WorkflowListPage: React.FC = () => {
           </div>
 
           <div className="home-toolbar-right">
+            <button
+              className="home-import-btn"
+              onClick={navigateToTemplateList}
+              title="浏览 ProductTemplate 模板商店"
+            >
+              模板商店
+            </button>
+
             {/* View toggle */}
             <div className="home-view-toggle">
               <button
