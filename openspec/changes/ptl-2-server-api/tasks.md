@@ -75,9 +75,9 @@ cd server && npm run build
 <!-- layer: editor -->
 <!-- verify: npx tsc --noEmit apps/dev-tool/src/modules/repositories/productTemplateRepository.ts -->
 
-- [ ] 改造 `apps/dev-tool/src/modules/repositories/productTemplateRepository.ts`
-- [ ] 优先调用 server API（`/product-templates`）
-- [ ] 失败时 fallback 到 IndexedDB
+- [x] 改造 `apps/dev-tool/src/modules/repositories/productTemplateRepository.ts`
+- [x] 优先调用 server API（`/product-templates`）
+- [x] 失败时 fallback 到 IndexedDB
 
 ```bash
 npx tsc --noEmit apps/dev-tool/src/modules/repositories/productTemplateRepository.ts
@@ -90,8 +90,8 @@ npx tsc --noEmit apps/dev-tool/src/modules/repositories/productTemplateRepositor
 <!-- layer: editor -->
 <!-- verify: cd apps/dev-tool && npx vite build -->
 
-- [ ] dev-tool 登录后创建 ProductTemplate，刷新页面后从 server 加载
-- [ ] 确认 server 数据库有对应记录
+- [x] dev-tool 登录后创建 ProductTemplate，刷新页面后从 server 加载
+- [x] 确认 server 数据库有对应记录
 
 ```bash
 cd apps/dev-tool && npx vite build
