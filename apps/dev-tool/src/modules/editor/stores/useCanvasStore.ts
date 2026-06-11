@@ -10,6 +10,7 @@ import type {
   EditorNodeGroup,
   EditorWorkflowMeta,
   ExecutionProgress,
+  SnippetSummary,
 } from '@prism/shared-types';
 import type { Template } from '@prism/shared-types';
 import { canConnectByDataType, PortDataType } from '@prism/shared-types';
