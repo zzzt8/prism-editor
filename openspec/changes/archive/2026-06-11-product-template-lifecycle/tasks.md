@@ -80,52 +80,88 @@ npx tsc --noEmit apps/dev-tool/src/components/ProductTemplateEditor/
 
 #### Task 2.1 — Prisma schema 新增模型
 
-- [ ] 编辑 `server/prisma/schema.prisma`，新增 `ProductTemplate` 模型：
+<!-- layer: backend -->
+<!-- verify: cd server && npx prisma validate -->
 
-```prisma
-model ProductTemplate {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  version     String   @default("1.0.0")
-  content     String   // JSON — ProductTemplate JSON
-  userId      String
-  publishedId String? // optional: FK to PublishedWorkflow
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-```
+- [x] 编辑 `server/prisma/schema.prisma`，新增 `ProductTemplate` 模型：
 
-- [ ] `prisma migrate dev --name add_product_template` 生成迁移
+  ```prisma
+  model ProductTemplate {
+    id          String   @id @default(cuid())
+    name        String
+    description String?
+    version     String   @default("1.0.0")
+    content     String   // 完整的 ProductTemplate JSON
+    userId      String
+    publishedId String?  // optional: FK to PublishedWorkflow
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
 
-```bash
-cd server && npx prisma migrate dev --name add_product_template
-```
+    user        User    @relation(fields: [userId], references: [id])
+    published   PublishedWorkflow? @relation(fields: [publishedId], references: [id])
+  }
+  ```
 
-#### Task 2.2 — ProductTemplate API 路由
-
-- [ ] 新建 `server/src/routes/product-template.ts`
-- [ ] 实现 `GET /product-templates`（列表，带分页）
-- [ ] 实现 `GET /product-templates/:id`（详情，含 JSON content）
-- [ ] 实现 `POST /product-templates`（创建）
-- [ ] 实现 `PATCH /product-templates/:id`（更新）
-- [ ] 实现 `DELETE /product-templates/:id`（删除）
-- [ ] 实现 `POST /product-templates/:id/publish`（绑定到 PublishedWorkflow）
-- [ ] 认证中间件：`authenticate` 用于写操作
+- [x] 验证 schema 语法
 
 ```bash
-# 验证
+cd server && npx prisma validate
+```
+
+#### Task 2.2 — Prisma Migrate
+
+<!-- layer: backend -->
+<!-- verify: cd server && npx prisma migrate dev --name add_product_template --skip-seed -->
+
+- [x] `prisma migrate dev --name add_product_template --skip-seed`
+
+```bash
+cd server && npx prisma migrate dev --name add_product_template --skip-seed
+```
+
+#### Task 2.3 — ProductTemplate API 路由
+
+<!-- layer: backend -->
+<!-- verify: cd server && npm run build -->
+
+- [x] 新建 `server/src/routes/product-template.ts`
+- [x] 实现：
+
+  - `GET /product-templates` — 列表（public read，带分页）
+  - `GET /product-templates/:id` — 详情（public read）
+  - `POST /product-templates` — 创建（auth required）
+  - `PATCH /product-templates/:id` — 更新（auth required，验证 userId 匹配）
+  - `DELETE /product-templates/:id` — 删除（auth required，验证 userId 匹配）
+  - `POST /product-templates/:id/publish` — 绑定到 PublishedWorkflow（auth required）
+
+- [x] 注册路由到 `server/src/app.ts`
+
+```bash
 cd server && npm run build
 ```
 
-#### Task 2.3 — dev-tool server-first 改造（替代 IndexedDB）
+#### Task 2.4 — ProductTemplateRepository server-first 改造
 
-- [ ] 改造 `ProductTemplateRepository`：优先调用 server API，IndexedDB 作为 fallback 或移除
-- [ ] dev-tool 启动时从 server 加载 ProductTemplate 列表
-- [ ] 保存时调用 `POST /product-templates` 或 `PATCH /product-templates/:id`
+<!-- layer: editor -->
+<!-- verify: npx tsc --noEmit apps/dev-tool/src/modules/repositories/productTemplateRepository.ts -->
+
+- [x] 改造 `apps/dev-tool/src/modules/repositories/productTemplateRepository.ts`
+- [x] 优先调用 server API（`/product-templates`）
+- [x] 失败时 fallback 到 IndexedDB
 
 ```bash
-# 验证
+npx tsc --noEmit apps/dev-tool/src/modules/repositories/productTemplateRepository.ts
+```
+
+#### Task 2.5 — 端到端验证
+
+<!-- layer: editor -->
+<!-- verify: cd apps/dev-tool && npx vite build -->
+
+- [x] dev-tool 登录后创建 ProductTemplate，刷新页面后从 server 加载
+- [x] 确认 server 数据库有对应记录
+
+```bash
 cd apps/dev-tool && npx vite build
 ```
 
