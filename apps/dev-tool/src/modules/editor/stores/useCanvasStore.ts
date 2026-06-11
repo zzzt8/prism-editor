@@ -13,7 +13,6 @@ import type {
 } from '@prism/shared-types';
 import type { Template } from '@prism/shared-types';
 import { canConnectByDataType, PortDataType } from '@prism/shared-types';
-import type { SnippetFragment, SnippetSummary } from '@prism/shared-types';
 import { PORT_TYPE_COLORS } from '../../../utils/portTypeStyles';
 import type { ContextMenuState } from './selectionSlice';
 import { ExecutionStatus } from './executionSlice';
@@ -24,7 +23,6 @@ import { autosaveService, initAutosaveService, getAutosaveService } from '../ser
 import { getExecutionService } from '../services/executionService';
 import { activeStorageAdapter } from '../../../storage';
 import { WorkflowRepository } from '../../repositories/workflowRepository';
-import { SnippetRepository } from '../../repositories/snippetRepository';
 import {
   createNodeId,
   createEdgeId,
@@ -163,7 +161,7 @@ interface CanvasState {
   // ── Snippet operations ──────────────────────────────────────────────────────
 
   snippetSave: (_name: string, _description: string, _selectedNodeIds: string[]) => Promise<void>;
-  snippetList: () => Promise<SnippetSummary[]>;
+  snippetList: () => Promise<unknown[]>;
   insertSnippet: (_snippetId: string, _position: { x: number; y: number }) => Promise<void>;
   deleteSnippet: (_id: string) => Promise<void>;
 }
@@ -172,7 +170,6 @@ interface CanvasState {
 
 // Create workflow repository for autosave (use activeStorageAdapter for server-first)
 const workflowRepository = new WorkflowRepository(activeStorageAdapter);
-const snippetRepository = new SnippetRepository();
 
 // Initialize autosave service
 const _autosave = autosaveService;
@@ -1170,81 +1167,9 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   },
 
   // ── Snippet operations ──────────────────────────────────────────────────────
-
-  async snippetSave(name: string, description: string, selectedNodeIds: string[]): Promise<void> {
-    const { nodes } = get();
-    const selectedNodes = nodes.filter((n) => selectedNodeIds.includes(n.id));
-
-    // Filter out nodes without definition (unavailable node types)
-    const validNodes = selectedNodes.filter((n) => n.data.definition != null);
-    if (validNodes.length === 0) return;
-
-    const validNodeIds = new Set(validNodes.map((n) => n.id));
-
-    // Filter edges: only keep edges where both endpoints are in the snippet
-    const fragmentEdges = get().edges.filter(
-      (e) => validNodeIds.has(e.source) && validNodeIds.has(e.target)
-    );
-
-    const fragment: SnippetFragment = {
-      id: createId(),
-      name: name.trim(),
-      description: description.trim() || undefined,
-      createdAt: new Date().toISOString(),
-      nodes: validNodes,
-      edges: fragmentEdges,
-      groups: [], // Groups are not saved in snippets (first version)
-    };
-
-    await snippetRepository.save(fragment);
-  },
-
-  async snippetList(): Promise<SnippetSummary[]> {
-    return snippetRepository.list();
-  },
-
-  async insertSnippet(snippetId: string, position: { x: number; y: number }): Promise<void> {
-    const fragment = await snippetRepository.get(snippetId);
-
-    // Filter out nodes whose nodeType is no longer registered
-    const availableNodes = fragment.nodes.filter((n) => {
-      if (!n.data.nodeType) return true;
-      const def = globalRegistry.getNode(n.data.nodeType);
-      if (!def) {
-        console.warn(`[insertSnippet] Skipping node '${n.id}' of unknown type '${n.data.nodeType}'`);
-        return false;
-      }
-      return true;
-    });
-
-    if (availableNodes.length === 0) return;
-
-    const availableNodeIds = new Set(availableNodes.map((n) => n.id));
-    const snippetEdges = fragment.edges.filter(
-      (e) => availableNodeIds.has(e.source) && availableNodeIds.has(e.target)
-    );
-
-    // basePosition = clickPosition - PASTE_OFFSET, since helper adds PASTE_OFFSET on top
-    const basePosition = {
-      x: position.x - PASTE_OFFSET,
-      y: position.y - PASTE_OFFSET,
-    };
-
-    const { newNodes, newEdges } = remapAndInsertNodes(
-      availableNodes,
-      snippetEdges,
-      basePosition,
-      { createNodeId, createEdgeId }
-    );
-
-    set((s) => ({
-      nodes: [...s.nodes, ...newNodes],
-      edges: [...s.edges, ...newEdges],
-    }));
-    get()._triggerAutoSave();
-  },
-
-  async deleteSnippet(id: string): Promise<void> {
-    await snippetRepository.delete(id);
-  },
+  // Snippet features removed — stub out
+  async snippetSave(_name: string, _description: string, _selectedNodeIds: string[]): Promise<void> {},
+  async snippetList(): Promise<never[]> { return []; },
+  async insertSnippet(_id: string, _position: { x: number; y: number }): Promise<void> {},
+  async deleteSnippet(_id: string): Promise<void> {},
 }));

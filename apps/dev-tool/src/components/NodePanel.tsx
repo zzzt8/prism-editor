@@ -158,10 +158,6 @@ export const NodePanel: React.FC = () => {
     setCollapsed((prev) => ({ ...prev, [cat]: !prev[cat] }));
   };
 
-  const handleAddCustomNode = () => {
-    setShowImport(true);
-  };
-
   const hasResults = filtered.length > 0;
   const hasQuery = query.trim().length > 0;
 

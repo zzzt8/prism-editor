@@ -8,14 +8,12 @@ import { NodePanel } from './components/NodePanel';
 import { WorkflowCanvas } from './components/canvas/WorkflowCanvas';
 import { ParamPanel as Inspector } from './components/ParamPanel';
 import { WorkflowHeader } from './components/header/WorkflowHeader';
-import { PublishDialog } from './components/header/PublishDialog';
 import { WorkflowsView } from './components/WorkflowsView';
 import { NewWorkflowModal } from './components/NewWorkflowModal';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { PublicRoute, AuthGuard } from './components/AuthGuard';
 import { useAuthStore } from './store/authStore';
-import { useCanvasStore } from './store/canvasStore';
 import {
   activeStorageAdapter,
   cleanupStorage,
@@ -25,25 +23,12 @@ import { ErrorBoundary } from '@prism/shared-ui';
 // --- Editor page (rendered inside DevToolLayout) ---
 function EditorPage() {
   const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [showPublishDialog, setShowPublishDialog] = React.useState(false);
-  const [publishStatus, setPublishStatus] = React.useState<'idle' | 'loading' | 'done'>('idle');
-
-  const handlePublishClick = () => {
-    setPublishStatus('loading');
-    setTimeout(() => {
-      setPublishStatus('done');
-      setShowPublishDialog(true);
-    }, 800);
-  };
 
   return (
     <>
       <DevToolLayout
         header={
-          <WorkflowHeader
-            onPublishClick={handlePublishClick}
-            publishStatus={publishStatus}
-          />
+          <WorkflowHeader onPublishClick={() => {}} publishStatus="idle" />
         }
         left={<NodePanel />}
         right={<Inspector />}
@@ -52,15 +37,6 @@ function EditorPage() {
           <WorkflowCanvas />
         </ReactFlowProvider>
       </DevToolLayout>
-
-      {showPublishDialog && (
-        <PublishDialog
-          onClose={() => {
-            setShowPublishDialog(false);
-            setPublishStatus('idle');
-          }}
-        />
-      )}
 
       <NewWorkflowModal
         isOpen={isModalOpen}
