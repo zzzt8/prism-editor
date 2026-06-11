@@ -52,8 +52,8 @@ cd server && npx prisma migrate dev --name add_product_template --skip-seed
 <!-- layer: backend -->
 <!-- verify: cd server && npm run build -->
 
-- [ ] 新建 `server/src/routes/product-template.ts`
-- [ ] 实现：
+- [x] 新建 `server/src/routes/product-template.ts`
+- [x] 实现：
 
   - `GET /product-templates` — 列表（public read，带分页）
   - `GET /product-templates/:id` — 详情（public read）
@@ -62,7 +62,7 @@ cd server && npx prisma migrate dev --name add_product_template --skip-seed
   - `DELETE /product-templates/:id` — 删除（auth required，验证 userId 匹配）
   - `POST /product-templates/:id/publish` — 绑定到 PublishedWorkflow（auth required）
 
-- [ ] 注册路由到 `server/src/app.ts`
+- [x] 注册路由到 `server/src/app.ts`
 
 ```bash
 cd server && npm run build

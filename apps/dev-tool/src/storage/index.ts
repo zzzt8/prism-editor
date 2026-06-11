@@ -3,15 +3,17 @@
 export { JsonFileAdapterImpl, jsonFileAdapter } from './JsonFileAdapter';
 export { ApiStorageAdapter } from './ApiStorageAdapter';
 export { IndexedDBStorageAdapter, indexedDBStorageAdapter } from './IndexedDBStorageAdapter';
+export { ProductTemplateApiAdapter } from './ProductTemplateApiAdapter';
 
 // Environment-based adapter selection
-import { ApiStorageAdapter } from './ApiStorageAdapter';
+import { ApiStorageAdapter, ProductTemplateApiAdapter } from './index';
 import { useAuthStore } from '../store/authStore';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // Single shared instance - avoid creating multiple instances with setInterval leaks
 let _apiAdapterInstance: ApiStorageAdapter | null = null;
+let _productTemplateApiAdapterInstance: ProductTemplateApiAdapter | null = null;
 
 function getOrCreateApiAdapter(): ApiStorageAdapter {
   if (!_apiAdapterInstance) {
@@ -19,6 +21,15 @@ function getOrCreateApiAdapter(): ApiStorageAdapter {
   }
   return _apiAdapterInstance;
 }
+
+function getOrCreateProductTemplateApiAdapter(): ProductTemplateApiAdapter {
+  if (!_productTemplateApiAdapterInstance) {
+    _productTemplateApiAdapterInstance = new ProductTemplateApiAdapter();
+  }
+  return _productTemplateApiAdapterInstance;
+}
+
+export const productTemplateApiAdapter = getOrCreateProductTemplateApiAdapter();
 
 // Use ApiStorageAdapter as the primary storage (server-first: Save/New/Publish all go to server)
 // IndexedDB is used as autosave cache only (for crash recovery)
@@ -34,6 +45,13 @@ export function syncStorageTokens() {
       activeStorageAdapter.setTokens(state.accessToken, '');
     } else {
       activeStorageAdapter.clearTokens();
+    }
+  }
+  if (_productTemplateApiAdapterInstance) {
+    if (state.accessToken && state.isAuthenticated) {
+      _productTemplateApiAdapterInstance.setAccessToken(state.accessToken);
+    } else {
+      _productTemplateApiAdapterInstance.setAccessToken(null);
     }
   }
 }
