@@ -2,12 +2,10 @@
 
 import React, { useState, useMemo } from 'react';
 import { globalRegistry } from '@prism/core';
-import type { NodeDefinition, NodePackageManifest } from '@prism/shared-types';
+import type { NodeDefinition } from '@prism/shared-types';
 import { useCanvasStore } from '../modules/editor/stores/useCanvasStore';
-import { Download, RefreshCw, VenetianMask, Image, Upload, Search, X, Hexagon, CircleDot, ChevronDown, Plus, Package } from 'lucide-react';
+import { Download, RefreshCw, VenetianMask, Image, Upload, Search, X, Hexagon, CircleDot, ChevronDown } from 'lucide-react';
 import './NodePanel.css';
-import { ImportModal } from './NodePackageManager/ImportModal';
-import { MarketplaceList } from './NodeMarketplace';
 
 const CATEGORY_LABELS: Record<string, string> = {
   input:     '输入',
@@ -116,8 +114,6 @@ export const NodePanel: React.FC = () => {
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [toast, setToast] = useState<string | null>(null);
-  const [showImport, setShowImport] = useState(false);
-  const [showMarketplace, setShowMarketplace] = useState(false);
   const [nodeVersion, setNodeVersion] = useState(0); // 用于触发节点列表刷新
 
   const allDefinitions = useMemo(() => {
@@ -134,18 +130,6 @@ export const NodePanel: React.FC = () => {
       return [];
     }
   }, [nodeVersion]);
-
-  const handleImportSuccess = (manifest: NodePackageManifest, _nodeTypes: string[]) => {
-    setToast(`节点包 "${manifest.name}" 导入成功！`);
-    setShowImport(false);
-    setNodeVersion((v) => v + 1); // 触发节点列表刷新
-  };
-
-  const handleMarketplaceInstall = (manifest: NodePackageManifest) => {
-    // Marketplace uses the same import flow
-    const nodeTypes = manifest.definitions.map((d) => d.type);
-    handleImportSuccess(manifest, nodeTypes);
-  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -240,14 +224,6 @@ export const NodePanel: React.FC = () => {
 
       {/* Footer — always visible */}
       <div className="node-panel-footer">
-        <button className="node-add-custom-btn" onClick={() => setShowMarketplace(true)} type="button">
-          <Package size={13} />
-          Browse Market
-        </button>
-        <button className="node-add-custom-btn" onClick={handleAddCustomNode} type="button">
-          <Plus size={13} />
-          Add Custom Node
-        </button>
         <div className="node-footer-links">
           <button className="node-footer-link" type="button">Settings</button>
           <span className="node-footer-sep" />
@@ -266,23 +242,6 @@ export const NodePanel: React.FC = () => {
         />
       )}
 
-      {/* Import Modal */}
-      {showImport && (
-        <ImportModal
-          onClose={() => setShowImport(false)}
-          onSuccess={handleImportSuccess}
-        />
-      )}
-
-      {/* Marketplace Panel */}
-      {showMarketplace && (
-        <div className="node-marketplace-panel">
-          <MarketplaceList
-            onInstallPackage={handleMarketplaceInstall}
-            onClose={() => setShowMarketplace(false)}
-          />
-        </div>
-      )}
     </aside>
   );
 };
