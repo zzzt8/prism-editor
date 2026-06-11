@@ -26,7 +26,7 @@
   }
   ```
 
-- [ ] 验证 schema 语法
+- [x] 验证 schema 语法
 
 ```bash
 cd server && npx prisma validate
@@ -39,7 +39,7 @@ cd server && npx prisma validate
 <!-- layer: backend -->
 <!-- verify: cd server && npx prisma migrate dev --name add_product_template --skip-seed -->
 
-- [ ] `prisma migrate dev --name add_product_template --skip-seed`
+- [x] `prisma migrate dev --name add_product_template --skip-seed`
 
 ```bash
 cd server && npx prisma migrate dev --name add_product_template --skip-seed
