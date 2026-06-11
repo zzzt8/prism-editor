@@ -104,6 +104,27 @@ packages/shared-types/src/product-template-compat.ts
 packages/shared-types/src/index.ts
 ```
 
+### 默认绑定策略
+
+当旧 `PublishedWorkflow` 通过兼容桥接函数被包装为 `ProductTemplate` 时，
+系统会自动生成一套最小可用的 preview binding：
+
+- **published inputs → `preview.flow.bindings.inputs`**
+  - 每个已发布输入都会映射为一个 `ProductTemplateInput`
+  - 同时绑定到 preview flow，target type 为 `published-input`
+- **exposed params → `designParams` + `preview.flow.bindings.designParams`**
+  - 每个 exposed param 会被提升为共享层的 `designParam`
+  - 同时绑定到 preview flow，target type 为 `exposed-param`
+- **这只是过渡期策略**
+  - 目的是让旧 published workflow 在不改发布模型的前提下，先具备
+    `ProductTemplate` 的共享层与绑定语义
+- **Production Flow 仍然不自动生成**
+  - `production.flow.type` 保持 `none`
+  - 不自动推导 production bindings，也不生成生产执行逻辑
+- **后续会支持显式配置 bindings**
+  - 真正的 `ProductTemplate` 编辑器落地后，bindings 应由模板作者显式配置，
+    而不是只依赖兼容桥接默认值
+
 ---
 
 ## Preview Flow
@@ -155,6 +176,43 @@ Both flows reference the same:
 
 This shared layer is the **consistency contract** between preview and production.
 If preview and production diverge, they must do so within the bounds of this shared input.
+
+---
+
+## Flow Binding：共享输入与设计参数如何连接到两条流程
+
+`ProductTemplate.inputs`、`designParams` 和 `assets` 是模板层的**共享数据面**。
+它们本身只描述“有哪些输入/参数/资产”，并不直接规定这些数据怎样进入
+`preview.flow` 或 `production.flow`。
+
+因此，v1 引入一个显式绑定层：`bindings`。
+
+- **共享层保持唯一来源** — 用户上传内容、关键设计参数、模板资产都定义在
+  `ProductTemplate` 顶层。
+- **`preview.flow` 和 `production.flow` 可以不同** — 它们可以引用不同的 workflow
+  或不同的生产链路，不要求使用同一套运行时对象。
+- **`bindings` 描述映射关系** — 每个 flow 自己声明，如何把共享层中的 `inputs`、
+  `designParams`、`assets` 绑定到它所使用的节点输入、参数或 exposed entry。
+- **支持同一批确认数据驱动两条链路** — 例如同一张设计图同时送入效果图预览和
+  生产图流程；同一组位置/缩放参数同时影响 preview 节点参数与 production 节点参数。
+
+概念上可表示为：
+
+```
+ProductTemplate
+  ├── inputs / designParams / assets   (shared layer)
+  │
+  ├── preview.flow
+  │     └── bindings -> map shared layer to preview targets
+  │
+  └── production.flow
+        └── bindings -> map shared layer to production targets
+```
+
+这让 “效果图链路” 和 “生产图链路” 即使完全不同，仍然可以围绕**同一批用户确认的数据**
+保持一致性。
+
+---
 
 ```
   User Input

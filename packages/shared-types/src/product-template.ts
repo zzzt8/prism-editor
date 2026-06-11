@@ -87,6 +87,11 @@ export interface PreviewFlowRef {
   workflowVersion?: string;
   entryNodeId?: string;
   notes?: string;
+  /**
+   * Describes how shared inputs, design params, and assets from the parent
+   * `ProductTemplate` are wired into this preview flow.
+   */
+  bindings?: ProductTemplateFlowBindings;
 }
 
 export interface ProductionFlowRef {
@@ -104,6 +109,79 @@ export interface ProductionFlowRef {
   workflowVersion?: string;
   entryNodeId?: string;
   notes?: string;
+  /**
+   * Describes how shared inputs, design params, and assets from the parent
+   * `ProductTemplate` are wired into this production flow.
+   *
+   * In v1 transitional mode this field is optional — if absent, the caller
+   * is responsible for manually mapping shared data to the flow's inputs.
+   * Once the production flow is formalised, bindings should be explicitly declared.
+   */
+  bindings?: ProductTemplateFlowBindings;
+}
+
+// ── Flow Binding Types ──────────────────────────────────────────────────────────
+
+/**
+ * Describes the concrete target within a flow that a shared template entity
+ * (input, design param, or asset) is wired to.
+ *
+ * `nodeId` is the canvas/node UUID inside the bound workflow.
+ * `portId` / `paramKey` / `inputId` identify the exact port or parameter
+ * within that node that receives the value.
+ */
+export interface ProductTemplateInputBindingTarget {
+  type: 'workflow-input' | 'published-input' | 'node-input';
+  id?: string;
+  nodeId?: string;
+  portId?: string;
+}
+
+export interface ProductTemplateDesignParamBindingTarget {
+  type: 'node-param' | 'exposed-param' | 'production-param';
+  nodeId?: string;
+  paramKey?: string;
+  exposedParamId?: string;
+}
+
+export interface ProductTemplateAssetBindingTarget {
+  type: 'node-param' | 'asset-input';
+  nodeId?: string;
+  paramKey?: string;
+  inputId?: string;
+}
+
+/** Wires a `ProductTemplateInput` to a specific port/input slot of a flow. */
+export interface ProductTemplateInputBinding {
+  inputId: string;
+  target: ProductTemplateInputBindingTarget;
+}
+
+/** Wires a `DesignParam` to a specific node parameter inside a flow. */
+export interface ProductTemplateDesignParamBinding {
+  designParamId: string;
+  target: ProductTemplateDesignParamBindingTarget;
+}
+
+/** Wires a `ProductTemplateAsset` to a node parameter or asset input slot of a flow. */
+export interface ProductTemplateAssetBinding {
+  assetId: string;
+  target: ProductTemplateAssetBindingTarget;
+}
+
+/**
+ * Complete binding map for a single flow (preview or production).
+ *
+ * Describes how the shared `ProductTemplate.inputs`, `designParams`,
+ * and `assets` are wired into the concrete nodes of the bound workflow.
+ *
+ * All three arrays are optional — callers may bind a subset of shared
+ * entities depending on what the target flow actually requires.
+ */
+export interface ProductTemplateFlowBindings {
+  inputs?: ProductTemplateInputBinding[];
+  designParams?: ProductTemplateDesignParamBinding[];
+  assets?: ProductTemplateAssetBinding[];
 }
 
 export interface PreviewCanvasLayerBinding {
@@ -168,6 +246,34 @@ export interface ProductTemplate {
     flow: ProductionFlowRef;
   };
 
+  publishState?: {
+    publishedWorkflowId?: string;
+    publishedWorkflowName?: string;
+    publishedWorkflowVersion?: string;
+    publishedAt?: string;
+    bindingStatus?: 'complete' | 'incomplete';
+    missingInputIds?: string[];
+    missingDesignParamIds?: string[];
+  };
+
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface ProductTemplateSummaryMetadata {
+  inputCount: number;
+  designParamCount: number;
+  assetCount: number;
+  publishedWorkflowId?: string;
+  lastPublishedAt?: string;
+}
+
+export interface ProductTemplateSummary {
+  id: string;
+  name: string;
+  description?: string;
+  version: string;
+  createdAt: string;
+  updatedAt: string;
+  metadata: ProductTemplateSummaryMetadata;
 }

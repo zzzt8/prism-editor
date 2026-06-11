@@ -15,6 +15,7 @@ model User {
   role      String   @default("user") // "user" | "admin"
   workflows Workflow[]
   nodePackages NodePackage[]
+  productTemplates ProductTemplate[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -121,6 +122,24 @@ model PublishedWorkflow {
   content    String
   publishedBy String?
   publishedAt DateTime @default(now())
+  productTemplate ProductTemplate?
+}
+
+model ProductTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  version     String   @default("1.0.0")
+  content     String   // 完整的 ProductTemplate JSON
+  userId      String
+  publishedId String?  @unique // optional: FK to PublishedWorkflow
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User               @relation(fields: [userId], references: [id])
+  published PublishedWorkflow? @relation(fields: [publishedId], references: [id])
+
+  @@index([userId])
 }
 
 model RevokedToken {

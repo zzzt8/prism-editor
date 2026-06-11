@@ -10,7 +10,8 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
 import type { CanvasNode } from '../../store/canvasStore';
 import { usePublishStore } from '../../modules/editor/stores/publishSlice';
-import type { ParamControlType } from '@prism/shared-types';
+import { useProductTemplateStore } from '../../store/productTemplateStore';
+import type { ParamControlType, ProductTemplate } from '@prism/shared-types';
 import { createId } from '@prism/shared-types';
 import type {
   PublishedWorkflow,
@@ -26,6 +27,8 @@ import { Check, Copy, Download, Upload, X, Plus, ChevronDown, ChevronRight, Penc
 import { copyWorkflowToClipboard, downloadWorkflowAsFile } from '../../utils/workflowExport';
 import { inferControlType, inferOptions } from '../../modules/editor/mappers/workflowToPublished';
 import { useAuthStore } from '../../store/authStore';
+
+type PublishMode = 'workflow' | 'product-template';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
@@ -209,6 +212,17 @@ function broadcastPublish(pw: PublishedWorkflow) {
 export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { nodes, edges, workflowMeta } = useCanvasStore();
   const { setParamDefinitions } = usePublishStore();
+  const {
+    productTemplateList,
+    currentProductTemplate,
+    loadProductTemplateList,
+    loadProductTemplate,
+    saveProductTemplate,
+    updateProductTemplate,
+  } = useProductTemplateStore();
+
+  const [publishMode, setPublishMode] = useState<PublishMode>('workflow');
+  const [selectedProductTemplateId, setSelectedProductTemplateId] = useState<string>('');
 
   const [publishName, setPublishName] = useState(workflowMeta.name);
   const [publishDesc, setPublishDesc] = useState('');
@@ -217,6 +231,10 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
   const [lastPublished, setLastPublished] = useState<PublishedWorkflow | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [templatePublishSuccess, setTemplatePublishSuccess] = useState<{
+    templateName: string;
+    publishedWorkflowName: string;
+  } | null>(null);
 
   // ── Derived node lists ──────────────────────────────────────────────────
   const outputNodes = useMemo(() => inferOutputNodes(nodes, edges), [nodes, edges]);
@@ -300,6 +318,17 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     () => candidateNodes.filter((n) => selectedInputIds.has(n.id)),
     [candidateNodes, selectedInputIds]
   );
+
+  React.useEffect(() => {
+    if (publishMode !== 'product-template') return;
+    void loadProductTemplateList();
+  }, [publishMode, loadProductTemplateList]);
+
+  React.useEffect(() => {
+    if (!selectedProductTemplateId) return;
+    if (currentProductTemplate?.id === selectedProductTemplateId) return;
+    void loadProductTemplate(selectedProductTemplateId);
+  }, [selectedProductTemplateId, currentProductTemplate?.id, loadProductTemplate]);
 
   // Re-sync when canvas nodes change
   React.useEffect(() => {
@@ -389,6 +418,89 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     ));
     setEditingEntryKey(null);
     setEditingLabel('');
+  };
+
+  const getTemplateBindingValidation = (template: ProductTemplate) => {
+    const previewBindings = template.preview.flow.bindings;
+    const boundInputIds = new Set((previewBindings?.inputs ?? []).map((binding) => binding.inputId));
+    const boundDesignParamIds = new Set(
+      (previewBindings?.designParams ?? []).map((binding) => binding.designParamId)
+    );
+
+    const missingInputIds = template.inputs
+      .map((input) => input.id)
+      .filter((inputId) => !boundInputIds.has(inputId));
+    const missingDesignParamIds = template.designParams
+      .map((param) => param.id)
+      .filter((paramId) => !boundDesignParamIds.has(paramId));
+
+    return {
+      isComplete: missingInputIds.length === 0 && missingDesignParamIds.length === 0,
+      missingInputIds,
+      missingDesignParamIds,
+    };
+  };
+
+  const handleProductTemplatePublish = async () => {
+    if (!selectedProductTemplateId) {
+      setError('请选择要发布的 ProductTemplate');
+      return;
+    }
+
+    const template = currentProductTemplate;
+    if (!template || template.id !== selectedProductTemplateId) {
+      setError('正在加载 ProductTemplate，请稍后再试');
+      return;
+    }
+
+    const bindingValidation = getTemplateBindingValidation(template);
+    if (!bindingValidation.isComplete) {
+      const missingInputs = bindingValidation.missingInputIds.length;
+      const missingParams = bindingValidation.missingDesignParamIds.length;
+      setError(`绑定不完整：缺少 ${missingInputs} 个 input 绑定，${missingParams} 个 design param 绑定`);
+      return;
+    }
+
+    setPublishing(true);
+    setError(null);
+
+    try {
+      updateProductTemplate({
+        preview: {
+          ...template.preview,
+          flow: {
+            ...template.preview.flow,
+            type: 'workflow',
+            workflowId: workflowMeta.id,
+            workflowVersion: workflowMeta.version,
+            notes: 'Bound locally from PublishDialog placeholder flow.',
+          },
+        },
+        publishState: {
+          publishedWorkflowId: workflowMeta.publishedId,
+          publishedWorkflowName: workflowMeta.name,
+          publishedWorkflowVersion: workflowMeta.version,
+          publishedAt: new Date().toISOString(),
+          bindingStatus: 'complete',
+          missingInputIds: [],
+          missingDesignParamIds: [],
+        },
+      });
+
+      const saved = await saveProductTemplate();
+      if (!saved) {
+        throw new Error('保存 ProductTemplate 发布占位信息失败');
+      }
+
+      setTemplatePublishSuccess({
+        templateName: saved.name,
+        publishedWorkflowName: workflowMeta.name,
+      });
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setPublishing(false);
+    }
   };
   // ── Publish to server ────────────────────────────────────────────────────────
   const publishToServer = async (pw: PublishedWorkflow, workflowId: string, publishedId?: string): Promise<{ id: string } | null> => {
@@ -615,6 +727,33 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
     );
   }
 
+  if (templatePublishSuccess) {
+    return (
+      <div className="dialog-overlay" onClick={onClose}>
+        <div className="dialog" role="dialog" aria-modal="true">
+          <div className="dialog-header">
+            <span className="dialog-title">ProductTemplate 已记录发布绑定</span>
+            <button className="dialog-close" onClick={onClose}><X size={16} /></button>
+          </div>
+          <div className="dialog-body">
+            <div className="publish-success">
+              <div className="publish-success-icon"><Check size={32} /></div>
+              <div className="publish-success-msg">
+                <strong>{templatePublishSuccess.templateName}</strong> 已绑定到当前 Workflow
+              </div>
+              <div className="publish-success-sub">
+                当前占位逻辑仅写入 IndexedDB，不做 server 持久化。绑定目标：{templatePublishSuccess.publishedWorkflowName}
+              </div>
+            </div>
+          </div>
+          <div className="dialog-footer">
+            <button className="dialog-btn dialog-btn-primary" onClick={onClose}>完成</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // ── Main publish form ───────────────────────────────────────────────────
   return (
     <div className="dialog-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -625,40 +764,130 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
         </div>
 
         <div className="dialog-body">
-
-          {/* ── Basic info ─────────────────────────────────────────────────── */}
-          <div className="dialog-field">
-            <label className="dialog-label" htmlFor="publish-name">发布名称</label>
-            <input
-              id="publish-name" className="dialog-input" type="text"
-              value={publishName} onChange={(e) => setPublishName(e.target.value)}
-              placeholder="用户将看到的名称" autoFocus
-            />
-          </div>
-          <div className="dialog-field">
-            <label className="dialog-label" htmlFor="publish-desc">描述（可选）</label>
-            <input
-              id="publish-desc" className="dialog-input" type="text"
-              value={publishDesc} onChange={(e) => setPublishDesc(e.target.value)}
-              placeholder="简短描述这个工作流的用途"
-            />
+          <div className="inspector-tabs" style={{ marginBottom: 16 }}>
+            <button
+              className={`inspector-tab${publishMode === 'workflow' ? ' inspector-tab--active' : ''}`}
+              onClick={() => setPublishMode('workflow')}
+              type="button"
+            >
+              发布 Workflow
+            </button>
+            <button
+              className={`inspector-tab${publishMode === 'product-template' ? ' inspector-tab--active' : ''}`}
+              onClick={() => setPublishMode('product-template')}
+              type="button"
+            >
+              发布为 ProductTemplate
+            </button>
           </div>
 
-          {/* ── Section 1: 定义用户上传内容 ────────────────────────────────── */}
-          <div className="publish-section">
-            <div className="publish-section-title">
-              定义用户上传内容
-              <span className="publish-section-hint">
-                仅显示无上游连线的节点（如「加载图片」「加载蒙版」）· 未勾选则沿用画布上的测试数据
-              </span>
-            </div>
-
-            {candidateNodes.length === 0 ? (
-              <div className="publish-empty">
-                画布中暂无可用节点
+          {publishMode === 'product-template' ? (
+            <>
+              <div className="dialog-field">
+                <label className="dialog-label" htmlFor="product-template-select">选择 ProductTemplate</label>
+                <select
+                  id="product-template-select"
+                  className="dialog-select"
+                  value={selectedProductTemplateId}
+                  onChange={(e) => setSelectedProductTemplateId(e.target.value)}
+                >
+                  <option value="">请选择一个模板</option>
+                  {productTemplateList.map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.name}
+                    </option>
+                  ))}
+                </select>
               </div>
-            ) : (
-              <div className="publish-input-candidates">
+
+              {selectedProductTemplateId && currentProductTemplate?.id === selectedProductTemplateId && (
+                <div className="publish-section">
+                  <div className="publish-section-title">
+                    ProductTemplate 绑定预览
+                    <span className="publish-section-hint">占位发布：仅写入本地 IndexedDB</span>
+                  </div>
+
+                  <div className="publish-source-card">
+                    <div className="publish-source-header">
+                      <span className="publish-source-node-label">{currentProductTemplate.name}</span>
+                      <span className="publish-source-type-badge">v{currentProductTemplate.version}</span>
+                    </div>
+                    <div className="publish-source-label-row">
+                      <label className="dialog-label" style={{ marginBottom: 0 }}>绑定 Workflow</label>
+                      <input
+                        className="dialog-input"
+                        value={workflowMeta.name}
+                        disabled
+                      />
+                    </div>
+                    <div className="publish-source-label-row">
+                      <label className="dialog-label" style={{ marginBottom: 0 }}>preview.flow.workflowId</label>
+                      <input
+                        className="dialog-input"
+                        value={workflowMeta.id}
+                        disabled
+                      />
+                    </div>
+                  </div>
+
+                  {(() => {
+                    const validation = getTemplateBindingValidation(currentProductTemplate);
+                    return validation.isComplete ? (
+                      <div className="publish-empty" style={{ color: '#16a34a' }}>
+                        绑定完整，可写入本地发布占位信息。
+                      </div>
+                    ) : (
+                      <div className="dialog-error">
+                        绑定不完整：缺少 {validation.missingInputIds.length} 个 input 绑定，
+                        {validation.missingDesignParamIds.length} 个 design param 绑定。
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {selectedProductTemplateId && currentProductTemplate?.id !== selectedProductTemplateId && (
+                <div className="publish-empty publish-empty--muted">正在加载 ProductTemplate…</div>
+              )}
+
+              {productTemplateList.length === 0 && (
+                <div className="publish-empty publish-empty--muted">暂无可用 ProductTemplate，请先创建并保存模板。</div>
+              )}
+            </>
+          ) : (
+            <>
+              {/* ── Basic info ─────────────────────────────────────────────────── */}
+              <div className="dialog-field">
+                <label className="dialog-label" htmlFor="publish-name">发布名称</label>
+                <input
+                  id="publish-name" className="dialog-input" type="text"
+                  value={publishName} onChange={(e) => setPublishName(e.target.value)}
+                  placeholder="用户将看到的名称" autoFocus
+                />
+              </div>
+              <div className="dialog-field">
+                <label className="dialog-label" htmlFor="publish-desc">描述（可选）</label>
+                <input
+                  id="publish-desc" className="dialog-input" type="text"
+                  value={publishDesc} onChange={(e) => setPublishDesc(e.target.value)}
+                  placeholder="简短描述这个工作流的用途"
+                />
+              </div>
+
+              <div className="publish-section">
+                <div className="publish-section-title">
+                  定义用户上传内容
+                  <span className="publish-section-hint">
+                    仅显示无上游连线的节点（如「加载图片」「加载蒙版」）· 未勾选则沿用画布上的测试数据
+                  </span>
+                </div>
+
+                {candidateNodes.length === 0 ? (
+                  <div className="publish-empty">
+                    画布中暂无可用节点
+                  </div>
+                ) : (
+                  <div className="publish-input-candidates">
                 {candidateNodes.map((node) => {
                   const def = node.data.definition;
                   const isSelected = selectedInputIds.has(node.id);
@@ -969,14 +1198,20 @@ export const PublishDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =>
               </div>
             )}
           </div>
+            </>
+          )}
 
           {error && <div className="dialog-error">{error}</div>}
         </div>
 
         <div className="dialog-footer">
           <button className="dialog-btn dialog-btn-secondary" onClick={onClose} disabled={publishing}>取消</button>
-          <button className="dialog-btn dialog-btn-primary" onClick={handlePublish} disabled={publishing}>
-            {publishing ? '发布中…' : '发布'}
+          <button
+            className="dialog-btn dialog-btn-primary"
+            onClick={publishMode === 'product-template' ? handleProductTemplatePublish : handlePublish}
+            disabled={publishing}
+          >
+            {publishing ? '发布中…' : publishMode === 'product-template' ? '记录本地发布绑定' : '发布'}
           </button>
         </div>
       </div>

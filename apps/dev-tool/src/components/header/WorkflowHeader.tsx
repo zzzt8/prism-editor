@@ -4,10 +4,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Box, Play, Square, CheckCircle2,
   Loader2, FileUp, Settings, User, Save,
-  History, Image,
+  History, Image, PackagePlus,
 } from 'lucide-react';
 import { useCanvasStore } from '../../store/canvasStore';
 import { useAppStore } from '../../store/appStore';
+import { useProductTemplateStore } from '../../store/productTemplateStore';
 import { PanelToggle } from './PanelToggle';
 import { RenderProductionModal } from './RenderProductionModal';
 
@@ -33,6 +34,7 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
   const saveWorkflow = useCanvasStore((s) => s.saveWorkflow);
   const _leftPanelOpen = useAppStore((s) => s.leftPanelOpen);
   const _rightPanelOpen = useAppStore((s) => s.rightPanelOpen);
+  const newProductTemplate = useProductTemplateStore((s) => s.newProductTemplate);
 
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -186,6 +188,15 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
 
         {/* ── Right Zone ──────────────────────────── */}
         <div className="wf-header-right">
+          <button
+            className="wf-save-btn"
+            onClick={() => newProductTemplate()}
+            title="新建 ProductTemplate"
+          >
+            <PackagePlus size={14} />
+            ProductTemplate
+          </button>
+
           {/* Save */}
           <button
             className="wf-save-btn"

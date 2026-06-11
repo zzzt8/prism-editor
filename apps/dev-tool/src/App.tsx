@@ -9,6 +9,7 @@ import { WorkflowCanvas } from './components/canvas/WorkflowCanvas';
 import { ParamPanel as Inspector } from './components/ParamPanel';
 import { WorkflowHeader } from './components/header/WorkflowHeader';
 import { PublishDialog } from './components/header/PublishDialog';
+import { ProductTemplateEditor } from './components/ProductTemplateEditor';
 import { WorkflowsView } from './components/WorkflowsView';
 import { NewWorkflowModal } from './components/NewWorkflowModal';
 import { VersionHistory } from './components/VersionHistory';
@@ -132,6 +133,8 @@ function EditorPage() {
         onClose={() => setIsModalOpen(false)}
         onCreated={() => setIsModalOpen(false)}
       />
+
+      <ProductTemplateEditor />
 
       {showVersionHistory && (
         <VersionHistoryWrapper
