@@ -8,6 +8,9 @@ import { ZipArchive } from 'archiver';
 // Initialize executor with all node executors
 const executor = new WorkflowExecutorNodeJs({ nodeExecutors });
 
+// Marker for user-provided input injection
+const USER_INPUT_MARKER = '__USER_INPUT__';
+
 interface RenderWorkflowBody {
   workflow: string; // JSON string
 }
@@ -15,6 +18,56 @@ interface RenderWorkflowBody {
 interface RenderBatchBody {
   workflow: string; // JSON string
   limit?: string; // max images per batch
+}
+
+/**
+ * Inject user-provided images into workflow nodes.
+ * Finds nodes with "__USER_INPUT__" marker and replaces with the uploaded image.
+ */
+function injectUserInputs(workflow: any, images: Record<string, string>): any {
+  const updatedNodes = workflow.nodes.map((node: any) => {
+    if (!node.params) return node;
+
+    const updatedParams = { ...node.params };
+    let modified = false;
+
+    for (const [key, value] of Object.entries(updatedParams)) {
+      if (value === USER_INPUT_MARKER) {
+        // Check if there's an uploaded image for this node
+        const imageKey = `${node.id}:${key}`;
+        const imageData = images[imageKey] || images[node.id] || Object.values(images)[0];
+        if (imageData) {
+          updatedParams[key] = imageData;
+          modified = true;
+        }
+      }
+    }
+
+    return modified ? { ...node, params: updatedParams } : node;
+  });
+
+  return { ...workflow, nodes: updatedNodes };
+}
+
+/**
+ * Collect uploaded images and convert to data URLs.
+ */
+async function collectImages(files: AsyncIterable<any>): Promise<Record<string, string>> {
+  const images: Record<string, string> = {};
+  let index = 0;
+
+  for await (const file of files) {
+    const buffer = await file.toBuffer();
+    const mimeType = file.mimetype || 'image/png';
+    const base64 = buffer.toString('base64');
+    const dataUrl = `data:${mimeType};base64,${base64}`;
+
+    // Support both named fields and sequential access
+    const key = file.fieldname !== 'images' ? file.fieldname : `image-${index++}`;
+    images[key] = dataUrl;
+  }
+
+  return images;
 }
 
 const renderRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
@@ -31,7 +84,7 @@ const renderRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       });
     }
 
-    let workflow;
+    let workflow: any;
     try {
       workflow = JSON.parse(workflowJson);
     } catch {
@@ -41,19 +94,13 @@ const renderRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     }
 
     // Collect uploaded images from multipart
-    const files = await request.files();
-    const images: Record<string, Buffer> = {};
+    const images = await collectImages(request.files());
 
-    for await (const file of files) {
-      const buffer = await file.toBuffer();
-      images[file.fieldname] = buffer;
-    }
+    // Inject user inputs into workflow nodes
+    const updatedWorkflow = injectUserInputs(workflow, images);
 
     try {
-      // Execute the workflow
-      // Note: In production, we would inject images into the workflow inputs
-      // For now, we execute with the raw workflow and return the result
-      const result = await executor.execute(workflow, {
+      const result = await executor.execute(updatedWorkflow, {
         signal: undefined,
       });
 
@@ -64,11 +111,25 @@ const renderRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
         });
       }
 
-      // Return results as JSON (images would need to be serialized separately)
-      return reply.status(200).send({
+      // Extract final image output for response
+      const results = result.results || {};
+      const finalNodeId = Object.keys(results).pop();
+      const finalOutput = finalNodeId ? (results[finalNodeId] as any) : null;
+
+      // Build response with preview/image data
+      const response: any = {
         status: 'done',
-        results: result.results,
-      });
+        results,
+      };
+
+      // If the output has an image/previewUrl, include it
+      if (finalOutput?.previewUrl) {
+        response.image = finalOutput.previewUrl;
+      } else if (finalOutput?.image?.previewUrl) {
+        response.image = finalOutput.image.previewUrl;
+      }
+
+      return reply.status(200).send(response);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       return reply.status(500).send({
@@ -91,7 +152,7 @@ const renderRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       });
     }
 
-    let workflow;
+    let workflow: any;
     try {
       workflow = JSON.parse(workflowJson);
     } catch {
@@ -104,15 +165,19 @@ const renderRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
     // Collect uploaded images
     const files = await request.files();
-    const images: Buffer[] = [];
+    const imageList: Record<string, string>[] = [];
+    let index = 0;
 
     for await (const file of files) {
-      if (images.length >= limit) break;
+      if (imageList.length >= limit) break;
       const buffer = await file.toBuffer();
-      images.push(buffer);
+      const mimeType = file.mimetype || 'image/png';
+      const base64 = buffer.toString('base64');
+      const dataUrl = `data:${mimeType};base64,${base64}`;
+      imageList.push({ [`image-${index++}`]: dataUrl });
     }
 
-    if (images.length === 0) {
+    if (imageList.length === 0) {
       return reply.status(400).send({
         error: 'At least one image is required',
       });
@@ -132,21 +197,42 @@ const renderRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     archive.pipe(reply as unknown as NodeJS.WritableStream);
 
     // Execute workflow for each image
-    for (let i = 0; i < images.length; i++) {
+    for (let i = 0; i < imageList.length; i++) {
       try {
-        const result = await executor.execute(workflow, {
+        const updatedWorkflow = injectUserInputs(workflow, imageList[i]);
+        const result = await executor.execute(updatedWorkflow, {
           signal: undefined,
         });
 
         if (result.status === 'done' && result.results) {
-          // Add result to ZIP
-          const resultJson = JSON.stringify(result.results, null, 2);
-          archive.append(resultJson, { name: `result-${i + 1}.json` });
+          // Extract final output
+          const results = result.results;
+          const finalNodeId = Object.keys(results).pop();
+          const finalOutput = finalNodeId ? (results[finalNodeId] as any) : null;
+
+          const resultData: any = {
+            index: i + 1,
+            results,
+          };
+
+          // Include image data if available
+          if (finalOutput?.previewUrl) {
+            resultData.image = finalOutput.previewUrl;
+          } else if (finalOutput?.image?.previewUrl) {
+            resultData.image = finalOutput.image.previewUrl;
+          }
+
+          archive.append(JSON.stringify(resultData, null, 2), { name: `result-${i + 1}.json` });
+        } else {
+          archive.append(
+            JSON.stringify({ error: result.error || 'Execution failed' }),
+            { name: `result-${i + 1}.json` }
+          );
         }
-      } catch {
-        // Skip failed images, log them
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
         archive.append(
-          JSON.stringify({ error: 'Execution failed' }),
+          JSON.stringify({ error: message }),
           { name: `result-${i + 1}.json` }
         );
       }

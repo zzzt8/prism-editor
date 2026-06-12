@@ -81,7 +81,7 @@ verify: integration-test
 - [x] 创建 `server/src/routes/render.ts`
 - [x] 实现端点：接收 workflow JSON + 图像文件，执行，返回结果
 - [x] 错误处理：节点执行失败返回 400 + 错误信息
-- [ ] 验收：curl 测试返回正确图像
+- [x] 验收：curl 测试返回正确图像
 
 ```bash
 # 测试命令
@@ -90,6 +90,8 @@ curl -X POST http://localhost:3001/api/render/workflow \
   -F "images=@test.png" \
   -o output.png
 ```
+
+> **偏离修复**: 原本 API 收集图像但未注入工作流。现已实现 `injectUserInputs()` 函数，识别 `__USER_INPUT__` 标记并将上传图像注入到对应节点参数中。
 
 ### 2.2 POST /api/render/batch
 
@@ -102,7 +104,7 @@ verify: integration-test
 - [x] 实现批量处理：循环执行工作流
 - [x] 使用 `archiver` 生成 ZIP
 - [x] 限制批量大小：最多 100 张/批
-- [ ] 验收：curl 测试返回 ZIP
+- [x] 验收：curl 测试返回 ZIP
 
 ```bash
 # 测试命令
@@ -112,6 +114,8 @@ curl -X POST http://localhost:3001/api/render/batch \
   -F "images=@test2.png" \
   -o results.zip
 ```
+
+> **偏离修复**: 批量处理现在正确注入图像到每个工作流执行，并返回包含图像数据的 JSON 结果。
 
 ### 2.3 注册路由
 
@@ -136,9 +140,9 @@ layer: packages/image-ops
 verify: test
 ```
 
-- [ ] 对比前端 Canvas executor 和后端 sharp executor 的输出
-- [ ] 使用 sample images 验证像素级一致性（允许误差 ±1）
-- [ ] 验收：`pnpm test packages/image-ops` 通过
+- [x] 对比前端 Canvas executor 和后端 sharp executor 的输出
+- [x] 使用 sample images 验证像素级一致性（允许误差 ±1）
+- [x] 验收：`pnpm test packages/image-ops` 通过
 
 ### 3.2 端到端测试
 
@@ -148,9 +152,9 @@ layer: server
 verify: test
 ```
 
-- [ ] 测试完整流程：上传图像 → 执行工作流 → 验证输出
-- [ ] 测试 composite、apply-mask 等核心节点
-- [ ] 验收：`pnpm test server` 通过
+- [x] 测试完整流程：上传图像 → 执行工作流 → 验证输出
+- [x] 测试 composite、apply-mask 等核心节点
+- [x] 验收：`pnpm test server` 通过
 
 ---
 
@@ -164,8 +168,8 @@ layer: docs
 verify: manual
 ```
 
-- [ ] 更新 `server/README.md`，添加 `/api/render/*` 端点说明
-- [ ] 添加使用示例
+- [x] 更新 `server/README.md`，添加 `/api/render/*` 端点说明
+- [x] 添加使用示例
 
 ---
 
