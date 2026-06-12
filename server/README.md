@@ -134,6 +134,40 @@ GET /health
 | POST | `/api/nodes` | 发布节点包 |
 | GET | `/api/nodes/:name` | 获取节点包详情 |
 
+### 工作流渲染
+
+| 方法 | 路径 | 描述 |
+|------|------|------|
+| POST | `/api/render/workflow` | 执行工作流，返回结果 JSON |
+| POST | `/api/render/batch` | 批量执行工作流，返回 ZIP |
+
+#### POST /api/render/workflow
+
+执行单个工作流。
+
+**请求**: `multipart/form-data`
+- `workflow` (string, required): 工作流 JSON
+- `images` (file, optional): 上传的图像文件
+
+**响应**:
+```json
+{
+  "status": "done",
+  "results": { ... }
+}
+```
+
+#### POST /api/render/batch
+
+批量执行工作流，返回 ZIP 压缩包。
+
+**请求**: `multipart/form-data`
+- `workflow` (string, required): 工作流 JSON
+- `images` (file[], required): 图像文件（最多 100 张）
+- `limit` (string, optional): 批量大小限制（默认 10，最大 100）
+
+**响应**: `application/zip`
+
 ## 迁移脚本
 
 ### 从 localStorage 迁移数据
