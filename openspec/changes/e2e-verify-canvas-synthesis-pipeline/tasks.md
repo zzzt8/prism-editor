@@ -28,10 +28,18 @@
   - 确认合成结果正确返回到前端
   - 验收：可以在 OutputSection 看到合成后的图片
 
-- [ ] **T6: 修复发现的问题（如有）**
-  - 如果上述任何步骤失败，记录具体错误
-  - 修复问题
-  - 验收：重新执行失败的步骤直到通过
+- [x] **T6: 修复发现的问题（如有）**
+  - 发现问题：server/package.json 缺少 `@prism/workflow-core` 依赖
+  - 发现问题：packages/workflow-core 和 shared-types 的 exports 指向源文件而非 dist
+  - 发现问题：packages/image-ops 的 `./nodejs` 路径指向源文件
+  - 已修复：添加依赖、更新 exports 指向 dist
+  - 验收：server 可以正常启动，API 返回 200
+
+- [ ] **T7: 端到端完整测试**
+  - 在浏览器中访问 dev-tool
+  - 创建并发布测试工作流
+  - 在 user-app 中打开并执行
+  - 验收：完整链路验证通过
 
 ---
 
