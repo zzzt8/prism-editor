@@ -22,6 +22,7 @@
     "@fastify/multipart": "^10.0.0",
     "@fastify/rate-limit": "^10.3.0",
     "@prism/image-ops": "workspace:*",
+    "@prism/workflow-core": "workspace:*",
     "@prisma/client": "^6.6.0",
     "archiver": "^8.0.0",
     "bcryptjs": "^3.0.3",

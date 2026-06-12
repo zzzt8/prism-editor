@@ -14,7 +14,7 @@
     "./apply-mask": "./dist/src/apply-mask.js",
     "./composite": "./dist/src/composite.js",
     "./export-image": "./dist/src/export-image.js",
-    "./nodejs": "./src/nodejs/index.js",
+    "./nodejs": "./dist/src/nodejs/index.js",
     "./sharp-utils": "./dist/src/nodejs/sharp-utils.js"
   },
   "scripts": {
