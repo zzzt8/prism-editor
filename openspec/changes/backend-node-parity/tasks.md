@@ -27,7 +27,7 @@
   - 实现：translate/scale/rotate + 合并现有 crop 功能
   - 验收：与前端 transform 输出视觉一致
 
-- [ ] **T6: 更新 nodejs/index.ts** — 导出新执行器
+- [x] **T6: 更新 nodejs/index.ts** — 导出新执行器
   - 添加所有新 executor 到 `nodeExecutors` map
   - 验收：`pnpm typecheck --filter=@prism/image-ops` 通过
 
