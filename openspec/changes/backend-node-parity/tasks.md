@@ -7,7 +7,7 @@
   - 实现：接收 width/height/backgroundColor 参数，输出 blank canvas base64
   - 验收：`pnpm test --filter=@prism/image-ops` 包含 empty-input 相关测试 PASS
 
-- [ ] **T2: load-image-executor** — 加载图片（URL/Path/Buffer）
+- [x] **T2: load-image-executor** — 加载图片（URL/Path/Buffer）
   - 创建 `packages/image-ops/src/nodejs/load-image-executor.ts`
   - 实现：支持三种输入源，输出 ImageData
   - 验收：可处理任意尺寸图片，内存不溢出
