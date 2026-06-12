@@ -12,7 +12,7 @@
   - 实现：支持三种输入源，输出 ImageData
   - 验收：可处理任意尺寸图片，内存不溢出
 
-- [ ] **T3: load-mask-executor** — 加载遮罩
+- [x] **T3: load-mask-executor** — 加载遮罩
   - 创建 `packages/image-ops/src/nodejs/load-mask-executor.ts`
   - 实现：复用 load-image，输出类型为 mask
   - 验收：输出 mask 类型正确
