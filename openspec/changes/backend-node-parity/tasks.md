@@ -2,7 +2,7 @@
 
 ## 任务清单
 
-- [ ] **T1: empty-input-executor** — 生成空白画布
+- [x] **T1: empty-input-executor** — 生成空白画布
   - 创建 `packages/image-ops/src/nodejs/empty-input-executor.ts`
   - 实现：接收 width/height/backgroundColor 参数，输出 blank canvas base64
   - 验收：`pnpm test --filter=@prism/image-ops` 包含 empty-input 相关测试 PASS
