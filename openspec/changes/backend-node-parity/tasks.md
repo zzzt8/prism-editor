@@ -17,7 +17,7 @@
   - 实现：复用 load-image，输出类型为 mask
   - 验收：输出 mask 类型正确
 
-- [ ] **T4: apply-mask-executor** — 应用遮罩
+- [x] **T4: apply-mask-executor** — 应用遮罩
   - 创建 `packages/image-ops/src/nodejs/apply-mask-executor.ts`
   - 实现：alpha/brightness/luminance 三种 mask 模式
   - 验收：三种模式输出与前端一致
