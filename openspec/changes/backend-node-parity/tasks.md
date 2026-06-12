@@ -31,7 +31,7 @@
   - 添加所有新 executor 到 `nodeExecutors` map
   - 验收：`pnpm typecheck --filter=@prism/image-ops` 通过
 
-- [ ] **T7: 集成测试** — 端到端验证
+- [x] **T7: 集成测试** — 端到端验证
   - 使用 WorkflowExecutorNodeJs 执行完整 pipeline
   - 验收：前端相同配置，后端输出视觉一致
 
