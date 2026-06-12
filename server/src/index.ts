@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import jwt from '@fastify/jwt';
+import multipart from '@fastify/multipart';
 import { app, errorHandler } from './app.js';
 import authRoutes from './routes/auth.js';
 import { prisma } from './db/client.js';
@@ -23,6 +24,13 @@ await fastify.register(cors, {
 });
 
 await fastify.register(cookie);
+
+await fastify.register(multipart, {
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB per file
+    files: 100, // max 100 files
+  },
+});
 
 const jwtSecret = process.env.JWT_SECRET;
 if (!jwtSecret) {
