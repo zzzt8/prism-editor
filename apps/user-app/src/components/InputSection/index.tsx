@@ -25,7 +25,7 @@
  * and results are aggregated into a ZIP download.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import type { PublishedInput, PublishedInputConfig, PublishedParamDefinition } from '@prism/shared-types';
 
 // ── Shared file reading helper ─────────────────────────────────────────────────
@@ -61,7 +61,7 @@ function ImageInputField({ inp, value, onChange }: ImageInputFieldProps) {
   const [draggingBatch, setDraggingBatch] = useState(false);
 
   const isArray = Array.isArray(value);
-  const items: string[] = isArray ? value : value ? [value] : [];
+  const items = useMemo<string[]>(() => (isArray ? value : value ? [value] : []), [isArray, value]);
 
   const handleDrop = useCallback(
     async (e: React.DragEvent) => {
@@ -394,7 +394,7 @@ function MaskInputField({ inp, value, onChange }: MaskInputFieldProps) {
   const [draggingBatch, setDraggingBatch] = useState(false);
 
   const isArray = Array.isArray(value);
-  const items: string[] = isArray ? value : value ? [value] : [];
+  const items = useMemo<string[]>(() => (isArray ? value : value ? [value] : []), [isArray, value]);
 
   const handleDrop = useCallback(
     async (e: React.DragEvent) => {

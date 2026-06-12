@@ -114,7 +114,7 @@ export const NodePanel: React.FC = () => {
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [toast, setToast] = useState<string | null>(null);
-  const [nodeVersion, setNodeVersion] = useState(0); // 用于触发节点列表刷新
+  const [_nodeVersion] = useState(0); // kept for future refresh mechanism
 
   const allDefinitions = useMemo(() => {
     try {
@@ -129,7 +129,7 @@ export const NodePanel: React.FC = () => {
       console.warn('[NodePanel] globalRegistry.initialize() failed:', message);
       return [];
     }
-  }, [nodeVersion]);
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

@@ -20,8 +20,8 @@ export const LoginPage: React.FC = () => {
 
     try {
       await login(email, password);
-    } catch (err: any) {
-      setError(err.message || 'Login failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
       setIsLoading(false);
     }

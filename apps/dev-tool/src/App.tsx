@@ -15,7 +15,6 @@ import { RegisterPage } from './pages/RegisterPage';
 import { PublicRoute, AuthGuard } from './components/AuthGuard';
 import { useAuthStore } from './store/authStore';
 import {
-  activeStorageAdapter,
   cleanupStorage,
 } from './storage';
 import { ErrorBoundary } from '@prism/shared-ui';

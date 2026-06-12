@@ -33,8 +33,8 @@ export const RegisterPage: React.FC = () => {
 
     try {
       await register(email, password, name || undefined);
-    } catch (err: any) {
-      setError(err.message || 'Registration failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
       setIsLoading(false);
     }

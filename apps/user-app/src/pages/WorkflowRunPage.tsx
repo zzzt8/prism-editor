@@ -144,7 +144,7 @@ export const WorkflowRunPage: React.FC = () => {
       setBatchCurrent(0);
     }
     setRunState({ status: 'idle', progress: undefined });
-  }, [selectedWorkflow?.sourceId, setRunState]);
+  }, [selectedWorkflow, setRunState]);
 
   const updateInput = useCallback((id: string, value: string | string[]) => {
     setInputValues((prev) => ({ ...prev, [id]: value }));
@@ -157,17 +157,17 @@ export const WorkflowRunPage: React.FC = () => {
     }));
   }, []);
 
-  // Derive outputs BEFORE handleRun to avoid TDZ (const declarations below are hoisted
-  // as uninitialized, but handleRun's body is evaluated at call-time, so effectiveOutputs
-  // must be defined before handleRun's function definition in the closure scope).
-  const configOutputs = selectedWorkflow?.config.outputs;
-  const effectiveOutputs = configOutputs && configOutputs.length > 0
-    ? configOutputs.map((co) => ({
+  const effectiveOutputs = useMemo(() => {
+    const configOutputs = selectedWorkflow?.config.outputs;
+    if (configOutputs && configOutputs.length > 0) {
+      return configOutputs.map((co) => ({
         id: `${co.nodeId}:image`,
         name: co.label,
         type: 'image' as const,
-      }))
-    : selectedWorkflow?.outputs ?? [];
+      }));
+    }
+    return selectedWorkflow?.outputs ?? [];
+  }, [selectedWorkflow]);
 
   const handleRun = useCallback(async () => {
     if (!selectedWorkflow) return;
@@ -292,7 +292,7 @@ export const WorkflowRunPage: React.FC = () => {
       paramValues,
       { onLog: addExecutionLog }
     );
-  }, [selectedWorkflow, inputValues, setRunState, addExecutionLog]);
+  }, [selectedWorkflow, inputValues, paramValues, setRunState, addExecutionLog]);
 
   const handleCancel = useCallback(() => {
     cancelWorkflow();

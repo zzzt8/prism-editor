@@ -35,7 +35,6 @@ import {
   inferPortDataType,
   ensureNodeRegistryInitialized,
   remapAndInsertNodes,
-  PASTE_OFFSET,
 } from './canvasStoreHelpers';
 
 // Re-export ExecutionStatus for backward compatibility (used by store/canvasStore.ts)
