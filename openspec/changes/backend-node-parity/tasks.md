@@ -22,7 +22,7 @@
   - 实现：alpha/brightness/luminance 三种 mask 模式
   - 验收：三种模式输出与前端一致
 
-- [ ] **T5: transform-executor** — 图像变换（合并 crop）
+- [x] **T5: transform-executor** — 图像变换（合并 crop）
   - 创建 `packages/image-ops/src/nodejs/transform-executor.ts`
   - 实现：translate/scale/rotate + 合并现有 crop 功能
   - 验收：与前端 transform 输出视觉一致
