@@ -31,6 +31,12 @@ export interface ExecuteOptions {
   onProgress: (_progress: ExecutionProgress) => void;
   signal: AbortSignal;
   laneConfig?: Partial<LaneConfig>;
+  /**
+   * Source identifier for the execution call. Carried for observability and
+   * for upstream consumers (canvas store) that decide whether to record an
+   * ExecutionLog. Defaults to 'manual' (button click).
+   */
+  source?: 'manual' | 'live';
 }
 
 export interface ExecutionService {
