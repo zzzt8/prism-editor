@@ -1,20 +1,21 @@
 # @prism/shared-ui
 
-设计系统和共享 UI 组件包。
+设计系统与共享 UI 组件包。基于 Lucide React 图标库 + CSS Modules + CSS 变量令牌，为 dev-tool 和 user-app 提供统一的视觉语言和基础组件。
 
 ## 功能
 
-- **图标库**: 基于 Lucide React 的统一图标集
-- **设计令牌**: 颜色、间距、字体等设计变量
-- **UI 组件**: Button、Input、Modal、Card 等基础组件
-- **样式系统**: CSS Modules + CSS 变量
+- **图标库**: 统一从 Lucide React re-export（按用途分类）+ `ICON_MAP` 索引
+- **设计令牌**: 颜色 / 间距 / 字体等 CSS 变量，集中管理视觉风格
+- **UI 组件**: Button / Input / Modal / Card / Badge / Spinner / Tooltip / Stack / Divider / Panel / ErrorBoundary
+- **样式系统**: CSS Modules + 全局 CSS 变量
+- **类型安全**: 每个组件导出对应 Props 类型，Variant / Size 等用 union type 约束
 
 ## 目录结构
 
 ```
 packages/shared-ui/
 ├── src/
-│   ├── components/           # UI 组件
+│   ├── components/             # UI 组件
 │   │   ├── Badge/
 │   │   ├── Button/
 │   │   ├── Card/
@@ -25,16 +26,21 @@ packages/shared-ui/
 │   │   ├── Panel/
 │   │   ├── Spinner/
 │   │   ├── Stack/
-│   │   └── Tooltip/
-│   ├── icons/               # 图标导出
+│   │   ├── Tooltip/
+│   │   ├── components.test.tsx
 │   │   └── index.ts
-│   ├── styles/              # 全局样式
-│   │   ├── tokens.css      # 设计令牌
-│   │   └── components.css  # 组件基础样式
-│   └── types/               # 类型定义
-│       └── tokens.ts
+│   ├── icons/                  # 图标导出
+│   │   └── index.ts            # ICON_MAP + LucideProps re-export
+│   ├── styles/                 # 全局样式
+│   │   ├── tokens.css          # 设计令牌（CSS 变量）
+│   │   └── components.css      # 组件基础样式
+│   ├── types/                  # 类型定义
+│   │   └── tokens.ts           # ColorTokens / SpacingTokens / TypographyTokens
+│   ├── test-setup.ts
+│   ├── css-modules.d.ts
+│   └── index.ts                # 公共入口
 ├── docs/
-│   └── design-tokens.md     # 设计令牌文档
+│   └── design-tokens.md        # 设计令牌文档
 └── package.json
 ```
 
@@ -43,12 +49,24 @@ packages/shared-ui/
 ```tsx
 import { Image, Upload, Play, Settings } from '@prism/shared-ui';
 
-// 在组件中使用
+// 在组件中使用（Lucide 组件，size 为 px）
 <button>
   <Play size={16} />
   运行
 </button>
 ```
+
+### 尺寸规范
+
+| Token | 值 | 使用场景 |
+|-------|-----|----------|
+| `sm` | 14px | 紧凑标签上下文 |
+| `md` | 16px | 默认（icon+text 按钮） |
+| `lg` | 18px | 独立 icon 按钮 |
+| `xl` | 20px | 区块标题 |
+| `2xl` | 24px | 空状态插图 |
+
+> 备注：`Badge` 文本 / `Chip` 标签常使用 12px（xs），属边界用法。
 
 ### 可用图标分类
 
@@ -61,20 +79,9 @@ import { Image, Upload, Play, Settings } from '@prism/shared-ui';
 | 节点/画布 | Box, GitBranch, Layers, Grid3X3 |
 | 杂项 | MoreHorizontal, MoreVertical, ExternalLink, RefreshCw, ZoomIn, ZoomOut, Maximize2, Minimize2 |
 
-### 图标尺寸规范
-
-| 尺寸 | 值 | 使用场景 |
-|------|-----|----------|
-| xs | 12px | Badge 文本, Chip 标签 |
-| sm | 14px | 紧凑标签上下文 |
-| md | 16px | 默认 - 图标+文字按钮 |
-| lg | 18px | 独立图标按钮 |
-| xl | 20px | 区块标题 |
-| 2xl | 24px | 空状态插图 |
-
 ### 动画图标
 
-加载/旋转图标应添加 `.icon-spin` CSS 类：
+加载 / 旋转图标应使用 `Loader2` 并加 `.icon-spin` CSS 类：
 
 ```tsx
 <span className="icon-spin">
@@ -82,35 +89,38 @@ import { Image, Upload, Play, Settings } from '@prism/shared-ui';
 </span>
 ```
 
+### 颜色规范
+
+所有图标使用 `currentColor`，**不要** hardcode 颜色，让 CSS `color` 决定。
+
+### 按字符串索引图标
+
+通过 `ICON_MAP` 可以按字符串名获取图标组件（动态场景）：
+
+```tsx
+import { ICON_MAP, type IconKey } from '@prism/shared-ui';
+
+const Icon = ICON_MAP[iconName as IconKey];
+return <Icon size={16} />;
+```
+
 ## 设计令牌
 
-### 颜色令牌
-
 ```css
-/* 使用方式 */
-.element {
-  color: var(--color-primary);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-}
+/* 颜色 */
+.element { color: var(--color-primary); background: var(--color-surface); border: 1px solid var(--color-border); }
+
+/* 间距 */
+.element { padding: var(--spacing-sm); margin: var(--spacing-md); }
+
+/* 字体 */
+.element { font-family: var(--font-sans); font-size: var(--text-sm); }
 ```
 
-### 间距令牌
+类型化令牌（在 `src/types/tokens.ts`）：
 
-```css
-.element {
-  padding: var(--spacing-sm);
-  margin: var(--spacing-md);
-}
-```
-
-### 字体令牌
-
-```css
-.element {
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-}
+```typescript
+import { tokens, type ColorTokens, type SpacingTokens } from '@prism/shared-ui';
 ```
 
 ## UI 组件
@@ -120,20 +130,22 @@ import { Image, Upload, Play, Settings } from '@prism/shared-ui';
 ```tsx
 import { Button } from '@prism/shared-ui';
 
-<Button variant="primary" size="md">
-  提交
-</Button>
+<Button variant="primary" size="md">提交</Button>
 ```
+
+- `variant`: `'primary' | 'secondary' | 'ghost' | 'danger'`
+- `size`: `'sm' | 'md' | 'lg'`
 
 ### Input
 
 ```tsx
 import { Input } from '@prism/shared-ui';
 
-<Input 
+<Input
   placeholder="请输入名称"
   value={name}
   onChange={(e) => setName(e.target.value)}
+  size="md"
 />
 ```
 
@@ -142,11 +154,7 @@ import { Input } from '@prism/shared-ui';
 ```tsx
 import { Modal } from '@prism/shared-ui';
 
-<Modal 
-  isOpen={isOpen} 
-  onClose={() => setIsOpen(false)}
-  title="标题"
->
+<Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="标题">
   内容
 </Modal>
 ```
@@ -162,10 +170,29 @@ import { Card } from '@prism/shared-ui';
 </Card>
 ```
 
+### Stack / VStack / HStack
+
+```tsx
+import { VStack, HStack } from '@prism/shared-ui';
+
+<VStack gap="md" align="start">
+  <span>Row 1</span>
+  <span>Row 2</span>
+</VStack>
+```
+
+- `gap`: `'xs' | 'sm' | 'md' | 'lg' | 'xl'`
+- `align` / `justify`: 9 种组合
+- `wrap`: `'nowrap' | 'wrap'`
+
+### Tooltip / Badge / Spinner / Divider / Panel / ErrorBoundary
+
+按需 import 即可，Props 类型随组件 export。
+
 ## 安装
 
 ```tsx
-// 导入 CSS（必需）
+// 导入 CSS（必需，触发 CSS 变量注入）
 import '@prism/shared-ui/styles/tokens.css';
 import '@prism/shared-ui/styles/components.css';
 ```
@@ -183,7 +210,7 @@ import '@prism/shared-ui/styles/components.css';
 | 命令 | 描述 |
 |------|------|
 | `pnpm build` | 构建 TypeScript 和复制 CSS |
-| `pnpm test` | 运行测试 |
+| `pnpm test` | 运行 Vitest 测试 |
 | `pnpm test:coverage` | 运行测试并生成覆盖率报告 |
 | `pnpm typecheck` | TypeScript 类型检查 |
 | `pnpm clean` | 清理构建产物 |

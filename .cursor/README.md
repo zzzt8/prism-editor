@@ -1,6 +1,6 @@
 # .cursor 目录说明
 
-> **v4.0 变更：** 在 OpenSpec 主流程上增加 ECC Bridge 与 lane skills；`opsx-meta` 新增 `task_type`，优先驱动 apply / verify 阶段的稳定自动路由。
+> **v4.0 变更：** 在 OpenSpec 主流程上增加 ECC Bridge 与 lane skills；`tasks.md` 中 `opsx-meta` 推荐显式写 `task_type`，优先驱动 apply / verify 阶段的稳定自动路由。
 
 ---
 
@@ -13,6 +13,7 @@
 │   │   ├── SHARED-LAYERS.md       # 共享层：layer 映射、验证命令
 │   │   ├── SKILL-INDEX.md         # 自动生成的 Skill 索引
 │   │   └── SKILL-SCHEMA.md        # 元数据 Schema 定义
+│   ├── openspec-quick/            # 轻量任务快速执行
 │   ├── openspec-explore/          # 探索代码库，澄清需求
 │   ├── openspec-propose/          # 创建 change，生成 artifacts
 │   ├── openspec-apply/            # 按 task 实现代码，断点续传基于 checkbox
@@ -38,8 +39,9 @@
 
 | 命令 | Skill | 阶段 | 作用 |
 |------|-------|------|------|
+| `/opsx-quick` | `openspec-quick` | 快速 | 轻量任务：过 Quick Gate → 自动选主 ECC lane → 最小实现 + 验证 |
 | `/opsx-explore` | `openspec-explore` | 探索 | 扫描代码库结构，澄清需求，量化切换标准 |
-| `/opsx-propose` | `openspec-propose` | 提案 | 创建 change，生成 artifacts；change_class 推断触发 review/测试模板；支持 change-splitting |
+| `/opsx-propose` | `openspec-propose` | 提案 | 创建 change，生成 artifacts；change_class 推断触发 review / 测试模板；支持 change-splitting |
 | `/opsx-apply` | `openspec-apply` | 实现 | 按 layer 优先级执行 task，断点续传基于 checkbox；内置 failure-handling 诊断 |
 | `/opsx-ecc-apply` | `openspec-apply` + `ecc-openspec-bridge` | 实现 | 在 OpenSpec apply 之上，为每个 task 按 `task_type` 自动匹配 ECC 专业 SOP lane |
 | `/opsx-verify` | `openspec-verify` | 验证 | Full 验证 + coherence-lite checklist |
@@ -122,6 +124,12 @@ ECC 负责：apply / verify 阶段的专业 SOP、lane 路由、故障归因
 - **ECC 是增强层**：只增强 apply / verify，不替代 proposal artifacts
 - **`task_type` 是路由锚点**：优先按 `task_type` 路由，减少模糊关键词猜测
 - **lane skills 是闭环**：`ecc-api-design`、`ecc-tdd-workflow`、`ecc-build-error-resolver` 已可独立执行
+
+---
+
+## 项目本地 ECC 配置
+
+本项目的 `ECC_AGENT_DATA_HOME` 默认从 `.cursor/ecc-agent-data.json` 读取，缺省值 `~/.cursor/ecc`。ECC 全局记忆目录不切回 `~/.claude`，避免覆盖用户全局 Cursor 配置；项目级 ECC 脚本 / rules / skills 优先放在 `.cursor/` 下。
 
 ---
 
