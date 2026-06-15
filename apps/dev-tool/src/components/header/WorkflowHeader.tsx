@@ -1,6 +1,7 @@
 // WorkflowHeader - editor top bar
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box, Play, Square, CheckCircle2,
   Loader2, FileUp, Settings, User, Save,
@@ -31,6 +32,8 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
   const renameWorkflow = useCanvasStore((s) => s.renameWorkflow);
   const saveWorkflow = useCanvasStore((s) => s.saveWorkflow);
   const livePreviewEnabled = useAppStore((s) => s.livePreviewEnabled);
+
+  const navigate = useNavigate();
 
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -273,7 +276,7 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
           </button>
 
           {/* Settings */}
-          <button className="wf-icon-btn" title="Settings" onClick={() => showMsg('Settings coming soon')}>
+          <button className="wf-icon-btn" title="Settings" onClick={() => navigate('/settings')}>
             <Settings size={14} />
           </button>
 

@@ -12,6 +12,7 @@ import { WorkflowsView } from './components/WorkflowsView';
 import { NewWorkflowModal } from './components/NewWorkflowModal';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { SettingsPage } from './pages/SettingsPage';
 import { PublicRoute, AuthGuard } from './components/AuthGuard';
 import { useAuthStore } from './store/authStore';
 import {
@@ -98,6 +99,14 @@ function AppRoutes() {
         element={
           <AuthGuard>
             <EditorPage />
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <AuthGuard>
+            <SettingsPage />
           </AuthGuard>
         }
       />
