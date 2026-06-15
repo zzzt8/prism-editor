@@ -201,7 +201,7 @@
 
 ---
 
-- [ ] **Task 10: typecheck + 全量测试通过**
+- [x] **Task 10: typecheck + 全量测试通过**
 
   ```yaml
   opsx-meta:
@@ -217,7 +217,7 @@
 
 ---
 
-- [ ] **Task 11: 回归验证：user-app 与发布路径不受影响**
+- [x] **Task 11: 回归验证：user-app 与发布路径不受影响**
 
   ```yaml
   opsx-meta:
