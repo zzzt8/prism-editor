@@ -76,6 +76,21 @@ const shouldFireLive = (): boolean => {
   return true;
 };
 
+// Stable signature of a node's "exec-relevant" fields. Position and runtime
+// execution results are intentionally excluded so dragging a node around the
+// canvas (or receiving progress updates) does not retrigger live execution.
+const nodeExecFingerprint = (n: { id: string; data: { params: unknown; extraInputs?: unknown; extraOutputs?: unknown } }): string => {
+  const params = n.data.params ?? {};
+  const extras = JSON.stringify([n.data.extraInputs ?? null, n.data.extraOutputs ?? null]);
+  return `${n.id}|${JSON.stringify(params)}|${extras}`;
+};
+
+const nodesExecFingerprint = (nodes: ReadonlyArray<{ id: string; data: { params: unknown; extraInputs?: unknown; extraOutputs?: unknown } }>): string => {
+  return nodes.map(nodeExecFingerprint).join('\n');
+};
+
+let _lastNodesFingerprint = '';
+
 const armLiveTimer = (debounceMs: number): void => {
   clearLiveTimer();
   if (!shouldFireLive()) return;
@@ -91,9 +106,23 @@ const armLiveTimer = (debounceMs: number): void => {
 
 const installLiveSubscription = (): void => {
   if (_liveSubscriptionTeardown) return;
+  // Initialise fingerprint to the current nodes so the first subscription
+  // event (which fires immediately when subscribing) does not fire a phantom
+  // live execution on app boot.
+  _lastNodesFingerprint = nodesExecFingerprint(useCanvasStore.getState().nodes);
   const unsubCanvas = useCanvasStore.subscribe((state, prev) => {
-    // React to shallow changes of nodes array reference OR targetPlatform change.
-    if (state.nodes !== prev.nodes || state.workflowMeta.targetPlatform !== prev.workflowMeta.targetPlatform) {
+    if (state.workflowMeta.targetPlatform !== prev.workflowMeta.targetPlatform) {
+      armLiveTimer(useAppStore.getState().livePreviewDebounceMs);
+      _lastNodesFingerprint = nodesExecFingerprint(state.nodes);
+      return;
+    }
+    // Only fire when an exec-relevant field changed (params / extra ports).
+    // Position changes and runtime executionResult updates keep the same
+    // fingerprint, so they do not retrigger.
+    const prevFp = _lastNodesFingerprint;
+    const nextFp = nodesExecFingerprint(state.nodes);
+    if (nextFp !== prevFp) {
+      _lastNodesFingerprint = nextFp;
       armLiveTimer(useAppStore.getState().livePreviewDebounceMs);
     }
   });
@@ -1269,3 +1298,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
 // ─── Install live subscription once at module load ────────────────────────────
 installLiveSubscription();
+
+// Exported for unit tests so they can re-install after destroyLiveSubscription
+// teardown, and so test setup can exercise the destroy path explicitly.
+export { installLiveSubscription };
