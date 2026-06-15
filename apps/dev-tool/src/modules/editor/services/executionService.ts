@@ -6,7 +6,15 @@ import type { EditorWorkflowMeta, EditorCanvasNode, EditorCanvasEdge, ExecutionP
 export interface ExecutionResult {
   status: 'done' | 'error' | 'cancelled';
   error?: string;
+  /**
+   * Resolved execution source. Defaults to 'manual' if the caller did not
+   * specify one. Lets the canvas store decide whether to record an
+   * ExecutionLog entry (e.g. skip for live reactive re-runs).
+   */
+  source: ExecutionSource;
 }
+
+export type ExecutionSource = 'manual' | 'live';
 
 type ExecutionLane = 'main-thread' | 'worker';
 
@@ -36,7 +44,7 @@ export interface ExecuteOptions {
    * for upstream consumers (canvas store) that decide whether to record an
    * ExecutionLog. Defaults to 'manual' (button click).
    */
-  source?: 'manual' | 'live';
+  source?: ExecutionSource;
 }
 
 export interface ExecutionService {
@@ -56,7 +64,8 @@ export function createExecutionService(): ExecutionService {
     async execute(_workflowMeta, _nodes, _edges, _options) {
       // Create a fresh AbortController for this execution run
       activeController = new AbortController();
-      const { onProgress, signal, laneConfig } = _options;
+      const { onProgress, signal, laneConfig, source: requestedSource } = _options;
+      const source: ExecutionSource = requestedSource ?? 'manual';
       const { globalRegistry } = await import('@prism/core');
       const { WorkflowExecutor } = await import('@prism/workflow-core');
 
@@ -67,6 +76,7 @@ export function createExecutionService(): ExecutionService {
         return {
           status: 'error' as const,
           error: initError instanceof Error ? initError.message : 'Failed to initialize node registry',
+          source,
         };
       }
 
@@ -78,6 +88,7 @@ export function createExecutionService(): ExecutionService {
         return {
           status: 'error' as const,
           error: execError instanceof Error ? execError.message : 'Failed to get executors',
+          source,
         };
       }
 
@@ -120,6 +131,7 @@ export function createExecutionService(): ExecutionService {
       return {
         status: result.status as 'done' | 'error' | 'cancelled',
         error: result.error,
+        source,
       };
     },
 
