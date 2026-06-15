@@ -41,12 +41,80 @@ import {
 // Re-export ExecutionStatus for backward compatibility (used by store/canvasStore.ts)
 export type { ExecutionStatus } from './executionSlice';
 
+import { useAppStore } from '../../../store/appStore';
+
 type ReactFlowConnection = RfConnection;
 
 // ─── Module-level state for execution ─────────────────────────────────────────
 
 let _currentLog: ExecutionLog | null = null;
 const _nodeStartTimes = new Map<string, number>();
+
+// ─── Module-level state for live preview subscription ─────────────────────────
+
+let _liveTimer: ReturnType<typeof setTimeout> | null = null;
+let _liveSubscriptionTeardown: (() => void) | null = null;
+
+const clearLiveTimer = (): void => {
+  if (_liveTimer !== null) {
+    clearTimeout(_liveTimer);
+    _liveTimer = null;
+  }
+  if (useCanvasStore.getState()._liveDebouncing) {
+    useCanvasStore.setState({ _liveDebouncing: false });
+  }
+};
+
+const shouldFireLive = (): boolean => {
+  const state = useCanvasStore.getState();
+  const appState = useAppStore.getState();
+
+  if (state.workflowMeta.targetPlatform !== 'browser') return false;
+  if (!appState.livePreviewEnabled) return false;
+  if (state._executionStatus === 'running') return false;
+  if (state.nodes.length === 0) return false;
+  return true;
+};
+
+const armLiveTimer = (debounceMs: number): void => {
+  clearLiveTimer();
+  if (!shouldFireLive()) return;
+  useCanvasStore.setState({ _liveDebouncing: true });
+  _liveTimer = setTimeout(() => {
+    _liveTimer = null;
+    useCanvasStore.setState({ _liveDebouncing: false });
+    // Re-check at fire time — conditions may have changed during the debounce.
+    if (!shouldFireLive()) return;
+    void useCanvasStore.getState().executeWorkflow('live');
+  }, debounceMs);
+};
+
+const installLiveSubscription = (): void => {
+  if (_liveSubscriptionTeardown) return;
+  const unsubCanvas = useCanvasStore.subscribe((state, prev) => {
+    // React to shallow changes of nodes array reference OR targetPlatform change.
+    if (state.nodes !== prev.nodes || state.workflowMeta.targetPlatform !== prev.workflowMeta.targetPlatform) {
+      armLiveTimer(useAppStore.getState().livePreviewDebounceMs);
+    }
+  });
+  const unsubApp = useAppStore.subscribe((state, prev) => {
+    if (
+      state.livePreviewEnabled !== prev.livePreviewEnabled ||
+      state.livePreviewDebounceMs !== prev.livePreviewDebounceMs
+    ) {
+      if (!state.livePreviewEnabled) {
+        clearLiveTimer();
+      } else {
+        armLiveTimer(state.livePreviewDebounceMs);
+      }
+    }
+  });
+  _liveSubscriptionTeardown = () => {
+    unsubCanvas();
+    unsubApp();
+    clearLiveTimer();
+  };
+};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -86,6 +154,9 @@ interface CanvasState {
   _executionAbort: (() => void) | null;
   _executionLog: import('@prism/shared-types').ExecutionLog | null;
   _executionLogs: ExecutionLog[];
+
+  // Live preview state (frontend reactive execution)
+  _liveDebouncing: boolean;
 
   // ── Graph operations ────────────────────────────────────────────────────────
 
@@ -150,6 +221,9 @@ interface CanvasState {
   clearExecution: () => void;
   recordNodeTiming: (_nodeId: string, _nodeType: string, _duration?: number, _status?: NodeTiming['status']) => void;
 
+  // Live subscription lifecycle (T4 — exposed for unit tests)
+  destroyLiveSubscription: () => void;
+
   // ── Inspector operations ─────────────────────────────────────────────────────
 
   openInspector: (_tab: InspectorTab, _nodeId?: string) => void;
@@ -205,6 +279,9 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   _executionAbort: null,
   _executionLog: null,
   _executionLogs: [],
+
+  // Initial state - live preview
+  _liveDebouncing: false,
 
   // ── Graph operations ────────────────────────────────────────────────────────
 
@@ -1128,6 +1205,16 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     }
   },
 
+  // ── Live preview subscription lifecycle ──────────────────────────────────
+  // Exposed so unit tests can tear down the subscription between cases
+  // (the production app keeps it alive for the lifetime of the page).
+  destroyLiveSubscription() {
+    if (_liveSubscriptionTeardown) {
+      _liveSubscriptionTeardown();
+      _liveSubscriptionTeardown = null;
+    }
+  },
+
   // ── Inspector operations ───────────────────────────────────────────────────
 
   openInspector(tab, nodeId) {
@@ -1179,3 +1266,6 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   async insertSnippet(_id: string, _position: { x: number; y: number }): Promise<void> {},
   async deleteSnippet(_id: string): Promise<void> {},
 }));
+
+// ─── Install live subscription once at module load ────────────────────────────
+installLiveSubscription();
