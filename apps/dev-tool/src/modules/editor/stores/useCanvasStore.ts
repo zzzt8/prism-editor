@@ -21,6 +21,7 @@ import type { ExecutionLog, NodeTiming } from '@prism/shared-types';
 import { createId } from '@prism/shared-types';
 import { globalRegistry } from '@prism/core';
 import { autosaveService, initAutosaveService, getAutosaveService } from '../services/autosaveService';
+import type { ExecutionSource } from '../services/executionService';
 import { getExecutionService } from '../services/executionService';
 import { activeStorageAdapter } from '../../../storage';
 import { WorkflowRepository } from '../../repositories/workflowRepository';
@@ -144,7 +145,7 @@ interface CanvasState {
   // ── Execution operations ─────────────────────────────────────────────────────
 
   updateNodeExecution: (_id: string, _result?: Record<string, unknown>, _error?: string) => void;
-  executeWorkflow: () => Promise<{ status: 'done' | 'error' | 'cancelled'; error?: string }>;
+  executeWorkflow: (_source?: ExecutionSource) => Promise<{ status: 'done' | 'error' | 'cancelled'; error?: string }>;
   cancelExecution: () => void;
   clearExecution: () => void;
   recordNodeTiming: (_nodeId: string, _nodeType: string, _duration?: number, _status?: NodeTiming['status']) => void;
@@ -940,23 +941,27 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     }));
   },
 
-  async executeWorkflow() {
+  async executeWorkflow(source: ExecutionSource = 'manual') {
     let { nodes, workflowMeta, edges } = get();
     if (nodes.length === 0) return { status: 'done' as const };
 
-    // ── ExecutionLog: create record on start ─────────────────────────────────
+    const recordLog = source === 'manual';
+
+    // ── ExecutionLog: create record on start (manual runs only) ───────────────
     const startedAt = Date.now();
-    _currentLog = {
-      runId: createId(),
-      workflowId: workflowMeta.id,
-      inputs: {},
-      outputs: {},
-      status: 'started',
-      startedAt,
-      nodeTimings: [],
-      errors: [],
-    };
-    _nodeStartTimes.clear();
+    if (recordLog) {
+      _currentLog = {
+        runId: createId(),
+        workflowId: workflowMeta.id,
+        inputs: {},
+        outputs: {},
+        status: 'started',
+        startedAt,
+        nodeTimings: [],
+        errors: [],
+      };
+      _nodeStartTimes.clear();
+    }
 
     // Clear previous execution results and set running state
     set((state) => ({
@@ -978,8 +983,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
     // Progress callback
     const progressCallback = (progress: ExecutionProgress) => {
-      // ── ExecutionLog: record node timing on each progress event ─────────────
-      if (_currentLog && progress.currentNodeId) {
+      // ── ExecutionLog: record node timing on each progress event (manual runs)
+      if (recordLog && _currentLog && progress.currentNodeId) {
         const now = Date.now();
         const node = get().nodes.find((n) => n.id === progress.currentNodeId);
         const nodeType = node?.data.nodeType ?? 'unknown';
@@ -1041,11 +1046,12 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       {
         onProgress: progressCallback,
         signal: controller.signal,
+        source,
       }
     );
 
-    // ── ExecutionLog: finalize on completion ──────────────────────────────────
-    if (_currentLog) {
+    // ── ExecutionLog: finalize on completion (manual runs only) ──────────────
+    if (recordLog && _currentLog) {
       const completedAt = Date.now();
       _currentLog.completedAt = completedAt;
       _currentLog.duration = completedAt - _currentLog.startedAt;
