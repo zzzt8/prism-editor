@@ -6,12 +6,15 @@ import {
   Loader2, FileUp, Settings, User, Save,
 } from 'lucide-react';
 import { useCanvasStore } from '../../store/canvasStore';
+import { useAppStore } from '../../store/appStore';
 import { PanelToggle } from './PanelToggle';
 
 interface WorkflowHeaderProps {
   onPublishClick: () => void;
   publishStatus: 'idle' | 'loading' | 'done';
 }
+
+type LiveBadgeState = 'hidden' | 'idle' | 'debouncing' | 'running';
 
 export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
   onPublishClick,
@@ -21,11 +24,13 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
   const isDirty = useCanvasStore((s) => s.isDirty);
   const nodes = useCanvasStore((s) => s.nodes);
   const executionStatus = useCanvasStore((s) => s._executionStatus);
+  const liveDebouncing = useCanvasStore((s) => s._liveDebouncing);
   const executeWorkflow = useCanvasStore((s) => s.executeWorkflow);
   const cancelExecution = useCanvasStore((s) => s.cancelExecution);
   const importWorkflowFromFile = useCanvasStore((s) => s.importWorkflowFromFile);
   const renameWorkflow = useCanvasStore((s) => s.renameWorkflow);
   const saveWorkflow = useCanvasStore((s) => s.saveWorkflow);
+  const livePreviewEnabled = useAppStore((s) => s.livePreviewEnabled);
 
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -35,6 +40,30 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
   const statusMsgTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isRunning = executionStatus === 'running';
+  const isFrontendWorkflow = workflowMeta.targetPlatform === 'browser';
+
+  const liveBadgeState: LiveBadgeState = (() => {
+    if (!isFrontendWorkflow) return 'hidden';
+    if (!livePreviewEnabled) return 'hidden';
+    if (isRunning) return 'running';
+    if (liveDebouncing) return 'debouncing';
+    return 'idle';
+  })();
+
+  const liveBadgeLabel = (() => {
+    switch (liveBadgeState) {
+      case 'running': return 'Live · 合成中…';
+      case 'debouncing': return 'Live · 等待稳定中';
+      case 'idle': return 'Live';
+      default: return '';
+    }
+  })();
+
+  const executeButtonLabel = (() => {
+    if (isRunning) return '停止';
+    if (isFrontendWorkflow) return '重跑';
+    return 'Execute';
+  })();
 
   const showMsg = (msg: string) => {
     // Clear any existing timer before setting new one
@@ -165,6 +194,23 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
             </span>
           )}
 
+          {liveBadgeState !== 'hidden' && (
+            <span
+              className={`wf-live-badge wf-live-badge--${liveBadgeState}`}
+              data-testid="wf-live-badge"
+              title={
+                liveBadgeState === 'running'
+                  ? '正在执行实时合成'
+                  : liveBadgeState === 'debouncing'
+                    ? '参数稳定后将自动合成'
+                    : '实时合成已启用'
+              }
+            >
+              <span className="wf-live-dot" />
+              {liveBadgeLabel}
+            </span>
+          )}
+
           <span className={`wf-save-badge ${isDirty ? 'wf-save-badge--dirty' : 'wf-save-badge--saved'}`}>
             <span className="wf-save-dot" />
             {isDirty ? 'DRAFT' : 'SAVED'}
@@ -193,14 +239,15 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
             className={`wf-execute-btn ${isRunning ? 'wf-execute-btn--running' : 'wf-execute-btn--ready'}`}
             onClick={handleExecute}
             disabled={!isRunning && nodes.length === 0}
-            title={isRunning ? '停止执行' : '执行工作流'}
+            title={isRunning ? '停止执行' : isFrontendWorkflow ? '跳过防抖立即执行' : '执行工作流'}
+            data-testid="wf-execute-btn"
           >
             {isRunning ? (
               <Square size={14} fill="currentColor" />
             ) : (
               <Play size={14} fill="currentColor" />
             )}
-            {isRunning ? '停止' : 'Execute'}
+            {executeButtonLabel}
           </button>
 
           {/* Publish */}
@@ -364,6 +411,54 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
           height: 6px;
           border-radius: 50%;
           background: currentColor;
+        }
+
+        .wf-live-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+          padding: 2px 8px;
+          border-radius: 9999px;
+          border: 1px solid;
+          flex-shrink: 0;
+          transition: color 0.12s, background 0.12s, border-color 0.12s;
+        }
+
+        .wf-live-badge--idle {
+          color: #a1a1aa;
+          background: rgba(161, 161, 170, 0.08);
+          border-color: rgba(161, 161, 170, 0.25);
+        }
+
+        .wf-live-badge--debouncing {
+          color: #f59e0b;
+          background: rgba(245, 158, 11, 0.1);
+          border-color: rgba(245, 158, 11, 0.35);
+        }
+
+        .wf-live-badge--running {
+          color: #c084fc;
+          background: rgba(192, 132, 252, 0.12);
+          border-color: rgba(192, 132, 252, 0.45);
+        }
+
+        .wf-live-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: currentColor;
+        }
+
+        .wf-live-badge--running .wf-live-dot {
+          animation: wf-live-pulse 1.1s ease-in-out infinite;
+        }
+
+        @keyframes wf-live-pulse {
+          0%, 100% { opacity: 0.4; transform: scale(0.85); }
+          50% { opacity: 1; transform: scale(1.15); }
         }
 
         /* Center Zone */
