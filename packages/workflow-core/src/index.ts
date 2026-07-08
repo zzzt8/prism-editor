@@ -5,7 +5,6 @@ export * from './executor';
 export * from './topo-sort';
 export * from './context';
 export * from './cache';
-export * from './published-executor';
 export * from './type-converter-registry';
 export * from './type-validator';
 export type { TypeConverterFn } from '@prism/shared-types';
