@@ -14,31 +14,76 @@
 
 ---
 
-## Phase 2.0 — 隐藏前置（Q1/Q2 决策落地）
+> **重构记录（apply 起步 - 路径 3）**：原 T2.0.1 字面要求"清理 PublishedWorkflow 引用"实际需要跨 5 packages 共 10 个文件清理 + 3 个文件删除，超出单 task 范围。经与用户拍板，将原 T2.0.1（清理引用）与原 T2.6（删除 published 文件）合并为新 task **T2.0.3**（published hard cleanup），按 layer 跨 5 个 commit 完成。原 T2.6 task 已被该 task 吸收。
+
+---
+
+## Phase 2.0 — 隐藏前置（Q1/Q2 决策落地 + PublishedWorkflow hard cleanup）
 
 > 这些 task 不写在 proposal.md 主线任务里，但在 apply 阶段必须先做（避免 dev-tool 编译失败）。
 
-### T2.0.1 — 清理 `PublishedWorkflow` 引用
+### T2.0.3 — PublishedWorkflow hard cleanup（合并 T2.0.1 + T2.6，按 layer 拆 5 commit）
 
 **opsx-meta**
 
 ```yaml
-id: T2.0.1
-layer: packages/shared-types, packages/workflow-core
+id: T2.0.3
+layer: packages/shared-types + packages/workflow-core + apps/dev-tool
 task_type: refactor
 verify:
   - type: command
-    command: pnpm grep -r "PublishedWorkflow" packages/ apps/ server/ --include="*.ts" --include="*.tsx" || echo "OK: no PublishedWorkflow references"
+    command: pnpm grep -r "PublishedWorkflow\|publishRepository\|published-executor\|PublishedConfig" packages/ apps/ server/ --include="*.ts" --include="*.tsx"
+  - type: file_not_exists
+    path: packages/shared-types/src/published.ts
+  - type: file_not_exists
+    path: packages/workflow-core/src/published-executor.ts
+  - type: file_not_exists
+    path: packages/workflow-core/src/published-executor.e2e.test.ts
+  - type: file_not_exists
+    path: apps/dev-tool/src/modules/repositories/publishRepository.ts
+  - type: file_not_exists
+    path: apps/dev-tool/src/modules/editor/mappers/workflowToPublished.ts
+  - type: file_not_exists
+    path: apps/dev-tool/src/modules/persistence/mappers/publishedToWorkflow.ts
+  - type: file_not_exists
+    path: apps/dev-tool/src/modules/persistence/mappers/publishedToWorkflow.test.ts
+  - type: file_not_exists
+    path: apps/dev-tool/src/utils/workflowExport.ts
+  - type: command
+    command: cd packages/shared-types && pnpm tsc --noEmit
+  - type: command
+    command: cd packages/workflow-core && pnpm tsc --noEmit
+  - type: command
+    command: cd apps/dev-tool && pnpm tsc --noEmit
 ```
 
 **Description**
 
-在 T2.1 之前清理所有 `PublishedWorkflow` 类型引用，避免后续删除 `published.ts` 时编译失败。
+按 layer 跨 5 个 commit 一次性清掉历史 `PublishedWorkflow` 债务。中间允许半成品状态（每次 commit 内部保证 typecheck 通过）。
+
+**commit 1**（shared-types layer）：删 `packages/shared-types/src/published.ts` + 从 `index.ts` 移除 `export * from './published'`
+
+**commit 2**（workflow-core layer）：删 `packages/workflow-core/src/published-executor.ts` + `published-executor.e2e.test.ts` + 从 `index.ts` 移除 `export * from './published-executor'`
+
+**commit 3**（dev-tool repositories layer）：从 `apps/dev-tool/src/modules/repositories/interfaces.ts` 删除 `IPublishRepository` 接口 + `PublishedWorkflow`/`PublishedWorkflowMeta` 引用 + 从 `repositories/index.ts` 删除 `PublishRepository` 导出
+
+**commit 4**（dev-tool mappers + utils layer）：删 `apps/dev-tool/src/modules/editor/mappers/workflowToPublished.ts` + `apps/dev-tool/src/modules/persistence/mappers/publishedToWorkflow.ts` + `publishedToWorkflow.test.ts` + `apps/dev-tool/src/utils/workflowExport.ts`（产品功能也丢，PRD 已删除 PublishedConfig 概念）
+
+**commit 5**（dev-tool cleanup）：删 `apps/dev-tool/src/modules/repositories/publishRepository.ts` + `apps/dev-tool/src/modules/persistence/mappers/index.ts` 移除 publishedToWorkflow 导出
+
+**跨 commit constraint**：
+- 每次 commit 内部保证 `pnpm typecheck` 通过
+- 涉及的 `from` 来源产物（如果有 dev-tool 仍依赖 published 类型的代码路径）必须随 commit 同步删除——不做兼容层
+- 删除 authStore 文件逻辑交由 T2.0.2 单独处理（这是 JWT 残余，不是 published 债务）
 
 **Acceptance Criteria**
 
-- [ ] `grep -r "PublishedWorkflow" packages/ apps/ server/ --include="*.ts" --include="*.tsx"` 返回 0 行
-- [ ] `pnpm typecheck` 通过
+- [ ] commit 1-5 全部完成
+- [ ] `grep -r "PublishedWorkflow|publishRepository|published-executor|PublishedConfig" packages/ apps/ server/` 返回 0 行
+- [ ] 9 个文件全部删除
+- [ ] `pnpm typecheck`（engine packages：shared-types、workflow-core）通过
+- [ ] `pnpm typecheck`（apps/dev-tool）通过
+- [ ] 无 dev-tool 端 PublishedWorkflow 残余路径
 
 ---
 
@@ -366,7 +411,11 @@ verify:
 
 ## Phase 2.5 — 历史债务清理
 
-### T2.6 — 删除 published.ts / published-executor.ts
+> **本 phase 已被 T2.0.3 吸收**。原 T2.6（删除 published.ts / published-executor.ts）作为 T2.0.3 commit 1-2 提前到 Phase 2.0 完成（必须在 T2.2 之前，保证 server 编译不依赖 published 模块）。
+
+---
+
+## Phase 2.6 — E2E 重写
 
 **opsx-meta**
 
