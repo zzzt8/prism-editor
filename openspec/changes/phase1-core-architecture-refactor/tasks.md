@@ -269,9 +269,9 @@ verify:
 
 **Acceptance Criteria**
 
-- [ ] `image-ops/nodejs/` 包含 4 个核心节点的 sharp 实现
-- [ ] 构建通过
-- [ ] 类型检查通过
+- [x] `image-ops/nodejs/` 包含 4 个核心节点的 sharp 实现
+- [x] 构建通过
+- [x] 类型检查通过
 
 ---
 

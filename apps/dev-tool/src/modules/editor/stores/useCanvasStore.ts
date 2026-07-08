@@ -329,7 +329,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   inspectorTab: 'parameters',
 
   // Initial state - draftSlice
-      workflowMeta: { id: createId(), name: 'Untitled Workflow', version: '1.0.0' },
+      workflowMeta: { id: createId(), name: 'Untitled Workflow', version: '1.0.0', targetPlatform: 'browser' },
       viewport: { x: 0, y: 0, zoom: 1 },
       isDraggingFromPanel: false,
       isDirty: false,
@@ -805,7 +805,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       groups: [],
       selectedNodeIds: [],
       selectedEdgeIds: [],
-      workflowMeta: { id: createId(), name: 'Untitled Workflow', version: '1.0.0' },
+      workflowMeta: { id: createId(), name: 'Untitled Workflow', version: '1.0.0', targetPlatform: 'browser' },
       isDirty: false,
       isDraggingFromPanel: false,
       _executionStatus: 'idle',
@@ -914,6 +914,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         id: createId(),
         name: template.name,
         version: '1.0.0',
+        targetPlatform: 'browser',
       },
       selectedNodeIds: [],
       selectedEdgeIds: [],
