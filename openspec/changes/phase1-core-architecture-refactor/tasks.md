@@ -147,9 +147,9 @@ verify:
 
 **Acceptance Criteria**
 
-- [ ] `core/composite/composite.ts` 包含所有叠加模式
-- [ ] 无 `typeof window` 或 `sharp` 引用
-- [ ] 现有测试迁移后通过
+- [x] `core/composite/composite.ts` 包含所有叠加模式
+- [x] 无 `typeof window` 或 `sharp` 引用
+- [x] 现有测试迁移后通过
 
 ---
 

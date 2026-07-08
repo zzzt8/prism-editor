@@ -21,5 +21,6 @@ export { compositeImages, type CompositeOptions } from './composite-math';
 export * from './composite/types';
 export * from './composite/composite'; // Re-export for new architecture
 export * from './mask/types';
+export * from './mask/mask'; // Re-export for new architecture
 export * from './transform/types';
 export * from './export/types';

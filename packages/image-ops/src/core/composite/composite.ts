@@ -135,10 +135,8 @@ export function compositeImages(
 }
 
 /**
- * Checks if the composite algorithm has any platform dependencies.
- * Returns true if no platform-specific APIs are used.
+ * Checks if the composite module has any platform dependencies.
  */
-export function isPlatformIndependent(): boolean {
-  // This function is used to verify the module has no platform dependencies
+export function isCompositePlatformIndependent(): boolean {
   return true;
 }
