@@ -698,29 +698,29 @@ interface RuntimeExecutor {
 **目标**：PRD 生效 + 历史代码清理 + mall 集成准备。
 
 **Phase 0.1 - PRD 与文档**：
-- [ ] 完成本文档（基线 PRD v1.0）
-- [ ] 在 `docs/README.md` 中将 v1.0 标为"当前生效"
-- [ ] 将 v0.1 / v0.2 / 任务拆解 / 任务规划摘要 / 架构审阅报告 / 技术架构约束 全部移入 `_archive/`
+- [x] 完成本文档（基线 PRD v1.0）
+- [x] 在 `docs/README.md` 中将 v1.0 标为"当前生效"
+- [x] 将 v0.1 / v0.2 / 任务拆解 / 任务规划摘要 / 架构审阅报告 / 技术架构约束 全部移入 `_archive/`
 
 **Phase 0.2 - 代码瘦身体系**（详见 §11）：
 
-| 删除项 | 处理方式 |
-|--------|---------|
-| JWT Auth | 删除 `@fastify/jwt`、Auth 中间件 |
-| User 模型 | 删除 `User` Prisma model、登录/注册 API |
-| RevokedToken | 删除（随 JWT 一起删除） |
-| NodePackage 市场 | 删除 `NodePackage` / `NodePackageVersion` 模型和路由 |
-| Snippets | 删除 `snippet.ts` stub |
-| SKU 模型 | 删除 `SKU` / `SKUWorkflow` 模型 |
-| WorkflowVersion | 删除（由 ProductTemplate 版本替代） |
-| apps/user-app | 删除（Prism 不做独立用户产品） |
+| 删除项 | 处理方式 | 状态 |
+|--------|---------|------|
+| JWT Auth | 删除 `@fastify/jwt`、Auth 中间件 | ✅ |
+| User 模型 | 删除 `User` Prisma model、登录/注册 API | ✅ |
+| RevokedToken | 删除（随 JWT 一起删除） | ✅ |
+| NodePackage 市场 | 删除 `NodePackage` / `NodePackageVersion` 模型和路由 | ✅ |
+| Snippets | 删除 `snippet.ts` stub（保留类型定义） | ✅ |
+| SKU 模型 | 删除 `SKU` / `SKUWorkflow` 模型 | ✅ |
+| WorkflowVersion | 删除（由 ProductTemplate 版本替代） | ✅ |
+| apps/user-app | 删除（Prism 不做独立用户产品） | ✅ |
 
 **Phase 0.3 - mall 集成准备**：
-- [ ] 设计精简 API 路由（templates / render / assets / health）
-- [ ] 实现 API Key 认证中间件
-- [ ] 配置 CORS 白名单
+- [x] 设计精简 API 路由（templates / render / assets / health）
+- [x] 实现 API Key 认证中间件
+- [x] 配置 CORS 白名单
 
-**完成标准**：PRD 生效 + 瘦身体系完成 + mall 集成 API 就绪
+**完成标准**：✅ PRD 生效 + 瘦身体系完成 + mall 集成 API 就绪
 
 ---
 
