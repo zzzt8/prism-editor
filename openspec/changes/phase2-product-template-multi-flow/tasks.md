@@ -8,8 +8,8 @@
 
 | Metric | Value |
 |--------|-------|
-| Total Tasks | 7 (T2.1–T2.6 + 隐藏前置 Q1/Q2) |
-| Completed | 0 |
+| Total Tasks | 8 (T2.0.3 / T2.0.2 / T2.1 / T2.2 / T2.3 / T2.4 / T2.5 / T2.7) |
+| Completed | 1 |
 | In Progress | 0 |
 
 ---
@@ -78,12 +78,14 @@ verify:
 
 **Acceptance Criteria**
 
-- [ ] commit 1-5 全部完成
-- [ ] `grep -r "PublishedWorkflow|publishRepository|published-executor|PublishedConfig" packages/ apps/ server/` 返回 0 行
-- [ ] 9 个文件全部删除
-- [ ] `pnpm typecheck`（engine packages：shared-types、workflow-core）通过
-- [ ] `pnpm typecheck`（apps/dev-tool）通过
-- [ ] 无 dev-tool 端 PublishedWorkflow 残余路径
+- [x] commit 1-5 全部完成
+- [x] `grep -r "PublishedWorkflow|publishRepository|published-executor|PublishedConfig" packages/ apps/ server/` 返回 0 行
+- [x] 9 个文件全部删除
+- [x] `pnpm typecheck`（engine packages：shared-types、workflow-core）通过
+- [x] `pnpm typecheck`（apps/dev-tool）通过
+- [x] 无 dev-tool 端 PublishedWorkflow 残余路径
+
+> **T2.0.3 完成 note**：实际删除 10 个文件（原计划 9 个 + commit 后补救 1 个 `publishSlice.ts`），5 commit + 1 fix commit `ad4c149`。Engine layer + Editor layer smoke 全过。
 
 ---
 
@@ -449,12 +451,12 @@ verify:
 
 **Acceptance Criteria**
 
-- [ ] 3 个文件全部删除
-- [ ] `packages/shared-types/src/index.ts` 不再 export published
-- [ ] 全仓 grep 无 `PublishedWorkflow` / `publishRepository` / `published-executor` / `PublishedConfig` 残留
-- [ ] `pnpm typecheck` 全量通过
-- [ ] `pnpm test` 全量通过
-- [ ] `pnpm build` 全量通过
+- [x] ~~3 个文件全部删除~~ → 已由 **T2.0.3 commit 1-2** 完成（提前合并）
+- [x] ~~`packages/shared-types/src/index.ts` 不再 export published~~ → 已由 T2.0.3 commit 1 完成
+- [x] ~~全仓 grep 无 `PublishedWorkflow` / `publishRepository` / `published-executor` / `PublishedConfig` 残留~~ → 已由 T2.0.3 验证
+- [x] ~~`pnpm typecheck` 全量通过~~ → 已由 T2.0.3 layer smoke 验证（engine + editor）
+- [x] ~~`pnpm test` 全量通过~~ → 推迟到 apply 末尾全量验证
+- [x] ~~`pnpm build` 全量通过~~ → 推迟到 apply 末尾全量验证
 
 ---
 
