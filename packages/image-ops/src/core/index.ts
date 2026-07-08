@@ -14,11 +14,12 @@ export { blendPixel, clamp } from './blend-modes';
 // Porter-Duff compositing
 export { compositePixel } from './porter-duff';
 
-// High-level compositing
+// High-level compositing (re-export from composite-math for backward compatibility)
 export { compositeImages, type CompositeOptions } from './composite-math';
 
 // Subdirectory exports (Phase 1.2 architecture)
 export * from './composite/types';
+export * from './composite/composite'; // Re-export for new architecture
 export * from './mask/types';
 export * from './transform/types';
 export * from './export/types';

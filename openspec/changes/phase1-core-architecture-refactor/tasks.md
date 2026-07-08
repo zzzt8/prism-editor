@@ -120,8 +120,8 @@ packages/image-ops/src/core/
 
 **Acceptance Criteria**
 
-- [ ] 目录结构已创建
-- [ ] 基础类型文件已创建
+- [x] 目录结构已创建
+- [x] 基础类型文件已创建
 
 ---
 
