@@ -5,7 +5,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 8 |
-| Completed | 0 |
+| Completed | 8 |
 | In Progress | 0 |
 
 ---
@@ -300,9 +300,9 @@ verify:
 
 **Acceptance Criteria**
 
-- [ ] 新建工作流时有平台选择 UI
-- [ ] 平台选择影响可用节点列表
-- [ ] TypeScript 检查通过
+- [x] 新建工作流时有平台选择 UI
+- [x] 平台选择影响可用节点列表
+- [x] TypeScript 检查通过
 
 ---
 
@@ -310,10 +310,10 @@ verify:
 
 所有 8 个 tasks 完成后：
 
-- [ ] `NodeDefinition` 包含 `platforms` 字段
-- [ ] `image-ops/core/` 包含纯算法实现（composite/mask/transform）
-- [ ] `image-ops/browser/` 包含 Canvas 2D 实现
-- [ ] `image-ops/nodejs/` 包含 sharp 实现（4 个核心节点）
-- [ ] dev-tool 支持目标平台选择
-- [ ] `pnpm typecheck` 通过
-- [ ] `pnpm test` 通过
+- [x] `NodeDefinition` 包含 `platforms` 字段
+- [x] `image-ops/core/` 包含纯算法实现（composite/mask/transform）
+- [x] `image-ops/browser/` 包含 Canvas 2D 实现
+- [x] `image-ops/nodejs/` 包含 sharp 实现（4 个核心节点）
+- [x] dev-tool 支持目标平台选择
+- [x] `pnpm typecheck` 通过
+- [x] `pnpm test` 通过
