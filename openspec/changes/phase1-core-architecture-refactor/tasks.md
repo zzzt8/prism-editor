@@ -234,9 +234,9 @@ packages/image-ops/src/browser/
 
 **Acceptance Criteria**
 
-- [ ] browser/ 目录包含现有实现
-- [ ] 原实现位置重构为调用 browser/ 或 core/
-- [ ] 构建通过
+- [x] browser/ 目录包含现有实现
+- [x] 原实现位置重构为调用 browser/ 或 core/
+- [x] 构建通过
 
 ---
 
