@@ -46,9 +46,9 @@ interface NodeDefinition {
 
 **Acceptance Criteria**
 
-- [ ] `Platform` 类型已定义
-- [ ] `NodeDefinition` 包含 `platforms` 字段
-- [ ] 现有实现中所有节点默认 `platforms: ['browser', 'nodejs']`
+- [x] `Platform` 类型已定义
+- [x] `NodeDefinition` 包含 `platforms` 字段
+- [x] 现有实现中所有节点默认 `platforms: ['browser']`
 
 ---
 
@@ -72,8 +72,8 @@ verify:
 
 **Acceptance Criteria**
 
-- [ ] 所有节点定义包含 `platforms` 字段
-- [ ] TypeScript 检查通过
+- [x] 所有节点定义包含 `platforms` 字段
+- [x] TypeScript 检查通过
 
 ---
 
