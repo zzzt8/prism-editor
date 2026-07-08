@@ -173,9 +173,9 @@ verify:
 
 **Acceptance Criteria**
 
-- [ ] `core/mask/mask.ts` 包含所有蒙版算法
-- [ ] 无 platform 依赖
-- [ ] 测试通过
+- [x] `core/mask/mask.ts` 包含所有蒙版算法
+- [x] 无 platform 依赖
+- [x] 测试通过
 
 ---
 

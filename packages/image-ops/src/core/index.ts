@@ -23,4 +23,5 @@ export * from './composite/composite'; // Re-export for new architecture
 export * from './mask/types';
 export * from './mask/mask'; // Re-export for new architecture
 export * from './transform/types';
+export * from './transform/transform'; // Re-export for new architecture
 export * from './export/types';
