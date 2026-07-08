@@ -4,8 +4,8 @@
 
 | Metric | Value |
 |--------|-------|
-| Total Tasks | 8 |
-| Completed | 8 |
+| Total Tasks | 11 |
+| Completed | 11 |
 | In Progress | 0 |
 
 ---
@@ -306,6 +306,87 @@ verify:
 
 ---
 
+## Phase 1.5 - 补充实现任务
+
+### T1.5.1 - executor 改造：调用 browser/ 中的 executor
+
+**opsx-meta**
+
+```yaml
+id: T1.5.1
+layer: packages/image-ops
+task_type: refactor
+verify:
+  - type: command
+    command: pnpm typecheck --filter=@prism/image-ops
+    exit_code: 0
+```
+
+**Description**
+
+将现有 `composite.ts`, `transform.ts`, `apply-mask.ts` 中的 executor 改造为调用 `browser/` 中的 executor（方案 C 三层架构）。
+
+**Acceptance Criteria**
+
+- [x] `executors.ts` 使用 `browserExecutors` 中的 executor
+- [x] 保持向后兼容，legacy executor 仍可独立使用
+- [x] 所有测试通过（271 tests）
+
+---
+
+### T1.5.2 - UI 完善：工作流目标平台选择
+
+**opsx-meta**
+
+```yaml
+id: T1.5.2
+layer: apps/dev-tool
+task_type: feature
+verify:
+  - type: command
+    command: pnpm typecheck --filter=@prism/dev-tool
+    exit_code: 0
+```
+
+**Description**
+
+dev-tool 新建工作流对话框中已包含完整的平台选择 UI（根据 PRD §6.4.2）。
+
+**Acceptance Criteria**
+
+- [x] `NewWorkflowModal.tsx` 包含目标平台选择
+- [x] 支持 browser/nodejs 两种平台选择
+- [x] `IndexedDBStorageAdapter.createWorkflow` 支持 targetPlatform
+- [x] TypeScript 检查通过
+
+---
+
+### T1.5.3 - E2E 测试验证
+
+**opsx-meta**
+
+```yaml
+id: T1.5.3
+layer: monorepo
+task_type: verification
+verify:
+  - type: command
+    command: pnpm typecheck && pnpm test
+    exit_code: 0
+```
+
+**Description**
+
+运行现有测试确认无回归。当前项目中无独立 E2E 测试套件（`*.spec.ts`），Playwright 仅用于 browser 环境 vitest 测试。
+
+**Acceptance Criteria**
+
+- [x] `pnpm typecheck` 全量通过（14 packages）
+- [x] `pnpm test` 全量通过（271 tests）
+- [x] 无回归引入
+
+---
+
 ## Completion Criteria
 
 所有 8 个 tasks 完成后：
@@ -317,3 +398,9 @@ verify:
 - [x] dev-tool 支持目标平台选择
 - [x] `pnpm typecheck` 通过
 - [x] `pnpm test` 通过
+
+**补充验证（2026-07-08）**
+
+- [x] T1.3: executor 改造完成，使用 `browserExecutors`
+- [x] T1.5: UI 完善完成，NewWorkflowModal 包含平台选择
+- [x] E2E: 全量测试通过，无回归
