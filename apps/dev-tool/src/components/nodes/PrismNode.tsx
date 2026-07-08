@@ -13,7 +13,7 @@
 //   PrismNodeControls.tsx — specialized body content per node type
 //   PrismNode.tsx         — main component (composes the above)
 
-import React, { type FC, useMemo, useState } from 'react';
+import React, { type FC, useMemo, useState, memo } from 'react';
 import { type NodeProps } from '@xyflow/react';
 import { useCanvasStore } from '../../store/canvasStore';
 import type { CanvasNodeData } from '../../modules/editor/stores/types';
@@ -44,7 +44,7 @@ interface PrismNodeProps extends Omit<NodeProps, 'data'> {
 // Main PrismNode component
 // ---------------------------------------------------------------------------
 
-export const PrismNode: FC<PrismNodeProps> = ({ id, data, selected: _rfSelected }) => {
+export const PrismNodeBase: FC<PrismNodeProps> = ({ id, data, selected: _rfSelected }) => {
   const params = useMemo(() => data.params ?? {}, [data.params]);
   const definition = data.definition;
   const label = data.label ?? data.nodeType ?? 'Unknown';
@@ -360,8 +360,29 @@ export const PrismNode: FC<PrismNodeProps> = ({ id, data, selected: _rfSelected 
   );
 };
 
+// ── Memoized export: prevent re-renders when unrelated nodes update ──────────────
+// Only re-render when: id, definition, label, params, extraInputs/Outputs,
+// executionResult, executionError, selected, minimized, bypassed change.
+// Position changes are handled by React Flow internally.
+const PrismNode = memo(PrismNodeBase, (prev, next) => {
+  return (
+    prev.id === next.id &&
+    prev.selected === next.selected &&
+    prev.data.label === next.data.label &&
+    prev.data.nodeType === next.data.nodeType &&
+    prev.data.definition === next.data.definition &&
+    prev.data.executionResult === next.data.executionResult &&
+    prev.data.executionError === next.data.executionError &&
+    prev.data.params === next.data.params &&
+    prev.data.extraInputs === next.data.extraInputs &&
+    prev.data.extraOutputs === next.data.extraOutputs &&
+    prev.data.minimized === next.data.minimized &&
+    prev.data.bypassed === next.data.bypassed
+  );
+});
 PrismNode.displayName = 'PrismNode';
 
-// Re-export drag state utilities for WorkflowCanvas and other consumers
+// Export the memoized component
+export { PrismNode };
 export { setDragImageState, getDragImageState };
 export type { DragState } from './PrismNodeControls';

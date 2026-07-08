@@ -7,8 +7,8 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
 const STORAGE_KEY = 'prism.dev-tool.app-prefs.v1';
-const DEFAULT_LIVE_PREVIEW_DEBOUNCE_MS = 200;
-const MAX_LIVE_PREVIEW_DEBOUNCE_MS = 1000;
+const DEFAULT_LIVE_PREVIEW_DEBOUNCE_MS = 50;
+const MAX_LIVE_PREVIEW_DEBOUNCE_MS = 500;
 const MIN_LIVE_PREVIEW_DEBOUNCE_MS = 0;
 
 export interface AppState {

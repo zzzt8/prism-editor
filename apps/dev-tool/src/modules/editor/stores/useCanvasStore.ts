@@ -55,6 +55,32 @@ const _nodeStartTimes = new Map<string, number>();
 let _liveTimer: ReturnType<typeof setTimeout> | null = null;
 let _liveSubscriptionTeardown: (() => void) | null = null;
 
+// ─── Module-level state for batched UI updates ─────────────────────────────────
+
+// For live executions: accumulate results, flush only at end
+// For manual executions: batch by 100ms interval
+let _pendingLiveResults: ExecutionProgress['results'] = [];
+let _lastManualUiUpdate = 0;
+
+const applyResultsToStore = (results: ExecutionProgress['results']) => {
+  if (results.length === 0) return;
+  useCanvasStore.setState((state) => ({
+    nodes: state.nodes.map((n) => {
+      const r = results.find((x) => x.nodeId === n.id);
+      if (!r) return n;
+      return {
+        ...n,
+        data: {
+          ...n.data,
+          executionResult: r.status === 'done' ? r.outputs : undefined,
+          executionError: r.status === 'error' ? r.error : undefined,
+          _executingNodeId: r.nodeId,
+        },
+      };
+    }),
+  }));
+};
+
 const clearLiveTimer = (): void => {
   if (_liveTimer !== null) {
     clearTimeout(_liveTimer);
@@ -72,6 +98,7 @@ const shouldFireLive = (): boolean => {
   if (state.workflowMeta.targetPlatform !== 'browser') return false;
   if (!appState.livePreviewEnabled) return false;
   if (state._executionStatus === 'running') return false;
+  if (state._isInteracting) return false; // Skip during drag/pan interactions
   if (state.nodes.length === 0) return false;
   return true;
 };
@@ -186,6 +213,11 @@ interface CanvasState {
 
   // Live preview state (frontend reactive execution)
   _liveDebouncing: boolean;
+  _isInteracting: boolean; // true during drag/pan interactions to skip live execution
+
+  // Interaction state management
+  startInteraction: () => void;
+  endInteraction: () => void;
 
   // ── Graph operations ────────────────────────────────────────────────────────
 
@@ -311,6 +343,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
   // Initial state - live preview
   _liveDebouncing: false,
+  _isInteracting: false,
 
   // ── Graph operations ────────────────────────────────────────────────────────
 
@@ -378,6 +411,19 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
   setEdges(edges) {
     set({ edges });
+  },
+
+  // ── Interaction state ───────────────────────────────────────────────────────
+  // Call startInteraction() when drag/pan starts, endInteraction() when it ends.
+  // During interaction, live workflow execution is skipped to keep UI responsive.
+  startInteraction() {
+    set({ _isInteracting: true });
+  },
+
+  endInteraction() {
+    set({ _isInteracting: false });
+    // Trigger live execution after interaction ends to update previews
+    armLiveTimer(useAppStore.getState().livePreviewDebounceMs);
   },
 
   onNodesChange(changes) {
@@ -1070,14 +1116,20 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     }
 
     // Clear previous execution results and set running state
-    set((state) => ({
-      nodes: state.nodes.map((n) => ({
-        ...n,
-        data: { ...n.data, executionResult: undefined, executionError: undefined },
-      })),
-      _executionStatus: 'running' as const,
-      _currentNodeId: null,
-    }));
+    // For live executions: keep old results visible until new results arrive
+    // For manual executions: clear immediately to show fresh state
+    if (source !== 'live') {
+      set((state) => ({
+        nodes: state.nodes.map((n) => ({
+          ...n,
+          data: { ...n.data, executionResult: undefined, executionError: undefined },
+        })),
+        _executionStatus: 'running' as const,
+        _currentNodeId: null,
+      }));
+    } else {
+      set({ _executionStatus: 'running' as const, _currentNodeId: null });
+    }
 
     // Use node list after clear (avoid stale executionResult on references)
     ({ nodes, workflowMeta, edges } = get());
@@ -1126,21 +1178,19 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         }
       }
 
-      set((state) => ({
-        nodes: state.nodes.map((n) => {
-          const nodeResult = progress.results.find((r) => r.nodeId === n.id);
-          if (!nodeResult) return n;
-          return {
-            ...n,
-            data: {
-              ...n.data,
-              executionResult: nodeResult.status === 'done' ? nodeResult.outputs : undefined,
-              executionError: nodeResult.status === 'error' ? nodeResult.error : undefined,
-              _executingNodeId: progress.currentNodeId,
-            },
-          };
-        }),
-      }));
+      // Batch UI updates: live executions → flush only at end; manual → every 100ms
+      if (source === 'live') {
+        // Live: accumulate results, flush only at end
+        _pendingLiveResults.push(...progress.results);
+      } else {
+        const now = Date.now();
+        if (now - _lastManualUiUpdate >= 100 || progress.results.some((r) => r.status === 'error')) {
+          applyResultsToStore(progress.results);
+          _lastManualUiUpdate = now;
+        } else {
+          _pendingLiveResults.push(...progress.results);
+        }
+      }
     };
 
     // Execute using service
@@ -1155,6 +1205,12 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         source,
       }
     );
+
+    // Flush any pending live results before finalizing
+    if (source === 'live' && _pendingLiveResults.length > 0) {
+      applyResultsToStore(_pendingLiveResults);
+      _pendingLiveResults = [];
+    }
 
     // ── ExecutionLog: finalize on completion (manual runs only) ──────────────
     if (recordLog && _currentLog) {
