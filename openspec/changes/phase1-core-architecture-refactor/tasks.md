@@ -199,9 +199,9 @@ verify:
 
 **Acceptance Criteria**
 
-- [ ] `core/transform/transform.ts` 包含 resize/rotate/flip 算法
-- [ ] 无 platform 依赖
-- [ ] 测试通过
+- [x] `core/transform/transform.ts` 包含 resize/rotate/flip 算法
+- [x] 无 platform 依赖
+- [x] 测试通过
 
 ---
 
