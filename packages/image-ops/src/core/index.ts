@@ -16,3 +16,9 @@ export { compositePixel } from './porter-duff';
 
 // High-level compositing
 export { compositeImages, type CompositeOptions } from './composite-math';
+
+// Subdirectory exports (Phase 1.2 architecture)
+export * from './composite/types';
+export * from './mask/types';
+export * from './transform/types';
+export * from './export/types';
