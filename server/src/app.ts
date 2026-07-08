@@ -1,18 +1,10 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyError } from 'fastify';
-import cors from '@fastify/cors';
-import authMiddleware from './middleware/auth.js';
-import workflowRoutes from './routes/workflow.js';
-import publishedRoutes from './routes/published.js';
 import assetsRoutes from './routes/assets.js';
 import renderRoutes from './routes/render.js';
 
 const appPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-  await fastify.register(authMiddleware, async () => {
-    await fastify.register(workflowRoutes);
-    await fastify.register(publishedRoutes);
-    await fastify.register(assetsRoutes);
-    await fastify.register(renderRoutes, { prefix: '/api/render' });
-  });
+  await fastify.register(assetsRoutes);
+  await fastify.register(renderRoutes, { prefix: '/api/render' });
 };
 
 // Global error handler for validation and Prisma errors
