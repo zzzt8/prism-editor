@@ -251,6 +251,29 @@ describe('ComposerState', () => {
     });
   });
 
+  describe('activeMask', () => {
+    it('should set active mask', () => {
+      const mask = { type: 'brightness' as const, threshold: 128 };
+      store.getState().setActiveMask(mask);
+      expect(store.getState().activeMask).toEqual(mask);
+    });
+
+    it('should clear active mask when set to null', () => {
+      const mask = { type: 'brightness' as const, threshold: 128 };
+      store.getState().setActiveMask(mask);
+      expect(store.getState().activeMask).toEqual(mask);
+
+      store.getState().setActiveMask(null);
+      expect(store.getState().activeMask).toBeNull();
+    });
+
+    it('should apply mask', () => {
+      const mask = { type: 'gradient' as const, startPoint: { x: 0, y: 0 }, endPoint: { x: 100, y: 100 } };
+      store.getState().applyMask(mask);
+      expect(store.getState().activeMask).toEqual(mask);
+    });
+  });
+
   describe('reset', () => {
     it('should reset state to initial values', () => {
       store.getState().addLayer({

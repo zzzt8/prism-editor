@@ -5,6 +5,7 @@
 import { create } from 'zustand';
 import type {
   LayerState,
+  MaskState,
 } from './types';
 
 export interface ComposerStoreState {
@@ -12,6 +13,7 @@ export interface ComposerStoreState {
   selectedLayerId: string | null;
   designParams: Record<string, number | string>;
   inputs: Record<string, string>;
+  activeMask: MaskState | null;
 }
 
 export interface ComposerStoreActions {
@@ -26,6 +28,8 @@ export interface ComposerStoreActions {
   setInputs: (_inputs: Record<string, string>) => void;
   toggleVisibility: (_id: string) => void;
   setLocked: (_id: string, _locked: boolean) => void;
+  setActiveMask: (_mask: MaskState | null) => void;
+  applyMask: (_mask: MaskState) => void;
   reset: () => void;
   // Undo/Redo actions
   undo: () => void;
@@ -39,6 +43,7 @@ interface HistoryEntry {
   selectedLayerId: string | null;
   designParams: Record<string, number | string>;
   inputs: Record<string, string>;
+  activeMask: MaskState | null;
 }
 
 const MAX_HISTORY_SIZE = 50;
@@ -48,6 +53,7 @@ const initialState: ComposerStoreState = {
   selectedLayerId: null,
   designParams: {},
   inputs: {},
+  activeMask: null,
 };
 
 export type ComposerStore = ComposerStoreState & ComposerStoreActions;
@@ -176,6 +182,26 @@ export const createComposerStore = (initial?: Partial<ComposerStoreState>) => {
       set({ layers: newLayers });
     },
 
+    setActiveMask: (mask) => {
+      if (isUndoRedo) {
+        set({ activeMask: mask });
+        return;
+      }
+      const state = get();
+      pushHistory({ ...state, activeMask: mask });
+      set({ activeMask: mask });
+    },
+
+    applyMask: (mask) => {
+      if (isUndoRedo) {
+        set({ activeMask: mask });
+        return;
+      }
+      const state = get();
+      pushHistory({ ...state, activeMask: mask });
+      set({ activeMask: mask });
+    },
+
     reset: () => {
       if (isUndoRedo) {
         set(initialState);
@@ -198,6 +224,7 @@ export const createComposerStore = (initial?: Partial<ComposerStoreState>) => {
           selectedLayerId: entry.selectedLayerId,
           designParams: entry.designParams,
           inputs: entry.inputs,
+          activeMask: entry.activeMask,
         });
         isUndoRedo = false;
       }
@@ -213,6 +240,7 @@ export const createComposerStore = (initial?: Partial<ComposerStoreState>) => {
           selectedLayerId: entry.selectedLayerId,
           designParams: entry.designParams,
           inputs: entry.inputs,
+          activeMask: entry.activeMask,
         });
         isUndoRedo = false;
       }
