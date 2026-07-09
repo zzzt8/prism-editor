@@ -238,8 +238,8 @@ describe('Cross-platform consistency', () => {
 ```
 
 验收：
-- [ ] cross-platform 一致性测试通过
-- [ ] pixel diff < 1%（允许舍入误差）
+- [x] cross-platform 一致性测试通过
+- [x] pixel diff < 1%
 
 ---
 
@@ -310,9 +310,7 @@ verify:
 npm run typecheck
 ```
 
-验收：所有 9 个 packages typecheck 通过
-
----
+验收：所有 9 个 packages typecheck 通过 ✅
 
 ### Q2 — 测试通过
 
@@ -320,7 +318,7 @@ npm run typecheck
 npm run test -- -- --run
 ```
 
-验收：所有测试通过，无 regression
+验收：所有测试通过，无 regression ✅
 
 ---
 
@@ -330,7 +328,7 @@ npm run test -- -- --run
 npm run lint
 ```
 
-验收：lint 无错误
+验收：lint 无错误 ✅
 
 ---
 
@@ -338,19 +336,19 @@ npm run lint
 
 | ID | Task | Layer | Status |
 |----|------|-------|--------|
-| T1.1 | 修复 nodejs/composite-executor 调用 | image-ops/nodejs | ⬜ |
-| T1.2 | 修复 nodejs/transform-executor 调用 | image-ops/nodejs | ⬜ |
-| T1.3 | 修复 nodejs/apply-mask-executor 调用 | image-ops/nodejs | ⬜ |
-| T1.4 | 补充 nodejs executor 单元测试 | image-ops/nodejs | ⬜ |
-| T1.5 | 补充节点 platforms: ['both'] | node-definitions | ⬜ |
-| T1.6 | 归档旧 composite-math.ts | image-ops/core | ⬜ |
-| T3.1 | 重构 ComposerCanvas 使用 image-ops | composer-sdk | ⬜ |
-| T3.2 | 补充 cross-platform 一致性测试 | image-ops | ⬜ |
+| T1.1 | 修复 nodejs/composite-executor 调用 | image-ops/nodejs | ✅ |
+| T1.2 | 修复 nodejs/transform-executor 调用 | image-ops/nodejs | ✅ |
+| T1.3 | 修复 nodejs/apply-mask-executor 调用 | image-ops/nodejs | ✅ |
+| T1.4 | 补充 nodejs executor 单元测试 | image-ops/nodejs | ✅ |
+| T1.5 | 补充节点 platforms: ['both'] | node-definitions | ✅ |
+| T1.6 | 归档旧 composite-math.ts | image-ops/core | ✅ |
+| T3.1 | 重构 ComposerCanvas 使用 image-ops | composer-sdk | ✅ |
+| T3.2 | 补充 cross-platform 一致性测试 | image-ops | ✅ |
 | T2.1 | 补全 ProductTemplate inputs tab | dev-tool | ⬜ |
 | T2.2 | 补全 ProductTemplate bindings tab | dev-tool | ⬜ |
 | T2.3 | 补全 ProductTemplate assets tab | dev-tool | ⬜ |
-| Q1 | 类型检查通过 | all | ⬜ |
-| Q2 | 测试通过 | all | ⬜ |
-| Q3 | lint 通过 | all | ⬜ |
+| Q1 | 类型检查通过 | all | ✅ |
+| Q2 | 测试通过 | all | ✅ |
+| Q3 | lint 通过 | all | ✅ |
 
-**Total: 14 tasks**
+**Total: 14 tasks (11 completed, 3 pending)**
