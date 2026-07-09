@@ -170,9 +170,9 @@ export function usePreviewImage(
 
 // Drag state helper split out to ./PrismNodeControls/dragImageState.ts.
 // Imported for local usage; re-exported below as Facade for external callers.
-import { setDragImageState, getDragImageState } from './PrismNodeControls/dragImageState';
-export type { DragState } from './PrismNodeControls/dragImageState';
+import { setDragImageState } from './PrismNodeControls/dragImageState';
 export { setDragImageState, getDragImageState } from './PrismNodeControls/dragImageState';
+export type { DragState } from './PrismNodeControls/dragImageState';
 
 // Helper function to process an image file and update node params
 function processImageFile(

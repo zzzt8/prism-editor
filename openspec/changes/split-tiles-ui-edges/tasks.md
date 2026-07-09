@@ -195,8 +195,8 @@ dependencies:
 
 **Acceptance Criteria**
 
-- [ ] `docs/refactor-map.md` 至少 5 个 `## YYYY-MM-DD - Tile:` 块
-- [ ] 每块包含原文件、新文件、对外暴露、依赖位置、下次修改先看
+- [x] `docs/refactor-map.md` 至少 5 个 `## YYYY-MM-DD - Tile:` 块
+- [x] 每块包含原文件、新文件、对外暴露、依赖位置、下次修改先看
 
 ---
 
