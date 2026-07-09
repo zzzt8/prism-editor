@@ -31,6 +31,7 @@ model Workflow {
   updatedAt    DateTime @updatedAt
 
   @@index([templateId])
+  @@index([templateId, platform])
 }
 
 model Asset {
