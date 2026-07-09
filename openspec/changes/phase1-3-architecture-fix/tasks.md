@@ -23,8 +23,8 @@ import { compositeImages } from '../core/composite/composite';
 ```
 
 验收：
-- [ ] `npm run typecheck` 通过
-- [ ] `packages/image-ops/src/nodejs/composite-executor.test.ts` 测试通过
+- [x] `npm run typecheck` 通过
+- [x] `packages/image-ops/src/nodejs/composite-executor.test.ts` 测试通过
 
 ---
 
