@@ -1,244 +1,157 @@
-// Render routes — workflow execution on the server side
+// Render routes — server-side template rendering
+// Phase 2: ProductTemplate multi-flow
+// Replaces old /api/render workflow endpoint with /api/render/template
 
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { WorkflowExecutorNodeJs } from '@prism/workflow-core';
 import { nodeExecutors } from '@prism/image-ops/nodejs';
-import { ZipArchive } from 'archiver';
+import type { Workflow as PrismaWorkflow } from '@prisma/client';
+import { Workflow } from '@prism/shared-types';
+import {
+  getById,
+  selectProductionFlow,
+  TemplateNotFoundError,
+  RenderPlatformNotFoundError,
+} from '../services/product-template-service.js';
 
-// Initialize executor with all node executors
 const executor = new WorkflowExecutorNodeJs({ nodeExecutors });
 
-// Marker for user-provided input injection
-const USER_INPUT_MARKER = '__USER_INPUT__';
-
-interface RenderWorkflowBody {
-  workflow: string; // JSON string
+interface RenderTemplateBody {
+  templateId: string;
+  userParams?: Record<string, unknown>;
+  inputs?: Record<string, unknown>;
+  format?: 'png' | 'jpeg';
 }
 
-interface RenderBatchBody {
-  workflow: string; // JSON string
-  limit?: string; // max images per batch
+function dataUrlToBuffer(dataUrl: string): Buffer {
+  const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, '');
+  return Buffer.from(base64, 'base64');
 }
 
-/**
- * Inject user-provided images into workflow nodes.
- * Finds nodes with "__USER_INPUT__" marker and replaces with the uploaded image.
- */
-function injectUserInputs(workflow: any, images: Record<string, string>): any {
-  const updatedNodes = workflow.nodes.map((node: any) => {
-    if (!node.params) return node;
-
-    const updatedParams = { ...node.params };
-    let modified = false;
-
-    for (const [key, value] of Object.entries(updatedParams)) {
-      if (value === USER_INPUT_MARKER) {
-        // Check if there's an uploaded image for this node
-        const imageKey = `${node.id}:${key}`;
-        const imageData = images[imageKey] || images[node.id] || Object.values(images)[0];
-        if (imageData) {
-          updatedParams[key] = imageData;
-          modified = true;
-        }
-      }
-    }
-
-    return modified ? { ...node, params: updatedParams } : node;
-  });
-
-  return { ...workflow, nodes: updatedNodes };
-}
-
-/**
- * Collect uploaded images and convert to data URLs.
- */
-async function collectImages(files: AsyncIterable<any>): Promise<Record<string, string>> {
-  const images: Record<string, string> = {};
-  let index = 0;
-
-  for await (const file of files) {
-    const buffer = await file.toBuffer();
-    const mimeType = file.mimetype || 'image/png';
-    const base64 = buffer.toString('base64');
-    const dataUrl = `data:${mimeType};base64,${base64}`;
-
-    // Support both named fields and sequential access
-    const key = file.fieldname !== 'images' ? file.fieldname : `image-${index++}`;
-    images[key] = dataUrl;
-  }
-
-  return images;
+function contentTypeFor(format: 'png' | 'jpeg') {
+  return format === 'jpeg' ? 'image/jpeg' : 'image/png';
 }
 
 const renderRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-  // POST /api/render/workflow
-  // Execute a workflow with uploaded images
-  fastify.post<{
-    Body: RenderWorkflowBody;
-  }>('/workflow', async (request, reply) => {
-    const { workflow: workflowJson } = request.body;
+  // POST /api/render/template
+  // Render a ProductTemplate using its production (nodejs) Flow
+  fastify.post<{ Body: RenderTemplateBody }>(
+    '/template',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['templateId'],
+          properties: {
+            templateId: { type: 'string' },
+            userParams: { type: 'object' },
+            inputs: { type: 'object' },
+            format: { type: 'string', enum: ['png', 'jpeg'] },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { templateId, format = 'png' } = request.body;
 
-    if (!workflowJson || typeof workflowJson !== 'string') {
-      return reply.status(400).send({
-        error: 'workflow JSON is required',
-      });
-    }
+      const ac = new AbortController();
+      const timeout = setTimeout(() => ac.abort(), 30_000);
 
-    let workflow: any;
-    try {
-      workflow = JSON.parse(workflowJson);
-    } catch {
-      return reply.status(400).send({
-        error: 'Invalid workflow JSON',
-      });
-    }
+      try {
+        await getById(templateId);
 
-    // Collect uploaded images from multipart
-    const images = await collectImages(request.files());
+        const flow: PrismaWorkflow = await selectProductionFlow(templateId);
+        const workflow: Workflow = JSON.parse(flow.content);
+        const result = await executor.execute(workflow, { signal: ac.signal });
 
-    // Inject user inputs into workflow nodes
-    const updatedWorkflow = injectUserInputs(workflow, images);
+        clearTimeout(timeout);
 
-    try {
-      const result = await executor.execute(updatedWorkflow, {
-        signal: undefined,
-      });
+        if (result.status === 'cancelled') {
+          return reply.status(504).send({
+            error: 'Render timed out after 30 seconds',
+            code: 'RENDER_TIMEOUT',
+          });
+        }
 
-      if (result.status === 'error') {
+        if (result.status === 'error') {
+          return reply.status(500).send({
+            error: result.error ?? 'Render execution failed',
+            code: 'RENDER_FAILED',
+          });
+        }
+
+        const results = result.results ?? {};
+        const finalNodeId = Object.keys(results).pop() ?? '';
+        const finalOutput = results[finalNodeId] as Record<string, unknown> | undefined;
+
+        let previewUrl: string | undefined;
+        if (finalOutput?.previewUrl && typeof finalOutput.previewUrl === 'string') {
+          previewUrl = finalOutput.previewUrl;
+        } else if (
+          finalOutput?.image &&
+          typeof finalOutput.image === 'object' &&
+          'previewUrl' in finalOutput.image &&
+          typeof (finalOutput.image as Record<string, unknown>).previewUrl === 'string'
+        ) {
+          previewUrl = (finalOutput.image as Record<string, unknown>).previewUrl as string;
+        }
+
+        if (!previewUrl) {
+          return reply.status(500).send({
+            error: 'No image output from workflow',
+            code: 'RENDER_FAILED',
+          });
+        }
+
+        const imageBuffer = dataUrlToBuffer(previewUrl);
+        const timestamp = Date.now();
+        const filename = `${templateId}-${timestamp}.${format}`;
+
+        reply.header('Content-Type', contentTypeFor(format));
+        reply.header('Content-Disposition', `inline; filename="${filename}"`);
+        return reply.send(imageBuffer);
+      } catch (err: unknown) {
+        clearTimeout(timeout);
+        request.log.error({ err }, 'Render error');
+
+        if (err instanceof TemplateNotFoundError) {
+          return reply.status(404).send({
+            error: err.message,
+            code: 'TEMPLATE_NOT_FOUND',
+          });
+        }
+        if (err instanceof RenderPlatformNotFoundError) {
+          return reply.status(422).send({
+            error: err.message,
+            code: 'RENDER_PLATFORM_NOT_FOUND',
+          });
+        }
+        if (err instanceof Error && err.name === 'AbortError') {
+          return reply.status(504).send({
+            error: 'Render timed out after 30 seconds',
+            code: 'RENDER_TIMEOUT',
+          });
+        }
+
         return reply.status(500).send({
-          error: 'Workflow execution failed',
-          message: result.error,
+          error: err instanceof Error ? err.message : 'Render failed',
+          code: 'RENDER_FAILED',
         });
       }
-
-      // Extract final image output for response
-      const results = result.results || {};
-      const finalNodeId = Object.keys(results).pop();
-      const finalOutput = finalNodeId ? (results[finalNodeId] as any) : null;
-
-      // Build response with preview/image data
-      const response: any = {
-        status: 'done',
-        results,
-      };
-
-      // If the output has an image/previewUrl, include it
-      if (finalOutput?.previewUrl) {
-        response.image = finalOutput.previewUrl;
-      } else if (finalOutput?.image?.previewUrl) {
-        response.image = finalOutput.image.previewUrl;
-      }
-
-      return reply.status(200).send(response);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      return reply.status(500).send({
-        error: 'Workflow execution error',
-        message,
-      });
     }
+  );
+
+  // Legacy endpoints — reject with 410 Gone
+  fastify.post('/workflow', async (_request, reply) => {
+    return reply.status(410).send({
+      error: 'This endpoint is deprecated. Use POST /api/render/template instead.',
+    });
   });
 
-  // POST /api/render/batch
-  // Execute workflow on multiple images and return as ZIP
-  fastify.post<{
-    Body: RenderBatchBody;
-  }>('/batch', async (request, reply) => {
-    const { workflow: workflowJson, limit: limitStr } = request.body ?? {};
-
-    if (!workflowJson || typeof workflowJson !== 'string') {
-      return reply.status(400).send({
-        error: 'workflow JSON is required',
-      });
-    }
-
-    let workflow: any;
-    try {
-      workflow = JSON.parse(workflowJson);
-    } catch {
-      return reply.status(400).send({
-        error: 'Invalid workflow JSON',
-      });
-    }
-
-    const limit = Math.min(parseInt(limitStr ?? '10', 10), 100);
-
-    // Collect uploaded images
-    const files = await request.files();
-    const imageList: Record<string, string>[] = [];
-    let index = 0;
-
-    for await (const file of files) {
-      if (imageList.length >= limit) break;
-      const buffer = await file.toBuffer();
-      const mimeType = file.mimetype || 'image/png';
-      const base64 = buffer.toString('base64');
-      const dataUrl = `data:${mimeType};base64,${base64}`;
-      imageList.push({ [`image-${index++}`]: dataUrl });
-    }
-
-    if (imageList.length === 0) {
-      return reply.status(400).send({
-        error: 'At least one image is required',
-      });
-    }
-
-    // Process images and create ZIP
-    const archive: ZipArchive = new ZipArchive({ zlib: { level: 9 } });
-
-    // Set up response headers for ZIP download
-    reply.header('Content-Type', 'application/zip');
-    reply.header(
-      'Content-Disposition',
-      'attachment; filename="render-results.zip"'
-    );
-
-    // Pipe archive to response
-    archive.pipe(reply as unknown as NodeJS.WritableStream);
-
-    // Execute workflow for each image
-    for (let i = 0; i < imageList.length; i++) {
-      try {
-        const updatedWorkflow = injectUserInputs(workflow, imageList[i]);
-        const result = await executor.execute(updatedWorkflow, {
-          signal: undefined,
-        });
-
-        if (result.status === 'done' && result.results) {
-          // Extract final output
-          const results = result.results;
-          const finalNodeId = Object.keys(results).pop();
-          const finalOutput = finalNodeId ? (results[finalNodeId] as any) : null;
-
-          const resultData: any = {
-            index: i + 1,
-            results,
-          };
-
-          // Include image data if available
-          if (finalOutput?.previewUrl) {
-            resultData.image = finalOutput.previewUrl;
-          } else if (finalOutput?.image?.previewUrl) {
-            resultData.image = finalOutput.image.previewUrl;
-          }
-
-          archive.append(JSON.stringify(resultData, null, 2), { name: `result-${i + 1}.json` });
-        } else {
-          archive.append(
-            JSON.stringify({ error: result.error || 'Execution failed' }),
-            { name: `result-${i + 1}.json` }
-          );
-        }
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        archive.append(
-          JSON.stringify({ error: message }),
-          { name: `result-${i + 1}.json` }
-        );
-      }
-    }
-
-    archive.finalize();
+  fastify.post('/batch', async (_request, reply) => {
+    return reply.status(410).send({
+      error: 'This endpoint is deprecated. Use POST /api/render/template instead.',
+    });
   });
 };
 

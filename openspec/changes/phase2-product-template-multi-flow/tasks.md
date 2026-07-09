@@ -9,7 +9,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 8 (T2.0.3 / T2.0.2 / T2.1 / T2.2 / T2.3 / T2.4 / T2.5 / T2.7) |
-| Completed | 6 |
+| Completed | 7 |
 | In Progress | 0 |
 
 ---
@@ -396,18 +396,18 @@ verify:
 
 **Acceptance Criteria**
 
-- [ ] `server/src/routes/render.ts` 含 `/api/render/template` route
-- [ ] 旧 `POST /api/render` 已删
-- [ ] 请求 body 接受 `{ templateId, userParams, inputs, format? }`
-- [ ] 成功响应 Content-Type 为 `image/png` 或 `image/jpeg`
-- [ ] Content-Disposition 头包含正确 filename
-- [ ] 404 `TEMPLATE_NOT_FOUND` 当 templateId 不存在
-- [ ] 422 `RENDER_PLATFORM_NOT_FOUND` 当无 nodejs platform Flow
-- [ ] 504 `RENDER_TIMEOUT` 当执行超时
-- [ ] 500 `RENDER_FAILED` 当 executor 抛错
+- [x] `server/src/routes/render.ts` 含 `/api/render/template` route
+- [x] 旧 `POST /api/render` 已删（返回 410 Gone）
+- [x] 请求 body 接受 `{ templateId, userParams, inputs, format? }`
+- [x] 成功响应 Content-Type 为 `image/png` 或 `image/jpeg`
+- [x] Content-Disposition 头包含正确 filename
+- [x] 404 `TEMPLATE_NOT_FOUND` 当 templateId 不存在
+- [x] 422 `RENDER_PLATFORM_NOT_FOUND` 当无 nodejs platform Flow
+- [x] 504 `RENDER_TIMEOUT` 当执行超时
+- [x] 500 `RENDER_FAILED` 当 executor 抛错
 - [ ] 集成测试覆盖 happy path + 4 个 error path
-- [ ] `pnpm --filter server typecheck` 通过
-- [ ] `pnpm --filter server test` 通过
+- [x] `pnpm --filter server typecheck` 通过
+- [x] `pnpm --filter server test` 通过
 
 ---
 
