@@ -8,8 +8,8 @@ import type { MaskState } from './types';
  * Returns value between 0 and 1
  */
 export function getMaskAlpha(
-  _x: number,
-  _y: number,
+  x: number,
+  y: number,
   mask: MaskState,
   _canvasWidth: number,
   _canvasHeight: number
