@@ -9,7 +9,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 7 |
-| Completed | 2 |
+| Completed | 3 |
 | In Progress | 1 |
 
 ---
@@ -100,9 +100,9 @@ verify:
 
 **Acceptance Criteria**
 
-- [ ] `openspec/changes/split-tiles-ui-edges` 目录存在
-- [ ] 子 change proposal.md / design.md / tasks.md 均存在
-- [ ] `openspec change validate split-tiles-ui-edges` 退出码 0
+- [x] `openspec/changes/split-tiles-ui-edges` 目录存在
+- [x] 子 change proposal.md / design.md / tasks.md 均存在
+- [x] `openspec change validate split-tiles-ui-edges` 退出码 0
 
 ---
 
