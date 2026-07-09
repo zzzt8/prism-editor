@@ -15,7 +15,7 @@ const _instance = new ApiStorageAdapter(apiBaseUrl);
 
 // Primary storage adapter (server-first: Save/New/Publish all go to server)
 // IndexedDB is used as autosave cache only (for crash recovery)
-export const activeStorageAdapter: import('@prism/shared-types').StorageAdapter = _instance;
+export const activeStorageAdapter: InstanceType<typeof ApiStorageAdapter> = _instance;
 
 // Cleanup function - call this on app unmount to prevent timer leaks
 export function cleanupStorage(): void {

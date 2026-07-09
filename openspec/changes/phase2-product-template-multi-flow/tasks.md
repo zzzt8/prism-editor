@@ -9,7 +9,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 8 (T2.0.3 / T2.0.2 / T2.1 / T2.2 / T2.3 / T2.4 / T2.5 / T2.7) |
-| Completed | 4 |
+| Completed | 5 |
 | In Progress | 0 |
 
 ---
@@ -276,14 +276,14 @@ verify:
 
 **Acceptance Criteria**
 
-- [ ] `apps/dev-tool/src/storage/ApiStorageAdapter.ts` 重写完成，含 `VITE_PRISM_SECRET` + `X-PRISM-SECRET`
-- [ ] `apps/dev-tool/src/modules/repositories/productTemplateRepository.ts` 存在
-- [ ] `apps/dev-tool/src/modules/repositories/flowRepository.ts` 存在
-- [ ] `apps/dev-tool/src/modules/repositories/publishRepository.ts` 不存在
-- [ ] `apps/dev-tool/src/storage/index.ts` 不再 export `syncStorageTokens`
-- [ ] `pnpm --filter dev-tool typecheck` 通过
-- [ ] `pnpm --filter dev-tool test` 通过
-- [ ] `pnpm --filter dev-tool build` 通过
+- [x] `apps/dev-tool/src/storage/ApiStorageAdapter.ts` 重写完成，含 `VITE_PRISM_SECRET` + `X-PRISM-SECRET`
+- [x] `apps/dev-tool/src/modules/repositories/productTemplateRepository.ts` 存在
+- [x] `apps/dev-tool/src/modules/repositories/flowRepository.ts` 存在
+- [x] `apps/dev-tool/src/modules/repositories/publishRepository.ts` 不存在
+- [x] `apps/dev-tool/src/storage/index.ts` 不再 export `syncStorageTokens`
+- [x] `pnpm --filter dev-tool typecheck` 通过
+- [x] `pnpm --filter dev-tool test` 通过（无 dev-tool tests，无 regression）
+- [x] `pnpm --filter dev-tool build` 通过
 
 ---
 
