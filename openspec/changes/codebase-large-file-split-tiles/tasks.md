@@ -288,14 +288,14 @@ dependencies:
 
 **Acceptance Criteria**
 
-- [ ] `packages/image-ops/src/scheduler/workerPoolSizing.ts` 存在并被 `workerPool.ts` import
-- [ ] `packages/composer-sdk/src/utils/imageToImageData.ts` 存在并被 `ComposerCanvas.tsx` import
-- [ ] `useCanvasStore.ts` 在本子 change 内不被修改（verify 阶段通过 `git diff` 验证）
-- [ ] `imageWorker.worker.ts` 在本子 change 内不被修改
-- [ ] `docs/refactor-map.md` 至少再新增 1 个 tile 块摘要
-- [ ] `pnpm typecheck --filter=@prism/image-ops --filter=@prism/composer-sdk` 退出码 0
-- [ ] `pnpm test --filter=@prism/image-ops --filter=@prism/composer-sdk` 退出码 0
-- [ ] 子 change C 已 archive
+- [x] `packages/image-ops/src/scheduler/workerPoolSizing.ts` 存在并被 `workerPool.ts` import
+- [x] `packages/composer-sdk/src/utils/imageToImageData.ts` 存在并被 `ComposerCanvas.tsx` import
+- [x] `useCanvasStore.ts` 在本子 change 内不被修改（verify 阶段通过 `git diff` 验证）
+- [x] `imageWorker.worker.ts` 在本子 change 内不被修改
+- [x] `docs/refactor-map.md` 至少再新增 1 个 tile 块摘要
+- [x] `pnpm typecheck --filter=@prism/image-ops --filter=@prism/composer-sdk` 退出码 0
+- [x] `pnpm test --filter=@prism/image-ops --filter=@prism/composer-sdk` 退出码 0
+- [x] 子 change C 已 archive
 
 ---
 
