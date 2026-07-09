@@ -9,7 +9,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 7 |
-| Completed | 3 |
+| Completed | 4 |
 | In Progress | 1 |
 
 ---
