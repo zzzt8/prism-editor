@@ -9,7 +9,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 8 (T2.0.3 / T2.0.2 / T2.1 / T2.2 / T2.3 / T2.4 / T2.5 / T2.7) |
-| Completed | 1 |
+| Completed | 2 |
 | In Progress | 0 |
 
 ---
@@ -108,14 +108,14 @@ verify:
 
 **Acceptance Criteria**
 
-- [ ] `apps/dev-tool/src/store/authStore.ts` 不存在
-- [ ] `apps/dev-tool/src/pages/LoginPage.tsx` 不存在
-- [ ] `apps/dev-tool/src/pages/RegisterPage.tsx` 不存在
-- [ ] `apps/dev-tool/src/pages/AuthPage.css` 不存在
-- [ ] `apps/dev-tool/src/components/AuthGuard.tsx` 内容已简化（仅返回 children，不做重定向）
-- [ ] `apps/dev-tool/src/App.tsx` 不再 import 上述文件
-- [ ] `apps/dev-tool/src/main.tsx` 不再 import authStore
-- [ ] `pnpm --filter dev-tool typecheck` 通过
+- [x] `apps/dev-tool/src/store/authStore.ts` 不存在
+- [x] `apps/dev-tool/src/pages/LoginPage.tsx` 不存在
+- [x] `apps/dev-tool/src/pages/RegisterPage.tsx` 不存在
+- [x] `apps/dev-tool/src/pages/AuthPage.css` 不存在
+- [x] `apps/dev-tool/src/components/AuthGuard.tsx` 内容已简化（仅返回 children，不做重定向）
+- [x] `apps/dev-tool/src/App.tsx` 不再 import 上述文件
+- [x] `apps/dev-tool/src/main.tsx` 不再 import authStore（main.tsx 无 authStore 引用）
+- [x] `pnpm --filter dev-tool typecheck` 通过
 
 ---
 
