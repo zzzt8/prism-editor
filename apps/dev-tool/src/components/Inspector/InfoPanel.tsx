@@ -4,7 +4,7 @@
 import React, { useMemo } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
 import { Image, CircleDot, Hash, Type, ToggleLeft, FileText } from 'lucide-react';
-import './Inspector.module.css';
+import './InfoPanel.module.css';
 
 interface InfoPanelProps {
   nodeId: string;

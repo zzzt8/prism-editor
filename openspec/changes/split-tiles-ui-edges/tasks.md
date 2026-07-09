@@ -9,7 +9,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 8 |
-| Completed | 2 |
+| Completed | 4 |
 | In Progress | 0 |
 
 ---
@@ -69,9 +69,9 @@ dependencies:
 
 **Acceptance Criteria**
 
-- [ ] `dragImageState.ts` 存在
-- [ ] `PrismNodeControls.tsx` 不再含 helper 本体，仅 re-export
-- [ ] `pnpm typecheck --filter=dev-tool` 退出码 0
+- [x] `dragImageState.ts` 存在
+- [x] `PrismNodeControls.tsx` 不再含 helper 本体，仅 re-export
+- [x] `pnpm typecheck --filter=dev-tool` 退出码 0
 
 ---
 
@@ -100,10 +100,10 @@ dependencies:
 
 **Acceptance Criteria**
 
-- [ ] `WorkflowHeaderStyles.css` 存在
-- [ ] `WorkflowHeader.tsx` 不再含内联 style 段
-- [ ] 旧 className 全部迁移
-- [ ] `pnpm typecheck --filter=dev-tool` 退出码 0
+- [x] `WorkflowHeaderStyles.css` 存在
+- [x] `WorkflowHeader.tsx` 不再含内联 style 段
+- [x] 旧 className 全部迁移
+- [x] `pnpm typecheck --filter=dev-tool` 退出码 0
 
 ---
 
