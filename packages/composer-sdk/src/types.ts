@@ -36,6 +36,8 @@ export interface LayerState {
   opacity: number;
   blendMode: BlendMode;
   mask?: MaskState;
+  visible: boolean;
+  locked: boolean;
 }
 
 /**

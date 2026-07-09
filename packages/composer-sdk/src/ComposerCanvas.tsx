@@ -164,7 +164,9 @@ export const ComposerCanvas: React.FC<ComposerSDKProps> = ({
 
     try {
       // Sort layers: first layer becomes base, rest become overlays
-      const sortedLayers = [...layers].reverse(); // top layer first for rendering
+      // Filter out invisible layers
+      const visibleLayers = layers.filter((l) => l.visible);
+      const sortedLayers = [...visibleLayers].reverse(); // top layer first for rendering
       if (sortedLayers.length === 0) return;
 
       // Convert first layer to ImageData as base
@@ -396,10 +398,12 @@ export const ComposerCanvas: React.FC<ComposerSDKProps> = ({
     height: img ? img.height * layer.scale : 100,
     transform: `rotate(${layer.rotation}deg)`,
     transformOrigin: 'center center',
-    cursor: 'move',
+    cursor: layer.locked ? 'not-allowed' : 'move',
     opacity: layer.opacity,
     outline: selectedLayerId === layer.id ? '2px solid #3b82f6' : 'none',
     outlineOffset: '2px',
+    pointerEvents: layer.locked ? 'none' : 'auto',
+    display: layer.visible ? 'block' : 'none',
   });
 
   return (

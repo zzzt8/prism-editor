@@ -53,6 +53,8 @@ describe('ComposerState', () => {
         rotation: 0,
         opacity: 1,
         blendMode: 'normal' as const,
+        visible: true,
+        locked: false,
       };
 
       store.getState().addLayer(layer);
@@ -73,6 +75,8 @@ describe('ComposerState', () => {
         rotation: 0,
         opacity: 1,
         blendMode: 'normal' as const,
+        visible: true,
+        locked: false,
       };
 
       store.getState().addLayer(layer);
@@ -91,6 +95,8 @@ describe('ComposerState', () => {
         rotation: 0,
         opacity: 1,
         blendMode: 'normal' as const,
+        visible: true,
+        locked: false,
       };
 
       store.getState().addLayer(layer);
@@ -112,6 +118,8 @@ describe('ComposerState', () => {
         rotation: 0,
         opacity: 1,
         blendMode: 'normal' as const,
+        visible: true,
+        locked: false,
       };
 
       store.getState().addLayer(layer);
@@ -156,6 +164,8 @@ describe('ComposerState', () => {
           rotation: 0,
           opacity: 1,
           blendMode: 'normal' as const,
+          visible: true,
+          locked: false,
         },
         {
           id: 'layer-2',
@@ -167,11 +177,77 @@ describe('ComposerState', () => {
           rotation: 45,
           opacity: 0.8,
           blendMode: 'multiply' as const,
+          visible: true,
+          locked: false,
         },
       ];
 
       store.getState().setLayers(layers);
       expect(store.getState().layers).toHaveLength(2);
+    });
+  });
+
+  describe('toggleVisibility', () => {
+    it('should toggle layer visibility', () => {
+      store.getState().addLayer({
+        id: 'layer-1',
+        name: 'Test',
+        imageUrl: 'https://example.com/test.png',
+        x: 0,
+        y: 0,
+        scale: 1,
+        rotation: 0,
+        opacity: 1,
+        blendMode: 'normal' as const,
+        visible: true,
+        locked: false,
+      });
+
+      store.getState().toggleVisibility('layer-1');
+      expect(store.getState().layers[0].visible).toBe(false);
+
+      store.getState().toggleVisibility('layer-1');
+      expect(store.getState().layers[0].visible).toBe(true);
+    });
+  });
+
+  describe('setLocked', () => {
+    it('should lock a layer', () => {
+      store.getState().addLayer({
+        id: 'layer-1',
+        name: 'Test',
+        imageUrl: 'https://example.com/test.png',
+        x: 0,
+        y: 0,
+        scale: 1,
+        rotation: 0,
+        opacity: 1,
+        blendMode: 'normal' as const,
+        visible: true,
+        locked: false,
+      });
+
+      store.getState().setLocked('layer-1', true);
+      expect(store.getState().layers[0].locked).toBe(true);
+    });
+
+    it('should unlock a layer', () => {
+      store.getState().addLayer({
+        id: 'layer-1',
+        name: 'Test',
+        imageUrl: 'https://example.com/test.png',
+        x: 0,
+        y: 0,
+        scale: 1,
+        rotation: 0,
+        opacity: 1,
+        blendMode: 'normal' as const,
+        visible: true,
+        locked: true,
+      });
+
+      store.getState().setLocked('layer-1', false);
+      expect(store.getState().layers[0].locked).toBe(false);
     });
   });
 
@@ -187,6 +263,8 @@ describe('ComposerState', () => {
         rotation: 0,
         opacity: 1,
         blendMode: 'normal' as const,
+        visible: true,
+        locked: false,
       });
       store.getState().selectLayer('layer-1');
       store.getState().updateDesignParam('test', 123);

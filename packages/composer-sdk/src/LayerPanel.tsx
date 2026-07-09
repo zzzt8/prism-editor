@@ -5,7 +5,8 @@ import React, { useCallback } from 'react';
 import { useComposerStore } from './ComposerState';
 
 export const LayerPanel: React.FC = () => {
-  const { layers, selectedLayerId, selectLayer, setLayers } = useComposerStore();
+  const { layers, selectedLayerId, selectLayer, setLayers, toggleVisibility, setLocked } =
+    useComposerStore();
 
   const handleDragStart = useCallback((e: React.DragEvent, layerId: string) => {
     e.dataTransfer.setData('text/plain', layerId);
@@ -38,20 +39,55 @@ export const LayerPanel: React.FC = () => {
     [layers, setLayers]
   );
 
+  const handleToggleVisibility = useCallback(
+    (e: React.MouseEvent, layerId: string) => {
+      e.stopPropagation();
+      toggleVisibility(layerId);
+    },
+    [toggleVisibility]
+  );
+
+  const handleToggleLock = useCallback(
+    (e: React.MouseEvent, layerId: string) => {
+      e.stopPropagation();
+      const layer = layers.find((l) => l.id === layerId);
+      if (layer) {
+        setLocked(layerId, !layer.locked);
+      }
+    },
+    [layers, setLocked]
+  );
+
   return (
     <div className="layer-panel">
       {layers.map((layer) => (
         <div
           key={layer.id}
-          className={selectedLayerId === layer.id ? 'layer-item selected' : 'layer-item'}
-          draggable
+          className={`layer-item ${selectedLayerId === layer.id ? 'selected' : ''} ${
+            layer.locked ? 'locked' : ''
+          }`}
+          draggable={!layer.locked}
           onClick={() => selectLayer(layer.id)}
           onDragStart={(e) => handleDragStart(e, layer.id)}
           onDragOver={handleDragOver}
           onDrop={(e) => handleDrop(e, layer.id)}
         >
+          <button
+            className={`visibility-btn ${layer.visible ? 'visible' : 'hidden'}`}
+            onClick={(e) => handleToggleVisibility(e, layer.id)}
+            title={layer.visible ? 'Hide layer' : 'Show layer'}
+          >
+            {layer.visible ? '👁' : '🚫'}
+          </button>
+          <button
+            className={`lock-btn ${layer.locked ? 'locked' : ''}`}
+            onClick={(e) => handleToggleLock(e, layer.id)}
+            title={layer.locked ? 'Unlock layer' : 'Lock layer'}
+          >
+            {layer.locked ? '🔒' : '🔓'}
+          </button>
           <img src={layer.imageUrl} alt={layer.name} />
-          <span>{layer.name}</span>
+          <span className={layer.visible ? '' : 'hidden-text'}>{layer.name}</span>
         </div>
       ))}
     </div>

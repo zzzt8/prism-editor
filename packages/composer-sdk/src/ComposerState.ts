@@ -23,6 +23,8 @@ export interface ComposerStoreActions {
   setLayers: (_layers: LayerState[]) => void;
   setDesignParams: (_params: Record<string, number | string>) => void;
   setInputs: (_inputs: Record<string, string>) => void;
+  toggleVisibility: (_id: string) => void;
+  setLocked: (_id: string, _locked: boolean) => void;
   reset: () => void;
 }
 
@@ -80,6 +82,20 @@ export const createComposerStore = (initial?: Partial<ComposerStoreState>) =>
 
     setInputs: (newInputs) =>
       set({ inputs: newInputs }),
+
+    toggleVisibility: (id) =>
+      set((state) => ({
+        layers: state.layers.map((l) =>
+          l.id === id ? { ...l, visible: !l.visible } : l
+        ),
+      })),
+
+    setLocked: (id, locked) =>
+      set((state) => ({
+        layers: state.layers.map((l) =>
+          l.id === id ? { ...l, locked } : l
+        ),
+      })),
 
     reset: () =>
       set(initialState),
