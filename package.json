@@ -21,12 +21,17 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "turbo run test",
+    "test:watch": "turbo run test:watch",
+    "test:e2e": "playwright test",
     "typecheck": "turbo run typecheck",
-    "clean": "turbo run clean"
+    "clean": "turbo run clean",
+    "check": "pnpm typecheck && pnpm lint && pnpm format:check",
+    "verify": "node scripts/verify.mjs"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.4",
     "@eslint/js": "9",
+    "@playwright/test": "^1.50.0",
     "@vitest/coverage-v8": "^1.6.1",
     "canvas": "3.2.2",
     "eslint": "9",

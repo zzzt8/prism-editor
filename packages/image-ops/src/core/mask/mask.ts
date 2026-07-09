@@ -13,17 +13,17 @@
  * import { applyMask, applyAlphaMask } from '@prism/image-ops/core/mask';
  */
 
-import type { ImageData } from '@prism/shared-types';
-import type { MaskOptions, MaskType } from './types';
+import type { ImageData } from '@prism/shared-types'
+import type { MaskOptions, MaskType } from './types'
 
-export type { MaskOptions, MaskType };
+export type { MaskOptions, MaskType }
 
 /**
  * Calculates luminance from RGB values.
  * Uses standard coefficients for Rec. 601.
  */
 export function getLuminance(r: number, g: number, b: number): number {
-  return 0.299 * r + 0.587 * g + 0.114 * b;
+  return 0.299 * r + 0.587 * g + 0.114 * b
 }
 
 /**
@@ -31,16 +31,16 @@ export function getLuminance(r: number, g: number, b: number): number {
  * Simple average of RGB channels.
  */
 export function getBrightness(r: number, g: number, b: number): number {
-  return (r + g + b) / 3;
+  return (r + g + b) / 3
 }
 
 /**
  * Creates a threshold function based on invert setting.
  */
-function createThresholdFn(threshold: number, invert: boolean): (value: number) => number {
+function createThresholdFn(threshold: number, invert: boolean): (_value: number) => number {
   return invert
-    ? (value: number) => (value < threshold ? 255 : 0)
-    : (value: number) => (value >= threshold ? 255 : 0);
+    ? (_value: number) => (_value < threshold ? 255 : 0)
+    : (_value: number) => (_value >= threshold ? 255 : 0)
 }
 
 /**
@@ -56,24 +56,24 @@ export function applyAlphaMask(
   imageData: ImageData,
   maskData: ImageData,
   threshold: number = 128,
-  invert: boolean = false
+  invert: boolean = false,
 ): ImageData {
   const result = new ImageData(
     new Uint8ClampedArray(imageData.data),
     imageData.width,
     imageData.height,
-    { colorSpace: imageData.colorSpace }
-  );
+    { colorSpace: imageData.colorSpace },
+  )
 
-  const thresholdFn = createThresholdFn(threshold, invert);
+  const thresholdFn = createThresholdFn(threshold, invert)
 
   for (let i = 0; i < result.data.length; i += 4) {
-    const maskValue = maskData.data[i];
-    const alphaValue = thresholdFn(maskValue);
-    result.data[i + 3] = Math.round((result.data[i + 3] * alphaValue) / 255);
+    const maskValue = maskData.data[i]
+    const alphaValue = thresholdFn(maskValue)
+    result.data[i + 3] = Math.round((result.data[i + 3] * alphaValue) / 255)
   }
 
-  return result;
+  return result
 }
 
 /**
@@ -89,28 +89,24 @@ export function applyBrightnessMask(
   imageData: ImageData,
   maskData: ImageData,
   threshold: number = 128,
-  invert: boolean = false
+  invert: boolean = false,
 ): ImageData {
   const result = new ImageData(
     new Uint8ClampedArray(imageData.data),
     imageData.width,
     imageData.height,
-    { colorSpace: imageData.colorSpace }
-  );
+    { colorSpace: imageData.colorSpace },
+  )
 
-  const thresholdFn = createThresholdFn(threshold, invert);
+  const thresholdFn = createThresholdFn(threshold, invert)
 
   for (let i = 0; i < result.data.length; i += 4) {
-    const brightness = getBrightness(
-      maskData.data[i],
-      maskData.data[i + 1],
-      maskData.data[i + 2]
-    );
-    const factor = thresholdFn(Math.round(brightness));
-    result.data[i + 3] = Math.round((result.data[i + 3] * factor) / 255);
+    const brightness = getBrightness(maskData.data[i], maskData.data[i + 1], maskData.data[i + 2])
+    const factor = thresholdFn(Math.round(brightness))
+    result.data[i + 3] = Math.round((result.data[i + 3] * factor) / 255)
   }
 
-  return result;
+  return result
 }
 
 /**
@@ -126,28 +122,24 @@ export function applyLuminanceMask(
   imageData: ImageData,
   maskData: ImageData,
   threshold: number = 128,
-  invert: boolean = false
+  invert: boolean = false,
 ): ImageData {
   const result = new ImageData(
     new Uint8ClampedArray(imageData.data),
     imageData.width,
     imageData.height,
-    { colorSpace: imageData.colorSpace }
-  );
+    { colorSpace: imageData.colorSpace },
+  )
 
-  const thresholdFn = createThresholdFn(threshold, invert);
+  const thresholdFn = createThresholdFn(threshold, invert)
 
   for (let i = 0; i < result.data.length; i += 4) {
-    const luminance = getLuminance(
-      maskData.data[i],
-      maskData.data[i + 1],
-      maskData.data[i + 2]
-    );
-    const factor = thresholdFn(Math.round(luminance));
-    result.data[i + 3] = Math.round((result.data[i + 3] * factor) / 255);
+    const luminance = getLuminance(maskData.data[i], maskData.data[i + 1], maskData.data[i + 2])
+    const factor = thresholdFn(Math.round(luminance))
+    result.data[i + 3] = Math.round((result.data[i + 3] * factor) / 255)
   }
 
-  return result;
+  return result
 }
 
 /**
@@ -162,17 +154,17 @@ export function applyLuminanceMask(
 export function applyMask(
   imageData: ImageData,
   maskData: ImageData,
-  options: MaskOptions = { type: 'alpha' }
+  options: MaskOptions = { type: 'alpha' },
 ): ImageData {
-  const { type, threshold = 128, invert = false } = options;
+  const { type, threshold = 128, invert = false } = options
 
   // If dimensions don't match, resize mask to fit
   if (imageData.width !== maskData.width || imageData.height !== maskData.height) {
-    const resizedMask = resizeMaskData(maskData, imageData.width, imageData.height);
-    return applyMaskWithType(imageData, resizedMask, type, threshold, invert);
+    const resizedMask = resizeMaskData(maskData, imageData.width, imageData.height)
+    return applyMaskWithType(imageData, resizedMask, type, threshold, invert)
   }
 
-  return applyMaskWithType(imageData, maskData, type, threshold, invert);
+  return applyMaskWithType(imageData, maskData, type, threshold, invert)
 }
 
 /**
@@ -183,17 +175,17 @@ function applyMaskWithType(
   maskData: ImageData,
   type: MaskType,
   threshold: number,
-  invert: boolean
+  invert: boolean,
 ): ImageData {
   switch (type) {
     case 'alpha':
-      return applyAlphaMask(imageData, maskData, threshold, invert);
+      return applyAlphaMask(imageData, maskData, threshold, invert)
     case 'brightness':
-      return applyBrightnessMask(imageData, maskData, threshold, invert);
+      return applyBrightnessMask(imageData, maskData, threshold, invert)
     case 'luminance':
-      return applyLuminanceMask(imageData, maskData, threshold, invert);
+      return applyLuminanceMask(imageData, maskData, threshold, invert)
     default:
-      throw new Error(`Unknown mask type: ${type}`);
+      throw new Error(`Unknown mask type: ${type}`)
   }
 }
 
@@ -209,37 +201,37 @@ function applyMaskWithType(
 export function resizeMaskData(
   src: ImageData,
   targetWidth: number,
-  targetHeight: number
+  targetHeight: number,
 ): ImageData {
   if (src.width === targetWidth && src.height === targetHeight) {
-    return src;
+    return src
   }
 
-  const result = new ImageData(targetWidth, targetHeight, { colorSpace: src.colorSpace });
-  const xRatio = src.width / targetWidth;
-  const yRatio = src.height / targetHeight;
+  const result = new ImageData(targetWidth, targetHeight, { colorSpace: src.colorSpace })
+  const xRatio = src.width / targetWidth
+  const yRatio = src.height / targetHeight
 
   for (let y = 0; y < targetHeight; y++) {
     for (let x = 0; x < targetWidth; x++) {
-      const srcX = Math.floor(x * xRatio);
-      const srcY = Math.floor(y * yRatio);
-      const srcIdx = (srcY * src.width + srcX) * 4;
-      const dstIdx = (y * targetWidth + x) * 4;
+      const srcX = Math.floor(x * xRatio)
+      const srcY = Math.floor(y * yRatio)
+      const srcIdx = (srcY * src.width + srcX) * 4
+      const dstIdx = (y * targetWidth + x) * 4
 
       // Nearest neighbor sampling
-      result.data[dstIdx] = src.data[srcIdx];
-      result.data[dstIdx + 1] = src.data[srcIdx + 1];
-      result.data[dstIdx + 2] = src.data[srcIdx + 2];
-      result.data[dstIdx + 3] = src.data[srcIdx + 3];
+      result.data[dstIdx] = src.data[srcIdx]
+      result.data[dstIdx + 1] = src.data[srcIdx + 1]
+      result.data[dstIdx + 2] = src.data[srcIdx + 2]
+      result.data[dstIdx + 3] = src.data[srcIdx + 3]
     }
   }
 
-  return result;
+  return result
 }
 
 /**
  * Checks if the mask module has any platform dependencies.
  */
 export function isMaskPlatformIndependent(): boolean {
-  return true;
+  return true
 }

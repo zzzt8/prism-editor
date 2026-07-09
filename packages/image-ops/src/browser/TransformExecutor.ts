@@ -6,82 +6,64 @@
  * - core/transform/transform.ts: Pure algorithm (no platform dependencies)
  */
 
-import type { NodeExecutor, TransformExecutorOutput } from '@prism/shared-types';
-import type { ImageData } from '@prism/shared-types';
-import type { TransformOptions } from '../core/transform/types';
-import { unwrapImageData } from '@prism/shared-types';
-import { generatePreviewUrl } from '../preview-strategy';
-import type { ExecutionContext } from '@prism/shared-types';
-import { createCanvas, makeImageData, getImageData, putImageData } from './canvas-utils';
+import type { NodeExecutor, TransformExecutorOutput } from '@prism/shared-types'
+import { unwrapImageData } from '@prism/shared-types'
+import { generatePreviewUrl } from '../preview-strategy'
+import type { ExecutionContext } from '@prism/shared-types'
+import { createCanvas, getImageData, putImageData } from './canvas-utils'
 
 /**
  * Browser-specific transform executor.
  * Uses Canvas 2D API for efficient transformation operations.
  */
-export const transformExecutor: NodeExecutor = async (
-  inputs,
-  params,
-  _ctx: ExecutionContext
-) => {
-  const rawImage = inputs['image'] as Parameters<typeof unwrapImageData>[0] | undefined;
-  const image = rawImage ? unwrapImageData(rawImage) : undefined;
+export const transformExecutor: NodeExecutor = async (inputs, params, _ctx: ExecutionContext) => {
+  const rawImage = inputs['image'] as Parameters<typeof unwrapImageData>[0] | undefined
+  const image = rawImage ? unwrapImageData(rawImage) : undefined
 
   if (!image) {
-    throw new Error('image input is required for transform executor');
+    throw new Error('image input is required for transform executor')
   }
 
-  const translateX = (params['translateX'] as number) ?? 0;
-  const translateY = (params['translateY'] as number) ?? 0;
-  const scaleX = (params['scaleX'] as number) ?? 1;
-  const scaleY = (params['scaleY'] as number) ?? 1;
-  const rotation = (params['rotation'] as number) ?? 0;
-  const cropX = (params['cropX'] as number) ?? 0;
-  const cropY = (params['cropY'] as number) ?? 0;
-  const cropWidth = (params['cropWidth'] as number) ?? 0;
-  const cropHeight = (params['cropHeight'] as number) ?? 0;
-
-  const transformOptions: TransformOptions = {
-    translateX,
-    translateY,
-    scaleX,
-    scaleY,
-    rotation,
-    cropX,
-    cropY,
-    cropWidth,
-    cropHeight,
-  };
+  const translateX = (params['translateX'] as number) ?? 0
+  const translateY = (params['translateY'] as number) ?? 0
+  const scaleX = (params['scaleX'] as number) ?? 1
+  const scaleY = (params['scaleY'] as number) ?? 1
+  const rotation = (params['rotation'] as number) ?? 0
+  const cropX = (params['cropX'] as number) ?? 0
+  const cropY = (params['cropY'] as number) ?? 0
+  const cropWidth = (params['cropWidth'] as number) ?? 0
+  const cropHeight = (params['cropHeight'] as number) ?? 0
 
   // Use Canvas 2D for transformations (supports arbitrary rotation, scale, translate)
-  const { canvas, ctx } = createCanvas(image.width, image.height);
-  putImageData(canvas, image, 0, 0);
+  const { canvas } = createCanvas(image.width, image.height)
+  putImageData(canvas, image, 0, 0)
 
   // Calculate output dimensions
-  let outWidth = cropWidth > 0 ? cropWidth : image.width;
-  let outHeight = cropHeight > 0 ? cropHeight : image.height;
-  outWidth = Math.round(outWidth * Math.abs(scaleX));
-  outHeight = Math.round(outHeight * Math.abs(scaleY));
+  let outWidth = cropWidth > 0 ? cropWidth : image.width
+  let outHeight = cropHeight > 0 ? cropHeight : image.height
+  outWidth = Math.round(outWidth * Math.abs(scaleX))
+  outHeight = Math.round(outHeight * Math.abs(scaleY))
 
   if (outWidth <= 0 || outHeight <= 0) {
-    throw new Error('Invalid output dimensions after transform');
+    throw new Error('Invalid output dimensions after transform')
   }
 
-  const outCanvas = new OffscreenCanvas(outWidth, outHeight);
-  const outCtx = outCanvas.getContext('2d');
-  if (!outCtx) throw new Error('Failed to get 2D context');
+  const outCanvas = new OffscreenCanvas(outWidth, outHeight)
+  const outCtx = outCanvas.getContext('2d')
+  if (!outCtx) throw new Error('Failed to get 2D context')
 
-  outCtx.save();
+  outCtx.save()
 
   // Move origin to center of output canvas
-  outCtx.translate(outWidth / 2, outHeight / 2);
+  outCtx.translate(outWidth / 2, outHeight / 2)
   // Scale
-  outCtx.scale(scaleX, scaleY);
+  outCtx.scale(scaleX, scaleY)
   // Rotate
-  outCtx.rotate((rotation * Math.PI) / 180);
+  outCtx.rotate((rotation * Math.PI) / 180)
   // Apply translation
-  outCtx.translate(translateX, translateY);
+  outCtx.translate(translateX, translateY)
   // Shift back to center
-  outCtx.translate(-outWidth / 2, -outHeight / 2);
+  outCtx.translate(-outWidth / 2, -outHeight / 2)
 
   // Draw with crop offset
   outCtx.drawImage(
@@ -93,13 +75,13 @@ export const transformExecutor: NodeExecutor = async (
     0,
     0,
     cropWidth > 0 ? cropWidth : image.width,
-    cropHeight > 0 ? cropHeight : image.height
-  );
+    cropHeight > 0 ? cropHeight : image.height,
+  )
 
-  outCtx.restore();
+  outCtx.restore()
 
-  const result = getImageData(outCanvas, 0, 0, outWidth, outHeight);
-  const previewRef = await generatePreviewUrl(result, outWidth, outHeight);
+  const result = getImageData(outCanvas, 0, 0, outWidth, outHeight)
+  const previewRef = await generatePreviewUrl(result, outWidth, outHeight)
 
   return {
     type: 'transform',
@@ -115,5 +97,5 @@ export const transformExecutor: NodeExecutor = async (
     previewUrl: previewRef.url,
     width: outWidth,
     height: outHeight,
-  } satisfies TransformExecutorOutput;
-};
+  } satisfies TransformExecutorOutput
+}
