@@ -1,0 +1,5 @@
+schema: prism-workflow
+created: 2026-07-09
+change_class: high
+title: "Phase 3: Composer SDK Completion — LayerPanel + Undo/Redo + Mask Integration"
+description: "完善 Composer SDK：图层管理面板、Undo/Redo、蒙版运算集成、键盘快捷键"
