@@ -10,7 +10,7 @@
 |--------|-------|
 | Total Tasks | 7 |
 | Completed | 5 |
-| In Progress | 1 |
+| In Progress | 0 |
 
 ---
 
@@ -44,9 +44,9 @@ verify:
 
 **Acceptance Criteria**
 
-- [ ] `openspec/changes/codebase-large-file-split-tiles/proposal.md` 存在且包含 change_class、Why、What Changes、Capabilities、Out of Scope
-- [ ] `openspec/changes/codebase-large-file-split-tiles/design.md` 存在且包含 Goals、Decisions、Architecture Review、Verification Checklist
-- [ ] `openspec/changes/codebase-large-file-split-tiles/tasks.md` 存在且包含 T0.1–T0.5 + 子 change 调度任务
+- [x] `openspec/changes/codebase-large-file-split-tiles/proposal.md` 存在且包含 change_class、Why、What Changes、Capabilities、Out of Scope
+- [x] `openspec/changes/codebase-large-file-split-tiles/design.md` 存在且包含 Goals、Decisions、Architecture Review、Verification Checklist
+- [x] `openspec/changes/codebase-large-file-split-tiles/tasks.md` 存在且包含 T0.1–T0.5 + 子 change 调度任务
 
 ---
 
@@ -162,10 +162,10 @@ dependencies:
 
 **Acceptance Criteria**
 
-- [ ] `openspec/changes/split-tiles-core-edges` 目录存在
-- [ ] proposal / design / tasks 完整
-- [ ] `openspec change validate` 通过
-- [ ] 子 change proposal 的 Out of Scope 显式列出“不拆 useCanvasStore 核心 / 不拆 worker mask/transform/export”
+- [x] `openspec/changes/split-tiles-core-edges` 目录存在
+- [x] proposal / design / tasks 完整
+- [x] `openspec change validate` 通过
+- [x] 子 change proposal 的 Out of Scope 显式列出"不拆 useCanvasStore 核心 / 不拆 worker mask/transform/export"
 
 ---
 
