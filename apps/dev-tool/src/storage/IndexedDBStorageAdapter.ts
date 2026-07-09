@@ -4,24 +4,16 @@
 import type { StorageAdapter, WorkflowMeta, NodeDefinition, Connection } from '@prism/shared-types';
 import type { Workflow } from '@prism/shared-types';
 import { createId } from '@prism/shared-types';
-
-const DB_NAME = 'prism-editor';
-const DB_VERSION = 2; // Bump version for new stores
-const STORE_WORKFLOWS = 'workflows';
-const STORE_META = 'meta';
-const STORE_INDEX = 'index';
-const STORE_VERSIONS = 'versions';
-const MAX_VERSION_RECORDS = 50;
-
-// Version data structure
-interface VersionRecord {
-  id: string;
-  workflowId: string;
-  version: string;
-  content: string;
-  createdBy: string | null;
-  createdAt: string;
-}
+import {
+  DB_NAME,
+  DB_VERSION,
+  STORE_WORKFLOWS,
+  STORE_META,
+  STORE_INDEX,
+  STORE_VERSIONS,
+  MAX_VERSION_RECORDS,
+  type VersionRecord,
+} from './indexedDbConstants';
 
 export class IndexedDBStorageAdapter implements StorageAdapter {
   private db: IDBDatabase | null = null;

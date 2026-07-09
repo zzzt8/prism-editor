@@ -1,25 +1,6 @@
 // Image loading with CORS support
 import type { ImageRef, ImageLoadOptions, ImageLoadResult } from '@prism/shared-types';
-
-/** Infer MIME type from URL path extension */
-function inferMimeType(url: string): string {
-  const ext = url.split('?')[0].split('.').pop()?.toLowerCase();
-  switch (ext) {
-    case 'jpg':
-    case 'jpeg':
-      return 'image/jpeg';
-    case 'webp':
-      return 'image/webp';
-    case 'gif':
-      return 'image/gif';
-    case 'bmp':
-      return 'image/bmp';
-    case 'ico':
-      return 'image/x-icon';
-    default:
-      return 'image/png'; // conservative default
-  }
-}
+import { inferMimeType } from './load-image/inferMimeType';
 
 export interface LoadCrossOriginImageOptions extends Omit<ImageLoadOptions, 'crossOrigin'> {
   timeout?: number;

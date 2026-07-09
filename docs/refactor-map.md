@@ -108,6 +108,38 @@
 
 ---
 
+## 2026-07-09 - Tile: IndexedDBStorageAdapter DB constants/types
+
+- 原文件：`apps/dev-tool/src/storage/IndexedDBStorageAdapter.ts:1-25`
+- 新文件：`apps/dev-tool/src/storage/indexedDbConstants.ts`
+- 新文件职责：IndexedDB schema 常量（`DB_NAME`、`DB_VERSION`、`STORE_WORKFLOWS/META/INDEX/VERSIONS`、`MAX_VERSION_RECORDS`）+ `VersionRecord` 类型
+- 对外暴露：`DB_NAME`、`DB_VERSION`、`STORE_WORKFLOWS`、`STORE_META`、`STORE_INDEX`、`STORE_VERSIONS`、`MAX_VERSION_RECORDS`、`VersionRecord`
+- 仍依赖它的位置：`IndexedDBStorageAdapter.ts`（import）
+- 下次修改该功能先看：
+  - `apps/dev-tool/src/storage/indexedDbConstants.ts`
+  - `apps/dev-tool/src/storage/IndexedDBStorageAdapter.ts`
+- 父 change：`codebase-large-file-split-tiles`
+- 子 change：`split-tiles-service-layer`（T1）
+- ECC lane：refactor / code-reviewer
+
+---
+
+## 2026-07-09 - Tile: load-image inferMimeType
+
+- 原文件：`packages/image-ops/src/load-image.ts:4-22`
+- 新文件：`packages/image-ops/src/load-image/inferMimeType.ts`
+- 新文件职责：根据 URL 扩展名推断 MIME type 的纯函数（jpg/jpeg/webp/gif/bmp/ico → 对应 mime；默认 png）
+- 对外暴露：`inferMimeType`
+- 仍依赖它的位置：`load-image.ts`（import）
+- 下次修改该功能先看：
+  - `packages/image-ops/src/load-image/inferMimeType.ts`
+  - `packages/image-ops/src/load-image.ts`
+- 父 change：`codebase-large-file-split-tiles`
+- 子 change：`split-tiles-service-layer`（T2）
+- ECC lane：refactor / code-reviewer
+
+---
+
 ## 2026-07-09 - Tile: dense-control-node.css Export text preview
 
 - 原文件：`apps/dev-tool/src/styles/nodes/dense-control-node.css:961-977`

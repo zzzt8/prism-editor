@@ -8,8 +8,8 @@
 
 | Metric | Value |
 |--------|-------|
-| Total Tasks | 6 |
-| Completed | 0 |
+| Total Tasks | 5 |
+| Completed | 5 |
 | In Progress | 0 |
 
 ---
@@ -38,10 +38,10 @@ verify:
 
 **Acceptance Criteria**
 
-- [ ] `indexedDbConstants.ts` 存在
-- [ ] `IndexedDBStorageAdapter.ts` 不再含 DB 常量本体，仅 import
-- [ ] `DB_NAME`、`DB_VERSION`、`STORE_NAMES` 数值与原值完全一致
-- [ ] `pnpm typecheck --filter=dev-tool` 退出码 0
+- [x] `indexedDbConstants.ts` 存在
+- [x] `IndexedDBStorageAdapter.ts` 不再含 DB 常量本体，仅 import
+- [x] `DB_NAME`、`DB_VERSION`、`STORE_NAMES` 数值与原值完全一致
+- [x] `pnpm typecheck --filter=dev-tool` 退出码 0
 
 ---
 
@@ -70,9 +70,9 @@ dependencies:
 
 **Acceptance Criteria**
 
-- [ ] `inferMimeType.ts` 存在
-- [ ] `load-image.ts` 不再含 `inferMimeType` 本体，仅 import
-- [ ] `pnpm typecheck --filter=@prism/image-ops` 退出码 0
+- [x] `inferMimeType.ts` 存在
+- [x] `load-image.ts` 不再含 `inferMimeType` 本体，仅 import
+- [x] `pnpm typecheck --filter=@prism/image-ops` 退出码 0
 
 ---
 
@@ -102,7 +102,7 @@ dependencies:
 
 **Acceptance Criteria**
 
-- [ ] `docs/refactor-map.md` 至少 2 个 `## YYYY-MM-DD - Tile:` 块（本子 change 新增）
+- [x] `docs/refactor-map.md` 至少 2 个 `## YYYY-MM-DD - Tile:` 块（本子 change 新增）
 
 ---
 
