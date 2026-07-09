@@ -9,7 +9,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 8 |
-| Completed | 0 |
+| Completed | 2 |
 | In Progress | 0 |
 
 ---
@@ -38,9 +38,9 @@ verify:
 
 **Acceptance Criteria**
 
-- [ ] `apps/dev-tool/src/components/workflows/DeleteConfirm.tsx` 存在
-- [ ] `WorkflowsView.tsx` 不再含 `DeleteConfirm` 本体，仅 re-export
-- [ ] `pnpm typecheck --filter=dev-tool` 退出码 0
+- [x] `apps/dev-tool/src/components/workflows/DeleteConfirm.tsx` 存在
+- [x] `WorkflowsView.tsx` 不再含 `DeleteConfirm` 本体，仅 re-export
+- [x] `pnpm typecheck --filter=dev-tool` 退出码 0
 
 ---
 

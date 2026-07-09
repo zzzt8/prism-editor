@@ -168,21 +168,11 @@ export function usePreviewImage(
   }, [imageFileValue, result, execImageKey]);
 }
 
-// Drag state for image file sharing between canvas and node components
-const DRAG_DATA_KEY = '__prism_drag_image';
-
-export interface DragState {
-  paramKey: 'imageFile' | 'maskFile';
-  nodeId: string;
-}
-
-export function setDragImageState(state: DragState | null) {
-  (window as unknown as Record<string, unknown>)[DRAG_DATA_KEY] = state;
-}
-
-export function getDragImageState(): DragState | null {
-  return (window as unknown as Record<string, unknown>)[DRAG_DATA_KEY] as DragState | null;
-}
+// Drag state helper split out to ./PrismNodeControls/dragImageState.ts.
+// Imported for local usage; re-exported below as Facade for external callers.
+import { setDragImageState, getDragImageState } from './PrismNodeControls/dragImageState';
+export type { DragState } from './PrismNodeControls/dragImageState';
+export { setDragImageState, getDragImageState } from './PrismNodeControls/dragImageState';
 
 // Helper function to process an image file and update node params
 function processImageFile(
