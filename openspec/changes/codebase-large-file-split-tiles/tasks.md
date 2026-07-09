@@ -204,16 +204,16 @@ dependencies:
 
 **Acceptance Criteria**
 
-- [ ] `apps/dev-tool/src/components/workflows/DeleteConfirm.tsx` 存在并被 `WorkflowsView.tsx` re-export
-- [ ] `apps/dev-tool/src/components/nodes/PrismNodeControls/dragImageState.ts` 存在并被 `PrismNodeControls.tsx` re-export
-- [ ] `apps/dev-tool/src/components/header/WorkflowHeaderStyles.css` 或等价 module 存在，`WorkflowHeader.tsx` 改为 import
-- [ ] `apps/dev-tool/src/components/Inspector/InfoPanel.module.css` 存在
-- [ ] `dense-control-node.css` 体积下降至少 20 行
-- [ ] `docs/refactor-map.md` 至少新增 1 个 tile 块摘要
-- [ ] `pnpm typecheck --filter=dev-tool` 退出码 0
-- [ ] `pnpm lint --filter=dev-tool` 退出码 0
-- [ ] `pnpm test --filter=dev-tool` 退出码 0
-- [ ] 子 change A 已 archive（`openspec list` 不再出现）
+- [x] `apps/dev-tool/src/components/workflows/DeleteConfirm.tsx` 存在并被 `WorkflowsView.tsx` re-export
+- [x] `apps/dev-tool/src/components/nodes/PrismNodeControls/dragImageState.ts` 存在并被 `PrismNodeControls.tsx` re-export
+- [x] `apps/dev-tool/src/components/header/WorkflowHeaderStyles.css` 或等价 module 存在，`WorkflowHeader.tsx` 改为 import
+- [x] `apps/dev-tool/src/components/Inspector/InfoPanel.module.css` 存在
+- [x] `dense-control-node.css` 体积下降至少 20 行
+- [x] `docs/refactor-map.md` 至少新增 1 个 tile 块摘要
+- [x] `pnpm typecheck --filter=dev-tool` 退出码 0
+- [x] `pnpm lint --filter=dev-tool` 退出码 0
+- [x] `pnpm test --filter=dev-tool` 退出码 0
+- [x] 子 change A 已 archive（`openspec list` 不再出现）
 
 ---
 
@@ -247,14 +247,14 @@ dependencies:
 
 **Acceptance Criteria**
 
-- [ ] `apps/dev-tool/src/storage/indexedDbConstants.ts` 存在并被 `IndexedDBStorageAdapter.ts` import
-- [ ] `packages/image-ops/src/load-image/inferMimeType.ts` 存在并被 `load-image.ts` import
-- [ ] `IndexedDBStorageAdapter` 公开方法（`save`、`load`、`list`、`delete`、`getVersions` 等）签名不变
-- [ ] `loadImageExecutor` / `loadMaskExecutor` 公开签名不变
-- [ ] `docs/refactor-map.md` 至少再新增 1 个 tile 块摘要
-- [ ] `pnpm typecheck --filter=dev-tool --filter=@prism/image-ops` 退出码 0
-- [ ] `pnpm test --filter=dev-tool --filter=@prism/image-ops` 退出码 0
-- [ ] 子 change B 已 archive
+- [x] `apps/dev-tool/src/storage/indexedDbConstants.ts` 存在并被 `IndexedDBStorageAdapter.ts` import
+- [x] `packages/image-ops/src/load-image/inferMimeType.ts` 存在并被 `load-image.ts` import
+- [x] `IndexedDBStorageAdapter` 公开方法（`save`、`load`、`list`、`delete`、`getVersions` 等）签名不变
+- [x] `loadImageExecutor` / `loadMaskExecutor` 公开签名不变
+- [x] `docs/refactor-map.md` 至少再新增 1 个 tile 块摘要
+- [x] `pnpm typecheck --filter=dev-tool --filter=@prism/image-ops` 退出码 0
+- [x] `pnpm test --filter=dev-tool --filter=@prism/image-ops` 退出码 0
+- [x] 子 change B 已 archive
 
 ---
 

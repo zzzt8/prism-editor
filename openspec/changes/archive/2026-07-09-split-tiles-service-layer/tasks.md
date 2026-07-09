@@ -132,9 +132,9 @@ dependencies:
 
 **Acceptance Criteria**
 
-- [ ] typecheck 通过
-- [ ] dev-tool 测试通过
-- [ ] image-ops 测试通过
+- [x] typecheck 通过
+- [x] dev-tool 测试通过
+- [x] image-ops 测试通过
 
 ---
 
