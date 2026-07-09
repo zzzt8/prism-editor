@@ -28,7 +28,7 @@ import { compositeImages } from '../core/composite/composite';
 
 ---
 
-### T1.2 — 修复 nodejs/transform-executor 调用路径
+### T1.2 — 检查 nodejs/transform-executor 调用路径
 
 **opsx-meta**:
 ```yaml
@@ -41,9 +41,11 @@ verify:
 
 检查 `packages/image-ops/src/nodejs/transform-executor.ts` 是否调用 `core/transform/transform.ts`。
 
+**结论**：nodejs/transform-executor 使用 sharp 原生 API（resize/rotate/extract）是对的平台适配设计，无需修改。
+
 验收：
-- [ ] `npm run typecheck` 通过
-- [ ] `packages/image-ops/src/nodejs/transform-executor.test.ts` 测试通过（如存在）
+- [x] `npm run typecheck` 通过
+- [x] nodejs/transform-executor 无需修改
 
 ---
 
@@ -60,9 +62,14 @@ verify:
 
 检查 `packages/image-ops/src/nodejs/apply-mask-executor.ts` 是否调用 `core/mask/mask.ts`。
 
+**修改**：
+- 导入 `applyMask` 从 `core/mask/mask.ts`
+- 删除本地实现的 `applyAlphaMask`/`applyBrightnessMask`/`applyLuminanceMask`
+- 删除 `resizeMaskToImage`（core/mask/mask.ts 内部处理）
+
 验收：
-- [ ] `npm run typecheck` 通过
-- [ ] `packages/image-ops/src/nodejs/apply-mask-executor.test.ts` 测试通过（如存在）
+- [x] `npm run typecheck` 通过
+- [x] `packages/image-ops/src/nodejs/apply-mask-executor.test.ts` 测试通过（如存在）
 
 ---
 
