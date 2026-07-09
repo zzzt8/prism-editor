@@ -4,9 +4,6 @@
 import { create } from 'zustand';
 import type {
   LayerState,
-  BlendMode,
-  MaskState,
-  ComposerState as IComposerState,
 } from './types';
 
 export interface ComposerStoreState {
@@ -17,15 +14,15 @@ export interface ComposerStoreState {
 }
 
 export interface ComposerStoreActions {
-  selectLayer: (id: string | null) => void;
-  updateLayer: (id: string, updates: Partial<LayerState>) => void;
-  addLayer: (layer: LayerState) => void;
-  removeLayer: (id: string) => void;
-  updateDesignParam: (key: string, value: number | string) => void;
-  updateInput: (key: string, value: string) => void;
-  setLayers: (layers: LayerState[]) => void;
-  setDesignParams: (params: Record<string, number | string>) => void;
-  setInputs: (inputs: Record<string, string>) => void;
+  selectLayer: (_id: string | null) => void;
+  updateLayer: (_id: string, _updates: Partial<LayerState>) => void;
+  addLayer: (_layer: LayerState) => void;
+  removeLayer: (_id: string) => void;
+  updateDesignParam: (_key: string, _value: number | string) => void;
+  updateInput: (_key: string, _value: string) => void;
+  setLayers: (_layers: LayerState[]) => void;
+  setDesignParams: (_params: Record<string, number | string>) => void;
+  setInputs: (_inputs: Record<string, string>) => void;
   reset: () => void;
 }
 
@@ -46,16 +43,16 @@ export const createComposerStore = (initial?: Partial<ComposerStoreState>) =>
     selectLayer: (id) =>
       set({ selectedLayerId: id }),
 
-    updateLayer: (id, updates) =>
+    updateLayer: (layerId, layerUpdates) =>
       set((state) => ({
-        layers: state.layers.map((layer) =>
-          layer.id === id ? { ...layer, ...updates } : layer
+        layers: state.layers.map((l) =>
+          l.id === layerId ? { ...l, ...layerUpdates } : l
         ),
       })),
 
-    addLayer: (layer) =>
+    addLayer: (newLayer) =>
       set((state) => ({
-        layers: [...state.layers, layer],
+        layers: [...state.layers, newLayer],
       })),
 
     removeLayer: (id) =>
@@ -65,24 +62,24 @@ export const createComposerStore = (initial?: Partial<ComposerStoreState>) =>
           state.selectedLayerId === id ? null : state.selectedLayerId,
       })),
 
-    updateDesignParam: (key, value) =>
+    updateDesignParam: (paramKey, paramValue) =>
       set((state) => ({
-        designParams: { ...state.designParams, [key]: value },
+        designParams: { ...state.designParams, [paramKey]: paramValue },
       })),
 
-    updateInput: (key, value) =>
+    updateInput: (inputKey, inputValue) =>
       set((state) => ({
-        inputs: { ...state.inputs, [key]: value },
+        inputs: { ...state.inputs, [inputKey]: inputValue },
       })),
 
-    setLayers: (layers) =>
-      set({ layers }),
+    setLayers: (newLayers) =>
+      set({ layers: newLayers }),
 
-    setDesignParams: (designParams) =>
-      set({ designParams }),
+    setDesignParams: (newDesignParams) =>
+      set({ designParams: newDesignParams }),
 
-    setInputs: (inputs) =>
-      set({ inputs }),
+    setInputs: (newInputs) =>
+      set({ inputs: newInputs }),
 
     reset: () =>
       set(initialState),

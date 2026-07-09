@@ -111,7 +111,7 @@ function FlowRow({
   deletingId,
 }: {
   flow: FlowMeta;
-  onDelete: (id: string) => void;
+  onDelete: (_id: string) => void;
   deletingId: string | null;
 }) {
   const isDeleting = deletingId === flow.id;

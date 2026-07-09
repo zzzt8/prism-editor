@@ -56,7 +56,7 @@ export class ApiStorageAdapter implements StorageAdapter {
     return workflow;
   }
 
-  async load(id: string): Promise<Workflow> {
+  async load(_id: string): Promise<Workflow> {
     // Phase 2: load via API template → flow path
     // This method kept for interface compliance only
     throw new Error('load() not implemented in Phase 2 ApiStorageAdapter. Use getTemplate + getFlow instead.');
@@ -83,7 +83,7 @@ export class ApiStorageAdapter implements StorageAdapter {
   async createWorkflow(
     name: string,
     description?: string,
-    category?: string
+    _category?: string
   ): Promise<{ meta: WorkflowMeta; content: Workflow }> {
     const template = await this.createTemplate({ name, description, content: '{}' });
     return {

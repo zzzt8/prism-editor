@@ -6,7 +6,7 @@ import { Panel } from '@prism/shared-ui';
 
 interface Props {
   value: Record<string, unknown>;
-  onChange: (bindings: Record<string, unknown>) => void;
+  onChange: (_bindings: Record<string, unknown>) => void;
 }
 
 export function BindingsEditor({ value, onChange }: Props) {
