@@ -15,7 +15,11 @@
     "./composite": "./dist/src/composite.js",
     "./export-image": "./dist/src/export-image.js",
     "./nodejs": "./dist/src/nodejs/index.js",
-    "./sharp-utils": "./dist/src/nodejs/sharp-utils.js"
+    "./sharp-utils": "./dist/src/nodejs/sharp-utils.js",
+    "./browser": {
+      "browser": "./dist/src/browser/index.js",
+      "default": "./dist/src/browser/index.js"
+    }
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
