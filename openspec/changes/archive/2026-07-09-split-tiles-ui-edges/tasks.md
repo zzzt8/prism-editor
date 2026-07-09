@@ -9,7 +9,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 8 |
-| Completed | 6 |
+| Completed | 7 |
 | In Progress | 0 |
 
 ---
@@ -229,9 +229,9 @@ dependencies:
 
 **Acceptance Criteria**
 
-- [ ] typecheck 通过
-- [ ] lint 通过
-- [ ] dev-tool 测试通过
+- [x] typecheck 通过
+- [x] lint 通过
+- [x] dev-tool 测试通过
 
 ---
 
