@@ -2,6 +2,8 @@
 // Phase 2: JWT token sync removed (PRD §6.3 mall trust mode).
 // ApiStorageAdapter uses X-PRISM-SECRET header only.
 
+import { ApiStorageAdapter } from './ApiStorageAdapter';
+
 export { JsonFileAdapterImpl, jsonFileAdapter } from './JsonFileAdapter';
 export { ApiStorageAdapter } from './ApiStorageAdapter';
 export { IndexedDBStorageAdapter, indexedDBStorageAdapter } from './IndexedDBStorageAdapter';
@@ -9,8 +11,6 @@ export { IndexedDBStorageAdapter, indexedDBStorageAdapter } from './IndexedDBSto
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // Singleton instance - created eagerly at module load to avoid timer leaks.
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { ApiStorageAdapter } = require('./ApiStorageAdapter');
 const _instance = new ApiStorageAdapter(apiBaseUrl);
 
 // Primary storage adapter (server-first: Save/New/Publish all go to server)

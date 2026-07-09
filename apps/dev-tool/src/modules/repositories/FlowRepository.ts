@@ -24,11 +24,12 @@ export interface CreateFlowInput {
 
 export class FlowRepository {
   async list(templateId: string): Promise<FlowMeta[]> {
-    return activeStorageAdapter.listFlows(templateId);
+    const flows = await activeStorageAdapter.listFlows(templateId) as FlowMeta[];
+    return flows;
   }
 
   async add(templateId: string, data: CreateFlowInput): Promise<FlowDetail> {
-    return activeStorageAdapter.addFlow(templateId, data);
+    return await activeStorageAdapter.addFlow(templateId, data) as FlowDetail;
   }
 
   async update(templateId: string, flowId: string, data: Partial<CreateFlowInput>): Promise<void> {
