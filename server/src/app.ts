@@ -1,9 +1,11 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyError } from 'fastify';
 import assetsRoutes from './routes/assets.js';
 import renderRoutes from './routes/render.js';
+import templatesRoutes from './routes/templates.js';
 
 const appPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   await fastify.register(assetsRoutes);
+  await fastify.register(templatesRoutes);
   await fastify.register(renderRoutes, { prefix: '/api/render' });
 };
 

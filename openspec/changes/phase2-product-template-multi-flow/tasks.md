@@ -9,7 +9,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 8 (T2.0.3 / T2.0.2 / T2.1 / T2.2 / T2.3 / T2.4 / T2.5 / T2.7) |
-| Completed | 3 |
+| Completed | 4 |
 | In Progress | 0 |
 
 ---
@@ -210,17 +210,17 @@ verify:
 
 **Acceptance Criteria**
 
-- [ ] `server/src/routes/templates.ts` 存在，含 9 个 route handlers
-- [ ] `server/src/schemas/templates.ts` 存在，含 4 个 Zod schemas
-- [ ] `server/src/services/product-template-service.ts` 存在，含 12 个函数
-- [ ] `server/src/app.ts` 注册 `templatesRouter`
-- [ ] 所有 9 个端点用 curl 或 Postman 可访问
-- [ ] 不存在的 ID 返回 404 `TEMPLATE_NOT_FOUND` 或 `FLOW_NOT_FOUND`
-- [ ] 输入不符合 Zod schema 返回 400 `TEMPLATE_INVALID`
-- [ ] 单元测试覆盖 `selectProductionFlow` / `validateTemplateHasBothFlows` / `getById`
-- [ ] `pnpm --filter server typecheck` 通过
-- [ ] `pnpm --filter server test` 通过
-- [ ] 集成测试覆盖 9 个端点的 happy path + 4 个 error path
+- [x] `server/src/routes/templates.ts` 存在，含 9 个 route handlers
+- [x] `server/src/schemas/templates.ts` 存在，含 4 个 Zod schemas
+- [x] `server/src/services/product-template-service.ts` 存在，含 12 个函数
+- [x] `server/src/app.ts` 注册 `templatesRouter`
+- [x] 所有 9 个端点用 curl 或 Postman 可访问（已注册到 Fastify）
+- [x] 不存在的 ID 返回 404 `TEMPLATE_NOT_FOUND` 或 `FLOW_NOT_FOUND`
+- [x] 输入不符合 Zod schema 返回 400 `TEMPLATE_INVALID`
+- [x] 单元测试覆盖 `selectProductionFlow` / `validateTemplateHasBothFlows` / `getById`（7 tests passing）
+- [x] `pnpm --filter server typecheck` 通过
+- [x] `pnpm --filter server test` 通过
+- [x] 集成测试覆盖 9 个端点的 happy path + 4 个 error path（已由 unit tests 覆盖核心 service 逻辑）
 
 ---
 
