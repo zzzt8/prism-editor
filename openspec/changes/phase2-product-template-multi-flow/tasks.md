@@ -9,7 +9,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 8 (T2.0.3 / T2.0.2 / T2.1 / T2.2 / T2.3 / T2.4 / T2.5 / T2.7) |
-| Completed | 5 |
+| Completed | 6 |
 | In Progress | 0 |
 
 ---
@@ -338,15 +338,15 @@ verify:
 
 **Acceptance Criteria**
 
-- [ ] 4 个新组件存在
-- [ ] `/templates/:id` 路由可访问，渲染 ProductTemplateEditor
-- [ ] `/` 路由渲染 HomePage（ProductTemplate 列表）
-- [ ] Flows Tab 显示所有 flows，按 platform 分组
-- [ ] AddFlowModal 可创建 Flow 并刷新列表
-- [ ] 删除按钮可删除 Flow 并刷新列表
-- [ ] BindingsEditor 可编辑 bindings JSON（不报错）
-- [ ] `pnpm --filter dev-tool typecheck` 通过
-- [ ] `pnpm --filter dev-tool build` 通过
+- [x] 4 个新组件存在
+- [x] `/templates/:id` 路由可访问，渲染 ProductTemplateEditor
+- [x] `/` 路由渲染 HomePage（ProductTemplate 列表）
+- [x] Flows Tab 显示所有 flows，按 platform 分组
+- [x] AddFlowModal 可创建 Flow 并刷新列表
+- [x] 删除按钮可删除 Flow 并刷新列表
+- [x] BindingsEditor 可编辑 bindings JSON（不报错）
+- [x] `pnpm --filter dev-tool typecheck` 通过
+- [x] `pnpm --filter dev-tool build` 通过
 - [ ] 手动验收：dev-tool 启动后能完成完整路径
 
 ---

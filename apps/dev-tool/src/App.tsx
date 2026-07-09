@@ -8,8 +8,9 @@ import { NodePanel } from './components/NodePanel';
 import { WorkflowCanvas } from './components/canvas/WorkflowCanvas';
 import { ParamPanel as Inspector } from './components/ParamPanel';
 import { WorkflowHeader } from './components/header/WorkflowHeader';
-import { WorkflowsView } from './components/WorkflowsView';
 import { NewWorkflowModal } from './components/NewWorkflowModal';
+import { ProductTemplateEditor } from './components/ProductTemplateEditor';
+import { HomePage } from './pages/HomePage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AuthGuard } from './components/AuthGuard';
 import { cleanupStorage } from './storage';
@@ -22,9 +23,7 @@ function EditorPage() {
   return (
     <>
       <DevToolLayout
-        header={
-          <WorkflowHeader onPublishClick={() => {}} publishStatus="idle" />
-        }
+        header={<WorkflowHeader onPublishClick={() => {}} publishStatus="idle" />}
         left={<NodePanel />}
         right={<Inspector />}
       >
@@ -33,22 +32,6 @@ function EditorPage() {
         </ReactFlowProvider>
       </DevToolLayout>
 
-      <NewWorkflowModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onCreated={() => setIsModalOpen(false)}
-      />
-    </>
-  );
-}
-
-// --- Root / Workflows page ---
-function HomePage() {
-  const [isModalOpen, setIsModalOpen] = React.useState(false);
-
-  return (
-    <>
-      <WorkflowsView onNewWorkflow={() => setIsModalOpen(true)} />
       <NewWorkflowModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -75,6 +58,14 @@ function AppRoutes() {
         element={
           <AuthGuard>
             <EditorPage />
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/templates/:id"
+        element={
+          <AuthGuard>
+            <ProductTemplateEditor />
           </AuthGuard>
         }
       />
