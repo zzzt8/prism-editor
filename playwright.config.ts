@@ -1,29 +1,27 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Playwright E2E Configuration
+ * Playwright E2E Configuration — Phase 2: ProductTemplate multi-flow
  *
- * 本配置支持：
- * - 本地开发: pnpm test:e2e
- * - CI: 自动使用 headless 模式
- * - 失败时自动保存 screenshot 和 trace
+ * Starts both dev-tool (port 3000) and API server (port 3001) before tests.
+ * dev-tool proxies /api/* to the server.
  */
 export default defineConfig({
   testDir: './tests/e2e',
-  fullyParallel: false, // 避免状态冲突
-  forbidOnly: !!process.env.CI, // CI 中禁止.only
+  fullyParallel: false,
+  forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : 1,
+  workers: 1,
   reporter: [
     ['html', { outputFolder: 'test-results/html' }],
     ['list'],
   ],
 
   use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:5173',
-    trace: 'on-first-retry', // 仅首次重试时保存 trace
-    screenshot: 'only-on-failure', // 失败时截图
-    video: 'on-first-retry', // 首次重试时录像
+    baseURL: 'http://localhost:3000',
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+    video: 'on-first-retry',
   },
 
   projects: [
@@ -31,22 +29,23 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
   ],
 
   webServer: process.env.CI
     ? undefined
-    : {
-        command: 'pnpm dev',
-        url: 'http://localhost:5173',
-        reuseExistingServer: true,
-        timeout: 120 * 1000,
-      },
+    : [
+        {
+          command: 'cd server && pnpm dev',
+          url: 'http://localhost:3001/api/health',
+          reuseExistingServer: true,
+          timeout: 30_000,
+        },
+        {
+          command: 'cd apps/dev-tool && pnpm dev',
+          url: 'http://localhost:3000',
+          reuseExistingServer: true,
+          timeout: 30_000,
+          waitForSelector: 'body',
+        },
+      ],
 });

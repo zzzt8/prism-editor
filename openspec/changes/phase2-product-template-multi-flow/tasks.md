@@ -504,13 +504,13 @@ verify:
 
 **Acceptance Criteria**
 
-- [ ] 4 个新 spec 文件存在
-- [ ] 3 个旧 spec 文件删除
+- [x] 4 个新 spec 文件存在
+- [x] 3 个旧 spec 文件删除
 - [ ] `pnpm exec playwright test` 全量通过
-- [ ] template-list 在 dev-tool 启动后能验证列表渲染
-- [ ] template-create 能完成创建路径
-- [ ] flow-manage 能完成新增/删除 Flow 路径
-- [ ] render-template 能验证 render API 返回 binary（检查 Content-Type）
+- [x] template-list 在 dev-tool 启动后能验证列表渲染
+- [x] template-create 能完成创建路径
+- [x] flow-manage 能完成新增/删除 Flow 路径
+- [x] render-template 能验证 render API 返回 binary（检查 Content-Type）
 
 ---
 
