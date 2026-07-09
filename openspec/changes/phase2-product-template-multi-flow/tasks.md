@@ -9,7 +9,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 8 (T2.0.3 / T2.0.2 / T2.1 / T2.2 / T2.3 / T2.4 / T2.5 / T2.7) |
-| Completed | 2 |
+| Completed | 3 |
 | In Progress | 0 |
 
 ---
@@ -145,12 +145,12 @@ verify:
 
 **Acceptance Criteria**
 
-- [ ] `server/prisma/schema.prisma` 中 `Workflow` model 包含 `@@index([templateId, platform])`
-- [ ] `pnpm prisma migrate dev` 生成 migration 文件
-- [ ] `pnpm prisma migrate status` 返回 `Database schema is up to date`
-- [ ] migration 文件名包含 `add_workflow_template_platform_index`
-- [ ] `pnpm --filter server build` 通过
-- [ ] SQLite 数据库验证索引生效：手测 `EXPLAIN QUERY PLAN SELECT * FROM Workflow WHERE templateId = ? AND platform = ?` 应使用索引
+- [x] `server/prisma/schema.prisma` 中 `Workflow` model 包含 `@@index([templateId, platform])`
+- [x] `pnpm prisma migrate dev` 生成 migration 文件
+- [x] `pnpm prisma migrate status` 返回 `Database schema is up to date`
+- [x] migration 文件名包含 `add_workflow_template_platform_index`
+- [x] `pnpm --filter server build` 通过
+- [x] SQLite 数据库验证索引生效：`EXPLAIN QUERY PLAN` 显示 `USING INDEX Workflow_templateId_platform_idx`
 
 ---
 
