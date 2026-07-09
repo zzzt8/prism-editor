@@ -8,8 +8,8 @@
 
 | Metric | Value |
 |--------|-------|
-| Total Tasks | 6 |
-| Completed | 0 |
+| Total Tasks | 5 |
+| Completed | 5 |
 | In Progress | 0 |
 
 ---
@@ -41,10 +41,10 @@ verify:
 
 **Acceptance Criteria**
 
-- [ ] `workerPoolSizing.ts` 存在
-- [ ] `workerPool.ts` 不再含 sizing 本体，仅 import
-- [ ] queue / execute / replace 段未被修改（verify 阶段 `git diff` 验证）
-- [ ] `pnpm typecheck --filter=@prism/image-ops` 退出码 0
+- [x] `workerPoolSizing.ts` 存在
+- [x] `workerPool.ts` 不再含 sizing 本体，仅 import
+- [x] queue / execute / replace 段未被修改
+- [x] `pnpm typecheck --filter=@prism/image-ops` 退出码 0
 
 ---
 
@@ -76,10 +76,10 @@ dependencies:
 
 **Acceptance Criteria**
 
-- [ ] `imageToImageData.ts` 存在
-- [ ] `ComposerCanvas.tsx` 不再含 `imageToImageData` 本体，仅 import
-- [ ] 组件主体未被修改（verify 阶段 `git diff` 验证）
-- [ ] `pnpm typecheck --filter=@prism/composer-sdk` 退出码 0
+- [x] `imageToImageData.ts` 存在
+- [x] `ComposerCanvas.tsx` 不再含 `imageToImageData` 本体，仅 import
+- [x] 组件主体未被修改
+- [x] `pnpm typecheck --filter=@prism/composer-sdk` 退出码 0
 
 ---
 
@@ -113,9 +113,9 @@ dependencies:
 
 **Acceptance Criteria**
 
-- [ ] `docs/refactor-map.md` 至少 2 个新增 `## YYYY-MM-DD - Tile:` 块（本子 change 贡献）
-- [ ] `git diff` 不含 `useCanvasStore.ts`
-- [ ] `git diff` 不含 `imageWorker.worker.ts`
+- [x] `docs/refactor-map.md` 至少 2 个新增 `## YYYY-MM-DD - Tile:` 块（本子 change 贡献）
+- [x] `git diff` 不含 `useCanvasStore.ts`
+- [x] `git diff` 不含 `imageWorker.worker.ts`
 
 ---
 
@@ -145,9 +145,9 @@ dependencies:
 
 **Acceptance Criteria**
 
-- [ ] typecheck 通过
-- [ ] image-ops 测试通过
-- [ ] composer-sdk 测试通过
+- [x] typecheck 通过
+- [x] image-ops 测试通过
+- [x] composer-sdk 测试通过
 
 ---
 

@@ -16,19 +16,10 @@ import type {
 } from './types';
 import { compositeExecutor } from '@prism/image-ops/browser';
 import type { BlendMode } from './types';
+import { imageToImageData } from './utils/imageToImageData';
 
-/**
- * Helper: Convert HTMLImageElement to ImageData
- */
-async function imageToImageData(img: HTMLImageElement): Promise<ImageData> {
-  const canvas = document.createElement('canvas');
-  canvas.width = img.naturalWidth;
-  canvas.height = img.naturalHeight;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Failed to get 2D context');
-  ctx.drawImage(img, 0, 0);
-  return ctx.getImageData(0, 0, canvas.width, canvas.height);
-}
+// Re-export for backwards compatibility (Facade).
+export { imageToImageData } from './utils/imageToImageData';
 
 /**
  * Apply a mask to ImageData by modifying the alpha channel

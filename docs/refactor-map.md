@@ -108,6 +108,38 @@
 
 ---
 
+## 2026-07-09 - Tile: workerPool sizing helpers
+
+- 原文件：`packages/image-ops/src/scheduler/workerPool.ts:10-44`
+- 新文件：`packages/image-ops/src/scheduler/workerPoolSizing.ts`
+- 新文件职责：worker pool sizing 纯函数（`calculateWorkerCount`、`getEffectiveSize`）
+- 对外暴露：`calculateWorkerCount`、`getEffectiveSize`
+- 仍依赖它的位置：`workerPool.ts`（import + re-export Facade）
+- 下次修改该功能先看：
+  - `packages/image-ops/src/scheduler/workerPoolSizing.ts`
+  - `packages/image-ops/src/scheduler/workerPool.ts`
+- 父 change：`codebase-large-file-split-tiles`
+- 子 change：`split-tiles-core-edges`（T1）
+- ECC lane：refactor / code-reviewer
+
+---
+
+## 2026-07-09 - Tile: ComposerCanvas imageToImageData
+
+- 原文件：`packages/composer-sdk/src/ComposerCanvas.tsx:20-31`
+- 新文件：`packages/composer-sdk/src/utils/imageToImageData.ts`
+- 新文件职责：`HTMLImageElement` → `ImageData` 转换的纯 async 函数（创建 canvas、设置尺寸、drawImage、getImageData）
+- 对外暴露：`imageToImageData`
+- 仍依赖它的位置：`ComposerCanvas.tsx`（import + re-export Facade）
+- 下次修改该功能先看：
+  - `packages/composer-sdk/src/utils/imageToImageData.ts`
+  - `packages/composer-sdk/src/ComposerCanvas.tsx`
+- 父 change：`codebase-large-file-split-tiles`
+- 子 change：`split-tiles-core-edges`（T2）
+- ECC lane：refactor / code-reviewer
+
+---
+
 ## 2026-07-09 - Tile: IndexedDBStorageAdapter DB constants/types
 
 - 原文件：`apps/dev-tool/src/storage/IndexedDBStorageAdapter.ts:1-25`
