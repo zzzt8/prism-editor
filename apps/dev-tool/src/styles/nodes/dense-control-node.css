@@ -957,21 +957,3 @@
   gap: 6px;
   padding: 12px;
 }
-
-/* Text preview area for Export node */
-.dcn-text-preview {
-  width: 100%;
-  min-height: 60px;
-  max-height: 150px;
-  border-radius: var(--dcn-radius-sm);
-  border: 1px solid var(--dcn-border);
-  background: var(--dcn-bg-header);
-  padding: 8px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: border-color 0.15s;
-}
-
-.dcn-text-preview:hover {
-  border-color: var(--dcn-accent);
-}
