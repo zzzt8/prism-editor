@@ -1,6 +1,6 @@
 // Prism Editor - Developer Tool App
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ReactFlowProvider } from '@xyflow/react';
 import { DevToolLayout } from './layouts/DevToolLayout';
@@ -10,14 +10,9 @@ import { ParamPanel as Inspector } from './components/ParamPanel';
 import { WorkflowHeader } from './components/header/WorkflowHeader';
 import { WorkflowsView } from './components/WorkflowsView';
 import { NewWorkflowModal } from './components/NewWorkflowModal';
-import { LoginPage } from './pages/LoginPage';
-import { RegisterPage } from './pages/RegisterPage';
 import { SettingsPage } from './pages/SettingsPage';
-import { PublicRoute, AuthGuard } from './components/AuthGuard';
-import { useAuthStore } from './store/authStore';
-import {
-  cleanupStorage,
-} from './storage';
+import { AuthGuard } from './components/AuthGuard';
+import { cleanupStorage } from './storage';
 import { ErrorBoundary } from '@prism/shared-ui';
 
 // --- Editor page (rendered inside DevToolLayout) ---
@@ -67,25 +62,6 @@ function HomePage() {
 function AppRoutes() {
   return (
     <Routes>
-      {/* Public routes — redirect to / if already authenticated */}
-      <Route
-        path="/login"
-        element={
-          <PublicRoute>
-            <LoginPage />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/register"
-        element={
-          <PublicRoute>
-            <RegisterPage />
-          </PublicRoute>
-        }
-      />
-
-      {/* Protected routes */}
       <Route
         path="/"
         element={
@@ -118,14 +94,7 @@ function AppRoutes() {
 }
 
 function App() {
-  const fetchCurrentUser = useAuthStore((s) => s.fetchCurrentUser);
-
-  useEffect(() => {
-    fetchCurrentUser().catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
+  React.useEffect(() => {
     return () => {
       cleanupStorage();
     };

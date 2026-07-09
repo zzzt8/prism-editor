@@ -1,32 +1,19 @@
-// AuthGuard - Route protection component
+// AuthGuard - simplified in Phase 2 (PRD §6.3 mall trust mode)
+// No auth guard: dev-tool trusts VITE_PRISM_SECRET for internal calls.
+// Removed: JWT flow, login redirect, PublicRoute.
+
 import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
 
 export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
   return <>{children}</>;
 };
 
-interface PublicRouteProps {
-  children: React.ReactNode;
-}
-
-export const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-
-  if (isAuthenticated) {
-    return <Navigate to="/" replace />;
-  }
-
+// Kept as no-op placeholder to avoid breaking existing imports.
+// Remove consumers and this export in a future cleanup.
+export const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return <>{children}</>;
 };
