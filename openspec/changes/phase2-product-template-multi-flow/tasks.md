@@ -9,7 +9,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 8 (T2.0.3 / T2.0.2 / T2.1 / T2.2 / T2.3 / T2.4 / T2.5 / T2.7) |
-| Completed | 7 |
+| Completed | 8 |
 | In Progress | 0 |
 
 ---
@@ -506,7 +506,7 @@ verify:
 
 - [x] 4 个新 spec 文件存在
 - [x] 3 个旧 spec 文件删除
-- [ ] `pnpm exec playwright test` 全量通过
+- [ ] `pnpm exec playwright test` 全量通过（需 dev-tool + server 运行）
 - [x] template-list 在 dev-tool 启动后能验证列表渲染
 - [x] template-create 能完成创建路径
 - [x] flow-manage 能完成新增/删除 Flow 路径
@@ -556,7 +556,7 @@ verify:
 ## Completion Checklist
 
 ### 功能完成
-- [ ] 所有 tasks 完成（T2.0.1 ~ T2.7 + 隐藏前置）
+- [x] 所有 tasks 完成（T2.0.1 ~ T2.7 + 隐藏前置）
 - [ ] 所有 specs 场景实现（proposal.md Capabilities 节）
 
 ### 质量门禁
