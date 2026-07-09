@@ -8,8 +8,21 @@ export type {
   ComposerSubmitParams,
   LayerState,
   BlendMode,
+  MaskState,
   MaskType,
 } from './types';
 
 export { ComposerCanvas } from './ComposerCanvas';
 export { ComposerParams } from './ComposerParams';
+export { LayerPanel } from './LayerPanel';
+export { useKeyboardShortcuts } from './useKeyboardShortcuts';
+export {
+  useComposerStore,
+  createComposerStore,
+  useLayers,
+  useSelectedLayer,
+  useDesignParams,
+  useInputs,
+} from './ComposerState';
+export type { ComposerStore, ComposerStoreState, ComposerStoreActions } from './ComposerState';
+export { getMaskAlpha, applyMaskToAlpha, drawGradientMask, applyFeatherEffect } from './maskUtils';
