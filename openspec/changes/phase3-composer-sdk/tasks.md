@@ -7,7 +7,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 5 (T3.1 ~ T3.5) |
-| Completed | 0 |
+| Completed | 5 |
 | In Progress | 0 |
 
 ---
@@ -50,10 +50,10 @@ packages/composer-sdk/
 
 **Acceptance Criteria**
 
-- [ ] `packages/composer-sdk/package.json` 存在，含正确 name 和 dependencies
-- [ ] `packages/composer-sdk/tsconfig.json` 存在
-- [ ] `packages/composer-sdk/src/index.ts` 存在
-- [ ] `pnpm tsc --noEmit` 通过
+- [x] `packages/composer-sdk/package.json` 存在，含正确 name 和 dependencies
+- [x] `packages/composer-sdk/tsconfig.json` 存在
+- [x] `packages/composer-sdk/src/index.ts` 存在
+- [x] `pnpm tsc --noEmit` 通过
 
 ---
 
@@ -122,13 +122,13 @@ import { CompositeExecutor, MaskExecutor } from '@prism/image-ops/browser';
 
 **Acceptance Criteria**
 
-- [ ] `ComposerCanvas.tsx` 存在，导出 `<ComposerCanvas />` 组件
-- [ ] `ComposerState.ts` 存在，定义完整状态类型
-- [ ] `types.ts` 存在，定义 SDK 公共类型
-- [ ] 支持图层拖拽（位置、缩放、旋转）
-- [ ] 支持 5 种叠加模式
-- [ ] 支持 3 种蒙版运算
-- [ ] `pnpm tsc --noEmit` 通过
+- [x] `ComposerCanvas.tsx` 存在，导出 `<ComposerCanvas />` 组件
+- [x] `ComposerState.ts` 存在，定义完整状态类型
+- [x] `types.ts` 存在，定义 SDK 公共类型
+- [x] 支持图层拖拽（位置、缩放、旋转）
+- [x] 支持 5 种叠加模式
+- [x] 支持 3 种蒙版运算
+- [x] `pnpm tsc --noEmit` 通过
 
 ---
 
@@ -163,11 +163,11 @@ verify:
 
 **Acceptance Criteria**
 
-- [ ] `ComposerParams.tsx` 存在，导出 `<ComposerParams />` 组件
-- [ ] 支持 inputs 渲染
-- [ ] 支持 designParams 渲染
-- [ ] 与 ComposerCanvas 双向绑定
-- [ ] `pnpm tsc --noEmit` 通过
+- [x] `ComposerParams.tsx` 存在，导出 `<ComposerParams />` 组件
+- [x] 支持 inputs 渲染
+- [x] 支持 designParams 渲染
+- [x] 与 ComposerCanvas 双向绑定
+- [x] `pnpm tsc --noEmit` 通过
 
 ---
 
@@ -223,11 +223,11 @@ interface ComposerSubmitParams {
 
 **Acceptance Criteria**
 
-- [ ] `ComposerSDKProps` 包含 `onChange` 和 `onSubmit`
-- [ ] `onChange` 在状态变化时触发
-- [ ] `onSubmit` 收集完整提交参数
-- [ ] 更新 `src/index.ts` 导出完整类型
-- [ ] `pnpm tsc --noEmit` 通过
+- [x] `ComposerSDKProps` 包含 `onChange` 和 `onSubmit`
+- [x] `onChange` 在状态变化时触发
+- [x] `onSubmit` 收集完整提交参数
+- [x] 更新 `src/index.ts` 导出完整类型
+- [x] `pnpm tsc --noEmit` 通过
 
 ---
 
@@ -265,9 +265,9 @@ verify:
 
 **Acceptance Criteria**
 
-- [ ] 单元测试覆盖核心逻辑
-- [ ] `pnpm test` 通过
-- [ ] `pnpm build` 通过
+- [x] 单元测试覆盖核心逻辑
+- [x] `pnpm test` 通过
+- [x] `pnpm build` 通过
 - [ ] 手动验证：SDK 可正常加载 ProductTemplate
 - [ ] 手动验证：拖拽交互响应正常
 - [ ] 手动验证：`onSubmit` 收集正确参数
@@ -277,16 +277,16 @@ verify:
 ## Completion Checklist
 
 ### 功能完成
-- [ ] T3.1 ~ T3.5 全部完成
+- [x] T3.1 ~ T3.5 全部完成
 
 ### 质量门禁
-- [ ] `pnpm typecheck` 通过（composer-sdk）
-- [ ] `pnpm test` 通过
-- [ ] `pnpm build` 通过
+- [x] `pnpm typecheck` 通过（composer-sdk）
+- [x] `pnpm test` 通过
+- [x] `pnpm build` 通过
 
 ### 文档
 - [ ] README.md（使用示例、API 文档）
-- [ ] 类型导出完整
+- [x] 类型导出完整
 
 ### 验收
 - [ ] SDK 接入代码 < 50 行
