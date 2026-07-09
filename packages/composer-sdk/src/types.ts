@@ -133,13 +133,13 @@ export interface ComposerSDKProps {
   /**
    * Called when any layer or parameter changes (debounced 100ms)
    */
-  onChange?: (state: ComposerState) => void;
+  onChange?: (_state: ComposerState) => void;
 
   /**
    * Called when user clicks the submit/confirm button
    * Only passes data, does NOT trigger Production Render
    */
-  onSubmit?: (params: ComposerSubmitParams) => void;
+  onSubmit?: (_params: ComposerSubmitParams) => void;
 
   /**
    * Canvas width in pixels (default: 800)

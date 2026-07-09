@@ -237,7 +237,7 @@ export const ComposerCanvas: React.FC<ComposerSDKProps> = ({
             ctx.drawImage(resultCanvas, 0, 0);
             currentResult = execResult.image.data;
           }
-        } catch (e) {
+        } catch {
           // Fallback: draw without image-ops if executor fails
           ctx.save();
           ctx.globalCompositeOperation = layer.blendMode as GlobalCompositeOperation || 'source-over';

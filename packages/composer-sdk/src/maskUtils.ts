@@ -1,18 +1,18 @@
 // Mask rendering utilities for Canvas-based compositing
 // Provides mask operations for layer compositing
 
-import type { MaskState, MaskType } from './types';
+import type { MaskState } from './types';
 
 /**
  * Get alpha multiplier from mask at given position
  * Returns value between 0 and 1
  */
 export function getMaskAlpha(
-  x: number,
-  y: number,
+  _x: number,
+  _y: number,
   mask: MaskState,
-  canvasWidth: number,
-  canvasHeight: number
+  _canvasWidth: number,
+  _canvasHeight: number
 ): number {
   switch (mask.type) {
     case 'brightness':
