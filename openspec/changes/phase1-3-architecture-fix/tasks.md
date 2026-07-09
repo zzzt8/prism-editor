@@ -328,7 +328,7 @@ npm run test -- -- --run
 npm run lint
 ```
 
-验收：lint 无错误 ✅
+验收：lint 无错误 ✅ (仅 2 个 pre-existing warnings)
 
 ---
 
@@ -344,11 +344,11 @@ npm run lint
 | T1.6 | 归档旧 composite-math.ts | image-ops/core | ✅ |
 | T3.1 | 重构 ComposerCanvas 使用 image-ops | composer-sdk | ✅ |
 | T3.2 | 补充 cross-platform 一致性测试 | image-ops | ✅ |
-| T2.1 | 补全 ProductTemplate inputs tab | dev-tool | ⬜ |
-| T2.2 | 补全 ProductTemplate bindings tab | dev-tool | ⬜ |
-| T2.3 | 补全 ProductTemplate assets tab | dev-tool | ⬜ |
+| T2.1 | 补全 ProductTemplate inputs tab | dev-tool | ⬜ (blocked by design) |
+| T2.2 | 补全 ProductTemplate bindings tab | dev-tool | ⬜ (blocked by design) |
+| T2.3 | 补全 ProductTemplate assets tab | dev-tool | ⬜ (blocked by design) |
 | Q1 | 类型检查通过 | all | ✅ |
 | Q2 | 测试通过 | all | ✅ |
 | Q3 | lint 通过 | all | ✅ |
 
-**Total: 14 tasks (11 completed, 3 pending)**
+**Total: 14 tasks (11 completed, 3 pending Phase 2)**
