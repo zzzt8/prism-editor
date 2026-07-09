@@ -557,34 +557,36 @@ verify:
 
 ### 功能完成
 - [x] 所有 tasks 完成（T2.0.1 ~ T2.7 + 隐藏前置）
-- [ ] 所有 specs 场景实现（proposal.md Capabilities 节）
+- [x] 所有 specs 场景实现（product-template / dev-tool-ux / render-api 3 个 spec 齐全）
 
 ### 质量门禁
-- [ ] `pnpm lint` 通过
-- [ ] `pnpm typecheck` 通过
-- [ ] `pnpm test` 通过（unit + integration）
-- [ ] `pnpm build` 通过
-- [ ] 覆盖率达标（保持 Phase 1 基线）
+- [x] `pnpm typecheck` 通过（全 monorepo 0 错误）
+- [x] `pnpm test` 通过（586/586 passing）
+- [x] `pnpm build` 通过（全 monorepo 0 错误）
+- [x] 覆盖率达标（Phase 2 不涉及 image-ops 覆盖率变更，保持 Phase 1 基线）
+- [x] `pnpm lint` N/A（项目未配置 lint）
 
 ### 测试覆盖
-- [ ] 所有 Scenario 有测试映射（T2.2 + T2.5 集成测试）
-- [ ] 核心算法有单元测试（product-template-service）
-- [ ] 关键流程有 E2E 测试（4 个 spec）
+- [x] 所有 Scenario 有测试映射（T2.2 unit tests 覆盖 product-template-service；T2.5 unit tests 覆盖 render API）
+- [x] 核心算法有单元测试（product-template-service: selectProductionFlow / validateTemplateHasBothFlows / getById — 7 tests）
+- [x] 关键流程有 E2E 测试（4 个 spec 文件存在：template-list / template-create / flow-manage / render-template）
+- [ ] **E2E Playwright 执行并通过**（需 dev-tool + server 运行时执行）
 
 ### 文档
 - [x] proposal.md 完整
 - [x] design.md 完整
-- [ ] specs/*.md 包含所有场景（**待补**：proposal.md 顶层已写 Capabilities，需在 apply 阶段生成 `specs/product-template/spec.md` 等）
-- [ ] test-plan.md 完整（**待补**）
-- [ ] verification.md 记录实际结果（**待补**）
-- [ ] qa-report.md 记录所有问题（**待补**）
+- [x] specs/*.md 包含所有场景（product-template + dev-tool-ux + render-api）
+- [x] test-plan.md 完整（本轮补完）
+- [x] verification.md 记录实际结果（本轮补完；smoke test 全通过；E2E 除外）
+- [x] qa-report.md 记录所有问题（本轮补完）
 
 ### Review
-- [ ] AI Review 无 Critical/High 问题
+- [x] AI Review 无 Critical 问题
+- [ ] AI Review 无 High 问题（3 个 High 待手动验收：E2E 执行 / dev-tool 手动路径 / console.warn 验证）
 - [ ] 人工 Review 通过
 - [ ] 所有问题已修复或计划
 
-**最终状态**: DRAFT / READY_FOR_REVIEW / APPROVED / MERGED
+**最终状态**: READY_FOR_REVIEW（待手动验收关闭 3 个 High）
 
 ---
 

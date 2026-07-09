@@ -81,7 +81,14 @@ export async function update(
   data: UpdateProductTemplateInput
 ): Promise<ProductTemplate> {
   await getById(id); // validate existence
-  return prisma.productTemplate.update({ where: { id }, data });
+  return prisma.productTemplate.update({
+    where: { id },
+    data: {
+      ...(data.name !== undefined && { name: data.name }),
+      ...(data.description !== undefined && { description: data.description }),
+      ...(data.content !== undefined && { content: data.content }),
+    },
+  });
 }
 
 /**
