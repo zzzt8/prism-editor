@@ -9,7 +9,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 7 |
-| Completed | 4 |
+| Completed | 5 |
 | In Progress | 1 |
 
 ---
@@ -131,9 +131,9 @@ dependencies:
 
 **Acceptance Criteria**
 
-- [ ] `openspec/changes/split-tiles-service-layer` 目录存在
-- [ ] proposal / design / tasks 完整
-- [ ] `openspec change validate` 通过
+- [x] `openspec/changes/split-tiles-service-layer` 目录存在
+- [x] proposal / design / tasks 完整
+- [x] `openspec change validate` 通过
 
 ---
 
