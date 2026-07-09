@@ -276,4 +276,98 @@ describe('ComposerState', () => {
       expect(store.getState().designParams).toEqual({});
     });
   });
+
+  describe('undo/redo', () => {
+    it('should undo addLayer', () => {
+      store.getState().addLayer({
+        id: 'layer-1',
+        name: 'Test',
+        imageUrl: 'https://example.com/test.png',
+        x: 0,
+        y: 0,
+        scale: 1,
+        rotation: 0,
+        opacity: 1,
+        blendMode: 'normal' as const,
+        visible: true,
+        locked: false,
+      });
+
+      expect(store.getState().layers).toHaveLength(1);
+
+      store.getState().undo();
+
+      expect(store.getState().layers).toHaveLength(0);
+    });
+
+    it('should redo after undo', () => {
+      store.getState().addLayer({
+        id: 'layer-1',
+        name: 'Test',
+        imageUrl: 'https://example.com/test.png',
+        x: 0,
+        y: 0,
+        scale: 1,
+        rotation: 0,
+        opacity: 1,
+        blendMode: 'normal' as const,
+        visible: true,
+        locked: false,
+      });
+
+      store.getState().undo();
+      expect(store.getState().layers).toHaveLength(0);
+
+      store.getState().redo();
+      expect(store.getState().layers).toHaveLength(1);
+    });
+
+    it('should undo multiple operations', () => {
+      store.getState().addLayer({
+        id: 'layer-1',
+        name: 'Test',
+        imageUrl: 'https://example.com/test.png',
+        x: 0,
+        y: 0,
+        scale: 1,
+        rotation: 0,
+        opacity: 1,
+        blendMode: 'normal' as const,
+        visible: true,
+        locked: false,
+      });
+      store.getState().updateLayer('layer-1', { x: 100 });
+
+      expect(store.getState().layers[0].x).toBe(100);
+
+      store.getState().undo();
+      expect(store.getState().layers[0].x).toBe(0);
+
+      store.getState().undo();
+      expect(store.getState().layers).toHaveLength(0);
+    });
+
+    it('should not undo if no history', () => {
+      const before = store.getState().layers;
+      store.getState().undo();
+      expect(store.getState().layers).toBe(before);
+    });
+
+    it('should limit history to 50 entries', () => {
+      // Add 55 layers (initial + 55 changes = 56 entries, but limited to 50)
+      for (let i = 0; i < 55; i++) {
+        store.getState().updateDesignParam(`param-${i}`, i);
+      }
+
+      // Try to undo 50 times - should work
+      let undoCount = 0;
+      while (store.getState().canUndo() && undoCount < 60) {
+        store.getState().undo();
+        undoCount++;
+      }
+
+      // Should have at most 50 undos
+      expect(undoCount).toBeLessThanOrEqual(50);
+    });
+  });
 });
