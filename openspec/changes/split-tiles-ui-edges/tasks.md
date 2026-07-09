@@ -9,7 +9,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 8 |
-| Completed | 4 |
+| Completed | 6 |
 | In Progress | 0 |
 
 ---
@@ -132,10 +132,10 @@ dependencies:
 
 **Acceptance Criteria**
 
-- [ ] `InfoPanel.module.css` 存在
-- [ ] `Inspector.module.css` 不再含 InfoPanel 段
-- [ ] 旧 className 全部迁移
-- [ ] `pnpm typecheck --filter=dev-tool` 退出码 0
+- [x] `InfoPanel.module.css` 存在
+- [x] `Inspector.module.css` 不再含 InfoPanel 段
+- [x] 旧 className 全部迁移
+- [x] `pnpm typecheck --filter=dev-tool` 退出码 0
 
 ---
 
@@ -164,8 +164,8 @@ dependencies:
 
 **Acceptance Criteria**
 
-- [ ] `dense-control-node.css` 至少下降 10 行（按需；若无可拆内容，标注"保留"）
-- [ ] `pnpm typecheck --filter=dev-tool` 退出码 0
+- [x] `dense-control-node.css` 至少下降 10 行
+- [x] `pnpm typecheck --filter=dev-tool` 退出码 0
 
 ---
 
