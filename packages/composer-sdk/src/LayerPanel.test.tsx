@@ -8,9 +8,9 @@ describe('LayerPanel drag-and-drop', () => {
   let store: ReturnType<typeof createComposerStore>;
 
   const mockLayers = [
-    { id: 'layer-1', name: 'Layer 1', imageUrl: 'https://example.com/1.png', x: 0, y: 0, scale: 1, rotation: 0, opacity: 1, blendMode: 'normal' as const },
-    { id: 'layer-2', name: 'Layer 2', imageUrl: 'https://example.com/2.png', x: 10, y: 10, scale: 1, rotation: 0, opacity: 1, blendMode: 'normal' as const },
-    { id: 'layer-3', name: 'Layer 3', imageUrl: 'https://example.com/3.png', x: 20, y: 20, scale: 1, rotation: 0, opacity: 1, blendMode: 'normal' as const },
+    { id: 'layer-1', name: 'Layer 1', imageUrl: 'https://example.com/1.png', x: 0, y: 0, scale: 1, rotation: 0, opacity: 1, blendMode: 'normal' as const, visible: true, locked: false },
+    { id: 'layer-2', name: 'Layer 2', imageUrl: 'https://example.com/2.png', x: 10, y: 10, scale: 1, rotation: 0, opacity: 1, blendMode: 'normal' as const, visible: true, locked: false },
+    { id: 'layer-3', name: 'Layer 3', imageUrl: 'https://example.com/3.png', x: 20, y: 20, scale: 1, rotation: 0, opacity: 1, blendMode: 'normal' as const, visible: true, locked: false },
   ];
 
   beforeEach(() => {
