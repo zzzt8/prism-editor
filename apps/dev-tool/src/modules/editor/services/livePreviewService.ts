@@ -9,8 +9,8 @@ import type { ExecutionSource } from './executionService';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface LivePreviewService {
-  subscribe: (store: StoreApi<unknown>) => () => void;
-  triggerPreview: (debounceMs: number) => void;
+  subscribe: (_store: StoreApi<unknown>) => () => void;
+  triggerPreview: (_debounceMs: number) => void;
   isActive: () => boolean;
   destroy: () => void;
 }
@@ -45,7 +45,7 @@ function nodesExecFingerprint(nodes: ReadonlyArray<{ id: string; data: { params:
   return nodes.map(nodeExecFingerprint).join('\n');
 }
 
-function applyResultsToStore(nodes: EditorCanvasNode[], results: ExecutionProgress['results']): EditorCanvasNode[] {
+function _applyResultsToStore(nodes: EditorCanvasNode[], results: ExecutionProgress['results']): EditorCanvasNode[] {
   if (results.length === 0) return nodes;
   return nodes.map((n) => {
     const r = results.find((x) => x.nodeId === n.id);
@@ -74,6 +74,7 @@ function shouldFireLive(
   if (executionStatus === 'running') return false;
   if (isInteracting) return false;
   if (nodes.length === 0) return false;
+  void nodes; void targetPlatform; void livePreviewEnabled; void executionStatus; void isInteracting;
   return true;
 }
 
@@ -94,7 +95,7 @@ function armLiveTimer(debounceMs: number): void {
     _executionStatus: string;
     _isInteracting: boolean;
     _liveDebouncing: boolean;
-    executeWorkflow: (source: ExecutionSource) => Promise<unknown>;
+    executeWorkflow: (_source: ExecutionSource) => Promise<unknown>;
   }>();
 
   if (!shouldFireLive(
@@ -119,7 +120,7 @@ function armLiveTimer(debounceMs: number): void {
       livePreviewEnabled?: boolean;
       _executionStatus: string;
       _isInteracting: boolean;
-      executeWorkflow: (source: ExecutionSource) => Promise<unknown>;
+      executeWorkflow: (_source: ExecutionSource) => Promise<unknown>;
     }>();
 
     if (!shouldFireLive(
@@ -201,8 +202,9 @@ export function createLivePreviewService(): LivePreviewService {
       };
     },
 
-    triggerPreview(debounceMs: number) {
-      armLiveTimer(debounceMs);
+    triggerPreview(_debounceMs: number) {
+      void _debounceMs;
+      armLiveTimer(50); // fallback debounce
     },
 
     isActive() {

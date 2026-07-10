@@ -16,7 +16,7 @@ export interface UseTemplatesResult {
   templates: Template[];
   loading: boolean;
   error: Error | null;
-  createTemplate: (name: string, description?: string) => Promise<Template>;
+  createTemplate: (_name: string, _description?: string) => Promise<Template>;
   refresh: () => void;
 }
 
@@ -38,8 +38,9 @@ export function useTemplates(): UseTemplatesResult {
     fetchTemplates();
   }, []);
 
-  const createTemplate = async (name: string, description?: string): Promise<Template> => {
-    const t = await repo.create({ name, description: description ?? '', content: '{}' });
+  const createTemplate = async (_name: string, _description?: string): Promise<Template> => {
+    void _name; void _description;
+    const t = await repo.create({ name: _name, description: _description ?? '', content: '{}' });
     return t;
   };
 

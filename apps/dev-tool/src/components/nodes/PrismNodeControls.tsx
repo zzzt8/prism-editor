@@ -4,7 +4,7 @@
 import React, { type FC, useState, useRef } from 'react';
 import { Upload } from 'lucide-react';
 import type { CanvasNodeData } from '../../modules/editor/stores/types';
-import { setDragImageState, getDragImageState, type DragState } from './PrismNodeControls/dragImageState';
+import { setDragImageState, getDragImageState } from './PrismNodeControls/dragImageState';
 import { getExecThumb } from './PrismNodeControls/imageThumbnails';
 import { useImageFilePreview, processImageFile, type ImageFileValue } from '../../hooks/useImageFilePreview';
 
@@ -21,12 +21,12 @@ interface FileDropzoneProps {
   displayHeight?: number;
   fileName?: string;
   isDragOver: boolean;
-  onDragEnter: (e: React.DragEvent) => void;
-  onDragLeave: (e: React.DragEvent) => void;
-  onDragOver: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent) => void;
+  onDragEnter: (_e: React.DragEvent) => void;
+  onDragLeave: (_e: React.DragEvent) => void;
+  onDragOver: (_e: React.DragEvent) => void;
+  onDrop: (_e: React.DragEvent) => void;
   onUploadClick: () => void;
-  onFileChange: (file: File) => void;
+  onFileChange: (_file: File) => void;
   dropLabel: string;
 }
 
