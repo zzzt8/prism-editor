@@ -235,7 +235,7 @@ await createTemplate('New Template', '');
 
 ### T5: 更新 imports 和清理
 
-- [ ] **task_id**: T5
+- [x] **task_id**: T5
 - **layer**: apps/dev-tool/src
 - **description**: 确保所有 import 路径正确，删除无用导出
 - **verify**: `pnpm typecheck && pnpm lint`
