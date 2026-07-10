@@ -4,7 +4,7 @@
 
 ### T1: 拆分 useCanvasStore — Live Preview Service
 
-- [ ] **task_id**: T1
+- [x] **task_id**: T1
 - **layer**: apps/dev-tool/src/store
 - **description**: 将 live preview 逻辑从 `useCanvasStore.ts` 抽至 `livePreviewService.ts`
 - **verify**: `pnpm typecheck`
