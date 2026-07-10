@@ -172,20 +172,20 @@
 
 ---
 
-## 2026-07-10 - Tile: useCanvasStore.SnippetStubs
+## 2026-07-10 - Tile: useCanvasStore.SnippetStubs ✅ 已完成
 
 - 原文件：`apps/dev-tool/src/modules/editor/stores/useCanvasStore.ts:1348-1353`
-- 新文件：`(未拆分 — 建议拆)` `useCanvasStore/snippetStubs.ts`
+- 新文件：`apps/dev-tool/src/modules/editor/stores/useCanvasStore/snippetStubs.ts`
 - 新文件职责：4 个空 snippet 方法（snippetSave/List/insertSnippet/deleteSnippet），已废弃功能桩
 - 对外暴露：`snippetSave`、`snippetList`、`insertSnippet`、`deleteSnippet`
 - 仍依赖它的位置：`useCanvasStore.ts`（re-export Facade）
 - 下次修改该功能先看：
-  - `useCanvasStore/snippetStubs.ts`
-  - `useCanvasStore.ts`
+  - `apps/dev-tool/src/modules/editor/stores/useCanvasStore/snippetStubs.ts`
+  - `apps/dev-tool/src/modules/editor/stores/useCanvasStore.ts`
 - 父 change：`codebase-large-file-split-tiles`
-- 子 change：`split-tiles-canvas-store`
+- 子 change：`split-tiles-canvas-store`（T4）
 - ECC lane：refactor
-- **优先级：P0（风险最低，4 个空函数，零运行时依赖）**
+- **状态：✅ 已完成（2026-07-10，commit 83a0c82，typecheck 通过）**
 
 ---
 
@@ -257,37 +257,37 @@
 
 ---
 
-## 2026-07-10 - Tile: ComposerCanvas.applyMaskToImageData
+## 2026-07-10 - Tile: ComposerCanvas.applyMaskToImageData ✅ 已完成
 
 - 原文件：`packages/composer-sdk/src/ComposerCanvas.tsx:24-78`
-- 新文件：`(未拆分 — 建议拆)` `composer-sdk/src/utils/imageMaskUtils.ts`
+- 新文件：`packages/composer-sdk/src/utils/imageMaskUtils.ts`
 - 新文件职责：像素级 alpha/brightness/gradient/feather mask 应用到 ImageData
 - 对外暴露：`applyMaskToImageData`
 - 仍依赖它的位置：`ComposerCanvas.tsx`（import + re-export Facade）
 - 下次修改该功能先看：
-  - `composer-sdk/src/utils/imageMaskUtils.ts`
+  - `packages/composer-sdk/src/utils/imageMaskUtils.ts`
   - `packages/composer-sdk/src/ComposerCanvas.tsx`
 - 父 change：`codebase-large-file-split-tiles`
-- 子 change：`split-tiles-composer-sdk`
+- 子 change：`split-tiles-composer-sdk`（T6）
 - ECC lane：refactor
-- **优先级：P0（纯函数，与 store/canvas 逻辑解耦）**
+- **状态：✅ 已完成（2026-07-10，commit d8872f9，typecheck 通过）**
 
 ---
 
-## 2026-07-10 - Tile: IndexedDBStorageAdapter.idbCrud
+## 2026-07-10 - Tile: IndexedDBStorageAdapter.idbCrud ✅ 已完成
 
 - 原文件：`apps/dev-tool/src/storage/IndexedDBStorageAdapter.ts:22-112`
-- 新文件：`(未拆分 — 建议拆)` `storage/idbCrud.ts`
-- 新文件职责：IndexedDB 底层 CRUD 封装（getDb/getStore/getAll/get/put/remove）
-- 对外暴露：`getDb`、`getStore`、`getAll`、`get`、`put`、`remove`
-- 仍依赖它的位置：`IndexedDBStorageAdapter.ts`（import）
+- 新文件：`apps/dev-tool/src/storage/idbCrud.ts`
+- 新文件职责：IndexedDB 底层 CRUD 封装（`setIdbCrudAdapter` / `idbGetAll` / `idbGet` / `idbPut` / `idbRemove`），通过 adapter 模式与类实例解耦
+- 对外暴露：`setIdbCrudAdapter`、`idbGetAll`、`idbGet`、`idbPut`、`idbRemove`、`DbGetter`
+- 仍依赖它的位置：`IndexedDBStorageAdapter.ts`（import + constructor 中调用 `setIdbCrudAdapter`）
 - 下次修改该功能先看：
-  - `storage/idbCrud.ts`
+  - `apps/dev-tool/src/storage/idbCrud.ts`
   - `apps/dev-tool/src/storage/IndexedDBStorageAdapter.ts`
 - 父 change：`codebase-large-file-split-tiles`
-- 子 change：`split-tiles-storage`
+- 子 change：`split-tiles-storage`（T5）
 - ECC lane：refactor
-- **优先级：P0（纯基础设施，与业务逻辑完全解耦）**
+- **状态：✅ 已完成（2026-07-10，commit 7b5f91e，typecheck 通过）**
 
 ---
 

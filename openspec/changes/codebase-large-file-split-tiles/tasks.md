@@ -129,6 +129,8 @@ opsx_meta:
   verify: pnpm --filter @prism/composer-sdk typecheck
 ```
 
+- [x] **已完成**（2026-07-10，commit d8872f9）
+
 - **原文件**：`packages/composer-sdk/src/ComposerCanvas.tsx:24-78`
 - **新文件**：`packages/composer-sdk/src/utils/imageMaskUtils.ts`
 - **操作**：
