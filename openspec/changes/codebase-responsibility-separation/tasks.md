@@ -66,7 +66,7 @@ getLivePreviewService().subscribe(useCanvasStore);
 
 ### T2: PrismNodeControls 去重 — 图片处理逻辑
 
-- [ ] **task_id**: T2
+- [x] **task_id**: T2
 - **layer**: apps/dev-tool/src/components
 - **description**: 抽取图片处理逻辑至 lib 层
 - **verify**: `pnpm typecheck && pnpm test`

@@ -2,23 +2,13 @@
 // Phase 2: ProductTemplate multi-flow
 // Replaces old WorkflowsView list with template management
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ProductTemplateRepository } from '../modules/repositories/ProductTemplateRepository';
-
-const repo = new ProductTemplateRepository();
+import { useTemplates } from '../hooks/useTemplates';
 
 export function HomePage() {
   const navigate = useNavigate();
-  const [templates, setTemplates] = useState<{ id: string; name: string; description?: string }[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    repo.list()
-      .then(setTemplates)
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+  const { templates, loading, createTemplate } = useTemplates();
 
   return (
     <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
@@ -27,7 +17,7 @@ export function HomePage() {
         <button
           onClick={async () => {
             try {
-              const t = await repo.create({ name: 'New Template', description: '', content: '{}' });
+              const t = await createTemplate('New Template', '');
               navigate(`/templates/${t.id}`);
             } catch (e) {
               console.error(e);
