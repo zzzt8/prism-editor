@@ -21,6 +21,7 @@ import type { ExecutionLog, NodeTiming } from '@prism/shared-types';
 import { createId } from '@prism/shared-types';
 import { globalRegistry } from '@prism/core';
 import { autosaveService, initAutosaveService, getAutosaveService } from '../services/autosaveService';
+import { getLivePreviewService, destroyLivePreviewService } from '../services/livePreviewService';
 import type { ExecutionSource } from '../services/executionService';
 import { getExecutionService } from '../services/executionService';
 import { activeStorageAdapter } from '../../../storage';
@@ -56,11 +57,6 @@ type ReactFlowConnection = RfConnection;
 let _currentLog: ExecutionLog | null = null;
 const _nodeStartTimes = new Map<string, number>();
 
-// ─── Module-level state for live preview subscription ─────────────────────────
-
-let _liveTimer: ReturnType<typeof setTimeout> | null = null;
-let _liveSubscriptionTeardown: (() => void) | null = null;
-
 // ─── Module-level state for batched UI updates ─────────────────────────────────
 
 // For live executions: accumulate results, flush only at end
@@ -85,97 +81,6 @@ const applyResultsToStore = (results: ExecutionProgress['results']) => {
       };
     }),
   }));
-};
-
-const clearLiveTimer = (): void => {
-  if (_liveTimer !== null) {
-    clearTimeout(_liveTimer);
-    _liveTimer = null;
-  }
-  if (useCanvasStore.getState()._liveDebouncing) {
-    useCanvasStore.setState({ _liveDebouncing: false });
-  }
-};
-
-const shouldFireLive = (): boolean => {
-  const state = useCanvasStore.getState();
-  const appState = useAppStore.getState();
-
-  if (state.workflowMeta.targetPlatform !== 'browser') return false;
-  if (!appState.livePreviewEnabled) return false;
-  if (state._executionStatus === 'running') return false;
-  if (state._isInteracting) return false; // Skip during drag/pan interactions
-  if (state.nodes.length === 0) return false;
-  return true;
-};
-
-// Stable signature of a node's "exec-relevant" fields. Position and runtime
-// execution results are intentionally excluded so dragging a node around the
-// canvas (or receiving progress updates) does not retrigger live execution.
-const nodeExecFingerprint = (n: { id: string; data: { params: unknown; extraInputs?: unknown; extraOutputs?: unknown } }): string => {
-  const params = n.data.params ?? {};
-  const extras = JSON.stringify([n.data.extraInputs ?? null, n.data.extraOutputs ?? null]);
-  return `${n.id}|${JSON.stringify(params)}|${extras}`;
-};
-
-const nodesExecFingerprint = (nodes: ReadonlyArray<{ id: string; data: { params: unknown; extraInputs?: unknown; extraOutputs?: unknown } }>): string => {
-  return nodes.map(nodeExecFingerprint).join('\n');
-};
-
-let _lastNodesFingerprint = '';
-
-const armLiveTimer = (debounceMs: number): void => {
-  clearLiveTimer();
-  if (!shouldFireLive()) return;
-  useCanvasStore.setState({ _liveDebouncing: true });
-  _liveTimer = setTimeout(() => {
-    _liveTimer = null;
-    useCanvasStore.setState({ _liveDebouncing: false });
-    // Re-check at fire time — conditions may have changed during the debounce.
-    if (!shouldFireLive()) return;
-    void useCanvasStore.getState().executeWorkflow('live');
-  }, debounceMs);
-};
-
-const installLiveSubscription = (): void => {
-  if (_liveSubscriptionTeardown) return;
-  // Initialise fingerprint to the current nodes so the first subscription
-  // event (which fires immediately when subscribing) does not fire a phantom
-  // live execution on app boot.
-  _lastNodesFingerprint = nodesExecFingerprint(useCanvasStore.getState().nodes);
-  const unsubCanvas = useCanvasStore.subscribe((state, prev) => {
-    if (state.workflowMeta.targetPlatform !== prev.workflowMeta.targetPlatform) {
-      armLiveTimer(useAppStore.getState().livePreviewDebounceMs);
-      _lastNodesFingerprint = nodesExecFingerprint(state.nodes);
-      return;
-    }
-    // Only fire when an exec-relevant field changed (params / extra ports).
-    // Position changes and runtime executionResult updates keep the same
-    // fingerprint, so they do not retrigger.
-    const prevFp = _lastNodesFingerprint;
-    const nextFp = nodesExecFingerprint(state.nodes);
-    if (nextFp !== prevFp) {
-      _lastNodesFingerprint = nextFp;
-      armLiveTimer(useAppStore.getState().livePreviewDebounceMs);
-    }
-  });
-  const unsubApp = useAppStore.subscribe((state, prev) => {
-    if (
-      state.livePreviewEnabled !== prev.livePreviewEnabled ||
-      state.livePreviewDebounceMs !== prev.livePreviewDebounceMs
-    ) {
-      if (!state.livePreviewEnabled) {
-        clearLiveTimer();
-      } else {
-        armLiveTimer(state.livePreviewDebounceMs);
-      }
-    }
-  });
-  _liveSubscriptionTeardown = () => {
-    unsubCanvas();
-    unsubApp();
-    clearLiveTimer();
-  };
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -429,7 +334,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   endInteraction() {
     set({ _isInteracting: false });
     // Trigger live execution after interaction ends to update previews
-    armLiveTimer(useAppStore.getState().livePreviewDebounceMs);
+    getLivePreviewService().triggerPreview(useAppStore.getState().livePreviewDebounceMs);
   },
 
   onNodesChange(changes) {
@@ -1301,10 +1206,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   // Exposed so unit tests can tear down the subscription between cases
   // (the production app keeps it alive for the lifetime of the page).
   destroyLiveSubscription() {
-    if (_liveSubscriptionTeardown) {
-      _liveSubscriptionTeardown();
-      _liveSubscriptionTeardown = null;
-    }
+    destroyLivePreviewService();
   },
 
   // ── Inspector operations ───────────────────────────────────────────────────
@@ -1358,9 +1260,13 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   deleteSnippet,
 }));
 
-// ─── Install live subscription once at module load ────────────────────────────
-installLiveSubscription();
+// ─── Install live preview service once at module load ──────────────────────────
+// Subscribe the live preview service to the store for reactive execution
+const _livePreviewCleanup = getLivePreviewService().subscribe(useCanvasStore);
 
-// Exported for unit tests so they can re-install after destroyLiveSubscription
-// teardown, and so test setup can exercise the destroy path explicitly.
-export { installLiveSubscription };
+// ─── Module exports ───────────────────────────────────────────────────────────
+
+// Re-export livePreviewService for backward compatibility (used by unit tests)
+export { getLivePreviewService } from '../services/livePreviewService';
+// Named export for backward compatibility with existing tests
+export { destroyLivePreviewService as destroyLiveSubscription } from '../services/livePreviewService';

@@ -2,3 +2,4 @@
 export { autosaveService, initAutosaveService, getAutosaveService } from './autosaveService';
 export { importExportService, initImportExportService, getImportExportService } from './importExportService';
 export { executionService, getExecutionService } from './executionService';
+export { getLivePreviewService, destroyLivePreviewService } from './livePreviewService';

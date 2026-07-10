@@ -1,0 +1,269 @@
+# Tasks: Codebase Responsibility Separation
+
+## P0 Tasks
+
+### T1: 拆分 useCanvasStore — Live Preview Service
+
+- [ ] **task_id**: T1
+- **layer**: apps/dev-tool/src/store
+- **description**: 将 live preview 逻辑从 `useCanvasStore.ts` 抽至 `livePreviewService.ts`
+- **verify**: `pnpm typecheck`
+
+```markdown
+## T1: Live Preview Service 拆分
+
+### Subtasks
+
+#### T1.1: 创建 livePreviewService.ts
+
+```typescript
+// src/modules/editor/services/livePreviewService.ts
+
+interface LivePreviewService {
+  subscribe: (store: CanvasStore) => () => void;
+  triggerPreview: () => void;
+  isActive: () => boolean;
+}
+
+export function createLivePreviewService(): LivePreviewService;
+export function getLivePreviewService(): LivePreviewService;
+```
+
+#### T1.2: 迁移 live preview 逻辑
+
+从 `useCanvasStore.ts` 迁移以下内容：
+- `_liveTimer` 状态
+- `_liveSubscriptionTeardown` 状态
+- `_pendingLiveResults` 状态
+- `_lastNodesFingerprint` 状态
+- `shouldFireLive()` 函数
+- `armLiveTimer()` 函数
+- `installLiveSubscription()` 函数
+- `nodeExecFingerprint()` 函数
+- `nodesExecFingerprint()` 函数
+
+#### T1.3: 更新 useCanvasStore 初始化
+
+```typescript
+// useCanvasStore.ts 模块级
+import { getLivePreviewService } from '../services/livePreviewService';
+
+// store 初始化后
+getLivePreviewService().subscribe(useCanvasStore);
+```
+
+#### T1.4: 导出兼容接口
+
+保持 `useCanvasStore` 导出不变，现有组件无需修改 import。
+
+**验收标准**:
+- [ ] `pnpm typecheck` 通过
+- [ ] Editor 页面加载正常
+- [ ] 修改节点参数后 live preview 触发正常
+```
+
+---
+
+### T2: PrismNodeControls 去重 — 图片处理逻辑
+
+- [ ] **task_id**: T2
+- **layer**: apps/dev-tool/src/components
+- **description**: 抽取图片处理逻辑至 lib 层
+- **verify**: `pnpm typecheck && pnpm test`
+
+```markdown
+## T2: 图片处理逻辑去重
+
+### Subtasks
+
+#### T2.1: 创建 lib/imageUtils.ts
+
+```typescript
+// src/lib/imageUtils.ts
+
+export interface ImageFileValue {
+  dataUrl: string;
+  width: number;
+  height: number;
+  fileName: string;
+}
+
+export function loadImageFile(file: File): Promise<ImageFileValue>;
+export function createThumbnail(imageData: ImageData, maxSize: number): string;
+export function createFullPreview(imageData: ImageData, maxSize: number): string;
+export function extractPreviewUrl(result: unknown, key?: string): string | null;
+```
+
+#### T2.2: 创建 useImageProcessor hook
+
+```typescript
+// src/hooks/useImageProcessor.ts
+
+export function useImageProcessor(
+  nodeId: string,
+  paramKey: 'imageFile' | 'maskFile',
+  updateNodeParams: (id: string, params: Record<string, unknown>) => void
+): {
+  previewUrl: string | null;
+  isDragOver: boolean;
+  handlers: {
+    onDragEnter: (e: React.DragEvent) => void;
+    onDragLeave: (e: React.DragEvent) => void;
+    onDragOver: (e: React.DragEvent) => void;
+    onDrop: (e: React.DragEvent) => void;
+  };
+};
+```
+
+#### T2.3: 重构 LoadImageBody
+
+```typescript
+// 使用 useImageProcessor 重构
+const { previewUrl, displayW, displayH, handlers } = useImageProcessor(
+  id, 'imageFile', updateNodeParams
+);
+```
+
+#### T2.4: 重构 LoadMaskBody
+
+```typescript
+// 使用 useImageProcessor 重构，传入 'maskFile'
+const { previewUrl, displayW, displayH, handlers } = useImageProcessor(
+  id, 'maskFile', updateNodeParams
+);
+```
+
+#### T2.5: 删除重复代码
+
+- 删除 `PrismNodeControls.tsx` 中的 `processImageFile()` 函数
+- 删除 `useExecutionThumbnail()`（已由 `lib/imageUtils.ts` 替代）
+- 删除 `usePreviewImage()`（已由 `lib/imageUtils.ts` 替代）
+
+**验收标准**:
+- [ ] `pnpm typecheck` 通过
+- [ ] 图片上传功能正常
+- [ ] 图片预览功能正常
+- [ ] 拖拽替换功能正常
+```
+
+---
+
+## P1 Tasks
+
+### T3: HomePage Hook 封装
+
+- [ ] **task_id**: T3
+- **layer**: apps/dev-tool/src/pages
+- **description**: 封装 HomePage 数据访问
+- **verify**: `pnpm typecheck`
+
+```markdown
+## T3: HomePage Hook 封装
+
+### Subtasks
+
+#### T3.1: 创建 useTemplates hook
+
+```typescript
+// src/hooks/useTemplates.ts
+
+interface UseTemplatesResult {
+  templates: Template[];
+  loading: boolean;
+  error: Error | null;
+  createTemplate: (name: string, description?: string) => Promise<Template>;
+}
+
+export function useTemplates(): UseTemplatesResult;
+```
+
+#### T3.2: 重构 HomePage
+
+```typescript
+// HomePage.tsx
+const { templates, loading, createTemplate } = useTemplates();
+
+// 在按钮点击中
+await createTemplate('New Template', '');
+```
+
+**验收标准**:
+- [ ] `pnpm typecheck` 通过
+- [ ] 模板列表加载正常
+- [ ] 创建模板功能正常
+```
+
+---
+
+### T4: PORT_COMPATIBILITY 迁移
+
+- [ ] **task_id**: T4
+- **layer**: packages/shared-types, packages/node-definitions
+- **description**: 将产品规则从 shared-types 移至 node-definitions
+- **verify**: `pnpm typecheck && pnpm build`
+
+```markdown
+## T4: PORT_COMPATIBILITY 迁移
+
+### Subtasks
+
+#### T4.1: 创建 rules/port-compatibility.ts
+
+```typescript
+// packages/node-definitions/src/rules/port-compatibility.ts
+
+import type { PortType } from '@prism/shared-types';
+
+export const PORT_COMPATIBILITY: Record<PortType, PortType[]> = {
+  // ... 迁移现有内容
+} as const;
+
+export function canConnect(sourceType: PortType, targetType: PortType): boolean {
+  // ... 迁移现有内容
+}
+```
+
+#### T4.2: 更新 port-types.ts
+
+```typescript
+// packages/shared-types/src/port-types.ts
+
+// 从 node-definitions 导入
+import { PORT_COMPATIBILITY, canConnect } from '@prism/node-definitions/rules/port-compatibility';
+
+// 重新导出供内部使用
+export { PORT_COMPATIBILITY, canConnect };
+```
+
+#### T4.3: 验证兼容性
+
+确认所有 `canConnect()` 调用仍然正常工作。
+
+**验收标准**:
+- [ ] `pnpm typecheck` 通过
+- [ ] `pnpm build` 通过
+- [ ] 连接验证功能正常
+```
+
+---
+
+## P2 Tasks
+
+### T5: 更新 imports 和清理
+
+- [ ] **task_id**: T5
+- **layer**: apps/dev-tool/src
+- **description**: 确保所有 import 路径正确，删除无用导出
+- **verify**: `pnpm typecheck && pnpm lint`
+
+---
+
+## 执行顺序
+
+```
+T1 (T1.1 → T1.2 → T1.3 → T1.4) → T2 (T2.1 → T2.2 → T2.3 → T2.4 → T2.5) → T3 → T4 → T5
+```
+
+**依赖关系**:
+- T1 必须先完成（T2 依赖 T1 的 service 模式）
+- T5 必须在最后执行（清理工作）

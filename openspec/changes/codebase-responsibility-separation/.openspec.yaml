@@ -1,0 +1,11 @@
+schema: prism-workflow
+created: 2026-07-10
+change_class: high
+title: Codebase Responsibility Separation
+description: 按"职责"拆代码，重构 useCanvasStore、PrismNodeControls、图片处理逻辑
+tags:
+  - refactor
+  - architecture
+  - cleanup
+owners:
+  - "@prism/dev-team"

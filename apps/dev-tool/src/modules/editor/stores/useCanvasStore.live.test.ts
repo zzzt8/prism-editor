@@ -30,8 +30,9 @@ vi.mock('../services/executionService', async () => {
   };
 });
 
-import { useCanvasStore, installLiveSubscription } from './useCanvasStore';
+import { useCanvasStore } from './useCanvasStore';
 import { useAppStore } from '../../../store/appStore';
+import { getLivePreviewService, destroyLivePreviewService } from '../services/livePreviewService';
 
 const advanceTimers = async (ms: number) => {
   await act(async () => {
@@ -92,9 +93,10 @@ describe('useCanvasStore — live preview subscription', () => {
 
   afterEach(() => {
     // Make sure no pending timer leaks into the next test
+    // Destroy and recreate the service to reset singleton state
     act(() => {
-      useCanvasStore.getState().destroyLiveSubscription();
-      installLiveSubscription();
+      destroyLivePreviewService();
+      getLivePreviewService().subscribe(useCanvasStore);
     });
     vi.useRealTimers();
   });
