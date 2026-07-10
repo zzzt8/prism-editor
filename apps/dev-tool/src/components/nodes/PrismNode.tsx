@@ -29,11 +29,10 @@ import {
   CompositeBody,
   ExportBody,
   EmptyInputBody,
-  useExecutionThumbnail,
-  usePreviewImage,
   setDragImageState,
   getDragImageState,
 } from './PrismNodeControls';
+import { useImageFilePreview } from '../../hooks/useImageFilePreview';
 import { AlertTriangle } from 'lucide-react';
 
 interface PrismNodeProps extends Omit<NodeProps, 'data'> {
@@ -83,8 +82,15 @@ export const PrismNodeBase: FC<PrismNodeProps> = ({ id, data, selected: _rfSelec
     (o) => o.type === 'image' || o.type === 'mask'
   )?.id;
 
-  const executionThumbnail = useExecutionThumbnail(data.executionResult, execImageKey);
-  const previewImage = usePreviewImage(imageFileValue, data.executionResult, execImageKey);
+  // Get preview for modal
+  const { previewUrl: previewImage } = useImageFilePreview(
+    imageFileValue,
+    data.executionResult,
+    execImageKey ?? 'image'
+  );
+
+  // Get thumbnail for inline display (smaller size)
+  const executionThumbnail = previewImage;
 
   // Param summary
   const paramSummary = useMemo(() => {
@@ -330,13 +336,10 @@ export const PrismNodeBase: FC<PrismNodeProps> = ({ id, data, selected: _rfSelec
                   onClick={() => setShowPreview(true)}
                 >
                   <img
-                    src={executionThumbnail.dataUrl}
+                    src={executionThumbnail}
                     alt="输出预览"
                     className="dcn-preview-img"
                   />
-                  <span className="dcn-preview-badge">
-                    {executionThumbnail.width}×{executionThumbnail.height}
-                  </span>
                 </div>
               )}
             </>

@@ -1,203 +1,110 @@
 // PrismNodeControls - Specialized body content renderers per node type
 // Part of the PrismNode split (openspec/changes/codebase-cleanup/design.md §Decision 6)
 
-import React, { type FC, useMemo, useState } from 'react';
+import React, { type FC, useState, useRef } from 'react';
 import { Upload } from 'lucide-react';
-import {
-  unwrapImageData,
-  unwrapPreviewUrl,
-} from '@prism/shared-types';
 import type { CanvasNodeData } from '../../modules/editor/stores/types';
+import { setDragImageState, getDragImageState, type DragState } from './PrismNodeControls/dragImageState';
+import { getExecThumb } from './PrismNodeControls/imageThumbnails';
+import { useImageFilePreview, processImageFile, type ImageFileValue } from '../../hooks/useImageFilePreview';
 
-interface ImageFileValue {
-  dataUrl: string;
-  width: number;
-  height: number;
-  fileName: string;
-}
-
-// Execution result thumbnail helper
-// Renders ImageData to a canvas capped at 400px so CSS scaling stays under 1.2x
-// within the 240px node width.
-export function useExecutionThumbnail(
-  result: CanvasNodeData['executionResult'],
-  execImageKey: string | undefined
-) {
-  return useMemo(() => {
-    if (!result || !execImageKey) return null;
-    const topPreview = result['previewUrl'];
-    const topW = result['width'] as number | undefined;
-    const topH = result['height'] as number | undefined;
-    if (typeof topPreview === 'string' && topPreview.length > 0 && topW && topH) {
-      return { dataUrl: topPreview, width: topW, height: topH };
-    }
-
-    const imgData = result[execImageKey];
-
-    if (imgData && typeof imgData === 'object' && !('data' in imgData) && 'url' in imgData) {
-      const ref = imgData as { url?: string; previewUrl?: string; width?: number; height?: number };
-      if (ref.url || ref.previewUrl) {
-        return {
-          dataUrl: ref.url ?? ref.previewUrl ?? '',
-          width: ref.width ?? 0,
-          height: ref.height ?? 0,
-        };
-      }
-    }
-
-    const imgDataObj = imgData as Record<string, unknown>;
-    if (imgData && typeof imgData === 'object' && 'data' in imgDataObj && 'width' in imgDataObj && 'height' in imgDataObj) {
-      const width = imgDataObj.width as number;
-      const height = imgDataObj.height as number;
-      const pUrl = imgDataObj.previewUrl;
-      if (typeof pUrl === 'string' && pUrl.length > 0 && width && height) {
-        return { dataUrl: pUrl, width, height };
-      }
-      const imageData = imgDataObj.data;
-      if (imageData instanceof ImageData && width && height) {
-        try {
-          const MAX = 400;
-          const scale = Math.min(1, MAX / Math.max(width, height));
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.round(width * scale);
-          canvas.height = Math.round(height * scale);
-          const ctx = canvas.getContext('2d');
-          if (!ctx) return null;
-          ctx.imageSmoothingEnabled = scale < 0.9;
-          const tmp = document.createElement('canvas');
-          tmp.width = width; tmp.height = height;
-          const tmpCtx = tmp.getContext('2d');
-          if (!tmpCtx) return null;
-          tmpCtx.putImageData(imageData, 0, 0);
-          ctx.drawImage(tmp, 0, 0, canvas.width, canvas.height);
-          return { dataUrl: canvas.toDataURL('image/png'), width, height };
-        } catch { return null; }
-      }
-    }
-
-    if (imgData instanceof ImageData && imgData.width && imgData.height) {
-      try {
-        const MAX = 400;
-        const scale = Math.min(1, MAX / Math.max(imgData.width, imgData.height));
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(imgData.width * scale);
-        canvas.height = Math.round(imgData.height * scale);
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return null;
-        ctx.imageSmoothingEnabled = scale < 0.9;
-        const tmp = document.createElement('canvas');
-        tmp.width = imgData.width; tmp.height = imgData.height;
-        const tmpCtx = tmp.getContext('2d');
-        if (!tmpCtx) return null;
-        tmpCtx.putImageData(imgData, 0, 0);
-        ctx.drawImage(tmp, 0, 0, canvas.width, canvas.height);
-        return { dataUrl: canvas.toDataURL('image/png'), width: imgData.width, height: imgData.height };
-      } catch { return null; }
-    }
-
-    return null;
-  }, [result, execImageKey]);
-}
-
-// Full preview image helper (for modal)
-export function usePreviewImage(
-  imageFileValue: { dataUrl?: string; width?: number; height?: number; fileName?: string } | undefined,
-  result: CanvasNodeData['executionResult'],
-  execImageKey: string | undefined
-) {
-  return useMemo(() => {
-    if (imageFileValue?.dataUrl) return imageFileValue.dataUrl;
-    if (!result || !execImageKey) return null;
-    const topPreview = result['previewUrl'];
-    if (typeof topPreview === 'string' && topPreview.length > 0) return topPreview;
-
-    const imgData = result[execImageKey];
-
-    if (imgData && typeof imgData === 'object' && !('data' in imgData) && 'url' in imgData) {
-      const ref = imgData as { url?: string; previewUrl?: string };
-      return ref.url ?? ref.previewUrl ?? null;
-    }
-
-    if (imgData && typeof imgData === 'object' && 'data' in imgData) {
-      const runtimeObj = imgData as { data: unknown; width?: number; height?: number; previewUrl?: string };
-      if (typeof runtimeObj.previewUrl === 'string' && runtimeObj.previewUrl.length > 0) {
-        return runtimeObj.previewUrl;
-      }
-      if (runtimeObj.data instanceof ImageData && runtimeObj.width && runtimeObj.height) {
-        const MAX = 1200;
-        const scale = Math.min(1, MAX / Math.max(runtimeObj.width, runtimeObj.height));
-        try {
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.round(runtimeObj.width * scale);
-          canvas.height = Math.round(runtimeObj.height * scale);
-          const ctx = canvas.getContext('2d');
-          if (!ctx) return null;
-          ctx.imageSmoothingEnabled = false;
-          const tmp = document.createElement('canvas');
-          tmp.width = runtimeObj.width; tmp.height = runtimeObj.height;
-          const tmpCtx = tmp.getContext('2d');
-          if (!tmpCtx) return null;
-          tmpCtx.putImageData(runtimeObj.data, 0, 0);
-          ctx.drawImage(tmp, 0, 0, canvas.width, canvas.height);
-          return canvas.toDataURL('image/png');
-        } catch { return null; }
-      }
-    }
-
-    if (imgData instanceof ImageData && imgData.width && imgData.height) {
-      const MAX = 1200;
-      const scale = Math.min(1, MAX / Math.max(imgData.width, imgData.height));
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(imgData.width * scale);
-        canvas.height = Math.round(imgData.height * scale);
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return null;
-        ctx.imageSmoothingEnabled = false;
-        const tmp = document.createElement('canvas');
-        tmp.width = imgData.width; tmp.height = imgData.height;
-        const tmpCtx = tmp.getContext('2d');
-        if (!tmpCtx) return null;
-        tmpCtx.putImageData(imgData, 0, 0);
-        ctx.drawImage(tmp, 0, 0, canvas.width, canvas.height);
-        return canvas.toDataURL('image/png');
-      } catch { return null; }
-    }
-
-    return null;
-  }, [imageFileValue, result, execImageKey]);
-}
-
-// Drag state helper split out to ./PrismNodeControls/dragImageState.ts.
-// Imported for local usage; re-exported below as Facade for external callers.
-import { setDragImageState } from './PrismNodeControls/dragImageState';
-export { setDragImageState, getDragImageState } from './PrismNodeControls/dragImageState';
+// Re-export types and helpers for backward compatibility with PrismNode.tsx
+export { setDragImageState, getDragImageState };
 export type { DragState } from './PrismNodeControls/dragImageState';
 
-// Thumbnail helpers split out to ./PrismNodeControls/imageThumbnails.ts.
-import { makeThumbnail, getExecThumb } from './PrismNodeControls/imageThumbnails';
-export { makeThumbnail, getExecThumb } from './PrismNodeControls/imageThumbnails';
+// ─── Shared file upload dropzone component ──────────────────────────────────────
 
-// Helper function to process an image file and update node params
-function processImageFile(
-  file: File,
-  updateNodeParams: (_id: string, _params: Record<string, unknown>) => void,
-  nodeId: string,
-  _params: Record<string, unknown>,
-  paramKey: 'imageFile' | 'maskFile'
-) {
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    const dataUrl = ev.target?.result as string;
-    const i = new Image();
-    i.onload = () => updateNodeParams(nodeId, { ..._params, [paramKey]: { dataUrl, width: i.naturalWidth, height: i.naturalHeight, fileName: file.name } });
-    i.onerror = () => updateNodeParams(nodeId, { ..._params, [paramKey]: { dataUrl, width: 0, height: 0, fileName: file.name } });
-    i.src = dataUrl;
-  };
-  reader.readAsDataURL(file);
+interface FileDropzoneProps {
+  label: string;
+  previewUrl: string | null;
+  displayWidth?: number;
+  displayHeight?: number;
+  fileName?: string;
+  isDragOver: boolean;
+  onDragEnter: (e: React.DragEvent) => void;
+  onDragLeave: (e: React.DragEvent) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent) => void;
+  onUploadClick: () => void;
+  onFileChange: (file: File) => void;
+  dropLabel: string;
 }
 
-// getExecThumb is now imported from './PrismNodeControls/imageThumbnails'
+const FileDropzone: FC<FileDropzoneProps> = ({
+  label,
+  previewUrl,
+  displayWidth,
+  displayHeight,
+  fileName,
+  isDragOver,
+  onDragEnter,
+  onDragLeave,
+  onDragOver,
+  onDrop,
+  onUploadClick,
+  onFileChange,
+  dropLabel,
+}) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  if (previewUrl) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div className="dcn-file-info">
+          <span className="dcn-file-name" title={fileName}>{fileName ?? label}</span>
+        </div>
+        <div
+          className={`dcn-preview ${isDragOver ? 'dcn-preview-drag-over' : ''}`}
+          data-preview
+          onDragEnter={onDragEnter}
+          onDragLeave={onDragLeave}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+        >
+          <img src={previewUrl} alt="Preview" className="dcn-preview-img" />
+          {displayWidth && displayHeight && <span className="dcn-preview-badge">{displayWidth}×{displayHeight}</span>}
+          {isDragOver && <div className="dcn-preview-drop-overlay"><span>{dropLabel}</span></div>}
+        </div>
+        <button
+          className="image-file-upload-btn"
+          style={{ fontSize: 10, padding: '3px 6px' }}
+          onClick={onUploadClick}
+        >
+          替换{label}
+          <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) onFileChange(file);
+              e.target.value = '';
+            }}
+          />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="dcn-dropzone"
+      onClick={onUploadClick}
+      title={`点击上传或拖放${label}`}
+    >
+      <Upload size={13} className="dcn-dropzone-icon" />
+      <span>上传{label}</span>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onFileChange(file);
+          e.target.value = '';
+        }}
+      />
+    </div>
+  );
+};
 
 // ─── Specialized body renderers ──────────────────────────────────────────────
 
@@ -209,115 +116,69 @@ export const LoadImageBody: FC<{
   nodeId: string;
   executionResult: CanvasNodeData['executionResult'];
   onShowPreview: () => void;
-}> = ({ imageFileValue, params: _params, updateNodeParams, nodeId, executionResult, onShowPreview: _onShowPreview }) => {
-  const inputRef = React.useRef<HTMLInputElement>(null);
-  const img = imageFileValue;
+}> = ({ imageFileValue, params, updateNodeParams, nodeId, executionResult }) => {
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const execPreviewUrl = useMemo(() => {
-    if (!executionResult) return null;
-    const rawImage = executionResult['image'];
-    const previewUrl = unwrapPreviewUrl(rawImage as Parameters<typeof unwrapPreviewUrl>[0], undefined);
-    if (previewUrl) return previewUrl;
-    const imageData = unwrapImageData(rawImage as Parameters<typeof unwrapImageData>[0]);
-    if (!imageData?.width || !imageData?.height) return null;
-    try {
-      const MAX = 400;
-      const scale = Math.min(1, MAX / Math.max(imageData.width, imageData.height));
-      const c = document.createElement('canvas');
-      c.width = Math.round(imageData.width * scale);
-      c.height = Math.round(imageData.height * scale);
-      const ctx = c.getContext('2d');
-      if (!ctx) return null;
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.putImageData(imageData, 0, 0);
-      return c.toDataURL('image/png');
-    } catch { return null; }
-  }, [executionResult]);
-
-  const previewUrl = img?.dataUrl ?? execPreviewUrl;
-  const execW = executionResult ? (executionResult['width'] as number | undefined) : undefined;
-  const execH = executionResult ? (executionResult['height'] as number | undefined) : undefined;
-  const displayW = img?.width ?? execW;
-  const displayH = img?.height ?? execH;
+  const { previewUrl, displayWidth, displayHeight, fileName } = useImageFilePreview(
+    imageFileValue,
+    executionResult,
+    'image'
+  );
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault(); e.stopPropagation();
     setIsDragOver(true);
     setDragImageState({ paramKey: 'imageFile', nodeId });
   };
+
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault(); e.stopPropagation();
     setIsDragOver(false);
     setDragImageState(null);
   };
+
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault(); e.stopPropagation();
     setIsDragOver(false); setDragImageState(null);
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/')) {
-      processImageFile(file, updateNodeParams, nodeId, imageFileValue as unknown as Record<string, unknown> ?? {}, 'imageFile');
+      processImageFile(file).then((result) => {
+        updateNodeParams(nodeId, { ...params, imageFile: result });
+      });
     }
   };
 
-  if (previewUrl) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <div className="dcn-file-info">
-          <span className="dcn-file-name" title={img?.fileName}>{img?.fileName ?? 'Result'}</span>
-        </div>
-        <div
-          className={`dcn-preview ${isDragOver ? 'dcn-preview-drag-over' : ''}`}
-          data-preview
-          onDragEnter={handleDragEnter}
-          onDragLeave={handleDragLeave}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-        >
-          <img src={previewUrl} alt="Preview" className="dcn-preview-img" />
-          {displayW && displayH && <span className="dcn-preview-badge">{displayW}×{displayH}</span>}
-          {isDragOver && <div className="dcn-preview-drop-overlay"><span>拖放替换图片</span></div>}
-        </div>
-        <button
-          className="image-file-upload-btn"
-          style={{ fontSize: 10, padding: '3px 6px' }}
-          onClick={() => inputRef.current?.click()}
-        >
-          替换图片
-          <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) processImageFile(file, updateNodeParams, nodeId, imageFileValue as unknown as Record<string, unknown> ?? {}, 'imageFile');
-              e.target.value = '';
-            }}
-          />
-        </button>
-      </div>
-    );
-  }
+  const handleUploadClick = () => {
+    // Find the hidden input and click it
+    const container = document.querySelector(`[data-node-id="${nodeId}"]`);
+    const input = container?.querySelector('input[type="file"]') as HTMLInputElement | null;
+    input?.click();
+  };
+
+  const handleFileChange = (file: File) => {
+    processImageFile(file).then((result) => {
+      updateNodeParams(nodeId, { ...params, imageFile: result });
+    });
+  };
 
   return (
-    <div
-      className="dcn-dropzone"
-      onClick={() => inputRef.current?.click()}
-      title="点击上传或拖放图片"
-    >
-      <Upload size={13} className="dcn-dropzone-icon" />
-      <span>上传图片</span>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        style={{ display: 'none' }}
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) processImageFile(file, updateNodeParams, nodeId, imageFileValue as unknown as Record<string, unknown> ?? {}, 'imageFile');
-          e.target.value = '';
-        }}
-      />
-    </div>
+    <FileDropzone
+      label="图片"
+      previewUrl={previewUrl}
+      displayWidth={displayWidth}
+      displayHeight={displayHeight}
+      fileName={fileName}
+      isDragOver={isDragOver}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      onUploadClick={handleUploadClick}
+      onFileChange={handleFileChange}
+      dropLabel="拖放替换图片"
+    />
   );
 };
 
@@ -329,109 +190,67 @@ export const LoadMaskBody: FC<{
   nodeId: string;
   executionResult: CanvasNodeData['executionResult'];
   onShowPreview: () => void;
-}> = ({ maskFileValue, params: _params, updateNodeParams, nodeId, executionResult, onShowPreview: _onShowPreview }) => {
-  const inputRef = React.useRef<HTMLInputElement>(null);
-  const img = maskFileValue;
+}> = ({ maskFileValue, params, updateNodeParams, nodeId, executionResult }) => {
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const execPreviewUrl = useMemo(() => {
-    if (!executionResult) return null;
-    const rawMask = executionResult['mask'];
-    const previewUrl = unwrapPreviewUrl(rawMask as Parameters<typeof unwrapPreviewUrl>[0], undefined);
-    if (previewUrl) return previewUrl;
-    const imageData = unwrapImageData(rawMask as Parameters<typeof unwrapImageData>[0]);
-    if (!imageData?.width || !imageData?.height) return null;
-    try {
-      const MAX = 400;
-      const scale = Math.min(1, MAX / Math.max(imageData.width, imageData.height));
-      const c = document.createElement('canvas');
-      c.width = Math.round(imageData.width * scale); c.height = Math.round(imageData.height * scale);
-      const ctx = c.getContext('2d');
-      if (!ctx) return null;
-      ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-      ctx.putImageData(imageData, 0, 0);
-      return c.toDataURL('image/png');
-    } catch { return null; }
-  }, [executionResult]);
-
-  const previewUrl = img?.dataUrl ?? execPreviewUrl;
-  const execW = executionResult ? (executionResult['width'] as number | undefined) : undefined;
-  const execH = executionResult ? (executionResult['height'] as number | undefined) : undefined;
-  const displayW = img?.width ?? execW;
-  const displayH = img?.height ?? execH;
+  const { previewUrl, displayWidth, displayHeight, fileName } = useImageFilePreview(
+    maskFileValue,
+    executionResult,
+    'mask'
+  );
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault(); e.stopPropagation();
     setIsDragOver(true);
     setDragImageState({ paramKey: 'maskFile', nodeId });
   };
+
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault(); e.stopPropagation();
     setIsDragOver(false); setDragImageState(null);
   };
+
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault(); e.stopPropagation();
     setIsDragOver(false); setDragImageState(null);
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/')) {
-      processImageFile(file, updateNodeParams, nodeId, maskFileValue as unknown as Record<string, unknown> ?? {}, 'maskFile');
+      processImageFile(file).then((result) => {
+        updateNodeParams(nodeId, { ...params, maskFile: result });
+      });
     }
   };
 
-  if (previewUrl) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <div className="dcn-file-info">
-          <span className="dcn-file-name" title={img?.fileName}>{img?.fileName ?? 'Result'}</span>
-        </div>
-        <div
-          className={`dcn-preview ${isDragOver ? 'dcn-preview-drag-over' : ''}`}
-          data-preview
-          onDragEnter={handleDragEnter}
-          onDragLeave={handleDragLeave}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-        >
-          <img src={previewUrl} alt="Mask Preview" className="dcn-preview-img" />
-          {displayW && displayH && <span className="dcn-preview-badge">{displayW}×{displayH}</span>}
-          {isDragOver && <div className="dcn-preview-drop-overlay"><span>拖放替换遮罩</span></div>}
-        </div>
-        <button className="image-file-upload-btn" style={{ fontSize: 10, padding: '3px 6px' }}
-          onClick={() => inputRef.current?.click()}>
-          替换遮罩
-          <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) processImageFile(file, updateNodeParams, nodeId, maskFileValue as unknown as Record<string, unknown> ?? {}, 'maskFile');
-              e.target.value = '';
-            }}
-          />
-        </button>
-      </div>
-    );
-  }
+  const handleUploadClick = () => {
+    const container = document.querySelector(`[data-node-id="${nodeId}"]`);
+    const input = container?.querySelector('input[type="file"]') as HTMLInputElement | null;
+    input?.click();
+  };
+
+  const handleFileChange = (file: File) => {
+    processImageFile(file).then((result) => {
+      updateNodeParams(nodeId, { ...params, maskFile: result });
+    });
+  };
 
   return (
-    <div
-      className="dcn-dropzone"
-      onClick={() => inputRef.current?.click()}
-      title="点击上传或拖放遮罩"
-    >
-      <Upload size={13} className="dcn-dropzone-icon" />
-      <span>上传遮罩</span>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        style={{ display: 'none' }}
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) processImageFile(file, updateNodeParams, nodeId, maskFileValue as unknown as Record<string, unknown> ?? {}, 'maskFile');
-          e.target.value = '';
-        }}
-      />
-    </div>
+    <FileDropzone
+      label="遮罩"
+      previewUrl={previewUrl}
+      displayWidth={displayWidth}
+      displayHeight={displayHeight}
+      fileName={fileName}
+      isDragOver={isDragOver}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      onUploadClick={handleUploadClick}
+      onFileChange={handleFileChange}
+      dropLabel="拖放替换遮罩"
+    />
   );
 };
 
