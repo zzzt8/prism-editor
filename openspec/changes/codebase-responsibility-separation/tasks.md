@@ -152,7 +152,7 @@ const { previewUrl, displayW, displayH, handlers } = useImageProcessor(
 
 ### T3: HomePage Hook 封装
 
-- [ ] **task_id**: T3
+- [x] **task_id**: T3
 - **layer**: apps/dev-tool/src/pages
 - **description**: 封装 HomePage 数据访问
 - **verify**: `pnpm typecheck`
@@ -195,54 +195,38 @@ await createTemplate('New Template', '');
 
 ---
 
-### T4: PORT_COMPATIBILITY 迁移
+### T4: PORT_COMPATIBILITY 架构确认
 
-- [ ] **task_id**: T4
-- **layer**: packages/shared-types, packages/node-definitions
-- **description**: 将产品规则从 shared-types 移至 node-definitions
+- [x] **task_id**: T4
+- **layer**: packages/shared-types
+- **description**: 确认 PORT_COMPATIBILITY 位置正确（shared-types），更新导出
 - **verify**: `pnpm typecheck && pnpm build`
 
 ```markdown
-## T4: PORT_COMPATIBILITY 迁移
+## T4: PORT_COMPATIBILITY 架构确认
 
-### Subtasks
+### 分析结果
 
-#### T4.1: 创建 rules/port-compatibility.ts
+检查结果：
+- `node-definitions` 依赖 `shared-types`
+- `shared-types` 不依赖 `node-definitions`
+- `PORT_COMPATIBILITY` 已在 `shared-types` 正确位置
 
-```typescript
-// packages/node-definitions/src/rules/port-compatibility.ts
+### 子任务
 
-import type { PortType } from '@prism/shared-types';
+#### T4.1: 确认架构合理性
 
-export const PORT_COMPATIBILITY: Record<PortType, PortType[]> = {
-  // ... 迁移现有内容
-} as const;
+`PORT_COMPATIBILITY` 是**跨节点类型**的通用连接规则，属于 shared-types 的职责范围。
+无需移动，保持现状。
 
-export function canConnect(sourceType: PortType, targetType: PortType): boolean {
-  // ... 迁移现有内容
-}
-```
+#### T4.2: 更新导出
 
-#### T4.2: 更新 port-types.ts
-
-```typescript
-// packages/shared-types/src/port-types.ts
-
-// 从 node-definitions 导入
-import { PORT_COMPATIBILITY, canConnect } from '@prism/node-definitions/rules/port-compatibility';
-
-// 重新导出供内部使用
-export { PORT_COMPATIBILITY, canConnect };
-```
-
-#### T4.3: 验证兼容性
-
-确认所有 `canConnect()` 调用仍然正常工作。
+确认 `PORT_COMPATIBILITY` 从 `shared-types` 正确导出，供其他包使用。
 
 **验收标准**:
-- [ ] `pnpm typecheck` 通过
-- [ ] `pnpm build` 通过
-- [ ] 连接验证功能正常
+- [x] `pnpm typecheck` 通过
+- [x] `pnpm build` 通过
+- [x] `canConnect()` 调用正常
 ```
 
 ---
