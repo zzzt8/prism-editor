@@ -6,56 +6,14 @@ import type { BlendMode, TransformOptions, MaskOptions, ExportOptions } from '@p
 import { registerImageDataTransferHandler } from '../comlink-image-data-transfer';
 import { CanvasPool, getCanvasPool } from './canvasPool';
 import { applyMask as applyMaskJS } from '../apply-mask';
+import { convertBlendMode } from './blendModeMap';
+import { hasOffscreenCanvas } from './types';
+import type { WorkerImageResult, WorkerLoadResult, WorkerExportResult, WorkerStatus } from './types';
 
 registerImageDataTransferHandler();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const selfAny = typeof self !== 'undefined' ? self as any : null;
-
-// Check if OffscreenCanvas is supported
-const hasOffscreenCanvas = typeof OffscreenCanvas !== 'undefined';
-
-/**
- * Image processing results returned from worker methods.
- * All ImageData is transferable for efficient memory management.
- */
-export interface WorkerImageResult {
-  data: ImageData;
-  width: number;
-  height: number;
-  colorSpace: PredefinedColorSpace;
-}
-
-/**
- * Load image result with metadata
- */
-export interface WorkerLoadResult {
-  data: ImageData;
-  width: number;
-  height: number;
-  crossOriginUsed: boolean;
-}
-
-/**
- * Export result with blob
- */
-export interface WorkerExportResult {
-  blob: Blob;
-  width: number;
-  height: number;
-  mimeType: string;
-}
-
-/**
- * Worker status for health monitoring
- */
-export interface WorkerStatus {
-  id: string;
-  ready: boolean;
-  processedCount: number;
-  errorCount: number;
-  lastError?: string;
-}
 
 /**
  * ImageWorker - Comlink-exposed API for image processing operations.
@@ -249,7 +207,7 @@ export class ImageWorker {
       // Draw base
       dstCtx.clearRect(0, 0, width, height);
       dstCtx.globalAlpha = opacity;
-      dstCtx.globalCompositeOperation = this.convertBlendMode(mode);
+      dstCtx.globalCompositeOperation = convertBlendMode(mode);
       dstCtx.drawImage(baseCanvas, 0, 0);
 
       // Draw overlay on top
@@ -972,7 +930,7 @@ export class ImageWorker {
 
       // Batch draw overlays
       dstCtx.globalAlpha = opacity;
-      dstCtx.globalCompositeOperation = this.convertBlendMode(mode);
+      dstCtx.globalCompositeOperation = convertBlendMode(mode);
 
       for (const overlay of overlays) {
         let overlayData = overlay;
@@ -1010,28 +968,12 @@ export class ImageWorker {
       }
     }
   }
+}  // end of ImageWorker class
 
-  /**
-   * Convert our BlendMode type to canvas composite operation string
-   */
-  private convertBlendMode(mode: BlendMode): GlobalCompositeOperation {
-    const modeMap: Record<BlendMode, GlobalCompositeOperation> = {
-      'normal': 'source-over',
-      'multiply': 'multiply',
-      'screen': 'screen',
-      'overlay': 'overlay',
-      'darken': 'darken',
-      'lighten': 'lighten',
-      'color-dodge': 'color-dodge',
-      'color-burn': 'color-burn',
-      'hard-light': 'hard-light',
-      'soft-light': 'soft-light',
-      'difference': 'difference',
-      'exclusion': 'exclusion',
-    };
-    return modeMap[mode] || 'source-over';
-  }
-}
+// Re-export for external callers.
+export { convertBlendMode } from './blendModeMap';
+export { hasOffscreenCanvas } from './types';
+export type { WorkerImageResult, WorkerLoadResult, WorkerExportResult, WorkerStatus } from './types';
 
 // Create worker instance
 const worker = new ImageWorker('worker-' + Math.random().toString(36).slice(2, 8));

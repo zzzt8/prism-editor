@@ -37,6 +37,12 @@ import {
   ensureNodeRegistryInitialized,
   remapAndInsertNodes,
 } from './canvasStoreHelpers';
+import {
+  snippetSave,
+  snippetList,
+  insertSnippet,
+  deleteSnippet,
+} from './useCanvasStore/snippetStubs';
 
 // Re-export ExecutionStatus for backward compatibility (used by store/canvasStore.ts)
 export type { ExecutionStatus } from './executionSlice';
@@ -1345,12 +1351,11 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     get()._triggerAutoSave();
   },
 
-  // ── Snippet operations ──────────────────────────────────────────────────────
-  // Snippet features removed — stub out
-  async snippetSave(_name: string, _description: string, _selectedNodeIds: string[]): Promise<void> {},
-  async snippetList(): Promise<never[]> { return []; },
-  async insertSnippet(_id: string, _position: { x: number; y: number }): Promise<void> {},
-  async deleteSnippet(_id: string): Promise<void> {},
+  // ── Snippet stubs moved to ./useCanvasStore/snippetStubs.ts ──────────────────────
+  snippetSave,
+  snippetList,
+  insertSnippet,
+  deleteSnippet,
 }));
 
 // ─── Install live subscription once at module load ────────────────────────────

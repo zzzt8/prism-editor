@@ -172,6 +172,125 @@
 
 ---
 
+## 2026-07-10 - Tile: useCanvasStore.SnippetStubs
+
+- 原文件：`apps/dev-tool/src/modules/editor/stores/useCanvasStore.ts:1348-1353`
+- 新文件：`(未拆分 — 建议拆)` `useCanvasStore/snippetStubs.ts`
+- 新文件职责：4 个空 snippet 方法（snippetSave/List/insertSnippet/deleteSnippet），已废弃功能桩
+- 对外暴露：`snippetSave`、`snippetList`、`insertSnippet`、`deleteSnippet`
+- 仍依赖它的位置：`useCanvasStore.ts`（re-export Facade）
+- 下次修改该功能先看：
+  - `useCanvasStore/snippetStubs.ts`
+  - `useCanvasStore.ts`
+- 父 change：`codebase-large-file-split-tiles`
+- 子 change：`split-tiles-canvas-store`
+- ECC lane：refactor
+- **优先级：P0（风险最低，4 个空函数，零运行时依赖）**
+
+---
+
+## 2026-07-10 - Tile: useCanvasStore.LiveExecutionState
+
+- 原文件：`apps/dev-tool/src/modules/editor/stores/useCanvasStore.ts:48-174`
+- 新文件：`(未拆分 — 建议拆)` `useCanvasStore/liveExecutionState.ts`
+- 新文件职责：live preview 订阅逻辑 + 模块级状态（`_pendingLiveResults`、`_lastManualUiUpdate`、`armLiveTimer`、`installLiveSubscription`、`applyResultsToStore`、`nodeExecFingerprint`）
+- 对外暴露：`armLiveTimer`、`installLiveSubscription`、`applyResultsToStore`、`nodeExecFingerprint`、`nodesExecFingerprint`
+- 仍依赖它的位置：`useCanvasStore.ts`（import + 使用 `useCanvasStore.getState()`）
+- 下次修改该功能先看：
+  - `useCanvasStore/liveExecutionState.ts`
+  - `useCanvasStore.ts`
+- 父 change：`codebase-large-file-split-tiles`
+- 子 change：`split-tiles-canvas-store`
+- ECC lane：refactor
+- **优先级：P1（纯函数 + 模块状态，与 store 实现体解耦清晰）**
+
+---
+
+## 2026-07-10 - Tile: imageWorker.convertBlendMode ✅ 已完成
+
+- 原文件：`packages/image-ops/src/worker/imageWorker.worker.ts:1017-1033`
+- 新文件：`packages/image-ops/src/worker/blendModeMap.ts`
+- 新文件职责：BlendMode → canvas GlobalCompositeOperation 纯映射函数（17 行）
+- 对外暴露：`convertBlendMode`
+- 仍依赖它的位置：`imageWorker.worker.ts`（import + re-export）、`worker/index.ts`（re-export chain）、`workerRunner.ts`、`workerPool.ts`
+- 下次修改该功能先看：
+  - `worker/blendModeMap.ts`
+  - `imageWorker.worker.ts`
+- 父 change：`codebase-large-file-split-tiles`
+- 子 change：`split-tiles-worker`（T1）
+- ECC lane：refactor
+- **状态：✅ 已完成（2026-07-10，typecheck 通过）**
+
+---
+
+## 2026-07-10 - Tile: imageWorker.Interfaces ✅ 已完成
+
+- 原文件：`packages/image-ops/src/worker/imageWorker.worker.ts:1-59`
+- 新文件：`packages/image-ops/src/worker/types.ts`
+- 新文件职责：WorkerImageResult / WorkerLoadResult / WorkerExportResult / WorkerStatus 4 个接口 + hasOffscreenCanvas 环境检测
+- 对外暴露：`WorkerImageResult`、`WorkerLoadResult`、`WorkerExportResult`、`WorkerStatus`、`hasOffscreenCanvas`
+- 仍依赖它的位置：`imageWorker.worker.ts`（import + re-export）、`worker/index.ts`（re-export chain）
+- 下次修改该功能先看：
+  - `worker/types.ts`
+  - `imageWorker.worker.ts`
+- 父 change：`codebase-large-file-split-tiles`
+- 子 change：`split-tiles-worker`（T2）
+- ECC lane：refactor
+- **状态：✅ 已完成（2026-07-10，typecheck 通过）**
+
+---
+
+## 2026-07-10 - Tile: PrismNodeControls.makeThumbnail ✅ 已完成
+
+- 原文件：`apps/dev-tool/src/components/nodes/PrismNodeControls.tsx:200-234`
+- 新文件：`apps/dev-tool/src/components/nodes/PrismNodeControls/imageThumbnails.ts`
+- 新文件职责：`makeThumbnail`（ImageData → dataUrl）+ `getExecThumb`（从 executionResult 提取 previewUrl）
+- 对外暴露：`makeThumbnail`、`getExecThumb`
+- 仍依赖它的位置：`PrismNodeControls.tsx`（import + re-export Facade）
+- 下次修改该功能先看：
+  - `PrismNodeControls/imageThumbnails.ts`
+  - `PrismNodeControls.tsx`
+- 父 change：`codebase-large-file-split-tiles`
+- 子 change：`split-tiles-ui-nodes`（T3）
+- ECC lane：refactor
+- **状态：✅ 已完成（2026-07-10，typecheck 通过）**
+
+---
+
+## 2026-07-10 - Tile: ComposerCanvas.applyMaskToImageData
+
+- 原文件：`packages/composer-sdk/src/ComposerCanvas.tsx:24-78`
+- 新文件：`(未拆分 — 建议拆)` `composer-sdk/src/utils/imageMaskUtils.ts`
+- 新文件职责：像素级 alpha/brightness/gradient/feather mask 应用到 ImageData
+- 对外暴露：`applyMaskToImageData`
+- 仍依赖它的位置：`ComposerCanvas.tsx`（import + re-export Facade）
+- 下次修改该功能先看：
+  - `composer-sdk/src/utils/imageMaskUtils.ts`
+  - `packages/composer-sdk/src/ComposerCanvas.tsx`
+- 父 change：`codebase-large-file-split-tiles`
+- 子 change：`split-tiles-composer-sdk`
+- ECC lane：refactor
+- **优先级：P0（纯函数，与 store/canvas 逻辑解耦）**
+
+---
+
+## 2026-07-10 - Tile: IndexedDBStorageAdapter.idbCrud
+
+- 原文件：`apps/dev-tool/src/storage/IndexedDBStorageAdapter.ts:22-112`
+- 新文件：`(未拆分 — 建议拆)` `storage/idbCrud.ts`
+- 新文件职责：IndexedDB 底层 CRUD 封装（getDb/getStore/getAll/get/put/remove）
+- 对外暴露：`getDb`、`getStore`、`getAll`、`get`、`put`、`remove`
+- 仍依赖它的位置：`IndexedDBStorageAdapter.ts`（import）
+- 下次修改该功能先看：
+  - `storage/idbCrud.ts`
+  - `apps/dev-tool/src/storage/IndexedDBStorageAdapter.ts`
+- 父 change：`codebase-large-file-split-tiles`
+- 子 change：`split-tiles-storage`
+- ECC lane：refactor
+- **优先级：P0（纯基础设施，与业务逻辑完全解耦）**
+
+---
+
 ## 2026-07-09 - Tile: dense-control-node.css Export text preview
 
 - 原文件：`apps/dev-tool/src/styles/nodes/dense-control-node.css:961-977`

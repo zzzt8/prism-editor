@@ -174,6 +174,10 @@ import { setDragImageState } from './PrismNodeControls/dragImageState';
 export { setDragImageState, getDragImageState } from './PrismNodeControls/dragImageState';
 export type { DragState } from './PrismNodeControls/dragImageState';
 
+// Thumbnail helpers split out to ./PrismNodeControls/imageThumbnails.ts.
+import { makeThumbnail, getExecThumb } from './PrismNodeControls/imageThumbnails';
+export { makeThumbnail, getExecThumb } from './PrismNodeControls/imageThumbnails';
+
 // Helper function to process an image file and update node params
 function processImageFile(
   file: File,
@@ -193,42 +197,7 @@ function processImageFile(
   reader.readAsDataURL(file);
 }
 
-/** Helper to generate a thumbnail from ImageData — cap at 200px so CSS scaling stays under 2x */
-function makeThumbnail(data: ImageData, maxPx = 200): string | null {
-  try {
-    const scale = Math.min(maxPx / data.width, maxPx / data.height, 1);
-    const c = document.createElement('canvas');
-    c.width = Math.round(data.width * scale); c.height = Math.round(data.height * scale);
-    const ctx = c.getContext('2d');
-    if (!ctx) return null;
-    ctx.imageSmoothingEnabled = false;
-    const t = document.createElement('canvas');
-    t.width = data.width; t.height = data.height;
-    const tc = t.getContext('2d');
-    if (!tc) return null;
-    tc.putImageData(data, 0, 0);
-    ctx.drawImage(t, 0, 0, c.width, c.height);
-    return c.toDataURL('image/png');
-  } catch { return null; }
-}
-
-function getExecThumb(executionResult: CanvasNodeData['executionResult']): string | null {
-  if (!executionResult) return null;
-  const topPreview = executionResult['previewUrl'];
-  if (typeof topPreview === 'string' && topPreview.length > 0) return topPreview;
-
-  const rawImage = executionResult['image'];
-  const fromImage = unwrapPreviewUrl(rawImage as Parameters<typeof unwrapPreviewUrl>[0], undefined);
-  if (fromImage) return fromImage;
-
-  const imageData = unwrapImageData(rawImage as Parameters<typeof unwrapImageData>[0]);
-  if (!imageData?.width || !imageData?.height) return null;
-  try {
-    return makeThumbnail(imageData);
-  } catch {
-    return null;
-  }
-}
+// getExecThumb is now imported from './PrismNodeControls/imageThumbnails'
 
 // ─── Specialized body renderers ──────────────────────────────────────────────
 
