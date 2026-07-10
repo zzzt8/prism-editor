@@ -109,6 +109,8 @@ opsx_meta:
   verify: pnpm --filter dev-tool typecheck
 ```
 
+- [x] **已完成**（2026-07-10，commit 7b5f91e）
+
 - **原文件**：`apps/dev-tool/src/storage/IndexedDBStorageAdapter.ts:22-112`
 - **新文件**：`apps/dev-tool/src/storage/idbCrud.ts`
 - **操作**：
