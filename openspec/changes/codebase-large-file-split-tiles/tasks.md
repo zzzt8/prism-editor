@@ -149,9 +149,11 @@ opsx_meta:
   verify: grep "split-tiles" docs/refactor-map.md | wc -l
 ```
 
+- [x] **已完成**（2026-07-10，commit c9c5693）
+
 - **原文件**：`docs/refactor-map.md`
 - **操作**：将 T1-T6 每个 tile 的摘要追加到 `docs/refactor-map.md`（YYYY-MM-DD = 2026-07-10）
-- **验收标准**：文件中包含至少 6 个 `split-tiles-*` 子 change 引用
+- **验收标准**：文件中包含至少 6 个 `split-tiles-*` 子 change 引用（实际 30 个）
 
 ---
 
