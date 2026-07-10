@@ -26,6 +26,8 @@ opsx_meta:
   verify: pnpm --filter @prism/image-ops typecheck
 ```
 
+- [x] **已完成**（2026-07-10，commit 83a0c82）
+
 - **原文件**：`packages/image-ops/src/worker/imageWorker.worker.ts:1017-1033`
 - **新文件**：`packages/image-ops/src/worker/blendModeMap.ts`
 - **操作**：
@@ -44,6 +46,8 @@ opsx_meta:
   layer: worker
   verify: pnpm --filter @prism/image-ops typecheck
 ```
+
+- [x] **已完成**（2026-07-10，commit 83a0c82）
 
 - **原文件**：`packages/image-ops/src/worker/imageWorker.worker.ts:1-58`
 - **新文件**：`packages/image-ops/src/worker/types.ts`
@@ -64,6 +68,8 @@ opsx_meta:
   verify: pnpm --filter dev-tool typecheck
 ```
 
+- [x] **已完成**（2026-07-10，commit 83a0c82）
+
 - **原文件**：`apps/dev-tool/src/components/nodes/PrismNodeControls.tsx:196-231`
 - **新文件**：`apps/dev-tool/src/components/nodes/PrismNodeControls/imageThumbnails.ts`
 - **操作**：
@@ -82,6 +88,8 @@ opsx_meta:
   layer: store
   verify: pnpm --filter dev-tool typecheck
 ```
+
+- [x] **已完成**（2026-07-10，commit 83a0c82）
 
 - **原文件**：`apps/dev-tool/src/modules/editor/stores/useCanvasStore.ts:1348-1353`
 - **新文件**：`apps/dev-tool/src/modules/editor/stores/useCanvasStore/snippetStubs.ts`
