@@ -14,4 +14,10 @@ export * from './template';
 export * from './snippet';
 export * from './execution-log';
 export * from './runtime-protocol';
+// M1-A: cross-runtime public contract types
+export * from './design-state';
+export * from './render-request';
+export * from './render-result';
+export * from './runtime-template';
+export * from './validation';
 export { createId } from './createId';

@@ -100,7 +100,7 @@
 
 - **id**: m1-a-t6
 - **layer**: ui-skin
-- **status**: pending
+- **status**: completed
 - **verify**: `pnpm --filter @prism/shared-types typecheck`
 
 ### 验收标准

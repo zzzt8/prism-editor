@@ -21,6 +21,11 @@
 | `runtime-protocol.ts` | `RuntimeProtocol` / `RuntimeEndpoint` / `EmbedConfig` | 运行协议抽象（page / api / embed） |
 | `execution-log.ts` | `ExecutionLog` / `NodeTiming` / `ExecutionError` | 执行日志模型 |
 | `node-package.ts` | 节点包相关类型 | 自定义节点包 |
+| `design-state.ts`（M1-A） | `DesignState` / `AssetRef` / `JsonValue` / `DesignStateTrace` | 跨端设计输入快照 |
+| `render-request.ts`（M1-A） | `RenderRequest` / `RenderRequestTrace` / `RenderRequestOptions` | 渲染调用契约 |
+| `render-result.ts`（M1-A） | `RenderResult` / `RenderResultOutput` / `RenderError` / `RenderTiming` | 渲染输出契约 |
+| `runtime-template.ts`（M1-A） | `RuntimeTemplate` / `RuntimeTemplateInputField` / `RuntimeTemplateFlow` | 运行时模板描述（与 `Template` 正交） |
+| `validation/index.ts`（M1-A） | `validateDesignState` / `validateRenderRequest` / `validateRenderResult` / `validateRuntimeTemplate` / `ValidationError` | ajv 运行时校验入口 |
 | `createId.ts` | `createId()` | ID 生成器 |
 
 ## 导出类型
@@ -178,13 +183,95 @@ import { createId } from '@prism/shared-types';
 const id = createId(); // 生成 ID
 ```
 
+## M1-A 公共契约（m1-a-design-state-types）
+
+Prism 跨端共享的版本化契约。`DesignState` / `RenderRequest` / `RenderResult` / `RuntimeTemplate` 在 Browser Runtime 与 Production Runtime 之间保持同一形状。
+
+### DesignState
+
+```typescript
+import {
+  type DesignState,
+  validateDesignState,
+} from '@prism/shared-types';
+
+const ds: DesignState = JSON.parse(rawJson);
+validateDesignState(ds); // throws ValidationError on failure; narrows to DesignState on success
+```
+
+- `schemaVersion: 1` 是字面量类型；纯字段增 → 仍是 `1`，改名 / 删除 / 改类型 → 必须 bump 到 `2`
+- `templateVersion` 与 `schemaVersion` 独立；前者是模板内容版本，后者是协议版本
+- `flowKey` 当前为 string 形态（M2 收紧为 enum）
+- **禁止携带**：`Blob / File / Canvas / ImageBitmap / DOM / Function / Store / blob URL`（架构护栏 §3）
+- `JsonValue` 联合是递归的 JSON-safe 值；不允许任何不可序列化对象
+
+### RenderRequest
+
+```typescript
+import { type RenderRequest, validateRenderRequest } from '@prism/shared-types';
+```
+
+包裹 `DesignState` + 可选 trace 字段 + 可选 options。`designState` 通过 `$ref` 复用 DesignState schema，不重复声明字段。
+
+### RenderResult
+
+```typescript
+import { type RenderResult, type RenderResultStatus } from '@prism/shared-types';
+```
+
+跨端统一的渲染输出形状。`outputs[].image` 是 `ImageRef`（不含 `ExecutorOutput` 内部子类型）；`status: 'done' | 'error' | 'cancelled'`；`timingMs` 必填。
+
+### RuntimeTemplate
+
+```typescript
+import { type RuntimeTemplate, validateRuntimeTemplate } from '@prism/shared-types';
+```
+
+公共的运行时模板描述，独立于 `Template`（EditorDraft 快照模型）。`flows[].nodes` 仅暴露 `{id, type}`，**不**含位置 / 参数 / DAG 内部结构。
+
+### 运行时校验入口
+
+`@prism/shared-types/src/validation/index.ts` 暴露四个 `validate*` 函数，全部为 `asserts input is <Type>` 形态，校验失败抛 `ValidationError`：
+
+| 函数 | 目标类型 |
+|------|----------|
+| `validateDesignState(input)` | `DesignState` |
+| `validateRenderRequest(input)` | `RenderRequest` |
+| `validateRenderResult(input)` | `RenderResult` |
+| `validateRuntimeTemplate(input)` | `RuntimeTemplate` |
+
+```typescript
+import { validateDesignState, ValidationError } from '@prism/shared-types';
+
+try {
+  validateDesignState(JSON.parse(raw));
+} catch (err) {
+  if (err instanceof ValidationError) {
+    console.error(err.target, err.errors);
+  }
+}
+```
+
+- ajv 配置：`{ allErrors: true, strict: true, removeAdditional: false, useDefaults: true }`
+- **不**引入 ajv-formats / ajv-keywords；M1 不需要 `date-time` 等格式扩展
+- 校验函数是 pure：不会 stringify 输入、不会修改入参
+
+### 版本策略
+
+- M1 = `schemaVersion: 1`
+- 纯加字段 → 保持 `1`
+- 重命名 / 删除 / 改类型 → 必须 bump
+- schema 文件位于 `packages/shared-types/src/validation/`
+
 ## 类型验证
 
-各包使用 Zod 进行运行时类型验证。`@prism/shared-types` 提供契约类型，consumer 包可选择自行声明 Zod schema。
+各包使用 ajv / Zod 进行运行时类型验证。M1-A 引入的公共契约在 `@prism/shared-types` 内自带 ajv 校验入口（`validateDesignState` / `validateRenderRequest` / `validateRenderResult` / `validateRuntimeTemplate`）；consumer 包可选择直接复用或自行声明 schema。
 
 ## 依赖
 
 - `zustand` - 状态管理库（被编辑器 store 引用）
+- `ajv` ^8.18.0 - JSON Schema 运行时校验（M1-A 引入）
+- `zod` ^4.3.6 - 运行时类型校验（project 已存在依赖）
 
 ## 脚本
 
