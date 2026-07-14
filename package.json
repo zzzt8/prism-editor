@@ -26,7 +26,11 @@
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean",
     "check": "pnpm typecheck && pnpm lint && pnpm format:check",
-    "verify": "node scripts/verify.mjs"
+    "verify": "node scripts/verify.mjs",
+    "prism:verify": "node tools/prism-control-center/verify.mjs --phase M0",
+    "prism:dashboard": "node tools/prism-control-center/serve.mjs",
+    "prism:dashboard:check": "node tools/prism-control-center/serve.mjs --check",
+    "prism:dashboard:test": "node tools/prism-control-center/test/status.test.mjs"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.4",
