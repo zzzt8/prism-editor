@@ -26,7 +26,7 @@ export const TEST_TEMPLATE_VERSION = '1.0.0';
 /** Minimal asset ref used by every test DesignState. */
 export function makeImage(width = 16, height = 16, kind = 'mock'): ImageRef {
   return {
-    type: 'inline-data',
+    type: 'data-url',
     url: `inline://${kind}`,
     width,
     height,
