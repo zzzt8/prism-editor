@@ -117,7 +117,7 @@ describe('validation/index — public validators', () => {
     const t: RuntimeTemplate = {
       id: 'tmpl.basic-mockup',
       version: '1.0.0',
-      schemaVersion: 1,
+      schemaVersion: 2,
       displayName: 'Basic Mockup',
       inputs: [
         {
@@ -128,7 +128,11 @@ describe('validation/index — public validators', () => {
           defaultValue: '#ffffff',
         },
       ],
-      flows: [{ flowKey: 'preview' as FlowKey, nodes: [{ id: 'n1', type: 'load-image' }] }],
+      flows: [{
+        flowKey: 'preview' as FlowKey,
+        nodes: [{ id: 'n1', type: 'load-image' }],
+        explicitOutputs: [{ slot: 'mockup', kind: 'image', mediaType: 'image/png' }],
+      }],
       createdAt: '2026-07-14T13:30:00.000Z',
       updatedAt: '2026-07-14T13:30:00.000Z',
     };
@@ -139,10 +143,47 @@ describe('validation/index — public validators', () => {
     const bad = {
       id: 'tmpl.empty',
       version: '1.0.0',
-      schemaVersion: 1,
+      schemaVersion: 2,
       displayName: 'Empty',
       inputs: [],
       flows: [],
+      createdAt: '2026-07-14T13:30:00.000Z',
+      updatedAt: '2026-07-14T13:30:00.000Z',
+    };
+    expect(() => validateRuntimeTemplate(bad)).toThrowError(ValidationError);
+  });
+
+  it('rejects RuntimeTemplate with empty explicitOutputs (Flow must declare outputs)', () => {
+    const bad: RuntimeTemplate = {
+      id: 'tmpl.no-outputs',
+      version: '1.0.0',
+      schemaVersion: 2,
+      displayName: 'No Outputs',
+      inputs: [],
+      flows: [{
+        flowKey: 'preview' as FlowKey,
+        nodes: [{ id: 'n1', type: 'load-image' }],
+        explicitOutputs: [],
+      }],
+      createdAt: '2026-07-14T13:30:00.000Z',
+      updatedAt: '2026-07-14T13:30:00.000Z',
+    };
+    expect(() => validateRuntimeTemplate(bad)).toThrowError(ValidationError);
+  });
+
+  it('rejects RuntimeTemplate with schemaVersion !== 2', () => {
+    const bad: RuntimeTemplate = {
+      id: 'tmpl.old',
+      version: '1.0.0',
+      // @ts-expect-error — schemaVersion 1 not allowed in M2-A
+      schemaVersion: 1,
+      displayName: 'Old',
+      inputs: [],
+      flows: [{
+        flowKey: 'preview' as FlowKey,
+        nodes: [{ id: 'n1', type: 'load-image' }],
+        explicitOutputs: [{ slot: 'mockup', kind: 'image' }],
+      }],
       createdAt: '2026-07-14T13:30:00.000Z',
       updatedAt: '2026-07-14T13:30:00.000Z',
     };

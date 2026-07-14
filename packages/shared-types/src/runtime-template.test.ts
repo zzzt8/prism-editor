@@ -17,13 +17,14 @@ const SAMPLE_FIELD: RuntimeTemplateInputField = {
 const SAMPLE_FLOW: RuntimeTemplateFlow = {
   flowKey: 'preview' as FlowKey,
   nodes: [{ id: 'n1', type: 'load-image' }],
+  explicitOutputs: [{ slot: 'mockup', kind: 'image', mediaType: 'image/png' }],
 };
 
 function makeTemplate(over: Partial<RuntimeTemplate> = {}): RuntimeTemplate {
   return {
     id: 'tmpl.basic-mockup',
     version: '1.0.0',
-    schemaVersion: 1,
+    schemaVersion: 2,
     displayName: 'Basic Mockup',
     inputs: [SAMPLE_FIELD],
     flows: [SAMPLE_FLOW],
@@ -39,7 +40,7 @@ describe('RuntimeTemplate — type contract shape', () => {
     const round = JSON.parse(JSON.stringify(t)) as RuntimeTemplate;
     expect(round.id).toBe('tmpl.basic-mockup');
     expect(round.version).toBe('1.0.0');
-    expect(round.schemaVersion).toBe(1);
+    expect(round.schemaVersion).toBe(2);
     expect(round.inputs).toHaveLength(1);
     expect(round.flows).toHaveLength(1);
   });
@@ -52,6 +53,17 @@ describe('RuntimeTemplate — type contract shape', () => {
     // RuntimeTemplate node projection must NOT include `position` or `params`
     const keys = Object.keys(node).sort();
     expect(keys).toEqual(['id', 'type']);
+  });
+
+  it('explicitOutputs public projection exposes only slot/kind/mediaType', () => {
+    const t = makeTemplate();
+    const slot = t.flows[0].explicitOutputs[0];
+    expect(slot.slot).toBe('mockup');
+    expect(slot.kind).toBe('image');
+    expect(slot.mediaType).toBe('image/png');
+    // Public projection: no nodeId / port allowed.
+    const keys = Object.keys(slot).sort();
+    expect(keys).toEqual(['kind', 'mediaType', 'slot']);
   });
 
   it('coexists with the legacy Template type without sharing members', () => {

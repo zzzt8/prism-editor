@@ -10,8 +10,13 @@
 // - Browser Runtime reads it via fetch (M5) or direct import (M6+).
 // - Production Runtime reads it on render-call path.
 //
-// M1 scope: declaration only. `nodes` per-flow is a minimal projection.
+// M2-A refinement: `RuntimeTemplateFlow` carries `explicitOutputs`
+// (public projection of `Flow.explicitOutputs`) so Mall can render UI
+// affordances per slot. The internal `nodeId` / `port` are NOT projected
+// (Guardrails §2.1). The authoritative `Flow` (with internal node/port
+// binding) lives in `./flow.ts`.
 
+import type { FlowKey, FlowOutputSlot } from './flow';
 import type { JsonValue } from './design-state';
 
 /**
@@ -53,12 +58,22 @@ export interface RuntimeTemplateInputField {
  * full DAG. The full Workflow graph is constructed at runtime by the
  * executor (M1-B / M2+). Public consumers MUST NOT depend on the
  * internal DAG shape (Guardrails §2.1).
+ *
+ * `explicitOutputs` is the **public** projection of `Flow.explicitOutputs`
+ * (M2-A). It carries the slot name + kind + optional mediaType so Mall
+ * can render UI affordances per slot. It does **NOT** include `nodeId`
+ * or `port` (those are internal Flow details; see `./flow.ts`).
  */
 export interface RuntimeTemplateFlow {
-  /** Stable flow identifier (M2 will constrain to enum). */
-  readonly flowKey: string;
+  /** Stable flow identifier (M2-A format-constrained string brand). */
+  readonly flowKey: FlowKey;
   /** Minimal node projection: id + type, no positions, no params. */
   readonly nodes: ReadonlyArray<{ readonly id: string; readonly type: string }>;
+  /**
+   * Public output slot projection (M2-A). Required non-empty: a Flow MUST
+   * declare its outputs (Guardrails §1.8).
+   */
+  readonly explicitOutputs: ReadonlyArray<FlowOutputSlot>;
 }
 
 /**
@@ -66,14 +81,19 @@ export interface RuntimeTemplateFlow {
  *
  * Independent of `Template` / `EditorDraft` (legacy snapshot model). Created
  * via the runtime build pipeline (M2+); NOT authored directly by users.
+ *
+ * Schema version policy:
+ * - M1 = 1. M2-A = 2 (breaking: added required `RuntimeTemplateFlow.explicitOutputs`).
+ * - Pure additive field changes → keep current version.
+ * - Renaming / removing / retyping / adding-required → must bump.
  */
 export interface RuntimeTemplate {
   /** Stable template identifier. */
   readonly id: string;
   /** Immutable per-template version (Guardrails §2.2). */
   readonly version: string;
-  /** Protocol schema version. M1 = 1. */
-  readonly schemaVersion: 1;
+  /** Protocol schema version. M1 = 1; M2-A = 2. */
+  readonly schemaVersion: 2;
   /** Human-readable display name for editor / debug. */
   readonly displayName: string;
   /** Public input field declarations. */
