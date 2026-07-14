@@ -11,12 +11,15 @@
 // representations.
 //
 // Implementation note:
-//   The package is built with TypeScript `composite: true`; static JSON
-//   imports are rejected by tsc's project-file tracking. We read schemas via
-//   `fs.readFileSync(new URL(..., import.meta.url))` so the JSON stays
-//   statically present on disk, while tsc never has to type-check its body.
+//   The package is built with TypeScript `composite: true` and the schema
+//   files live next to this source as JSON siblings. The runtime resolves
+//   the schema directory from `package.json` so cross-package consumers
+//   (vitest with `@fs` URL rewriting, node production, dev-tool vitest) all
+//   see the same canonical path.
 
 import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import Ajv, { type ErrorObject, type ValidateFunction } from 'ajv';
 
 import type { DesignState } from '../design-state';
@@ -48,11 +51,26 @@ interface JsonSchema {
   readonly [key: string]: unknown;
 }
 
+/**
+ * Resolve the directory containing the package's source `.schema.json` files.
+ *
+ * Works for both source invocations (`pnpm --filter @prism/shared-types test`)
+ * and built-artefact invocations (consumers importing `@prism/shared-types`
+ * from `dist/...`). It does so by walking up from the calling module to the
+ * nearest `package.json` and then descending into `dist/src/validation` if
+ * present, else `src/validation`.
+ */
+function resolveSchemaDir(): string {
+  // ESM: derive `__dirname` from `import.meta.url`.
+  // After tsc emits to dist/src/validation/index.js, dirname(...) gives
+  // `.../dist/src/validation`. The JSON files live in the same directory.
+  return dirname(fileURLToPath(import.meta.url));
+}
+
+const SCHEMA_DIR = resolveSchemaDir();
+
 function loadSchema(name: string): JsonSchema {
-  const url = new URL(`./${name}`, import.meta.url);
-  // Avoid `url.fileURLToPath` typing edge cases on Windows by going through
-  // string conversion explicitly.
-  const path = url.pathname.replace(/^\/([A-Za-z]:)/, '$1');
+  const path = join(SCHEMA_DIR, name);
   const raw = readFileSync(path, 'utf-8');
   return JSON.parse(raw) as JsonSchema;
 }

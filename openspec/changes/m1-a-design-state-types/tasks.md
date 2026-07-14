@@ -117,7 +117,7 @@
 
 - **id**: m1-a-t7
 - **layer**: meta
-- **status**: pending
+- **status**: completed
 - **verify**: `cat openspec/changes/m1-a-design-state-types/tasks.md | grep status`
 
 ### 验收标准
