@@ -186,7 +186,7 @@
 ### 验收标准
 - [x] adapter boundary 显式声明 alphaFormat
 - [x] composite.ts 移除 detectAlphaFormat 启发式调用
-- [x] 7 个 alpha 回归测试通过
+- [x] 10 个 alpha 回归测试通过（A01–A07: `unPremultiply` 行为；A08–A10: `detectAlphaFormat` 启发式稳定性锁定，不在生产路径使用）
 - [x] 深灰 straight-alpha `(64,64,64,128)` 不被错误提亮
 - [x] unPremultiply 输出 clamp 到 [0, 255]
 
