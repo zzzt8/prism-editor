@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>M0 Browser Runtime Host</title>
+  <style>
+    body {
+      font-family: monospace;
+      margin: 0;
+      padding: 12px;
+      background: #fafafa;
+      color: #222;
+    }
+    #status {
+      padding: 6px 10px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+    #status.ready { background: #d1f4d8; color: #1f6f33; }
+    #status.error { background: #ffd9d9; color: #a02020; }
+  </style>
+</head>
+<body>
+  <div id="status">loading…</div>
+  <pre id="info"></pre>
+
+  <!--
+    This file is served by Vite dev server from packages/image-ops/_m0_evidence/browser-runtime-host/.
+    It does NOT load test-setup.ts, does NOT load any Node-style polyfill.
+    It registers window.__M0_RUNTIME__ which is consumed by Playwright page.evaluate().
+  -->
+
+  <script type="module">
+    // Import the shared module (pure JS, browser-compatible).
+    import {
+      M0_SCENARIOS,
+      buildLShapedBase,
+      buildUserImage,
+      getFixtureConstants,
+    } from '../shared/index.ts';
+
+    import { transformExecutor as browserTransformExecutor } from '../../src/browser/TransformExecutor.ts';
+    import { compositeExecutor as browserCompositeExecutor } from '../../src/browser/CompositeExecutor.ts';
+    import { exportExecutor as browserExportExecutor } from '../../src/browser/ExportExecutor.ts';
+    import { unwrapImageData } from '@prism/shared-types';
+
+    const statusEl = document.getElementById('status');
+    const infoEl = document.getElementById('info');
+
+    /**
+     * Run a full Browser workflow:
+     *   [userImage] → transform → composite (over lShapedBase) → export (PNG bytes)
+     */
+    async function runBrowserWorkflow(scenario, lShapedBase, userImage) {
+      const tStart = performance.now();
+      const transformResult = await browserTransformExecutor(
+        { image: userImage },
+        scenario.transformParams,
+        {},
+      );
+      const transformedData = unwrapImageData(transformResult.image);
+      if (!transformedData) throw new Error('Browser transform result missing image');
+
+      const compositeResult = await browserCompositeExecutor(
+        { base: lShapedBase, overlay: transformedData },
+        scenario.compositeParams,
+        {},
+      );
+      const compositeData = unwrapImageData(compositeResult.image);
+      if (!compositeData) throw new Error('Browser composite result missing image');
+
+      // Real ExportExecutor export path (full chain, not toDataURL shortcut).
+      const exportResult = await browserExportExecutor(
+        { image: compositeData },
+        {},
+        {},
+      );
+
+      // For cross-process transfer, we still need a base64 PNG.
+      // Decode the data URL to bytes.
+      const dataUrl = exportResult.dataUrl;
+      const base64 = dataUrl.split(',')[1];
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+      return {
+        width: compositeData.width,
+        height: compositeData.height,
+        pngBytes: bytes,
+        pngBase64: base64,
+        elapsedMs: performance.now() - tStart,
+      };
+    }
+
+    /**
+     * Convert raw PNG bytes (Uint8Array) to an ImageData via OffscreenCanvas.
+     */
+    async function pngBytesToImageData(bytes) {
+      const blob = new Blob([bytes], { type: 'image/png' });
+      const bitmap = await createImageBitmap(blob);
+      const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(bitmap, 0, 0);
+      return ctx.getImageData(0, 0, bitmap.width, bitmap.height);
+    }
+
+    const lShapedBase = buildLShapedBase();
+    const userImage = buildUserImage();
+    const fixtureConstants = getFixtureConstants();
+
+    window.__M0_RUNTIME__ = {
+      scenarios: M0_SCENARIOS,
+      fixtureConstants,
+      lShapedBaseBytes: lShapedBase.data,
+      userImageBytes: userImage.data,
+      lShapedBaseWidth: lShapedBase.width,
+      lShapedBaseHeight: lShapedBase.height,
+      userImageWidth: userImage.width,
+      userImageHeight: userImage.height,
+      runBrowserWorkflow,
+      pngBytesToImageData,
+    };
+
+    statusEl.textContent = 'ready';
+    statusEl.className = 'ready';
+    infoEl.textContent = JSON.stringify({
+      scenarios: M0_SCENARIOS.length,
+      fixtureConstants,
+      userAgent: navigator.userAgent,
+      hasOffscreenCanvas: typeof OffscreenCanvas !== 'undefined',
+    }, null, 2);
+  </script>
+</body>
+</html>

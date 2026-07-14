@@ -125,7 +125,27 @@ export function compositeImages(
     }
   }
 
-  return new ImageData(result, canvasWidth, canvasHeight)
+  return makeImageData(result, canvasWidth, canvasHeight)
+}
+
+/**
+ * Construct an ImageData in a way that works even when the host environment
+ * (e.g. bare Node 22) does not provide a global `ImageData` constructor.
+ *
+ * Used only inside `compositeImages` because the Node.js test environment in
+ * the M0 verification harness runs the executor chain outside of any browser
+ * polyfill. Downstream consumers only read `data`, `width`, and `height`.
+ */
+function makeImageData(
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+): ImageData {
+  const Ctor = (globalThis as { ImageData?: new (d: Uint8ClampedArray, w: number, h: number) => ImageData }).ImageData;
+  if (typeof Ctor === 'function') {
+    return new Ctor(data, width, height);
+  }
+  return { data, width, height, colorSpace: 'srgb' } as unknown as ImageData;
 }
 
 /**
