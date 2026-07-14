@@ -44,7 +44,7 @@
 
 - **id**: m1-a-t3
 - **layer**: ui-skin
-- **status**: pending
+- **status**: completed
 - **verify**: `pnpm --filter @prism/shared-types test -- --run render-result`
 
 ### 验收标准
