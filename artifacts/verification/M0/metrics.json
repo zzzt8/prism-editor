@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "generatedAt": "2026-07-14T12:54:44.219Z",
+  "generatedAt": "2026-07-14T13:03:22.455Z",
   "scenarios": [
     {
       "id": "identity",
@@ -9,14 +9,14 @@
         "width": 256,
         "height": 192,
         "nonTransparentPixelCount": 49152,
-        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784033667350\\scenarios\\identity-browser.png",
+        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784034185540\\scenarios\\identity-browser.png",
         "fileHash": "sha256:e3b66404e6b50056d82cdc69403dc3f0b2a9141ecac99e0dcbe74e68bfff5dbc"
       },
       "node": {
         "width": 256,
         "height": 192,
         "nonTransparentPixelCount": 49152,
-        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784033667350\\scenarios\\identity-node.png",
+        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784034185540\\scenarios\\identity-node.png",
         "fileHash": "sha256:7e4f2eefdd55adefc9d52ce360d1ec10176ed964b35699a3bb101a16e583088b"
       },
       "diff": {
@@ -45,14 +45,14 @@
         "width": 256,
         "height": 192,
         "nonTransparentPixelCount": 49152,
-        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784033667350\\scenarios\\scale-2x-browser.png",
+        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784034185540\\scenarios\\scale-2x-browser.png",
         "fileHash": "sha256:fd90d18ee28ef7ee3a515ebf4a2615743cf26e8b82a313a855d0f340406bc58c"
       },
       "node": {
         "width": 256,
         "height": 192,
         "nonTransparentPixelCount": 49152,
-        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784033667350\\scenarios\\scale-2x-node.png",
+        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784034185540\\scenarios\\scale-2x-node.png",
         "fileHash": "sha256:50c6f53600d9ce9ba2aba56592d77dd79d8a5e2c5da44658e302f5d785a57cfc"
       },
       "diff": {
@@ -81,14 +81,14 @@
         "width": 256,
         "height": 192,
         "nonTransparentPixelCount": 49152,
-        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784033667350\\scenarios\\rotate-90-browser.png",
+        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784034185540\\scenarios\\rotate-90-browser.png",
         "fileHash": "sha256:fb77acc036f4244d376ab92c5e32869a2677ece24d13f1fd42f869fb3679b9e4"
       },
       "node": {
         "width": 256,
         "height": 192,
         "nonTransparentPixelCount": 49152,
-        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784033667350\\scenarios\\rotate-90-node.png",
+        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784034185540\\scenarios\\rotate-90-node.png",
         "fileHash": "sha256:d26fcc3b457a88faf26d15b00a258f21104e144ff8c2f81323b6882c3a4180d6"
       },
       "diff": {
@@ -117,14 +117,14 @@
         "width": 256,
         "height": 192,
         "nonTransparentPixelCount": 49152,
-        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784033667350\\scenarios\\scale-rotate-browser.png",
+        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784034185540\\scenarios\\scale-rotate-browser.png",
         "fileHash": "sha256:30800478c99e6791353eb6387b4172abf33d9fa87612ccaba906d926271f7e75"
       },
       "node": {
         "width": 256,
         "height": 192,
         "nonTransparentPixelCount": 49152,
-        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784033667350\\scenarios\\scale-rotate-node.png",
+        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784034185540\\scenarios\\scale-rotate-node.png",
         "fileHash": "sha256:8b3bdef9b6537f701b0e71d3ae200697c65d4e62a1ff56f24e7f525341630f8e"
       },
       "diff": {
@@ -153,14 +153,14 @@
         "width": 256,
         "height": 192,
         "nonTransparentPixelCount": 49152,
-        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784033667350\\scenarios\\translate-scale-browser.png",
+        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784034185540\\scenarios\\translate-scale-browser.png",
         "fileHash": "sha256:9c0dfd11bf0910a619b27b74e9281daeaec85288b6a831d01cc23c5523ad0a29"
       },
       "node": {
         "width": 256,
         "height": 192,
         "nonTransparentPixelCount": 49152,
-        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784033667350\\scenarios\\translate-scale-node.png",
+        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784034185540\\scenarios\\translate-scale-node.png",
         "fileHash": "sha256:43e6c715834dc6a117d02fe38c0571ae8f1a24923fdbdb4507bf45f6313f9ec1"
       },
       "diff": {
