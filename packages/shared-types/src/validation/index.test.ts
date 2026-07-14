@@ -71,12 +71,40 @@ describe('validation/index — public validators', () => {
   });
 
   it('passes a valid RenderRequest', () => {
-    const req: RenderRequest = { designState: SAMPLE_DS };
+    const req: RenderRequest = {
+      designState: SAMPLE_DS,
+      requestedOutputSlots: ['mockup'],
+    };
     expect(() => validateRenderRequest(req)).not.toThrow();
   });
 
   it('rejects RenderRequest when designState is missing', () => {
     expect(() => validateRenderRequest({})).toThrowError(ValidationError);
+  });
+
+  it('rejects RenderRequest when requestedOutputSlots is missing', () => {
+    expect(() =>
+      validateRenderRequest({ designState: SAMPLE_DS }),
+    ).toThrowError(ValidationError);
+  });
+
+  it('rejects RenderRequest when requestedOutputSlots is empty', () => {
+    expect(() =>
+      validateRenderRequest({
+        designState: SAMPLE_DS,
+        requestedOutputSlots: [],
+      }),
+    ).toThrowError(ValidationError);
+  });
+
+  it('rejects RenderRequest when carrying a second flowKey', () => {
+    // additionalProperties: false rejects unknown fields.
+    const bad = {
+      designState: SAMPLE_DS,
+      requestedOutputSlots: ['mockup'],
+      flowKey: 'production',
+    } as unknown as RenderRequest;
+    expect(() => validateRenderRequest(bad)).toThrowError(ValidationError);
   });
 
   it('passes a valid RenderResult (done)', () => {

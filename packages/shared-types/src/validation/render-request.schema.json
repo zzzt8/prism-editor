@@ -2,13 +2,25 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://prism-editor.local/schemas/render-request.schema.json",
   "title": "Prism RenderRequest",
-  "description": "Public render invocation. Wraps a DesignState for either Browser Runtime or Production Runtime. Same payload is valid in both runtimes.",
+  "description": "Public render invocation (M2-A = schemaVersion 2). Wraps a DesignState and an explicit list of requested output slots. flowKey lives ONLY in DesignState; RenderRequest MUST NOT carry a second copy.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["designState"],
+  "required": ["designState", "requestedOutputSlots"],
   "properties": {
     "designState": {
       "$ref": "design-state.schema.json"
+    },
+    "requestedOutputSlots": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128,
+        "pattern": "^[a-zA-Z][a-zA-Z0-9._-]{0,127}$"
+      },
+      "description": "Public output slot names requested from this render. Must be a non-empty subset of Flow.explicitOutputs slots. ajv `minItems: 1` enforces non-empty."
     },
     "trace": {
       "type": "object",

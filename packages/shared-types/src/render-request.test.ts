@@ -44,6 +44,7 @@ describe('RenderRequest — type contract shape', () => {
     };
     const req: RenderRequest = {
       designState: SAMPLE_DS,
+      requestedOutputSlots: ['mockup'],
       trace,
       options,
     };
@@ -51,6 +52,7 @@ describe('RenderRequest — type contract shape', () => {
     expect(round.designState.schemaVersion).toBe(1);
     expect(round.designState.templateId).toBe('tmpl.basic-mockup');
     expect(round.designState.flowKey).toBe('production');
+    expect(round.requestedOutputSlots).toEqual(['mockup']);
     expect(round.trace?.requestId).toBe('req-1');
     expect(round.options?.timeoutMs).toBe(30_000);
     expect(round.options?.preferParallel).toBe(true);
@@ -58,15 +60,22 @@ describe('RenderRequest — type contract shape', () => {
   });
 
   it('allows trace and options to be omitted (minimal request)', () => {
-    const req: RenderRequest = { designState: SAMPLE_DS };
+    const req: RenderRequest = {
+      designState: SAMPLE_DS,
+      requestedOutputSlots: ['mockup'],
+    };
     const round = JSON.parse(JSON.stringify(req)) as RenderRequest;
     expect(round.designState.templateId).toBe('tmpl.basic-mockup');
+    expect(round.requestedOutputSlots).toEqual(['mockup']);
     expect(round.trace).toBeUndefined();
     expect(round.options).toBeUndefined();
   });
 
   it('embeds DesignState by reference, treating it as the single source of truth', () => {
-    const req: RenderRequest = { designState: SAMPLE_DS };
+    const req: RenderRequest = {
+      designState: SAMPLE_DS,
+      requestedOutputSlots: ['mockup'],
+    };
     expect(req.designState).toBe(SAMPLE_DS);
   });
 });
