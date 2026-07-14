@@ -13,6 +13,37 @@ import { createExecutionContext, recordNodeResult, checkAborted } from './contex
 import type { ExecutionContext } from './context';
 import type { ExecutionCache } from './cache';
 import { TypeValidator, TypeMismatchError, type TypeCheckingOptions } from './type-validator';
+import {
+  buildWorkflowFromDesignState,
+  mapExecutorResultToRenderResult,
+  type ExecuteFromDesignStateParams,
+} from './design-state-execution';
+import type { DesignState, RenderResult } from '@prism/shared-types';
+import { validateDesignState } from '@prism/shared-types';
+
+/**
+ * Options for `WorkflowExecutor.executeFromDesignState`. Mirrors the relevant
+ * subset of `WorkflowExecutorOptions` (signal / progress / cache) plus a
+ * `params` payload that carries the executor-param bundle extracted from the
+ * inbound `DesignState` by the consumer (M1-B tests / future M2 callers).
+ */
+export interface ExecuteFromDesignStateOptions {
+  readonly signal?: AbortSignal;
+  readonly onProgress?: import('@prism/shared-types').ProgressCallback;
+  readonly cache?: import('@prism/shared-types').ExecutionCache;
+  readonly enableCache?: boolean;
+  readonly params: ExecuteFromDesignStateParams;
+  /**
+   * Optional override for the render id. Defaults to the
+   * `DesignState.trace.requestId` if present, otherwise a synthesized `m1-b-<unixMs>`.
+   */
+  readonly renderId?: string;
+}
+
+export interface ExecuteFromDesignStateResult {
+  readonly renderResult: RenderResult;
+  readonly flowKey: string;
+}
 
 export interface ExecutorResult {
   workflowId: string;
@@ -323,5 +354,53 @@ export class WorkflowExecutor {
       error: firstError?.error,
       ...(typeErrors.length > 0 && { typeErrors }),
     };
+  }
+
+  /**
+   * Execute a workflow from a M1-A `DesignState` snapshot.
+   *
+   * Pipeline:
+   * 1. ajv `validateDesignState(designState)` — throws `ValidationError` on failure.
+   * 2. Construct an internal `Workflow` shape (private; not exported from
+   *    `@prism/workflow-core/src/index.ts`).
+   * 3. Call the existing `execute(workflow, options)` method (Behavior preserved).
+   * 4. Wrap the `ExecutorResult` in a public `RenderResult` (M1-A contract).
+   *
+   * The `params` payload carries the executor-param bundle extracted from
+   * `DesignState.inputs` by the consumer. M1-B callers (5-scenario fixture
+   * tests) build this explicitly; M2 will let `DesignState` carry native param
+   * fields.
+   *
+   * @throws `ValidationError` from `@prism/shared-types/validation` on malformed input.
+   */
+  async executeFromDesignState(
+    designState: DesignState,
+    options: ExecuteFromDesignStateOptions,
+  ): Promise<ExecuteFromDesignStateResult> {
+    const startedAt = Date.now();
+    const renderId =
+      options.renderId ?? designState.trace?.requestId ?? `m1-b-${startedAt.toString(36)}`;
+
+    // ajv pre-validation is enforced inside `assertValidDesignState`. We re-use
+    // the existing ajv entry (M1-A) so we don't fork validator logic.
+    validateDesignState(designState);
+
+    const workflow = buildWorkflowFromDesignState(designState, options.params);
+
+    const execResult = await this.execute(workflow, {
+      signal: options.signal,
+      onProgress: options.onProgress,
+      cache: options.cache as ExecutionCache | undefined,
+      enableCache: options.enableCache,
+    });
+
+    const renderResult = mapExecutorResultToRenderResult(
+      designState,
+      execResult,
+      renderId,
+      startedAt,
+    );
+
+    return { renderResult, flowKey: designState.flowKey };
   }
 }
