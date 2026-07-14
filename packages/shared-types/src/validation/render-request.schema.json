@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://prism-editor.local/schemas/render-request.schema.json",
+  "title": "Prism RenderRequest",
+  "description": "Public render invocation. Wraps a DesignState for either Browser Runtime or Production Runtime. Same payload is valid in both runtimes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["designState"],
+  "properties": {
+    "designState": {
+      "$ref": "design-state.schema.json"
+    },
+    "trace": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requestId": { "type": "string", "maxLength": 256 },
+        "traceId": { "type": "string", "maxLength": 256 },
+        "externalReferenceId": { "type": "string", "maxLength": 256 }
+      }
+    },
+    "options": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timeoutMs": { "type": "integer", "minimum": 0, "maximum": 86400000 },
+        "preferParallel": { "type": "boolean" },
+        "targetLane": { "type": "string", "enum": ["preview", "production"] }
+      }
+    }
+  }
+}
