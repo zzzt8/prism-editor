@@ -46,8 +46,9 @@
     },
     "createdAt": {
       "type": "string",
-      "format": "date-time",
-      "description": "ISO-8601 timestamp."
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "ISO-8601 timestamp as a string. M1 does not parse the date-time format."
     },
     "metadata": {
       "type": "object",

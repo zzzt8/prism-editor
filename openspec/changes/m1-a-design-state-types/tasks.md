@@ -78,7 +78,7 @@
 
 - **id**: m1-a-t5
 - **layer**: ui-skin
-- **status**: pending
+- **status**: completed
 - **verify**: `pnpm --filter @prism/shared-types test -- --run validation`
 
 ### 验收标准

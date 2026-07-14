@@ -30,8 +30,8 @@
       "minItems": 1,
       "items": { "$ref": "#/definitions/flow" }
     },
-    "createdAt": { "type": "string", "format": "date-time" },
-    "updatedAt": { "type": "string", "format": "date-time" }
+    "createdAt": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "updatedAt": { "type": "string", "minLength": 1, "maxLength": 128 }
   },
   "definitions": {
     "inputField": {
