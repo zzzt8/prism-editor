@@ -3,7 +3,7 @@ created: 2026-07-14
 id: m2-a-deterministic-flow-and-output-protocol
 phase: M2
 title: "M2-A: Deterministic Flow & Explicit Output Protocol"
-status: in_progress
+status: done
 author: agent
 change_class: high
 tags:
