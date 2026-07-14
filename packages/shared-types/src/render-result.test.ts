@@ -34,11 +34,14 @@ function makeRenderResult(over: Partial<RenderResult> = {}): RenderResult {
     id: 'out-001',
     image: SAMPLE_IMAGE_REF,
     slot: 'mockup',
+    flowKey: SAMPLE_DS.flowKey,
   };
   const timing: RenderTiming = { startedAt: 100, endedAt: 250 };
   return {
+    schemaVersion: 2,
     renderId: 'render-001',
     designState: SAMPLE_DS,
+    templateVersion: SAMPLE_DS.templateVersion,
     status: 'done',
     outputs: [out],
     timingMs: timing,
@@ -50,6 +53,7 @@ describe('RenderResult — type contract shape', () => {
   it('round-trips a done result with one output through JSON', () => {
     const r = makeRenderResult();
     const round = JSON.parse(JSON.stringify(r)) as RenderResult;
+    expect(round.schemaVersion).toBe(2);
     expect(round.status).toBe('done');
     expect(round.outputs).toHaveLength(1);
     expect(round.outputs[0].id).toBe('out-001');
@@ -78,7 +82,7 @@ describe('RenderResult — type contract shape', () => {
 
   it('mirrors the input DesignState for audit traceability', () => {
     const ds: DesignState = { ...SAMPLE_DS, flowKey: 'preview' as FlowKey };
-    const r = makeRenderResult({ designState: ds });
+    const r = makeRenderResult({ designState: ds, templateVersion: ds.templateVersion });
     expect(r.designState).toBe(ds);
     expect(r.designState.flowKey).toBe('preview');
   });

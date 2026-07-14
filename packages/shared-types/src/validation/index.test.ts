@@ -109,13 +109,16 @@ describe('validation/index — public validators', () => {
 
   it('passes a valid RenderResult (done)', () => {
     const r: RenderResult = {
+      schemaVersion: 2,
       renderId: 'render-001',
       designState: SAMPLE_DS,
+      templateVersion: SAMPLE_DS.templateVersion,
       status: 'done',
       outputs: [
         {
           id: 'out-1',
           slot: 'mockup',
+          flowKey: SAMPLE_DS.flowKey,
           image: {
             type: 'data-url',
             url: 'data:image/png;base64,XXX',
@@ -132,10 +135,61 @@ describe('validation/index — public validators', () => {
 
   it('rejects RenderResult with unknown status', () => {
     const r = {
+      schemaVersion: 2,
       renderId: 'render-001',
       designState: SAMPLE_DS,
+      templateVersion: SAMPLE_DS.templateVersion,
       status: 'pending',
       outputs: [],
+      timingMs: { startedAt: 0, endedAt: 100 },
+    };
+    expect(() => validateRenderResult(r)).toThrowError(ValidationError);
+  });
+
+  it('rejects RenderResult with missing templateVersion', () => {
+    const r = {
+      renderId: 'render-001',
+      designState: SAMPLE_DS,
+      status: 'done',
+      outputs: [
+        {
+          id: 'out-1',
+          slot: 'mockup',
+          flowKey: SAMPLE_DS.flowKey,
+          image: {
+            type: 'data-url',
+            url: 'data:image/png;base64,XXX',
+            width: 1024,
+            height: 768,
+            mimeType: 'image/png',
+          },
+        },
+      ],
+      timingMs: { startedAt: 0, endedAt: 100 },
+    };
+    expect(() => validateRenderResult(r)).toThrowError(ValidationError);
+  });
+
+  it('rejects RenderResult with outputs missing flowKey', () => {
+    const r = {
+      schemaVersion: 2,
+      renderId: 'render-001',
+      designState: SAMPLE_DS,
+      templateVersion: SAMPLE_DS.templateVersion,
+      status: 'done',
+      outputs: [
+        {
+          id: 'out-1',
+          slot: 'mockup',
+          image: {
+            type: 'data-url',
+            url: 'data:image/png;base64,XXX',
+            width: 1024,
+            height: 768,
+            mimeType: 'image/png',
+          },
+        },
+      ],
       timingMs: { startedAt: 0, endedAt: 100 },
     };
     expect(() => validateRenderResult(r)).toThrowError(ValidationError);

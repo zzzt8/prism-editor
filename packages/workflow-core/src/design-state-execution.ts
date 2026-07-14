@@ -266,14 +266,20 @@ export function mapExecutorResultToRenderResult(
               id: `${renderId}-output-0`,
               image,
               slot: ds.flowKey,
+              // M2-A: each output carries the flow that produced it.
+              flowKey: ds.flowKey,
             },
           ];
         })()
       : [];
 
   const base = {
+    // M2-A: schemaVersion bumped to 2; templateVersion mirrors the
+    // originating DesignState for audit (Guardrails §2.2 / §2.4).
+    schemaVersion: 2 as const,
     renderId,
     designState: ds,
+    templateVersion: ds.templateVersion,
     status,
     outputs,
     timingMs: { startedAt, endedAt },

@@ -2,11 +2,12 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://prism-editor.local/schemas/render-result.schema.json",
   "title": "Prism RenderResult",
-  "description": "Public render output shape. Same shape from Browser Runtime and Production Runtime for a given DesignState.",
+  "description": "Public render output shape. M2-A = schemaVersion 2. Same shape from Browser Runtime and Production Runtime for a given DesignState. outputs[].flowKey must equal designState.flowKey (enforced in validateRenderResult post-validation).",
   "type": "object",
   "additionalProperties": false,
-  "required": ["renderId", "designState", "status", "outputs", "timingMs"],
+  "required": ["schemaVersion", "renderId", "designState", "templateVersion", "status", "outputs", "timingMs"],
   "properties": {
+    "schemaVersion": { "type": "integer", "const": 2 },
     "renderId": {
       "type": "string",
       "minLength": 1,
@@ -14,6 +15,12 @@
     },
     "designState": {
       "$ref": "design-state.schema.json"
+    },
+    "templateVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "Template version that produced this result; must equal designState.templateVersion (post-validation enforces equality)."
     },
     "status": {
       "type": "string",
@@ -56,7 +63,7 @@
     "output": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "image", "slot"],
+      "required": ["id", "image", "slot", "flowKey"],
       "properties": {
         "id": {
           "type": "string",
@@ -82,7 +89,14 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 128,
-          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,127}$"
+          "pattern": "^[a-zA-Z][a-zA-Z0-9._-]{0,127}$"
+        },
+        "flowKey": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 96,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "description": "Flow that produced this output; must equal designState.flowKey (post-validation enforces equality)."
         }
       }
     }
