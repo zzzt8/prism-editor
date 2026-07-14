@@ -1,0 +1,39 @@
+schema: prism-workflow
+created: 2026-07-14
+id: m2-b-workflow-core-explicit-flow-resolution
+phase: M2
+title: "M2-B: Workflow Core Explicit Flow Resolution"
+status: done
+author: agent
+change_class: high
+tags:
+  - m2
+  - workflow-core
+  - engine
+  - deterministic-execution
+depends_on:
+  - m2-a-deterministic-flow-and-output-protocol
+blocks:
+  - m2-c-server-deterministic-render-entry
+affected:
+  packages:
+    - workflow-core
+    - image-ops
+  layers:
+    - engine
+scope:
+  - 按 DesignState.flowKey + TemplateVersion 精确解析唯一 Flow
+  - 不再使用固定 M0 scenario 写死 DAG
+  - 不再通过 ExecuteFromDesignStateOptions.params 携带同义参数
+  - 按 Flow.explicitOutputs 收集结果，按 requestedOutputSlots 过滤
+  - 输出顺序由 Flow 声明顺序决定
+  - 8 个稳定错误码
+  - Browser / Node 共享解析语义
+  - 保留 WorkflowExecutor.execute() 旧入口
+out_of_scope:
+  - 修改 server 入口或 Prisma（M2-C）
+  - 删除 WorkflowExecutor.execute()（M4 才删）
+  - 重写 image-ops core/* 算法
+  - 暴露内部 nodeId/port 给 Mall 公开协议
+  - M3 / M4 / M6 / M7 范围
+  - 修改 M0 metrics.json
