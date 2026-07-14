@@ -61,7 +61,7 @@
 
 - **id**: m1-a-t4
 - **layer**: ui-skin
-- **status**: pending
+- **status**: completed
 - **verify**: `pnpm --filter @prism/shared-types test -- --run runtime-template`
 
 ### 验收标准
