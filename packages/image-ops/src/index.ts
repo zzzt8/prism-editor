@@ -12,5 +12,15 @@ export * from './executors';
 export * from './scheduler';
 export * from './task-scheduler';
 export * from './preview-strategy';
+// M1-B: DesignState → Executor Params adapter (added 2026-07-14)
+export {
+  designStateToExecutorParams,
+  AdapterError,
+} from './adapters/design-state-adapter';
+export type {
+  TransformParams,
+  CompositeParams,
+  ExecutorParamsBundle,
+} from './adapters/design-state-adapter';
 // Note: './worker' exports are internal only — Worker is instantiated at runtime
 // via the WorkerPool and should not be imported directly in application code.
