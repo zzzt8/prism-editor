@@ -207,7 +207,7 @@ describe('M0 Dual Runtime Consistency', () => {
         { image: baseImage },
         {},
         {}
-      ) as TransformExecutorOutput;
+      ) as unknown as TransformExecutorOutput;
 
       expect(result.type).toBe('transform');
       expect(result.width).toBe(20);
@@ -219,7 +219,7 @@ describe('M0 Dual Runtime Consistency', () => {
         { image: baseImage },
         { scaleX: 1, scaleY: 1, rotation: 0 },
         {}
-      ) as TransformExecutorOutput;
+      ) as unknown as TransformExecutorOutput;
 
       expect(result.type).toBe('transform');
       expect(result.width).toBe(20);
@@ -231,7 +231,7 @@ describe('M0 Dual Runtime Consistency', () => {
         { image: baseImage },
         { scaleX: 2, scaleY: 2, rotation: 0 },
         {}
-      ) as TransformExecutorOutput;
+      ) as unknown as TransformExecutorOutput;
 
       expect(result.type).toBe('transform');
       expect(result.width).toBe(40); // 20 * 2
@@ -243,7 +243,7 @@ describe('M0 Dual Runtime Consistency', () => {
         { image: baseImage },
         { scaleX: 1, scaleY: 1, rotation: 90 },
         {}
-      ) as TransformExecutorOutput;
+      ) as unknown as TransformExecutorOutput;
 
       expect(result.type).toBe('transform');
       expect(result.width).toBeGreaterThan(0);
@@ -255,7 +255,7 @@ describe('M0 Dual Runtime Consistency', () => {
         { image: baseImage },
         { scaleX: 0.5, scaleY: 0.5, rotation: 180 },
         {}
-      ) as TransformExecutorOutput;
+      ) as unknown as TransformExecutorOutput;
 
       expect(result.type).toBe('transform');
       expect(result.width).toBeGreaterThan(0);
@@ -267,7 +267,7 @@ describe('M0 Dual Runtime Consistency', () => {
         { image: baseImage },
         { translateX: 10, translateY: 10, scaleX: 1.5, scaleY: 1.5 },
         {}
-      ) as TransformExecutorOutput;
+      ) as unknown as TransformExecutorOutput;
 
       expect(result.type).toBe('transform');
       expect(result.width).toBe(30); // 20 * 1.5
@@ -292,13 +292,13 @@ describe('M0 Dual Runtime Consistency', () => {
         { image: baseImage },
         params,
         {}
-      ) as TransformExecutorOutput;
+      ) as unknown as TransformExecutorOutput;
 
       const result2 = await nodeTransformExecutor(
         { image: baseImage },
         params,
         {}
-      ) as TransformExecutorOutput;
+      ) as unknown as TransformExecutorOutput;
 
       expect(result1.width).toBe(result2.width);
       expect(result1.height).toBe(result2.height);
@@ -313,13 +313,13 @@ describe('M0 Dual Runtime Consistency', () => {
         { image: baseImage },
         params,
         {}
-      ) as TransformExecutorOutput;
+      ) as unknown as TransformExecutorOutput;
 
       const result2 = await nodeTransformExecutor(
         { image: baseImage },
         params,
         {}
-      ) as TransformExecutorOutput;
+      ) as unknown as TransformExecutorOutput;
 
       expect(result1.width).toBe(result2.width);
       expect(result1.height).toBe(result2.height);
@@ -332,13 +332,13 @@ describe('M0 Dual Runtime Consistency', () => {
         { image: baseImage },
         params,
         {}
-      ) as TransformExecutorOutput;
+      ) as unknown as TransformExecutorOutput;
 
       const result2 = await nodeTransformExecutor(
         { image: baseImage },
         params,
         {}
-      ) as TransformExecutorOutput;
+      ) as unknown as TransformExecutorOutput;
 
       expect(result1.width).toBe(result2.width);
       expect(result1.height).toBe(result2.height);
@@ -351,13 +351,13 @@ describe('M0 Dual Runtime Consistency', () => {
         { image: baseImage },
         params,
         {}
-      ) as TransformExecutorOutput;
+      ) as unknown as TransformExecutorOutput;
 
       const result2 = await nodeTransformExecutor(
         { image: baseImage },
         params,
         {}
-      ) as TransformExecutorOutput;
+      ) as unknown as TransformExecutorOutput;
 
       expect(result1.width).toBe(result2.width);
       expect(result1.height).toBe(result2.height);
