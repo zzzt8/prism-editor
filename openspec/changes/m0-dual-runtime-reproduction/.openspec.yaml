@@ -1,0 +1,30 @@
+schema: prism-workflow
+created: 2026-07-14
+id: m0-dual-runtime-reproduction
+phase: M0
+title: "M0: 双端执行器几何一致性验证"
+status: completed
+author: agent
+change_class: low
+tags:
+  - m0
+  - dual-runtime
+  - executor
+  - transform
+  - consistency
+affected:
+  packages:
+    - image-ops
+  layers:
+    - runtime
+    - test
+scope:
+  - 双端 transform executor 一致性测试
+  - 确定性 fixture
+  - 几何一致性验证
+out_of_scope:
+  - DesignState 定义
+  - 协议契约
+  - Mall 接入
+  - 多 Flow
+  - ZIP/PDF/CMYK
