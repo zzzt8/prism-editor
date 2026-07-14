@@ -1,0 +1,38 @@
+schema: prism-workflow
+created: 2026-07-14
+id: m1-b-design-state-roundtrip
+phase: M1
+title: "M1-B: DesignState 双端闭环验证"
+status: in_progress
+author: agent
+change_class: high
+tags:
+  - m1
+  - design-state
+  - roundtrip
+  - executor
+  - consistency
+depends_on:
+  - m1-a-design-state-types
+blocks: []
+affected:
+  packages:
+    - workflow-core
+    - image-ops
+  layers:
+    - engine
+scope:
+  - WorkflowExecutor.executeFromDesignState 新方法
+  - image-ops DesignState → executor params adapter
+  - 5 场景 fixture 重新喂入的双端闭环测试
+  - M0 几何基线复用对比
+  - RenderResult 包装层
+  - changelog 文档
+out_of_scope:
+  - 服务端路由（M6）
+  - UI 切换（M4）
+  - 多 Flow 选择 / explicitOutputs（M2）
+  - 不删 WorkflowExecutor.execute() 旧入口
+  - Prisma 持久化
+  - 重写 core/* 算法
+  - 修改 M0 已 archived 产物
