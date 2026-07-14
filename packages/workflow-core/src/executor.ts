@@ -14,28 +14,32 @@ import type { ExecutionContext } from './context';
 import type { ExecutionCache } from './cache';
 import { TypeValidator, TypeMismatchError, type TypeCheckingOptions } from './type-validator';
 import {
-  buildWorkflowFromDesignState,
-  mapExecutorResultToRenderResult,
-  type ExecuteFromDesignStateParams,
+  mapFlowResultToRenderResult,
 } from './design-state-execution';
 import type { DesignState, RenderResult } from '@prism/shared-types';
 import { validateDesignState } from '@prism/shared-types';
+import { executeFlow, type ExecuteFlowResult } from './flow-execution';
+import type { TemplateVersionCatalog } from './flow-resolver';
+import { resolveTemplateVersion, resolveFlow } from './flow-resolver';
+import { FlowResolverError } from './errors';
 
 /**
- * Options for `WorkflowExecutor.executeFromDesignState`. Mirrors the relevant
- * subset of `WorkflowExecutorOptions` (signal / progress / cache) plus a
- * `params` payload that carries the executor-param bundle extracted from the
- * inbound `DesignState` by the consumer (M1-B tests / future M2 callers).
+ * Options for `WorkflowExecutor.executeFromDesignState` (M2-B).
+ *
+ * `options.params` was removed (Decision 2): runtime params come from
+ * `DesignState.inputs.params`. M2-C injects a Prisma-backed
+ * `TemplateVersionCatalog` via `options.catalog`; tests use the
+ * `InMemoryTemplateVersionCatalog`.
  */
 export interface ExecuteFromDesignStateOptions {
   readonly signal?: AbortSignal;
   readonly onProgress?: import('@prism/shared-types').ProgressCallback;
   readonly cache?: import('@prism/shared-types').ExecutionCache;
   readonly enableCache?: boolean;
-  readonly params: ExecuteFromDesignStateParams;
+  readonly catalog?: TemplateVersionCatalog;
   /**
-   * Optional override for the render id. Defaults to the
-   * `DesignState.trace.requestId` if present, otherwise a synthesized `m1-b-<unixMs>`.
+   * Render id override. Defaults to `DesignState.trace.requestId` then
+   * `m2-b-<unixMs>`.
    */
   readonly renderId?: string;
 }
@@ -359,46 +363,54 @@ export class WorkflowExecutor {
   /**
    * Execute a workflow from a M1-A `DesignState` snapshot.
    *
-   * Pipeline:
+   * Pipeline (M2-B):
    * 1. ajv `validateDesignState(designState)` — throws `ValidationError` on failure.
-   * 2. Construct an internal `Workflow` shape (private; not exported from
-   *    `@prism/workflow-core/src/index.ts`).
-   * 3. Call the existing `execute(workflow, options)` method (Behavior preserved).
-   * 4. Wrap the `ExecutorResult` in a public `RenderResult` (M1-A contract).
+   * 2. `resolveTemplateVersion(designState.templateId, designState.templateVersion)`
+   *    via the injected (or test in-memory) `TemplateVersionCatalog`. Falls back
+   *    to the catalog's current version when `templateVersion` is omitted from
+   *    the inbound DesignState. (Decision 1 — never findFirst.)
+   * 3. `resolveFlow(templateVersion, designState.flowKey)` — precise key match.
+   *    Throws `FLOW_NOT_FOUND` / `DUPLICATE_FLOW_KEY` per Decision 6.
+   * 4. `executeFlow(this, flow, designState, options)` consumes the Flow's
+   *    `explicitOutputs`; runtime params are read from `DesignState.inputs.params`
+   *    (Decision 2 — no `options.params` synonym bundle).
+   * 5. `mapFlowResultToRenderResult(flow, designState, ...)` packs the
+   *    `ExecuteFlowResult` into a public `RenderResult` whose `outputs[]`
+   *    follows `flow.explicitOutputs` declaration order.
    *
-   * The `params` payload carries the executor-param bundle extracted from
-   * `DesignState.inputs` by the consumer. M1-B callers (5-scenario fixture
-   * tests) build this explicitly; M2 will let `DesignState` carry native param
-   * fields.
+   * The `WorkflowExecutor.execute(workflow, options)` legacy entry is
+   * preserved (M4 deletes it).
    *
    * @throws `ValidationError` from `@prism/shared-types/validation` on malformed input.
+   * @throws `FlowResolverError` for any resolution failure (FLOW_NOT_FOUND, DUPLICATE_FLOW_KEY,
+   *   TEMPLATE_VERSION_NOT_FOUND, FLOW_OUTPUTS_MISSING, REQUESTED_OUTPUT_UNKNOWN,
+   *   DECLARED_OUTPUT_NOT_PRODUCED).
    */
   async executeFromDesignState(
     designState: DesignState,
-    options: ExecuteFromDesignStateOptions,
+    options: ExecuteFromDesignStateOptions = {},
   ): Promise<ExecuteFromDesignStateResult> {
-    const startedAt = Date.now();
-    const renderId =
-      options.renderId ?? designState.trace?.requestId ?? `m1-b-${startedAt.toString(36)}`;
-
-    // ajv pre-validation is enforced inside `assertValidDesignState`. We re-use
-    // the existing ajv entry (M1-A) so we don't fork validator logic.
     validateDesignState(designState);
 
-    const workflow = buildWorkflowFromDesignState(designState, options.params);
+    const templateVersion = resolveTemplateVersion(
+      designState.templateId,
+      designState.templateVersion,
+      options.catalog,
+    );
+    const flow = resolveFlow(templateVersion, designState.flowKey);
 
-    const execResult = await this.execute(workflow, {
+    const flowResult = await executeFlow(this, flow, designState, {
       signal: options.signal,
       onProgress: options.onProgress,
-      cache: options.cache as ExecutionCache | undefined,
+      cache: options.cache,
       enableCache: options.enableCache,
+      renderId: options.renderId,
     });
 
-    const renderResult = mapExecutorResultToRenderResult(
+    const renderResult = mapFlowResultToRenderResult(
+      flow,
       designState,
-      execResult,
-      renderId,
-      startedAt,
+      flowResult,
     );
 
     return { renderResult, flowKey: designState.flowKey };

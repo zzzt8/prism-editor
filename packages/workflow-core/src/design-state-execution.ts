@@ -1,174 +1,36 @@
-// M1-B: DesignState → RenderResult round-trip entry helpers.
+// M2-B: DesignState → RenderResult round-trip mapping.
 //
 // Architecture:
-// - `buildWorkflowFromDesignState(ds, params)` is **private to this package**.
-//   It is NOT re-exported from `index.ts`, so the internal DAG shape never
-//   leaks to consumers.
-// - `mapExecutorResultToRenderResult(ds, execResult, renderId, startedAt)` is
-//   part of the package-internal pipeline.
-// - `executeFromDesignState` (defined as a method on `WorkflowExecutor`) calls
-//   ajv `validateDesignState` from `@prism/shared-types`, then constructs a
-//   runtime Workflow via the helpers above, calls `execute(workflow, ...)`, and
-//   packs the result into a `RenderResult` from `@prism/shared-types`.
-//
-// Constraints honored:
-// - Readonly inputs, no mutation of the inbound `DesignState`.
-// - No new platform dependencies (no sharp / canvas at this level).
-// - Cannot carry Blob / File / Canvas / ImageBitmap / DOM / Function across
-//   the boundary; final output is always a `RenderResult` whose `outputs[].image`
-//   is an `ImageRef` (json-safe).
-//
-// M1-B scope is the 5 fixed M0 fixture scenarios (identity / scale-2x /
-// rotate-90 / scale-rotate / translate-scale). The internal workflow shape is
-// a fixed 4-node pipeline: load-image → transform → composite → export.
+// - `mapFlowResultToRenderResult(flow, designState, flowResult)` is the
+//   single place that turns a `ExecuteFlowResult` (engine-internal: node
+//   output bag + collected slot frames) into a public `RenderResult`.
+// - Output order is fully determined by `flow.explicitOutputs` declaration
+//   order (after `requestedOutputSlots` filtering inside `executeFlow`).
+//   This is the audit-stable contract from M2-A / Guardrails §1.8 — no
+//   `Object.keys(...).pop()`-style implicit selection lives in this file.
+// - The legacy `buildWorkflowFromDesignState` (hard-coded 4-node pipeline)
+//   and `mapExecutorResultToRenderResult` (single-output extractor) were
+//   the M1-B shape; they were removed because they encode the M0 scenario
+//   pipeline literally. M2-B drives a *real* per-template Flow (see
+//   `flow-execution.ts`).
 
-import {
-  validateDesignState,
-  type DesignState,
-  type RenderResult,
-  type RenderResultOutput,
-  type RenderResultStatus,
-  type ImageRef,
+import type {
+  DesignState,
+  RenderResult,
+  RenderResultOutput,
+  RenderResultStatus,
 } from '@prism/shared-types';
-import type { Workflow, WorkflowNode, Connection } from '@prism/shared-types';
-import type { ExecutorResult } from './executor';
+import { validateDesignState } from '@prism/shared-types';
+import type { Flow } from '@prism/shared-types';
+
+import type { ExecuteFlowResult } from './flow-execution';
 
 /**
- * Public-but-package-internal helper. Holds the param bundle that the caller
- * provided (after M1-A ajv validation) so `buildWorkflowFromDesignState` can
- * spread it onto each node's `params`. The bundle shape is:
- *
- * ```ts
- * {
- *   transformParams: { translateX, translateY, scaleX, scaleY, rotation, cropX, cropY, cropWidth, cropHeight },
- *   compositeParams: { blendMode, opacity, canvasWidth, canvasHeight, overlayX, overlayY },
- * }
- * ```
- *
- * For now, M1-B callers (the round-trip integration test) build this bundle
- * explicitly from `M0_SCENARIOS` and pass it in. M2 will let `DesignState`
- * carry the params natively.
+ * Map a `status` enum to the public `RenderResultStatus`
+ * (`done | error | cancelled`). The two are aligned by design; this is a
+ * structural cast with an exhaustiveness guard.
  */
-export interface ExecuteFromDesignStateParams {
-  readonly transformParams: {
-    readonly translateX: number;
-    readonly translateY: number;
-    readonly scaleX: number;
-    readonly scaleY: number;
-    readonly rotation: number;
-    readonly cropX?: number;
-    readonly cropY?: number;
-    readonly cropWidth?: number;
-    readonly cropHeight?: number;
-  };
-  readonly compositeParams: {
-    readonly blendMode: string;
-    readonly opacity: number;
-    readonly canvasWidth: number;
-    readonly canvasHeight: number;
-    readonly overlayX: number;
-    readonly overlayY: number;
-  };
-}
-
-const POSITION_ORIGIN = { x: 0, y: 0 } as const;
-
-function makePosition(x: number): { readonly x: number; readonly y: number } {
-  return { x, y: POSITION_ORIGIN.y };
-}
-
-function makeLoadImageNode(): WorkflowNode {
-  return {
-    id: 'load-image',
-    type: 'load-image',
-    position: makePosition(0),
-    params: {},
-  };
-}
-
-function makeTransformNode(params: ExecuteFromDesignStateParams['transformParams']): WorkflowNode {
-  return {
-    id: 'transform',
-    type: 'transform',
-    position: makePosition(1),
-    params: { ...params },
-  };
-}
-
-function makeCompositeNode(params: ExecuteFromDesignStateParams['compositeParams']): WorkflowNode {
-  return {
-    id: 'composite',
-    type: 'composite',
-    position: makePosition(2),
-    params: { ...params },
-  };
-}
-
-function makeExportNode(): WorkflowNode {
-  return {
-    id: 'export',
-    type: 'export',
-    position: makePosition(3),
-    params: {},
-  };
-}
-
-function makeConnection(fromNodeId: string, toNodeId: string, fromPort: string, toPort: string): Connection {
-  return {
-    id: `${fromNodeId}.${fromPort}->${toNodeId}.${toPort}`,
-    from: { nodeId: fromNodeId, port: fromPort },
-    to: { nodeId: toNodeId, port: toPort },
-  };
-}
-
-/**
- * Build a runtime `Workflow` from a (validated) `DesignState`.
- *
- * M1-B: this is a fixed 4-node pipeline mirroring the M0 driver sequence.
- * The `flowKey` is folded into `workflow.name` for traceability.
- *
- * NOT exported from `@prism/workflow-core/src/index.ts`; the internal DAG
- * shape stays private.
- */
-export function buildWorkflowFromDesignState(
-  ds: DesignState,
-  params: ExecuteFromDesignStateParams,
-): Workflow {
-  const nodes: WorkflowNode[] = [
-    makeLoadImageNode(),
-    makeTransformNode(params.transformParams),
-    makeCompositeNode(params.compositeParams),
-    makeExportNode(),
-  ];
-
-  const connections: Connection[] = [
-    makeConnection('load-image', 'transform', 'image', 'image'),
-    makeConnection('transform', 'composite', 'image', 'overlay'),
-    makeConnection('composite', 'export', 'image', 'image'),
-  ];
-
-  return {
-    id: `m1-b:${ds.templateId}@${ds.templateVersion}`,
-    name: `flow:${ds.flowKey}`,
-    version: ds.templateVersion,
-    nodes,
-    connections,
-    inputs: [],
-    outputs: [],
-    metadata: {
-      createdAt: ds.createdAt,
-      updatedAt: ds.createdAt,
-      description: `M1-B round-trip workflow (designState.flowKey=${ds.flowKey})`,
-    },
-  };
-}
-
-/**
- * Map a `status` enum from `ExecutorResult` (engine internal) to the public
- * `RenderResultStatus` (`done | error | cancelled`). The two are aligned by
- * design, so this is a structural cast with an exhaustiveness guard.
- */
-function mapStatus(status: ExecutorResult['status']): RenderResultStatus {
+function mapStatus(status: 'done' | 'error' | 'cancelled'): RenderResultStatus {
   switch (status) {
     case 'done':
     case 'error':
@@ -176,7 +38,7 @@ function mapStatus(status: ExecutorResult['status']): RenderResultStatus {
       return status;
     default: {
       const exhaustive: never = status;
-      throw new Error(`Unknown ExecutorResult status: ${String(exhaustive)}`);
+      throw new Error(`Unknown ExecuteFlowResult status: ${String(exhaustive)}`);
     }
   }
 }
@@ -190,118 +52,83 @@ function classifyErrorCode(message: string): 'RENDER_FAILED' | 'RENDER_TIMEOUT' 
 }
 
 /**
- * Best-effort extraction of the final output image from the executor's node
- * result bag. M1-B's fixed 4-stage pipeline ends at the `export` node which
- * returns `{ dataUrl, previewUrl, format, dimensions }` per
- * `ExportExecutorOutput`. We accept any string-shaped preview/dataUrl and
- * synthesize an `ImageRef`. If the result shape is non-conforming, returns
- * `null` so the caller can decide error semantics.
+ * Re-export the helper that downstream tests / adapters use to assert
+ * on `DesignState` shape. The underlying ajv entry is unchanged.
  */
-function extractFinalImage(execResult: ExecutorResult, workflowId: string): ImageRef | null {
-  const exportOutputs = execResult.results['export'];
-  if (!exportOutputs) return null;
+export { validateDesignState } from '@prism/shared-types';
 
-  const dataUrl = (exportOutputs['dataUrl'] ?? exportOutputs['previewUrl']) as string | undefined;
-  if (typeof dataUrl !== 'string') return null;
-
-  const dims = exportOutputs['dimensions'] as { width: number; height: number } | undefined;
-  const format = (exportOutputs['format'] as string | undefined) ?? 'image/png';
-
-  if (dataUrl.startsWith('data:')) {
-    return {
-      type: 'data-url',
-      url: dataUrl,
-      width: dims?.width ?? 0,
-      height: dims?.height ?? 0,
-      mimeType: format,
-    };
-  }
-  if (dataUrl.startsWith('blob:')) {
-    return {
-      type: 'blob-url',
-      url: dataUrl,
-      width: dims?.width ?? 0,
-      height: dims?.height ?? 0,
-      mimeType: format,
-    };
-  }
-  return {
-    type: 'cross-origin-url',
-    url: dataUrl,
-    width: dims?.width ?? 0,
-    height: dims?.height ?? 0,
-    mimeType: format,
-  };
+/**
+ * Assert-validate a `DesignState` (M1-A ajv entry). Pure pass-through;
+ * throws `ValidationError` unchanged.
+ */
+export function assertValidDesignState(ds: unknown): asserts ds is DesignState {
+  validateDesignState(ds);
 }
 
 /**
- * Pack an `ExecutorResult` into a public `RenderResult`.
+ * Build `RenderResult.outputs[]` from an `ExecuteFlowResult.outputs[]`.
+ *
+ * The list is already in `flow.explicitOutputs` declaration order
+ * (filtered by `requestedOutputSlots`); this wrapper is mainly an
+ * identity-with-narrowing for the public type. Tests verify here that
+ * no implicit ordering step runs at this layer (Guardrails §1.8).
+ *
+ * Public; exported for downstream adapters / consumer tests.
+ */
+export function buildRenderResultOutputs(
+  flowResult: ExecuteFlowResult,
+): ReadonlyArray<RenderResultOutput> {
+  return flowResult.outputs;
+}
+
+/**
+ * Pack an `ExecuteFlowResult` into a public `RenderResult`.
+ *
+ * - `RenderResult.templateVersion` mirrors `designState.templateVersion`
+ *   (Guardrails §2.2 / §2.4).
+ * - `RenderResult.outputs[]` is already in `flow.explicitOutputs`
+ *   declaration order — this function MUST NOT re-sort, re-filter, or
+ *   walk `executorResult.results` (Guardrails §1.8).
+ * - `timingMs.endedAt` is wall-clock at the time of mapping.
  *
  * Status mapping:
- * - `done`     → at least 1 output, no `error`
- * - `error`    → `error.code` derived from message keywords; no outputs
- * - `cancelled`→ no outputs, no error (caller may inspect downstream)
- *
- * `renderId` is provided by the caller (typically derived from `DesignState.trace.requestId`).
- * `startedAt` is the wall-clock ms when scheduling began (caller-recorded).
+ * - `done`     → ≥1 output, no `error`
+ * - `error`    → `error.code/message` derived from executor error string
+ * - `cancelled`→ no outputs, no error
  */
-export function mapExecutorResultToRenderResult(
-  ds: DesignState,
-  execResult: ExecutorResult,
-  renderId: string,
-  startedAt: number,
+export function mapFlowResultToRenderResult(
+  flow: Flow,
+  designState: DesignState,
+  flowResult: ExecuteFlowResult,
 ): RenderResult {
   const endedAt = Date.now();
-  const status = mapStatus(execResult.status);
-
-  const outputs: ReadonlyArray<RenderResultOutput> =
-    status === 'done'
-      ? (() => {
-          const image = extractFinalImage(execResult, ds.templateId);
-          if (!image) {
-            return [] as ReadonlyArray<RenderResultOutput>;
-          }
-          return [
-            {
-              id: `${renderId}-output-0`,
-              image,
-              slot: ds.flowKey,
-              // M2-A: each output carries the flow that produced it.
-              flowKey: ds.flowKey,
-            },
-          ];
-        })()
-      : [];
+  const status = mapStatus(flowResult.executorResult.status);
 
   const base = {
-    // M2-A: schemaVersion bumped to 2; templateVersion mirrors the
-    // originating DesignState for audit (Guardrails §2.2 / §2.4).
     schemaVersion: 2 as const,
-    renderId,
-    designState: ds,
-    templateVersion: ds.templateVersion,
+    renderId: flowResult.renderId,
+    designState,
+    templateVersion: designState.templateVersion,
     status,
-    outputs,
-    timingMs: { startedAt, endedAt },
+    outputs: status === 'done' ? buildRenderResultOutputs(flowResult) : [],
+    timingMs: { startedAt: flowResult.startedAt, endedAt },
   };
 
-  if (status === 'error' && execResult.error) {
+  if (status === 'error' && flowResult.executorResult.error) {
     return {
       ...base,
       error: {
-        code: classifyErrorCode(execResult.error),
-        message: execResult.error,
+        code: classifyErrorCode(flowResult.executorResult.error),
+        message: flowResult.executorResult.error,
       },
     };
   }
 
-  return base;
-}
+  // Reference `flow` to satisfy linters; flow is part of the contract
+  // surface even though it does not appear in `RenderResult` shape — the
+  // audit trail is held together via `designState.flowKey === flow.flowKey`
+  // (asserted by `validateRenderResult` post-validation in shared-types).
+  void flow;
 
-/**
- * Validate a `DesignState` (M1-A ajv entry) and throw on failure.
- * Pure pass-through; throws `ValidationError` unchanged.
- */
-export function assertValidDesignState(ds: unknown): asserts ds is DesignState {
-  validateDesignState(ds);
+  return base as RenderResult;
 }
