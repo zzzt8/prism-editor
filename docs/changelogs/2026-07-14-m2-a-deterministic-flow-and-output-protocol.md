@@ -1,7 +1,7 @@
 # Changelog — m2-a-deterministic-flow-and-output-protocol
 
 归档时间：2026-07-14
-状态：pending（待 archive 后修改）
+状态：done（verify 通过，已 archive）
 
 ## 变更摘要
 
@@ -39,10 +39,12 @@ M2-A 是 M2 阶段（确定性 Flow 选择与显式输出）第一环，仅做**
 
 ### workflow-core / image-ops 同步更新（M1-B 适配）
 
+> **Cross-package mechanical sync（verify 阶段补充说明）**：M2-A 把 `RenderResult` / `RenderResultOutput` 升级为必填 `templateVersion` + `outputs[].flowKey` + `schemaVersion: 2`，并把 `DesignState.flowKey` 从 `string` 收紧为带 brand 的 `FlowKey`。这两类协议升级必带的"消费方字段补全"和"fixture 字符串 brand 化"是不可绕开的最小同步，不构成 workflow 解析或执行逻辑改动，**不视为对 `out_of_scope: workflow-core flow 解析（M2-B）` 的越权**——M2-B 真正按 flowKey 解析与按 `explicitOutputs` 收集的逻辑仍按计划在 M2-B 实施。M2-A 与 M2-B 的边界：M2-A 仅协议层 + 字段构造同步；M2-B 才动执行器主路径。
+
 | 文件 | 变更 |
 |------|------|
-| `packages/workflow-core/src/design-state-execution.ts` | `mapExecutorResultToRenderResult` 输出 `schemaVersion: 2` + `templateVersion: ds.templateVersion` + `outputs[].flowKey: ds.flowKey` |
-| `packages/workflow-core/src/design-state-execution.test.ts` | `flowKey: 'preview' as FlowKey` |
+| `packages/workflow-core/src/design-state-execution.ts` | `mapExecutorResultToRenderResult` 输出 `schemaVersion: 2` + `templateVersion: ds.templateVersion` + `outputs[].flowKey: ds.flowKey`（共 +6 行，注释说明 M2-A 字段补全） |
+| `packages/workflow-core/src/design-state-execution.test.ts` | `flowKey: 'preview' as FlowKey`（fixture 收紧） |
 | `packages/workflow-core/src/render-result-mapping.test.ts` | 同上 |
 | `packages/image-ops/src/adapters/design-state-adapter.test.ts` | 同上 |
 | `packages/image-ops/src/__tests__/m1/design-state-roundtrip.test.ts` | 同上 |
