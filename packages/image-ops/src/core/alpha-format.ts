@@ -22,8 +22,20 @@ import type { ImageData } from '@prism/shared-types';
 /**
  * Detects whether the given ImageData uses premultiplied or straight alpha.
  *
- * Samples up to 100 pixels (400 bytes) for performance. A single pixel with
- * channel values exceeding its alpha indicates straight alpha format.
+ * Samples up to 100 pixels (400 bytes) for performance.
+ *
+ * For fully-opaque images (alpha=255 everywhere), both straight and premultiplied
+ * look identical since premultiplied with alpha=255 is just [r, g, b, 255] = [r, g, b, alpha].
+ * We conservatively treat them as straight alpha — this is fine for identical inputs
+ * (both Browser and Node will detect the same format and use the same path).
+ *
+ * For pixels with partial transparency, the detection logic is:
+ * - **Premultiplied**: R ≤ A, G ≤ A, B ≤ A for each pixel (channels scaled by alpha)
+ * - **Straight**: Any channel may exceed alpha (e.g., bright pixel at 50% opacity = [255, 0, 0, 128])
+ *
+ * Canvas 2D getImageData() returns PREMULTIPLIED pixels.
+ * Sharp PNG decode also returns PREMULTIPLIED pixels.
+ * Therefore the canvas fixture (created via canvas/OffscreenCanvas) is premultiplied.
  */
 export function detectAlphaFormat(pixels: ImageData): 'premultiplied' | 'straight' {
   const limit = Math.min(pixels.data.length, 400);
@@ -33,11 +45,14 @@ export function detectAlphaFormat(pixels: ImageData): 'premultiplied' | 'straigh
       const r = pixels.data[i];
       const g = pixels.data[i + 1];
       const b = pixels.data[i + 2];
-      if (r > a || g > a || b > a) return 'straight';
-      if (r === a && g === a && b === a) return 'premultiplied';
+      // Premultiplied: all channels ≤ alpha
       if (r <= a && g <= a && b <= a) return 'premultiplied';
+      // Straight: at least one channel > alpha
+      if (r > a || g > a || b > a) return 'straight';
     }
   }
+  // No partial-alpha pixels found — conservatively treat as straight
+  // (both paths will detect this consistently for identical inputs)
   return 'straight';
 }
 
@@ -56,9 +71,6 @@ export function detectAlphaFormat(pixels: ImageData): 'premultiplied' | 'straigh
  */
 export function unPremultiply(r: number, g: number, b: number, a: number): [number, number, number] {
   if (a === 0) return [0, 0, 0];
-  return [
-    Math.round((r * 255) / a),
-    Math.round((g * 255) / a),
-    Math.round((b * 255) / a),
-  ];
+  const clamp = (v: number): number => Math.max(0, Math.min(255, Math.round((v * 255) / a)));
+  return [clamp(r), clamp(g), clamp(b)];
 }
