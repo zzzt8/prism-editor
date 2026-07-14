@@ -28,7 +28,13 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:run": "vitest run",
-    "test:browser": "vitest run --config vitest.browser.config.ts"
+    "test:browser": "vitest run --config vitest.browser.config.ts",
+    "verify:m0": "node --import tsx _m0_evidence/spike/spike-runner.ts && node --import tsx _m0_evidence/driver/m0-driver.ts && vitest run _m0_evidence/mutation/m0-mutation.test.ts && vitest run _m0_evidence/alpha/alpha-regression.test.ts",
+    "verify:m0:node-parity-only": "vitest run src/dual-executor-consistency.test.ts",
+    "verify:m0:alpha-only": "vitest run _m0_evidence/alpha/alpha-regression.test.ts",
+    "verify:m0:mutation-only": "vitest run _m0_evidence/mutation/m0-mutation.test.ts",
+    "verify:m0:spike-only": "node --import tsx _m0_evidence/spike/spike-runner.ts",
+    "verify:m0:driver-only": "node --import tsx _m0_evidence/driver/m0-driver.ts"
   },
   "dependencies": {
     "@prism/shared-types": "workspace:*",

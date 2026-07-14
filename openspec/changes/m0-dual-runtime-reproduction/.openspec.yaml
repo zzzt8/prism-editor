@@ -2,7 +2,7 @@ schema: prism-workflow
 created: 2026-07-14
 id: m0-dual-runtime-reproduction
 phase: M0
-title: "M0: 双端执行器几何一致性验证"
+title: "M0: 真实浏览器 vs Node Runtime 几何一致性验证"
 status: completed
 author: agent
 change_class: low
@@ -19,12 +19,15 @@ affected:
     - runtime
     - test
 scope:
+  - Real Chromium 浏览器验证
+  - Node + Sharp 生产验证
   - 双端 transform executor 一致性测试
   - 确定性 fixture
   - 几何一致性验证
+  - artifact 原子生成
 out_of_scope:
   - DesignState 定义
-  - 协议契约
+  - 协议契约变更
   - Mall 接入
   - 多 Flow
   - ZIP/PDF/CMYK
