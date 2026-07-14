@@ -1,0 +1,37 @@
+schema: prism-workflow
+created: 2026-07-14
+id: m2-a-deterministic-flow-and-output-protocol
+phase: M2
+title: "M2-A: Deterministic Flow & Explicit Output Protocol"
+status: in_progress
+author: agent
+change_class: high
+tags:
+  - m2
+  - protocol
+  - flow-key
+  - explicit-outputs
+depends_on: []
+blocks:
+  - m2-b-workflow-core-explicit-flow-resolution
+affected:
+  packages:
+    - shared-types
+  layers:
+    - shared-protocol
+scope:
+  - DesignState.flowKey 收紧为稳定格式字符串（非封闭枚举）
+  - 新增 Flow / FlowOutput / FlowOutputSlot 类型与 schema
+  - RenderRequest.requestedOutputSlots 语义
+  - RenderResult.outputs 追溯字段与顺序稳定性
+  - RuntimeTemplate.flows[*] 增加 explicitOutputs 投影
+  - 4 个 JSON schema + ajv 同步更新
+  - 语义校验：重复 flowKey / 重复 slot / 引用不存在节点 / 引用不存在 port
+out_of_scope:
+  - workflow-core 的 flow 解析与执行（M2-B）
+  - server 入口与数据库迁移（M2-C）
+  - 修改 M0 / M1 已 archived 的产物
+  - 引入新依赖（保持 ajv）
+  - 暴露内部 nodeId / port 到 Mall 公开协议
+  - M3 / M4 / M6 / M7 范围
+  - UI 修改、Mall 接入

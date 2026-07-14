@@ -26,6 +26,8 @@
 | `render-result.ts`（M1-A） | `RenderResult` / `RenderResultOutput` / `RenderError` / `RenderTiming` | 渲染输出契约 |
 | `runtime-template.ts`（M1-A） | `RuntimeTemplate` / `RuntimeTemplateInputField` / `RuntimeTemplateFlow` | 运行时模板描述（与 `Template` 正交） |
 | `validation/index.ts`（M1-A） | `validateDesignState` / `validateRenderRequest` / `validateRenderResult` / `validateRuntimeTemplate` / `ValidationError` | ajv 运行时校验入口 |
+| `flow.ts`（M2-A） | `Flow` / `FlowKey` / `FlowNodeRef` / `FlowOutput` / `FlowOutputSlot` / `FlowKind` | Flow 权威定义与稳定 flowKey 字符串 brand |
+| `validation/index.ts`（M2-A） | `validateFlow` / `validateFlowKey` | Flow 与 FlowKey 的 ajv 校验入口（含语义校验） |
 | `createId.ts` | `createId()` | ID 生成器 |
 
 ## 导出类型
@@ -231,7 +233,7 @@ import { type RuntimeTemplate, validateRuntimeTemplate } from '@prism/shared-typ
 
 ### 运行时校验入口
 
-`@prism/shared-types/src/validation/index.ts` 暴露四个 `validate*` 函数，全部为 `asserts input is <Type>` 形态，校验失败抛 `ValidationError`：
+`@prism/shared-types/src/validation/index.ts` 暴露四个 `validate*` 函数（M1-A），全部为 `asserts input is <Type>` 形态，校验失败抛 `ValidationError`：
 
 | 函数 | 目标类型 |
 |------|----------|
@@ -239,6 +241,8 @@ import { type RuntimeTemplate, validateRuntimeTemplate } from '@prism/shared-typ
 | `validateRenderRequest(input)` | `RenderRequest` |
 | `validateRenderResult(input)` | `RenderResult` |
 | `validateRuntimeTemplate(input)` | `RuntimeTemplate` |
+| `validateFlow(input)`（M2-A） | `Flow` |
+| `validateFlowKey(input)`（M2-A） | `FlowKey` |
 
 ```typescript
 import { validateDesignState, ValidationError } from '@prism/shared-types';
@@ -259,9 +263,110 @@ try {
 ### 版本策略
 
 - M1 = `schemaVersion: 1`
-- 纯加字段 → 保持 `1`
-- 重命名 / 删除 / 改类型 → 必须 bump
+- M2-A = `schemaVersion: 2`（适用于 `RenderRequest` / `RenderResult` / `RuntimeTemplate`）；`DesignState` 仍是 `1`（纯字段增）；`Flow` 初始 `1`
+- 纯加字段 → 保持当前版本
+- 重命名 / 删除 / 改类型 / 新增必填字段 → 必须 bump
 - schema 文件位于 `packages/shared-types/src/validation/`
+
+### Mall 公开 vs 内部字段边界
+
+| 字段 / 类型 | Mall 可见？ | 备注 |
+|------------|-----------|------|
+| `DesignState.flowKey` | ✅ | 唯一权威 flow 选择依据 |
+| `RenderRequest.requestedOutputSlots` | ✅ | 必填非空 slot 名数组 |
+| `RuntimeTemplateFlow.flowKey` | ✅ | 公开 |
+| `RuntimeTemplateFlow.explicitOutputs[].slot / kind / mediaType` | ✅ | 公开 slot 投影 |
+| `Flow.explicitOutputs[].nodeId / port` | ❌ | 内部 DAG 细节（护栏 §2.1） |
+| `Flow`（整体） | ❌ | 引擎 / server 内部消费 |
+| `RenderRequest` 中携带 `flowKey` | ❌ | schema `additionalProperties: false` 拒绝（决定 #5） |
+
+## M2-A 公共契约（m2-a-deterministic-flow-and-output-protocol）
+
+`M2-A` 在 `M1-A` 基础上引入 4 个跨包公开类型 + 收紧 `flowKey` 形态，并完成 5 个 schema 的同步升级。对应护栏 §1.7（Flow 选择显式）、§1.8（输出显式声明）。
+
+### FlowKey
+
+`flowKey` 是稳定格式字符串（**非封闭枚举**）。新增 flowKey 只需配置模板与 Flow，**不需要修改 shared-types**（护栏 §1.9）。
+
+```typescript
+import { type FlowKey, validateFlowKey } from '@prism/shared-types';
+
+// pattern: ^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$
+// minLength: 1, maxLength: 96
+const k: FlowKey = 'production.print' as FlowKey;
+validateFlowKey(k); // throws ValidationError on shape mismatch
+```
+
+### Flow / FlowNodeRef / FlowOutput / FlowOutputSlot
+
+`Flow` 是引擎 / server 内部消费的不可变 Flow 定义；`explicitOutputs` 携带 `nodeId + port` 内部细节。`FlowOutputSlot` 是 `Flow.explicitOutputs` 的**公开投影**，仅暴露 `{ slot, kind, mediaType? }`，对 Mall 屏蔽内部 DAG。
+
+```typescript
+import { type Flow, type FlowOutputSlot } from '@prism/shared-types';
+
+// 公开协议只能看到 FlowOutputSlot 三字段
+const slot: FlowOutputSlot = { slot: 'mockup', kind: 'image', mediaType: 'image/png' };
+```
+
+### RuntimeTemplate.flows[].explicitOutputs
+
+`RuntimeTemplateFlow` 新增 `explicitOutputs: ReadonlyArray<FlowOutputSlot>` 必填非空；`schemaVersion` 升级为 `2`。
+
+```typescript
+import { type RuntimeTemplate, validateRuntimeTemplate } from '@prism/shared-types';
+
+const t: RuntimeTemplate = { /* ... */ flows: [{
+  flowKey: 'production.print' as FlowKey,
+  nodes: [{ id: 'n1', type: 'load-image' }],
+  explicitOutputs: [{ slot: 'mockup', kind: 'image' }],
+}] };
+validateRuntimeTemplate(t);
+```
+
+### RenderRequest.requestedOutputSlots
+
+`RenderRequest` 新增 `requestedOutputSlots: ReadonlyArray<string>` 必填非空（`minItems: 1, maxItems: 64`）。`schemaVersion` 升级为 `2`。`RenderRequest` 不允许携带 `flowKey`（schema `additionalProperties: false` 拒绝）。
+
+```typescript
+import { type RenderRequest, validateRenderRequest } from '@prism/shared-types';
+
+const req: RenderRequest = {
+  designState: ds,
+  requestedOutputSlots: ['mockup'], // 必填非空
+};
+validateRenderRequest(req);
+```
+
+### RenderResult 顺序规则 + 追溯字段
+
+- `RenderResult.outputs` 顺序 = `Flow.explicitOutputs` 声明顺序（经 `requestedOutputSlots` 过滤）—— **不**依赖对象遍历顺序 / 执行顺序 / `findFirst`
+- `RenderResult.templateVersion` 必填；与 `designState.templateVersion` 一致（post-validation 校验）
+- `RenderResultOutput.flowKey` 必填；与 `designState.flowKey` 一致（post-validation 校验）
+- `schemaVersion` 升级为 `2`
+
+```typescript
+import { type RenderResult, validateRenderResult } from '@prism/shared-types';
+
+const r: RenderResult = { /* ... */ outputs: [
+  { id: 'o1', slot: 'mockup', flowKey: 'production.print' as FlowKey, image: {...} },
+] };
+validateRenderResult(r);
+```
+
+### M2-A 校验错误码
+
+| 错误码 | 抛出位置 | 触发条件 |
+|--------|---------|----------|
+| `DUPLICATE_FLOW_KEY` | `validateRuntimeTemplate` | 同一 TemplateVersion 内出现 2+ 同名 `flows[].flowKey` |
+| `OUTPUT_SLOT_DUPLICATE` | `validateFlow` | 同一 Flow 内 `explicitOutputs[]` 含重复 `slot` |
+| `OUTPUT_NODE_NOT_FOUND` | `validateFlow` | `explicitOutputs[].nodeId` 不在 `nodeRefs[].nodeId` |
+| `REQUESTED_OUTPUTS_EMPTY` | `validateRenderRequest` | `requestedOutputSlots.length === 0` |
+| `TEMPLATE_VERSION_MISMATCH` | `validateRenderResult` | `templateVersion !== designState.templateVersion` |
+| `OUTPUT_FLOW_KEY_MISMATCH` | `validateRenderResult` | `outputs[].flowKey !== designState.flowKey` |
+| `OUTPUT_PORT_NOT_FOUND` | M2-B 启用 | `explicitOutputs[].port` 不在节点定义 |
+| `REQUESTED_OUTPUT_UNKNOWN` | M2-B 启用 | `requestedOutputSlots` 包含 Flow 未声明 slot |
+
+错误统一通过 M1-A `ValidationError` 抛出，含 `target` + `errors[]`（每个 error 带 JSON Pointer 路径的 `instancePath`）。
 
 ## 类型验证
 

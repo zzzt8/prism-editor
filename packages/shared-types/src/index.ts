@@ -16,6 +16,8 @@ export * from './execution-log';
 export * from './runtime-protocol';
 // M1-A: cross-runtime public contract types
 export * from './design-state';
+// M2-A: Flow / FlowOutput / FlowOutputSlot / FlowKey + ajv validators
+export * from './flow';
 export * from './render-request';
 export * from './render-result';
 export * from './runtime-template';

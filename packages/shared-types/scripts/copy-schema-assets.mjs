@@ -17,7 +17,7 @@ const distDir = resolve(packageRoot, 'dist/src/validation');
 
 mkdirSync(distDir, { recursive: true });
 
-for (const name of ['design-state.schema.json', 'render-request.schema.json', 'render-result.schema.json', 'runtime-template.schema.json']) {
+for (const name of ['design-state.schema.json', 'flow.schema.json', 'render-request.schema.json', 'render-result.schema.json', 'runtime-template.schema.json']) {
   const from = resolve(srcDir, name);
   const to = resolve(distDir, name);
   const raw = readFileSync(from, 'utf-8');
