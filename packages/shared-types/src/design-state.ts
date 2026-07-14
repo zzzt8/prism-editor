@@ -11,8 +11,15 @@
 // - @prism/server (Mall-facing render endpoints)
 // - apps/dev-tool / apps/composer-sdk
 //
-// M1 scope: declaration only. flow selection, runtime selection, and
-// explicitOutputs are deferred to M2 per the migration roadmap.
+// M2-A refinement: `flowKey` is tightened from `string` to the `FlowKey` brand
+// declared in `./flow.ts`. `FlowKey` is a format-constrained stable string —
+// NOT a closed enum. New flowKeys can be added by configuring new templates
+// and Flows; this package does not need to be updated (Guardrails §1.9).
+// Pure field-additive, so DesignState.schemaVersion stays at 1.
+
+import type { FlowKey } from './flow';
+
+export type { FlowKey } from './flow';
 
 /** Recursive JSON-safe value union. No functions, no class instances. */
 export type JsonPrimitive = string | number | boolean | null;
@@ -92,11 +99,13 @@ export interface DesignState {
   /** Immutable template version (matches `RuntimeTemplate.version`). */
   readonly templateVersion: string;
   /**
-   * Explicit flow key (M2 will tighten to an enum; M1 accepts any 1..256-char string).
-   * Forbidden to select flows implicitly via `findFirst` or iteration order
-   * (Guardrails §1.7).
+   * Explicit flow key (M2-A). `FlowKey` is a format-constrained stable string
+   * (pattern: `^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$`, maxLength 96); it is
+   * NOT a closed enum — adding a new flowKey only requires configuring a
+   * new template and Flow, never a shared-types change (Guardrails §1.7,
+   * §1.9).
    */
-  readonly flowKey: string;
+  readonly flowKey: FlowKey;
   /** Template-bound inputs. */
   readonly inputs: DesignStateInputs;
   /** ISO-8601 timestamp when this snapshot was assembled. */

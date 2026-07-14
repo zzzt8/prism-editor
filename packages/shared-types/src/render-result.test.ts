@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { DesignState } from './design-state';
+import type { FlowKey } from './flow';
 import type { ImageRef } from './image';
 import type {
   RenderResult,
@@ -12,7 +13,7 @@ const SAMPLE_DS: DesignState = {
   schemaVersion: 1,
   templateId: 'tmpl.basic-mockup',
   templateVersion: '1.0.0',
-  flowKey: 'production',
+  flowKey: 'production' as FlowKey,
   inputs: {
     assets: [],
     params: {},
@@ -76,7 +77,7 @@ describe('RenderResult — type contract shape', () => {
   });
 
   it('mirrors the input DesignState for audit traceability', () => {
-    const ds: DesignState = { ...SAMPLE_DS, flowKey: 'preview' };
+    const ds: DesignState = { ...SAMPLE_DS, flowKey: 'preview' as FlowKey };
     const r = makeRenderResult({ designState: ds });
     expect(r.designState).toBe(ds);
     expect(r.designState.flowKey).toBe('preview');

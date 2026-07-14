@@ -23,7 +23,7 @@ import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { DesignState } from '@prism/shared-types';
+import type { DesignState, FlowKey } from '@prism/shared-types';
 
 import { WorkflowExecutor } from '@prism/workflow-core';
 import { designStateToExecutorParams } from '../../adapters/design-state-adapter';
@@ -181,7 +181,7 @@ function designStateFor(scenarioId: string, transformParams: unknown, compositeP
     schemaVersion: 1,
     templateId: 'tmpl.basic-mockup',
     templateVersion: '1.0.0',
-    flowKey: scenarioId,
+    flowKey: scenarioId as FlowKey,
     inputs: {
       assets: [
         {

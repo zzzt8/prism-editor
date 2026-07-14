@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import type { DesignState } from '@prism/shared-types';
+import type { DesignState, FlowKey } from '@prism/shared-types';
 
 import {
   designStateToExecutorParams,
@@ -24,7 +24,7 @@ function baseDsWithParams(params: Record<string, unknown>): DesignState {
     schemaVersion: 1,
     templateId: 'tmpl.basic-mockup',
     templateVersion: '1.0.0',
-    flowKey: 'preview',
+    flowKey: 'preview' as FlowKey,
     inputs: {
       assets: [],
       params: params as DesignState['inputs']['params'],

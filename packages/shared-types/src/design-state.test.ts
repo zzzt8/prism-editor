@@ -6,6 +6,7 @@ import type {
   DesignStateInputs,
   JsonValue,
 } from './design-state';
+import type { FlowKey } from './flow';
 
 const SAMPLE_ASSET: AssetRef = {
   id: 'asset-base-001',
@@ -33,7 +34,7 @@ function makeDesignState(overrides: Partial<DesignState> = {}): DesignState {
     schemaVersion: 1,
     templateId: 'tmpl.basic-mockup',
     templateVersion: '1.0.0',
-    flowKey: 'preview',
+    flowKey: 'preview' as FlowKey,
     inputs: SAMPLE_INPUTS,
     createdAt: NOW,
     ...overrides,

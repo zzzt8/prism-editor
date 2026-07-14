@@ -25,9 +25,9 @@
     "flowKey": {
       "type": "string",
       "minLength": 1,
-      "maxLength": 256,
-      "pattern": "^[a-z0-9][a-z0-9._-]{0,255}$",
-      "description": "Explicit flow selection. M2 will constrain to enum."
+      "maxLength": 96,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "description": "Explicit flow selector. Format-constrained stable string; NOT a closed enum. See PRISM_ARCHITECTURE_GUARDRAILS §1.7 / §1.9 and design.md Decision 1."
     },
     "inputs": {
       "type": "object",

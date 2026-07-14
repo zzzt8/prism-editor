@@ -4,6 +4,7 @@ import type {
   RuntimeTemplateInputField,
   RuntimeTemplateFlow,
 } from './runtime-template';
+import type { FlowKey } from './flow';
 
 const SAMPLE_FIELD: RuntimeTemplateInputField = {
   id: 'background',
@@ -14,7 +15,7 @@ const SAMPLE_FIELD: RuntimeTemplateInputField = {
 };
 
 const SAMPLE_FLOW: RuntimeTemplateFlow = {
-  flowKey: 'preview',
+  flowKey: 'preview' as FlowKey,
   nodes: [{ id: 'n1', type: 'load-image' }],
 };
 

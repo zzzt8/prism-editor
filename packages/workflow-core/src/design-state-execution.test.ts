@@ -14,6 +14,7 @@ import {
   validateDesignState,
   ValidationError,
   type DesignState,
+  type FlowKey,
 } from '@prism/shared-types';
 
 import { WorkflowExecutor } from './executor';
@@ -23,7 +24,7 @@ function makeValidDs(): DesignState {
     schemaVersion: 1,
     templateId: 'tmpl.basic-mockup',
     templateVersion: '1.0.0',
-    flowKey: 'preview',
+    flowKey: 'preview' as FlowKey,
     inputs: {
       assets: [
         {

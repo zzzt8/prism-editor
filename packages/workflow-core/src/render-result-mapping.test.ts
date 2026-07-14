@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import type { DesignState, RenderResult } from '@prism/shared-types';
+import type { DesignState, FlowKey, RenderResult } from '@prism/shared-types';
 
 import { mapExecutorResultToRenderResult } from './design-state-execution';
 import type { ExecutorResult } from './executor';
@@ -21,7 +21,7 @@ const SAMPLE_DS: DesignState = {
   schemaVersion: 1,
   templateId: 'tmpl.basic-mockup',
   templateVersion: '1.0.0',
-  flowKey: 'preview',
+  flowKey: 'preview' as FlowKey,
   inputs: {
     assets: [
       {
@@ -120,7 +120,7 @@ describe('mapExecutorResultToRenderResult — branch coverage', () => {
   });
 
   it('branch 4: output.slot is taken from designState.flowKey', () => {
-    const dsWithCustomFlow = { ...SAMPLE_DS, flowKey: 'production-batch' };
+    const dsWithCustomFlow = { ...SAMPLE_DS, flowKey: 'production-batch' as FlowKey };
     const rr = mapExecutorResultToRenderResult(
       dsWithCustomFlow,
       buildDoneExec(),

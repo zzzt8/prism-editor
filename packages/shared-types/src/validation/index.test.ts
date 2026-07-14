@@ -8,6 +8,7 @@ import {
   __schemas,
 } from './index';
 import type { DesignState } from '../design-state';
+import type { FlowKey } from '../flow';
 import type { RenderRequest } from '../render-request';
 import type { RenderResult } from '../render-result';
 import type { RuntimeTemplate } from '../runtime-template';
@@ -16,7 +17,7 @@ const SAMPLE_DS: DesignState = {
   schemaVersion: 1,
   templateId: 'tmpl.basic-mockup',
   templateVersion: '1.0.0',
-  flowKey: 'preview',
+  flowKey: 'preview' as FlowKey,
   inputs: {
     assets: [
       {
@@ -127,7 +128,7 @@ describe('validation/index — public validators', () => {
           defaultValue: '#ffffff',
         },
       ],
-      flows: [{ flowKey: 'preview', nodes: [{ id: 'n1', type: 'load-image' }] }],
+      flows: [{ flowKey: 'preview' as FlowKey, nodes: [{ id: 'n1', type: 'load-image' }] }],
       createdAt: '2026-07-14T13:30:00.000Z',
       updatedAt: '2026-07-14T13:30:00.000Z',
     };
