@@ -22,6 +22,7 @@
 
 // Browser executors
 export { browserExecutors } from './browser/index';
+export { compositeExecutor } from './browser/CompositeExecutor';
 
 // Canvas utilities
 export {
