@@ -14,6 +14,7 @@ import {
   TemplateNotFoundError,
   FlowNotFoundError,
 } from './services/product-template-service.js';
+import { FlowCatalog } from './services/flow-catalog.js';
 import {
   CreateProductTemplateSchema,
   UpdateProductTemplateSchema,
@@ -28,6 +29,10 @@ function isPrismaFKError(err: unknown): boolean {
 // Template CRUD routes registered directly on the app plugin (not via sub-plugin)
 // to avoid Fastify v5 router bug where /:id intercepts / within plugin scope.
 const appPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
+  // M2-C: Pre-load FlowCatalog at server startup for sync O(1) lookups
+  // in executeFromDesignState (called per-request).
+  const catalog = await FlowCatalog.create();
+
   await fastify.register(assetsRoutes);
 
   // GET /api/templates — list all templates
@@ -176,7 +181,7 @@ const appPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     }
   });
 
-  await fastify.register(renderRoutes, { prefix: '/render' });
+  await fastify.register(renderRoutes, { prefix: '/render', catalog });
 };
 
 // Global error handler for validation and Prisma errors
