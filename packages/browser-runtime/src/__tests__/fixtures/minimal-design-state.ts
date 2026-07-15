@@ -4,7 +4,7 @@
  * This fixture provides a valid DesignState with flowKey for testing.
  */
 
-import type { DesignState, DesignStateAssetBinding, AssetRef } from '@prism/shared-types';
+import type { DesignState, DesignStateAssetBinding, AssetRef, DesignStateParams } from '@prism/shared-types';
 import type { FlowKey } from '@prism/shared-types';
 
 /**
@@ -37,13 +37,13 @@ export function createAssetBinding(
  * Minimal DesignState with flowKey.
  */
 export const minimalDesignState: DesignState = {
-  schemaVersion: 1,
+  schemaVersion: 1 as const,
   templateId: 'test-template',
   templateVersion: '1.0.0',
   flowKey: 'preview.main' as FlowKey,
   inputs: {
     assets: [],
-    params: {},
+    params: {} as DesignStateParams,
   },
   createdAt: '2026-01-01T00:00:00Z',
 };
@@ -56,16 +56,16 @@ export function createDesignState(overrides: {
   templateVersion?: string;
   flowKey?: string;
   assets?: DesignStateAssetBinding[];
-  params?: Record<string, unknown>;
+  params?: DesignStateParams;
 }): DesignState {
   return {
-    schemaVersion: 1,
+    schemaVersion: 1 as const,
     templateId: overrides.templateId ?? 'test-template',
     templateVersion: overrides.templateVersion ?? '1.0.0',
     flowKey: (overrides.flowKey ?? 'preview.main') as FlowKey,
     inputs: {
       assets: overrides.assets ?? [],
-      params: overrides.params ?? {},
+      params: overrides.params ?? {} as DesignStateParams,
     },
     createdAt: '2026-01-01T00:00:00Z',
   };

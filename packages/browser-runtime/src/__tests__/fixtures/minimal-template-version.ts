@@ -7,20 +7,11 @@
 
 import type { TemplateVersion, TemplateVersionFlow } from '../../interfaces/template-version-resolver';
 
-export const minimalTemplateVersion: TemplateVersion = {
-  templateId: 'test-template',
-  version: '1.0.0',
-  flows: [
-    minimalFlow,
-  ],
-  createdAt: '2026-01-01T00:00:00Z',
-};
-
 /**
  * Minimal Flow with 2 explicit output slots.
  */
 const minimalFlow: TemplateVersionFlow = {
-  schemaVersion: 1,
+  schemaVersion: 1 as const,
   flowKey: 'preview.main',
   nodeRefs: [
     { nodeId: 'load-base', nodeType: 'load-image' },
@@ -32,6 +23,15 @@ const minimalFlow: TemplateVersionFlow = {
     { slot: 'mockup', nodeId: 'composite', port: 'image', kind: 'image' },
     { slot: 'cutting-preview', nodeId: 'export', port: 'image', kind: 'image' },
   ],
+};
+
+export const minimalTemplateVersion: TemplateVersion = {
+  templateId: 'test-template',
+  version: '1.0.0',
+  flows: [
+    minimalFlow,
+  ],
+  createdAt: '2026-01-01T00:00:00Z',
 };
 
 /**
@@ -51,7 +51,7 @@ export function createTemplateVersion(overrides: {
     version: overrides.version ?? '1.0.0',
     flows: [
       {
-        schemaVersion: 1,
+        schemaVersion: 1 as const,
         flowKey,
         nodeRefs: [
           { nodeId: 'load-base', nodeType: 'load-image' },

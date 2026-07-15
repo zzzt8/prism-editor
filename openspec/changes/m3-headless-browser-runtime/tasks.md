@@ -5,7 +5,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 12 |
-| Completed | 10 |
+| Completed | 11 |
 | In Progress | 0 |
 
 ---
@@ -350,17 +350,17 @@ Add package boundary gates to verify no forbidden dependencies.
 
 **Acceptance Criteria**
 
-- [ ] `boundary-gates.test.ts` checks package.json dependencies
-- [ ] Verifies no `react` or `@types/react`
-- [ ] Verifies no `zustand`
-- [ ] Verifies no `@prism/dev-tool`
-- [ ] Verifies no `@prism/composer-sdk`
-- [ ] Verifies no `@prism/server`
-- [ ] Verifies no `sharp`
-- [ ] Verifies no `@prism/image-ops/nodejs`
-- [ ] Verifies no Node built-ins (fs, path, buffer, process, stream, crypto)
-- [ ] Verifies no deep imports from `@prism/image-ops/src` except `/browser/`
-- [ ] All gate tests pass
+- [x] `boundary-gates.test.ts` checks package.json dependencies
+- [x] Verifies no `react` or `@types/react`
+- [x] Verifies no `zustand`
+- [x] Verifies no `@prism/dev-tool`
+- [x] Verifies no `@prism/composer-sdk`
+- [x] Verifies no `@prism/server`
+- [x] Verifies no `sharp`
+- [x] Verifies no `@prism/image-ops/nodejs`
+- [x] Verifies no Node built-ins (fs, path, buffer, process, stream, crypto)
+- [x] Verifies no deep imports from `@prism/image-ops/src` except `/browser/`
+- [x] All gate tests pass
 
 ---
 

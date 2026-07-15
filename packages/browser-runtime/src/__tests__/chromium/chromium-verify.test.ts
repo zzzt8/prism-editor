@@ -76,7 +76,7 @@ async function verifyExecutesDesignStateFlowKey(): Promise<boolean> {
         templateId: 'test',
         version: '1.0.0',
         flows: [{
-          schemaVersion: 1,
+          schemaVersion: 1 as const,
           flowKey: testFlowKey,
           nodeRefs: [{ nodeId: 'n1', nodeType: 'load-image' }],
           explicitOutputs: [{ slot: 'out', nodeId: 'n1', port: 'image', kind: 'image' }],
@@ -88,21 +88,21 @@ async function verifyExecutesDesignStateFlowKey(): Promise<boolean> {
 
     const request: RenderRequest = {
       designState: {
-        schemaVersion: 1,
+        schemaVersion: 1 as const,
         templateId: 'test',
         templateVersion: '1.0.0',
-        flowKey: testFlowKey,
-        inputs: { assets: [], params: {} },
+        flowKey: testFlowKey as any,
+        inputs: { assets: [], params: {} as any },
         createdAt: '2026-01-01T00:00:00Z',
       },
       requestedOutputSlots: ['out'],
     };
 
     try {
-      await execute(request, {
-        assetResolver: mockAssetResolver,
-        outputSink: mockOutputSink,
-        templateVersionResolver: mockTemplateVersionResolver,
+      await execute(request as any, {
+        assetResolver: mockAssetResolver as any,
+        outputSink: mockOutputSink as any,
+        templateVersionResolver: mockTemplateVersionResolver as any,
       });
     } catch {
       // May fail due to mock limitations, but we're checking flow key resolution
@@ -135,7 +135,7 @@ async function verifyReturnsMultipleOutputSlots(): Promise<boolean> {
         templateId: 'test',
         version: '1.0.0',
         flows: [{
-          schemaVersion: 1,
+          schemaVersion: 1 as const,
           flowKey: 'preview.main',
           nodeRefs: [
             { nodeId: 'n1', nodeType: 'load-image' },
@@ -153,27 +153,27 @@ async function verifyReturnsMultipleOutputSlots(): Promise<boolean> {
 
     const request: RenderRequest = {
       designState: {
-        schemaVersion: 1,
+        schemaVersion: 1 as const,
         templateId: 'test',
         templateVersion: '1.0.0',
-        flowKey: 'preview.main',
-        inputs: { assets: [], params: {} },
+        flowKey: 'preview.main' as any,
+        inputs: { assets: [], params: {} as any },
         createdAt: '2026-01-01T00:00:00Z',
       },
       requestedOutputSlots: ['mockup', 'cutting-preview'],
     };
 
     try {
-      await execute(request, {
+      await execute(request as any, {
         assetResolver: {
           resolve: vi.fn().mockResolvedValue({
             width: 100,
             height: 100,
             data: new Uint8ClampedArray(40000),
           } as ImageData),
-        },
-        outputSink: mockOutputSink,
-        templateVersionResolver: mockTemplateVersionResolver,
+        } as any,
+        outputSink: mockOutputSink as any,
+        templateVersionResolver: mockTemplateVersionResolver as any,
       });
     } catch {
       // Mock executors don't exist, so execution fails
@@ -193,14 +193,13 @@ async function verifyReturnsMultipleOutputSlots(): Promise<boolean> {
  */
 async function verifyRequestedOutputSlotsEffective(): Promise<boolean> {
   try {
-    // Request only one slot
     const request = {
       designState: {
-        schemaVersion: 1,
+        schemaVersion: 1 as const,
         templateId: 'test',
         templateVersion: '1.0.0',
-        flowKey: 'preview.main',
-        inputs: { assets: [], params: {} },
+        flowKey: 'preview.main' as any,
+        inputs: { assets: [], params: {} as any },
         createdAt: '2026-01-01T00:00:00Z',
       },
       requestedOutputSlots: ['mockup'],
@@ -242,7 +241,7 @@ async function verifyUnknownSlotReturnsError(): Promise<boolean> {
         templateId: 'test',
         version: '1.0.0',
         flows: [{
-          schemaVersion: 1,
+          schemaVersion: 1 as const,
           flowKey: 'preview.main',
           nodeRefs: [{ nodeId: 'n1', nodeType: 'load-image' }],
           explicitOutputs: [{ slot: 'mockup', nodeId: 'n1', port: 'image', kind: 'image' }],
@@ -254,25 +253,25 @@ async function verifyUnknownSlotReturnsError(): Promise<boolean> {
 
     const request: RenderRequest = {
       designState: {
-        schemaVersion: 1,
+        schemaVersion: 1 as const,
         templateId: 'test',
         templateVersion: '1.0.0',
-        flowKey: 'preview.main',
-        inputs: { assets: [], params: {} },
+        flowKey: 'preview.main' as any,
+        inputs: { assets: [], params: {} as any },
         createdAt: '2026-01-01T00:00:00Z',
       },
       requestedOutputSlots: ['unknown-slot'],
     };
 
     try {
-      await execute(request, {
+      await execute(request as any, {
         assetResolver: {
           resolve: vi.fn().mockResolvedValue({
             width: 100,
             height: 100,
             data: new Uint8ClampedArray(40000),
           } as ImageData),
-        },
+        } as any,
         outputSink: {
           publish: vi.fn().mockReturnValue({
             id: 'test-img',
@@ -280,8 +279,8 @@ async function verifyUnknownSlotReturnsError(): Promise<boolean> {
             width: 100,
             height: 100,
           }),
-        },
-        templateVersionResolver: mockTemplateVersionResolver,
+        } as any,
+        templateVersionResolver: mockTemplateVersionResolver as any,
       });
       return false; // Should have thrown
     } catch (error) {
@@ -298,8 +297,7 @@ async function verifyUnknownSlotReturnsError(): Promise<boolean> {
  * Runtime bundle does not include Sharp.
  */
 async function verifyBundleExcludesSharp(): Promise<boolean> {
-  // This is verified by the package boundary tests
-  return true;
+  return true; // Verified by boundary tests
 }
 
 /**
@@ -311,8 +309,6 @@ async function verifyBundleExcludesSharp(): Promise<boolean> {
  */
 async function verifyNoCanvasPolyfill(): Promise<boolean> {
   try {
-    // In Node.js test environment, OffscreenCanvas may not be available
-    // Skip this check in non-browser environments
     if (typeof process !== 'undefined' && process.versions?.node) {
       return true; // Node.js test environment
     }
@@ -329,10 +325,8 @@ async function verifyNoCanvasPolyfill(): Promise<boolean> {
  * Verification 10: chromium-tests-pass
  *
  * Package build, typecheck, and Chromium tests pass.
- * Note: This aggregates the other verifications.
  */
 async function verifyChromiumTestsPass(): Promise<boolean> {
-  // Core verifications that must pass in test environment
   const coreResults = await Promise.all([
     verifyBrowserRuntimeCanBeCreated(),
     verifyNoDevToolDependency(),

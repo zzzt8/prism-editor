@@ -166,7 +166,8 @@ export function injectResolvedAssets(
 ): DesignState {
   // For browser runtime, we inject ImageData into params for the executor to use
   // The executor will look for imageData in the params under the slot name
-  const injectedParams: Record<string, unknown> = { ...designState.inputs.params };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const injectedParams = { ...designState.inputs.params } as any;
 
   for (const [slot, imageData] of resolvedAssets.bySlot) {
     injectedParams[slot] = imageData;
