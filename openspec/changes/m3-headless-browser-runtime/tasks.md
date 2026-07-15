@@ -5,7 +5,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 12 |
-| Completed | 7 |
+| Completed | 8 |
 | In Progress | 0 |
 
 ---
@@ -254,11 +254,11 @@ Create fixed fixtures for Chromium test host.
 
 **Acceptance Criteria**
 
-- [ ] `minimal-template-version.ts` exports a TemplateVersion with at least 2 explicit output slots
-- [ ] `minimal-design-state.ts` exports a DesignState with flowKey
-- [ ] `minimal-render-request.ts` exports a RenderRequest with requestedOutputSlots
-- [ ] Fixtures use real M2 types from @prism/shared-types
-- [ ] Fixtures work with real workflow-core flow resolution
+- [x] `minimal-template-version.ts` exports a TemplateVersion with at least 2 explicit output slots
+- [x] `minimal-design-state.ts` exports a DesignState with flowKey
+- [x] `minimal-render-request.ts` exports a RenderRequest with requestedOutputSlots
+- [x] Fixtures use real M2 types from @prism/shared-types
+- [x] Fixtures work with real workflow-core flow resolution
 
 ---
 
