@@ -5,7 +5,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 12 |
-| Completed | 3 |
+| Completed | 4 |
 | In Progress | 0 |
 
 ---
@@ -131,10 +131,10 @@ Add test to verify `@prism/image-ops/browser` does not contain Sharp or Node bui
 
 **Acceptance Criteria**
 
-- [ ] Test file `browser-entry-isolation.test.ts` created
-- [ ] Test verifies `browser` entry does not contain Sharp imports
-- [ ] Test verifies `browser` entry does not contain Node built-ins (fs, path, buffer, process)
-- [ ] Test passes
+- [x] Test file `browser-entry-isolation.test.ts` created
+- [x] Test verifies `browser` entry does not contain Sharp imports
+- [x] Test verifies `browser` entry does not contain Node built-ins (fs, path, buffer, process)
+- [x] Test passes
 
 ---
 
