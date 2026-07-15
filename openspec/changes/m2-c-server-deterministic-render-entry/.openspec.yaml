@@ -1,0 +1,38 @@
+schema: prism-workflow
+created: 2026-07-14
+id: m2-c-server-deterministic-render-entry
+phase: M2
+title: "M2-C: Server Deterministic Render Entry"
+status: done
+author: agent
+change_class: high
+tags:
+  - m2
+  - server
+  - prisma
+  - render-entry
+  - data-migration
+depends_on:
+  - m2-a-deterministic-flow-and-output-protocol
+  - m2-b-workflow-core-explicit-flow-resolution
+blocks: []
+affected:
+  packages:
+    - server
+  layers:
+    - server
+    - database
+scope:
+  - 新生产入口消费 RenderRequest + DesignState
+  - TemplateVersion + flowKey 唯一定位 Flow
+  - 移除 prisma.workflow.findFirst + Object.keys(results).pop()
+  - RenderResult 完整审计
+  - Prisma 模型最小正确迁移
+  - 旧 /api/render/template 调用方调查与下线方案
+out_of_scope:
+  - 任何 shared-types / workflow-core / image-ops 修改
+  - 恢复 user-app / 旧登录系统
+  - Mall 接入 / CORS
+  - SKU / 订单 / 工厂账号
+  - UI 修改
+  - M3 / M4 / M6 / M7 范围
