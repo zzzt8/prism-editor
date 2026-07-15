@@ -5,7 +5,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 12 |
-| Completed | 0 |
+| Completed | 1 |
 | In Progress | 0 |
 
 ---
@@ -35,13 +35,13 @@ Create the initial `@prism/browser-runtime` package structure.
 
 **Acceptance Criteria**
 
-- [ ] `packages/browser-runtime/package.json` created with correct name, version, exports
-- [ ] `packages/browser-runtime/tsconfig.json` configured with ES2022 + DOM libs, no @types/node
-- [ ] `packages/browser-runtime/vitest.config.ts` configured for Chromium testing
-- [ ] `packages/browser-runtime/src/index.ts` exports `execute()` function stub
-- [ ] Package registered in `pnpm-workspace.yaml`
-- [ ] `pnpm install` succeeds
-- [ ] `pnpm typecheck --filter @prism/browser-runtime` succeeds
+- [x] `packages/browser-runtime/package.json` created with correct name, version, exports
+- [x] `packages/browser-runtime/tsconfig.json` configured with ES2022 + DOM libs, no @types/node
+- [x] `packages/browser-runtime/vitest.config.ts` configured for Chromium testing
+- [x] `packages/browser-runtime/src/index.ts` exports `execute()` function stub
+- [x] Package registered in `pnpm-workspace.yaml`
+- [x] `pnpm install` succeeds
+- [x] `pnpm typecheck --filter @prism/browser-runtime` succeeds
 
 ---
 
