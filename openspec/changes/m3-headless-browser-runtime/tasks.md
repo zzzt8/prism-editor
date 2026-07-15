@@ -5,7 +5,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 12 |
-| Completed | 6 |
+| Completed | 7 |
 | In Progress | 0 |
 
 ---
@@ -219,12 +219,12 @@ Implement the asset-resolver-backed loader for browser runtime.
 
 **Acceptance Criteria**
 
-- [ ] `asset-resolver-backed-loader.ts` created
-- [ ] Loader uses AssetResolver.resolve() to get ImageData
-- [ ] Loader supports inline, remote, and prism-asset kinds
-- [ ] Loader reuses existing OffscreenCanvas decoding logic
-- [ ] Does NOT modify existing `load-image.ts` (preserves Dev Tool behavior)
-- [ ] Unit tests for all supported asset kinds
+- [x] `asset-resolver-backed-loader.ts` created
+- [x] Loader uses AssetResolver.resolve() to get ImageData
+- [x] Loader supports inline, remote, and prism-asset kinds
+- [x] Loader reuses existing OffscreenCanvas decoding logic
+- [x] Does NOT modify existing `load-image.ts` (preserves Dev Tool behavior)
+- [x] Unit tests for all supported asset kinds
 
 ---
 
