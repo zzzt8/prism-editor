@@ -25,11 +25,13 @@ model Workflow {
   templateId   String
   template     ProductTemplate @relation(fields: [templateId], references: [id])
   name         String
+  flowKey      String   // Flow identifier within a templateId (e.g. 'production', 'preview.print')
   platform     String   // 'browser' | 'nodejs'
   content      String   // workflow JSON
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  @@unique([templateId, flowKey])
   @@index([templateId])
   @@index([templateId, platform])
 }

@@ -29,12 +29,14 @@ export type UpdateProductTemplateInput = z.infer<typeof UpdateProductTemplateSch
 
 export const CreateFlowSchema = z.object({
   name: z.string().min(1).max(255),
+  flowKey: z.string().min(1).max(255),
   platform: PlatformSchema,
   content: z.string(), // Workflow JSON string
 });
 
 export const UpdateFlowSchema = z.object({
   name: z.string().min(1).max(255).optional(),
+  flowKey: z.string().min(1).max(255).optional(),
   platform: PlatformSchema.optional(),
   content: z.string().optional(),
 });

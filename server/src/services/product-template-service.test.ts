@@ -24,12 +24,14 @@ const TEST_TEMPLATE = {
 
 const BROWSER_FLOW = {
   name: 'Preview Flow',
+  flowKey: 'preview',
   platform: 'browser' as const,
   content: '{"nodes":[]}',
 };
 
 const NODEJS_FLOW = {
   name: 'Production Flow',
+  flowKey: 'production',
   platform: 'nodejs' as const,
   content: '{"nodes":[]}',
 };

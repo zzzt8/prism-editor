@@ -113,6 +113,7 @@ export async function listFlows(
     select: {
       id: true,
       templateId: true,
+      flowKey: true,
       name: true,
       platform: true,
       createdAt: true,
@@ -143,6 +144,7 @@ export async function addFlow(
     data: {
       templateId,
       name: data.name,
+      flowKey: data.flowKey,
       platform: data.platform,
       content: data.content,
     },
@@ -157,7 +159,15 @@ export async function updateFlow(
   data: UpdateFlowInput
 ): Promise<Workflow> {
   await getFlowById(flowId); // validate existence
-  return prisma.workflow.update({ where: { id: flowId }, data });
+  return prisma.workflow.update({
+    where: { id: flowId },
+    data: {
+      ...(data.name !== undefined && { name: data.name }),
+      ...(data.flowKey !== undefined && { flowKey: data.flowKey }),
+      ...(data.platform !== undefined && { platform: data.platform }),
+      ...(data.content !== undefined && { content: data.content }),
+    },
+  });
 }
 
 /**
