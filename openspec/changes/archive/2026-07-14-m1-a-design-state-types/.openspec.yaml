@@ -1,0 +1,38 @@
+schema: prism-workflow
+created: 2026-07-14
+id: m1-a-design-state-types
+phase: M1
+title: "M1-A: DesignState/RenderRequest/RenderResult/RuntimeTemplate 类型契约"
+status: in_progress
+author: agent
+change_class: high
+tags:
+  - m1
+  - protocol
+  - design-state
+  - types
+  - ajv
+depends_on: []
+blocks:
+  - m1-b-design-state-roundtrip
+affected:
+  packages:
+    - shared-types
+  layers:
+    - ui-skin
+scope:
+  - DesignState / RenderRequest / RenderResult / RuntimeTemplate 4 类型
+  - 4 个 JSON schema 文件
+  - ajv ^8 运行时校验封装
+  - shared-types/src/index.ts 仅追加 export
+  - shared-types/package.json 新增 ajv runtime 依赖
+  - shared-types/README.md 增补 M1-A 章节
+out_of_scope:
+  - workflow-core 任何改动
+  - image-ops 任何改动
+  - server 任何改动
+  - Prisma schema / DB migration
+  - Mall 接入
+  - 多 Flow 选择逻辑
+  - Composer / Dev Tool UI 切换
+  - 新增独立包

@@ -1,0 +1,195 @@
+/* InfoPanel styles — extracted from Inspector.module.css (split-tiles-ui-edges T4). */
+
+/* ── InfoPanel.tsx ───────────────────────────────────────── */
+
+:global(.info-mono) {
+  font-family: 'SF Mono', 'Cascadia Code', monospace;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+:global(.param-node-info) {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+:global(.info-description) {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:global(.param-info-row) {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+:global(.param-info-row:last-child) {
+  border-bottom: none;
+}
+
+:global(.param-info-row--column) {
+  flex-direction: column;
+  gap: 4px;
+}
+
+:global(.param-info-label) {
+  font-size: 12px;
+  color: #71717a;
+  flex-shrink: 0;
+}
+
+:global(.param-info-row > span:not(.param-info-label):not(.info-mono):not(.info-description)) {
+  font-size: 12px;
+  color: var(--color-text);
+  text-align: right;
+  word-break: break-all;
+}
+
+:global(.info-port-count) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 16px;
+  padding: 0 4px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin-left: 6px;
+  line-height: 1;
+}
+
+:global(.info-port-list) {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+:global(.info-port-row) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  transition: border-color 0.12s;
+}
+
+:global(.info-port-row:hover) {
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+:global(.info-port-row--connected) {
+  border-color: rgba(74, 222, 128, 0.3);
+}
+
+:global(.info-port-icon) {
+  flex-shrink: 0;
+  width: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+}
+
+:global(.info-port-name) {
+  font-size: 12px;
+  color: var(--color-text);
+  flex-shrink: 0;
+}
+
+:global(.info-port-id) {
+  font-size: 10px;
+  font-family: 'SF Mono', 'Cascadia Code', monospace;
+  color: var(--color-text-muted);
+  opacity: 0.6;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:global(.info-port-status) {
+  font-size: 10px;
+  flex-shrink: 0;
+  color: #9ca3af;
+}
+
+:global(.info-port-status--connected) {
+  color: #4ade80;
+}
+
+:global(.info-port-dynamic) {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+:global(.info-execution) {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+:global(.info-execution-status) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+:global(.info-execution-dot) {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: info-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes info-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
+}
+
+:global(.info-execution-label) {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+:global(.info-error) {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: 6px;
+}
+
+:global(.info-error-label) {
+  font-size: 10px;
+  font-weight: 600;
+  color: #f87171;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+:global(.info-error-msg) {
+  font-size: 11px;
+  color: #f87171;
+  line-height: 1.4;
+  word-break: break-word;
+}
+

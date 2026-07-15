@@ -1,19 +1,5 @@
 // Repository module barrel export
-// Phase 1: Wraps existing IndexedDBStorageAdapter, no behavior change
 
 export { WorkflowRepository } from './workflowRepository';
-export { VersionRepository } from './versionRepository';
-export { PublishRepository } from './publishRepository';
-export { TemplateRepository } from './templateRepository';
-export { TemplateVersionRepository } from './templateVersionRepository';
-export { SnippetRepository } from './snippetRepository';
 
-export type {
-  IWorkflowRepository,
-  IVersionRepository,
-  IPublishRepository,
-  ITemplateRepository,
-  ITemplateVersionRepository,
-  TemplateVersion,
-  ISnippetRepository,
-} from './interfaces';
+export type { IWorkflowRepository } from './interfaces';

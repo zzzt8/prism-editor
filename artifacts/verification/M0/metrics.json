@@ -1,0 +1,202 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedAt": "2026-07-14T13:03:22.455Z",
+  "scenarios": [
+    {
+      "id": "identity",
+      "name": "identity transform (no change)",
+      "browser": {
+        "width": 256,
+        "height": 192,
+        "nonTransparentPixelCount": 49152,
+        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784034185540\\scenarios\\identity-browser.png",
+        "fileHash": "sha256:e3b66404e6b50056d82cdc69403dc3f0b2a9141ecac99e0dcbe74e68bfff5dbc"
+      },
+      "node": {
+        "width": 256,
+        "height": 192,
+        "nonTransparentPixelCount": 49152,
+        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784034185540\\scenarios\\identity-node.png",
+        "fileHash": "sha256:7e4f2eefdd55adefc9d52ce360d1ec10176ed964b35699a3bb101a16e583088b"
+      },
+      "diff": {
+        "centerDeltaPx": 0,
+        "centerDeltaNorm": 0,
+        "boundingBoxDelta": 0,
+        "alphaMaskIoU": 1,
+        "interiorRgbMae": 0,
+        "interiorChangedPercent": 0,
+        "edgeBandRgbMae": 0,
+        "edgeBandAlphaMae": 0,
+        "nonTransparentPixelCount": 49152,
+        "outputDimensionsMatch": true,
+        "width": 256,
+        "height": 192
+      },
+      "hashes": {
+        "fixture": "sha256:sha256:aaffaecfc0a7fcc6f1258ef723638a558186ec0d83ee5b667d3bb8f06c86bb1c/sha256:10f9ccad95feb1ce73b028e2800586819f1306a92336a920dc09ac1f24259891",
+        "workflow": "sha256:139214a5b5938c5dcc29662996223535047b8ddd2962c98f11265d60aa2fc7da"
+      }
+    },
+    {
+      "id": "scale-2x",
+      "name": "scale-2x transform",
+      "browser": {
+        "width": 256,
+        "height": 192,
+        "nonTransparentPixelCount": 49152,
+        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784034185540\\scenarios\\scale-2x-browser.png",
+        "fileHash": "sha256:fd90d18ee28ef7ee3a515ebf4a2615743cf26e8b82a313a855d0f340406bc58c"
+      },
+      "node": {
+        "width": 256,
+        "height": 192,
+        "nonTransparentPixelCount": 49152,
+        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784034185540\\scenarios\\scale-2x-node.png",
+        "fileHash": "sha256:50c6f53600d9ce9ba2aba56592d77dd79d8a5e2c5da44658e302f5d785a57cfc"
+      },
+      "diff": {
+        "centerDeltaPx": 0,
+        "centerDeltaNorm": 0,
+        "boundingBoxDelta": 0,
+        "alphaMaskIoU": 1,
+        "interiorRgbMae": 25.198257908364198,
+        "interiorChangedPercent": 17.648176291793312,
+        "edgeBandRgbMae": 24.287773980034633,
+        "edgeBandAlphaMae": 0,
+        "nonTransparentPixelCount": 49152,
+        "outputDimensionsMatch": true,
+        "width": 256,
+        "height": 192
+      },
+      "hashes": {
+        "fixture": "sha256:sha256:aaffaecfc0a7fcc6f1258ef723638a558186ec0d83ee5b667d3bb8f06c86bb1c/sha256:10f9ccad95feb1ce73b028e2800586819f1306a92336a920dc09ac1f24259891",
+        "workflow": "sha256:e372a88259059d7c50c393d41cb3206b0375fb1f51af94c2fdf2c4b6090347af"
+      }
+    },
+    {
+      "id": "rotate-90",
+      "name": "rotate-90 transform",
+      "browser": {
+        "width": 256,
+        "height": 192,
+        "nonTransparentPixelCount": 49152,
+        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784034185540\\scenarios\\rotate-90-browser.png",
+        "fileHash": "sha256:fb77acc036f4244d376ab92c5e32869a2677ece24d13f1fd42f869fb3679b9e4"
+      },
+      "node": {
+        "width": 256,
+        "height": 192,
+        "nonTransparentPixelCount": 49152,
+        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784034185540\\scenarios\\rotate-90-node.png",
+        "fileHash": "sha256:d26fcc3b457a88faf26d15b00a258f21104e144ff8c2f81323b6882c3a4180d6"
+      },
+      "diff": {
+        "centerDeltaPx": 0,
+        "centerDeltaNorm": 0,
+        "boundingBoxDelta": 0,
+        "alphaMaskIoU": 1,
+        "interiorRgbMae": 4.885736800630448,
+        "interiorChangedPercent": 4.052684903748734,
+        "edgeBandRgbMae": 4.709201388888918,
+        "edgeBandAlphaMae": 0,
+        "nonTransparentPixelCount": 49152,
+        "outputDimensionsMatch": true,
+        "width": 256,
+        "height": 192
+      },
+      "hashes": {
+        "fixture": "sha256:sha256:aaffaecfc0a7fcc6f1258ef723638a558186ec0d83ee5b667d3bb8f06c86bb1c/sha256:10f9ccad95feb1ce73b028e2800586819f1306a92336a920dc09ac1f24259891",
+        "workflow": "sha256:f2768f26c8039a69bfa2b04c3f5493b07a69020c88301d50a769a6e0eae7c3db"
+      }
+    },
+    {
+      "id": "scale-rotate",
+      "name": "scale + rotate (180) transform",
+      "browser": {
+        "width": 256,
+        "height": 192,
+        "nonTransparentPixelCount": 49152,
+        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784034185540\\scenarios\\scale-rotate-browser.png",
+        "fileHash": "sha256:30800478c99e6791353eb6387b4172abf33d9fa87612ccaba906d926271f7e75"
+      },
+      "node": {
+        "width": 256,
+        "height": 192,
+        "nonTransparentPixelCount": 49152,
+        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784034185540\\scenarios\\scale-rotate-node.png",
+        "fileHash": "sha256:8b3bdef9b6537f701b0e71d3ae200697c65d4e62a1ff56f24e7f525341630f8e"
+      },
+      "diff": {
+        "centerDeltaPx": 0,
+        "centerDeltaNorm": 0,
+        "boundingBoxDelta": 0,
+        "alphaMaskIoU": 1,
+        "interiorRgbMae": 1.03581278847236,
+        "interiorChangedPercent": 0.6923336710570753,
+        "edgeBandRgbMae": 0.9983859592013862,
+        "edgeBandAlphaMae": 0,
+        "nonTransparentPixelCount": 49152,
+        "outputDimensionsMatch": true,
+        "width": 256,
+        "height": 192
+      },
+      "hashes": {
+        "fixture": "sha256:sha256:aaffaecfc0a7fcc6f1258ef723638a558186ec0d83ee5b667d3bb8f06c86bb1c/sha256:10f9ccad95feb1ce73b028e2800586819f1306a92336a920dc09ac1f24259891",
+        "workflow": "sha256:b9196aa0ed4345a87752893231463c64c9788b6ecf296abe11dee32c4fd68084"
+      }
+    },
+    {
+      "id": "translate-scale",
+      "name": "translate + scale transform",
+      "browser": {
+        "width": 256,
+        "height": 192,
+        "nonTransparentPixelCount": 49152,
+        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784034185540\\scenarios\\translate-scale-browser.png",
+        "fileHash": "sha256:9c0dfd11bf0910a619b27b74e9281daeaec85288b6a831d01cc23c5523ad0a29"
+      },
+      "node": {
+        "width": 256,
+        "height": 192,
+        "nonTransparentPixelCount": 49152,
+        "filePath": "C:\\PM\\Product\\prism-editor\\artifacts\\verification\\.m0-tmp-1784034185540\\scenarios\\translate-scale-node.png",
+        "fileHash": "sha256:43e6c715834dc6a117d02fe38c0571ae8f1a24923fdbdb4507bf45f6313f9ec1"
+      },
+      "diff": {
+        "centerDeltaPx": 0,
+        "centerDeltaNorm": 0,
+        "boundingBoxDelta": 0,
+        "alphaMaskIoU": 1,
+        "interiorRgbMae": 3.9235618597320907,
+        "interiorChangedPercent": 3.0606214116852417,
+        "edgeBandRgbMae": 3.7817925347222396,
+        "edgeBandAlphaMae": 0,
+        "nonTransparentPixelCount": 49152,
+        "outputDimensionsMatch": true,
+        "width": 256,
+        "height": 192
+      },
+      "hashes": {
+        "fixture": "sha256:sha256:aaffaecfc0a7fcc6f1258ef723638a558186ec0d83ee5b667d3bb8f06c86bb1c/sha256:10f9ccad95feb1ce73b028e2800586819f1306a92336a920dc09ac1f24259891",
+        "workflow": "sha256:1ce66b3ce8e4b6fe6659fca0d700c7259daf42b7c293199915e3e99ff937617c"
+      }
+    }
+  ],
+  "worstCase": {
+    "scenario": "scale-2x",
+    "metric": "interiorRgbMae",
+    "value": 25.198257908364198,
+    "marginToThreshold": 5.03965158167284
+  },
+  "thresholds": {
+    "centerDeltaPx": 4,
+    "centerDeltaNorm": 0.02,
+    "boundingBoxDelta": 4,
+    "alphaMaskIoU": 0.95,
+    "interiorRgbMae": 5,
+    "interiorChangedPercent": 5,
+    "edgeBandRgbMae": 8,
+    "edgeBandAlphaMae": 5
+  }
+}

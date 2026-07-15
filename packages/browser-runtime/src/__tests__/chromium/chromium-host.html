@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>M3 Browser Runtime Test Host</title>
+  <style>
+    body {
+      font-family: monospace;
+      margin: 0;
+      padding: 12px;
+      background: #fafafa;
+      color: #222;
+    }
+    #status {
+      padding: 6px 10px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+    #status.ready { background: #d1f4d8; color: #1f6f33; }
+    #status.error { background: #ffd9d9; color: #a02020; }
+    #status.running { background: #fff3cd; color: #856404; }
+  </style>
+</head>
+<body>
+  <div id="status">loading…</div>
+  <pre id="info"></pre>
+  <pre id="result"></pre>
+
+  <script type="module">
+    import { execute } from '@prism/browser-runtime';
+
+    const statusEl = document.getElementById('status');
+    const infoEl = document.getElementById('info');
+    const resultEl = document.getElementById('result');
+
+    /**
+     * Mock AssetResolver for testing.
+     * Creates a simple test image.
+     */
+    function createMockAssetResolver() {
+      return {
+        async resolve(assetRef) {
+          // Create a simple 100x100 test image
+          const canvas = new OffscreenCanvas(100, 100);
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ff0000';
+          ctx.fillRect(0, 0, 50, 50);
+          ctx.fillStyle = '#00ff00';
+          ctx.fillRect(50, 0, 50, 50);
+          ctx.fillStyle = '#0000ff';
+          ctx.fillRect(0, 50, 50, 50);
+          ctx.fillStyle = '#ffff00';
+          ctx.fillRect(50, 50, 50, 50);
+          return ctx.getImageData(0, 0, 100, 100);
+        }
+      };
+    }
+
+    /**
+     * Mock OutputSink for testing.
+     * Converts outputs to data URLs for verification.
+     */
+    function createMockOutputSink() {
+      const outputs = [];
+      return {
+        publish(nodeId, slot, output) {
+          outputs.push({ nodeId, slot, output });
+          // Return a mock ImageRef
+          return {
+            id: `img-${slot}-${Date.now()}`,
+            url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+            width: 100,
+            height: 100,
+          };
+        },
+        getOutputs() {
+          return outputs;
+        }
+      };
+    }
+
+    /**
+     * Mock TemplateVersionResolver for testing.
+     */
+    function createMockTemplateVersionResolver() {
+      return {
+        getVersion(templateId, version) {
+          return {
+            templateId,
+            version,
+            flows: [{
+              schemaVersion: 1,
+              flowKey: 'preview.main',
+              nodeRefs: [
+                { nodeId: 'load-base', nodeType: 'load-image' },
+                { nodeId: 'load-overlay', nodeType: 'load-image' },
+                { nodeId: 'composite', nodeType: 'composite' },
+                { nodeId: 'export', nodeType: 'export' },
+              ],
+              explicitOutputs: [
+                { slot: 'mockup', nodeId: 'composite', port: 'image', kind: 'image' },
+                { slot: 'cutting-preview', nodeId: 'export', port: 'image', kind: 'image' },
+              ],
+            }],
+            createdAt: '2026-01-01T00:00:00Z',
+          };
+        },
+        currentVersion(templateId) {
+          return this.getVersion(templateId, '1.0.0');
+        }
+      };
+    }
+
+    /**
+     * Create a test RenderRequest.
+     */
+    function createTestRenderRequest() {
+      return {
+        designState: {
+          schemaVersion: 1,
+          templateId: 'test-template',
+          templateVersion: '1.0.0',
+          flowKey: 'preview.main',
+          inputs: {
+            assets: [
+              { slot: 'base', asset: { id: 'test-base', kind: 'inline', mimeType: 'image/png' } },
+            ],
+            params: {},
+          },
+          createdAt: '2026-01-01T00:00:00Z',
+        },
+        requestedOutputSlots: ['mockup', 'cutting-preview'],
+      };
+    }
+
+    /**
+     * Run the browser runtime test.
+     */
+    async function runTest() {
+      try {
+        statusEl.textContent = 'running';
+        statusEl.className = 'running';
+
+        infoEl.textContent = JSON.stringify({
+          hasExecute: typeof execute === 'function',
+          hasOffscreenCanvas: typeof OffscreenCanvas !== 'undefined',
+          userAgent: navigator.userAgent,
+        }, null, 2);
+
+        const request = createTestRenderRequest();
+        const options = {
+          assetResolver: createMockAssetResolver(),
+          templateVersionResolver: createMockTemplateVersionResolver(),
+          outputSink: createMockOutputSink(),
+        };
+
+        const result = await execute(request, options);
+
+        statusEl.textContent = 'ready';
+        statusEl.className = 'ready';
+
+        resultEl.textContent = JSON.stringify({
+          renderId: result.renderId,
+          status: result.status,
+          outputsCount: result.outputs.length,
+          outputs: result.outputs.map(o => ({ slot: o.slot, flowKey: o.flowKey })),
+        }, null, 2);
+
+        // Expose result for Playwright to access
+        window.__M3_RUNTIME__ = {
+          result,
+          request,
+          options,
+        };
+
+      } catch (error) {
+        statusEl.textContent = 'error';
+        statusEl.className = 'error';
+        resultEl.textContent = `Error: ${error.message}\n${error.stack}`;
+        window.__M3_ERROR__ = error;
+      }
+    }
+
+    runTest();
+  </script>
+</body>
+</html>

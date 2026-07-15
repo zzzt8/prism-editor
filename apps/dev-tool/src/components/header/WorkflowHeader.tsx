@@ -1,38 +1,40 @@
 // WorkflowHeader - editor top bar
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box, Play, Square, CheckCircle2,
   Loader2, FileUp, Settings, User, Save,
-  History, Image,
 } from 'lucide-react';
 import { useCanvasStore } from '../../store/canvasStore';
 import { useAppStore } from '../../store/appStore';
 import { PanelToggle } from './PanelToggle';
-import { RenderProductionModal } from './RenderProductionModal';
+import './WorkflowHeaderStyles.css';
 
 interface WorkflowHeaderProps {
   onPublishClick: () => void;
   publishStatus: 'idle' | 'loading' | 'done';
-  onVersionHistoryClick?: () => void;
 }
+
+type LiveBadgeState = 'hidden' | 'idle' | 'debouncing' | 'running';
 
 export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
   onPublishClick,
   publishStatus,
-  onVersionHistoryClick,
 }) => {
   const workflowMeta = useCanvasStore((s) => s.workflowMeta);
   const isDirty = useCanvasStore((s) => s.isDirty);
   const nodes = useCanvasStore((s) => s.nodes);
   const executionStatus = useCanvasStore((s) => s._executionStatus);
+  const liveDebouncing = useCanvasStore((s) => s._liveDebouncing);
   const executeWorkflow = useCanvasStore((s) => s.executeWorkflow);
   const cancelExecution = useCanvasStore((s) => s.cancelExecution);
   const importWorkflowFromFile = useCanvasStore((s) => s.importWorkflowFromFile);
   const renameWorkflow = useCanvasStore((s) => s.renameWorkflow);
   const saveWorkflow = useCanvasStore((s) => s.saveWorkflow);
-  const _leftPanelOpen = useAppStore((s) => s.leftPanelOpen);
-  const _rightPanelOpen = useAppStore((s) => s.rightPanelOpen);
+  const livePreviewEnabled = useAppStore((s) => s.livePreviewEnabled);
+
+  const navigate = useNavigate();
 
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -40,9 +42,32 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const statusMsgTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [showRenderModal, setShowRenderModal] = useState(false);
 
   const isRunning = executionStatus === 'running';
+  const isFrontendWorkflow = workflowMeta.targetPlatform === 'browser';
+
+  const liveBadgeState: LiveBadgeState = (() => {
+    if (!isFrontendWorkflow) return 'hidden';
+    if (!livePreviewEnabled) return 'hidden';
+    if (isRunning) return 'running';
+    if (liveDebouncing) return 'debouncing';
+    return 'idle';
+  })();
+
+  const liveBadgeLabel = (() => {
+    switch (liveBadgeState) {
+      case 'running': return 'Live · 合成中…';
+      case 'debouncing': return 'Live · 等待稳定中';
+      case 'idle': return 'Live';
+      default: return '';
+    }
+  })();
+
+  const executeButtonLabel = (() => {
+    if (isRunning) return '停止';
+    if (isFrontendWorkflow) return '重跑';
+    return 'Execute';
+  })();
 
   const showMsg = (msg: string) => {
     // Clear any existing timer before setting new one
@@ -173,6 +198,23 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
             </span>
           )}
 
+          {liveBadgeState !== 'hidden' && (
+            <span
+              className={`wf-live-badge wf-live-badge--${liveBadgeState}`}
+              data-testid="wf-live-badge"
+              title={
+                liveBadgeState === 'running'
+                  ? '正在执行实时合成'
+                  : liveBadgeState === 'debouncing'
+                    ? '参数稳定后将自动合成'
+                    : '实时合成已启用'
+              }
+            >
+              <span className="wf-live-dot" />
+              {liveBadgeLabel}
+            </span>
+          )}
+
           <span className={`wf-save-badge ${isDirty ? 'wf-save-badge--dirty' : 'wf-save-badge--saved'}`}>
             <span className="wf-save-dot" />
             {isDirty ? 'DRAFT' : 'SAVED'}
@@ -201,14 +243,15 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
             className={`wf-execute-btn ${isRunning ? 'wf-execute-btn--running' : 'wf-execute-btn--ready'}`}
             onClick={handleExecute}
             disabled={!isRunning && nodes.length === 0}
-            title={isRunning ? '停止执行' : '执行工作流'}
+            title={isRunning ? '停止执行' : isFrontendWorkflow ? '跳过防抖立即执行' : '执行工作流'}
+            data-testid="wf-execute-btn"
           >
             {isRunning ? (
               <Square size={14} fill="currentColor" />
             ) : (
               <Play size={14} fill="currentColor" />
             )}
-            {isRunning ? '停止' : 'Execute'}
+            {executeButtonLabel}
           </button>
 
           {/* Publish */}
@@ -228,34 +271,13 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
             Publish
           </button>
 
-          {/* Render Production */}
-          <button
-            className="wf-render-btn"
-            onClick={() => setShowRenderModal(true)}
-            title="渲染生产图"
-          >
-            <Image size={14} />
-            Render
-          </button>
-
-          {/* Version History */}
-          {onVersionHistoryClick && (
-            <button
-              className="wf-icon-btn"
-              onClick={onVersionHistoryClick}
-              title="版本历史"
-            >
-              <History size={14} />
-            </button>
-          )}
-
           {/* Import JSON */}
           <button className="wf-icon-btn" onClick={handleImportJson} title="导入 JSON">
             <FileUp size={14} />
           </button>
 
           {/* Settings */}
-          <button className="wf-icon-btn" title="Settings" onClick={() => showMsg('Settings coming soon')}>
+          <button className="wf-icon-btn" title="Settings" onClick={() => navigate('/settings')}>
             <Settings size={14} />
           </button>
 
@@ -274,341 +296,8 @@ export const WorkflowHeader: React.FC<WorkflowHeaderProps> = ({
           style={{ display: 'none' }}
           onChange={handleFileChange}
         />
-
-        <RenderProductionModal
-          isOpen={showRenderModal}
-          onClose={() => setShowRenderModal(false)}
-          workflowId={workflowMeta.id}
-        />
       </header>
 
-      <style>{`
-        .wf-header {
-          height: 56px;
-          flex-shrink: 0;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 0 24px;
-          background: #18181b;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-          position: relative;
-          gap: 12px;
-          z-index: 40;
-        }
-
-        /* Left Zone */
-        .wf-header-left {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          flex: 1;
-          min-width: 0;
-        }
-
-        .wf-logo-group {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          flex-shrink: 0;
-        }
-
-        .wf-logo-icon {
-          width: 32px;
-          height: 32px;
-          border-radius: 8px;
-          background: #a855f7;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-        }
-
-        .wf-logo-text {
-          font-size: 15px;
-          font-weight: 700;
-          color: #f4f4f5;
-          letter-spacing: -0.02em;
-        }
-
-        .wf-sep {
-          color: rgba(255, 255, 255, 0.15);
-          font-size: 15px;
-          font-weight: 400;
-          flex-shrink: 0;
-        }
-
-        .wf-workflow-name {
-          font-size: 15px;
-          font-weight: 500;
-          color: #a1a1aa;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          cursor: text;
-          transition: color 0.12s;
-          flex: 1;
-          min-width: 0;
-        }
-        .wf-workflow-name:hover {
-          color: #f4f4f5;
-        }
-
-        .wf-title-input {
-          flex: 1;
-          min-width: 0;
-          font-size: 15px;
-          font-weight: 500;
-          color: #f4f4f5;
-          background: #27272a;
-          border: 1px solid #a855f7;
-          border-radius: 6px;
-          padding: 2px 8px;
-          outline: none;
-          font-family: inherit;
-          box-shadow: 0 0 0 2px rgba(177, 161, 255, 0.15);
-        }
-
-        .wf-save-badge {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 0.04em;
-          padding: 2px 7px;
-          border-radius: 9999px;
-          border: 1px solid;
-          flex-shrink: 0;
-        }
-
-        .wf-save-badge--saved {
-          color: #4ade80;
-          background: rgba(74, 222, 128, 0.1);
-          border-color: rgba(74, 222, 128, 0.25);
-        }
-
-        .wf-save-badge--dirty {
-          color: #f59e0b;
-          background: rgba(245, 158, 11, 0.1);
-          border-color: rgba(245, 158, 11, 0.25);
-        }
-
-        .wf-save-dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: currentColor;
-        }
-
-        /* Center Zone */
-        .wf-header-center {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        /* PanelToggle styles */
-        .panel-toggle-pill {
-          display: flex;
-          align-items: center;
-          background: transparent;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 6px;
-          padding: 3px;
-          gap: 2px;
-        }
-
-        .panel-toggle-btn {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          padding: 4px 10px;
-          border: none;
-          background: transparent;
-          color: #a1a1aa;
-          font-size: 12px;
-          font-weight: 500;
-          cursor: pointer;
-          border-radius: 6px;
-          font-family: inherit;
-          transition: background 0.12s, color 0.12s;
-          white-space: nowrap;
-        }
-        .panel-toggle-btn:hover {
-          background: #27272a;
-          color: #f4f4f5;
-        }
-        .panel-toggle-btn--active {
-          background: #27272a;
-          color: #f4f4f5;
-        }
-
-        /* Right Zone */
-        .wf-header-right {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          flex: 1;
-          justify-content: flex-end;
-        }
-
-        .wf-execute-btn {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          padding: 5px 12px;
-          border-radius: 6px;
-          font-size: 12px;
-          font-weight: 600;
-          cursor: pointer;
-          border: 1px solid;
-          font-family: inherit;
-          transition: opacity 0.12s, transform 0.12s;
-        }
-        .wf-execute-btn:disabled {
-          opacity: 0.4;
-          cursor: not-allowed;
-        }
-        .wf-save-btn {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          padding: 5px 12px;
-          border-radius: 6px;
-          font-size: 12px;
-          font-weight: 600;
-          cursor: pointer;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          background: transparent;
-          color: #a1a1aa;
-          font-family: inherit;
-          transition: background 0.12s, color 0.12s, border-color 0.12s;
-        }
-        .wf-save-btn:hover {
-          background: #27272a;
-          color: #f4f4f5;
-          border-color: rgba(255, 255, 255, 0.15);
-        }
-        .wf-save-btn:active {
-          transform: scale(0.97);
-        }
-
-        /* Purple — matches homepage accent */
-        .wf-execute-btn--ready {
-          color: #ffffff;
-          background: #a855f7;
-          border-color: #a855f7;
-        }
-        .wf-execute-btn--ready:hover:not(:disabled) {
-          background: #c084fc;
-          border-color: #c084fc;
-        }
-        /* Stop button stays red */
-        .wf-execute-btn--running {
-          color: #fff;
-          background: #dc2626;
-          border-color: #dc2626;
-        }
-        .wf-execute-btn--running:hover {
-          background: #b91c1c;
-          border-color: #b91c1c;
-        }
-
-        .wf-publish-btn {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          padding: 5px 12px;
-          border-radius: 6px;
-          font-size: 12px;
-          font-weight: 600;
-          cursor: pointer;
-          border: 1px solid rgba(177, 161, 255, 0.35);
-          background: rgba(177, 161, 255, 0.08);
-          color: #c084fc;
-          font-family: inherit;
-          transition: background 0.12s, color 0.12s;
-        }
-        .wf-publish-btn:hover:not(:disabled) {
-          background: rgba(177, 161, 255, 0.18);
-          color: #c084fc;
-        }
-        .wf-publish-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .wf-icon-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 32px;
-          height: 32px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          background: transparent;
-          color: #a1a1aa;
-          cursor: pointer;
-          border-radius: 6px;
-          transition: background 0.12s, color 0.12s, border-color 0.12s;
-        }
-        .wf-icon-btn:hover {
-          background: #27272a;
-          color: #f4f4f5;
-          border-color: rgba(255, 255, 255, 0.15);
-        }
-
-        .wf-render-btn {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          padding: 5px 12px;
-          border-radius: 6px;
-          font-size: 12px;
-          font-weight: 600;
-          cursor: pointer;
-          border: 1px solid rgba(74, 222, 128, 0.35);
-          background: rgba(74, 222, 128, 0.08);
-          color: #4ade80;
-          font-family: inherit;
-          transition: background 0.12s, color 0.12s;
-        }
-        .wf-render-btn:hover {
-          background: rgba(74, 222, 128, 0.18);
-          color: #4ade80;
-        }
-
-        .wf-spin {
-          animation: wf-spin 0.8s linear infinite;
-        }
-
-        @keyframes wf-spin {
-          to { transform: rotate(360deg); }
-        }
-
-        .wf-status-msg {
-          position: absolute;
-          left: 50%;
-          transform: translateX(-50%);
-          bottom: -28px;
-          background: #27272a;
-          color: #c084fc;
-          font-size: 11px;
-          padding: 4px 10px;
-          border-radius: 6px;
-          white-space: nowrap;
-          z-index: 100;
-          animation: fadeIn 0.15s ease;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-          border: 1px solid rgba(177, 161, 255, 0.15);
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-      `}</style>
     </>
   );
 };

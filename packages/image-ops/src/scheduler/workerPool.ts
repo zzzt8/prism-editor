@@ -4,44 +4,12 @@
 import * as Comlink from 'comlink';
 import type { ImageWorker, WorkerStatus } from '../worker/imageWorker.worker';
 import { registerImageDataTransferHandler } from '../comlink-image-data-transfer';
+import { calculateWorkerCount, getEffectiveSize } from './workerPoolSizing';
 
 registerImageDataTransferHandler();
 
-/**
- * Calculate the optimal number of workers based on device capabilities.
- * 
- * Formula: min(maxSize, max(minSize, hardwareConcurrency - 1))
- * Reserves 1 core for the main thread to avoid Worker and UI resource contention.
- */
-export function calculateWorkerCount(
-  hardwareConcurrency: number,
-  maxSize: number = 4,
-  minSize: number = 1
-): number {
-  const cores = hardwareConcurrency || 2;
-  const calculated = Math.max(minSize, cores - 1);
-  return Math.min(maxSize, calculated);
-}
-
-/**
- * Get the effective pool size based on config and device capabilities.
- * 
- * If dynamic is false, uses fixed size (size or baseSize).
- * If dynamic is true (default), calculates based on hardwareConcurrency.
- */
-export function getEffectiveSize(config: WorkerPoolConfig): number {
-  if (config.dynamic === false) {
-    return config.size ?? config.baseSize ?? 2;
-  }
-
-  const maxSize = config.maxSize ?? 4;
-  const minSize = config.minSize ?? 1;
-  const cores = typeof navigator !== 'undefined'
-    ? (navigator.hardwareConcurrency || 2)
-    : 2;
-
-  return calculateWorkerCount(cores, maxSize, minSize);
-}
+// Re-export for backwards compatibility (Facade).
+export { calculateWorkerCount, getEffectiveSize } from './workerPoolSizing';
 
 /**
  * Represents a single worker instance in the pool

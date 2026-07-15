@@ -44,6 +44,16 @@ export class WorkflowExecutorNodeJs {
   ): Promise<ExecutorResult> {
     return this.executor.execute(workflow, options);
   }
+
+  // M2-C: Delegate executeFromDesignState from the wrapped WorkflowExecutor.
+  // Both WorkflowExecutorNodeJs (server) and WorkflowExecutor (tests) expose the same
+  // executeFromDesignState contract; only the nodeExecutors differ.
+  async executeFromDesignState(
+    designState: import('@prism/shared-types').DesignState,
+    options: import('./executor').ExecuteFromDesignStateOptions = {},
+  ): Promise<import('./executor').ExecuteFromDesignStateResult> {
+    return this.executor.executeFromDesignState(designState, options);
+  }
 }
 
 /**

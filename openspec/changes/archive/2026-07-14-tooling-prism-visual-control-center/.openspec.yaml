@@ -1,0 +1,33 @@
+schema: prism-workflow
+created: 2026-07-14
+id: tooling-prism-visual-control-center
+phase: tooling
+title: "Prism Visual Control Center V0"
+status: in_progress
+author: agent
+change_class: low
+tags:
+  - tooling
+  - control-center
+  - m0
+  - verification
+affected:
+  packages: []
+  layers:
+    - tooling
+scope:
+  - tools/prism-control-center/**
+  - docs/control-center/**
+  - package.json scripts
+  - .gitignore
+out_of_scope:
+  - packages/**
+  - docs/architecture/**
+  - Mall 相关代码
+  - Browser Runtime
+  - Node Runtime
+  - Composer/Dev Tool
+  - M0 测试
+  - 锁文件
+  - 新 npm 依赖
+  - M0 修复

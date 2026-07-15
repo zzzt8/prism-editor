@@ -23,11 +23,6 @@
       "cache": false,
       "persistent": true
     },
-    "dev#user-app": {
-      "dependsOn": ["dev#server"],
-      "cache": false,
-      "persistent": true
-    },
     "lint": {
       "dependsOn": ["^build"],
       "cache": true,

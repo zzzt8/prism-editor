@@ -1,42 +1,38 @@
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const defaultPassword = process.env.SEED_USER_PASSWORD || 'default123'; // 从环境变量读取，开发环境默认密码
-  const hashedPassword = await bcrypt.hash(defaultPassword, 12);
-
-  // Check if default user exists
-  const existingUser = await prisma.user.findFirst({
-    where: { email: 'default@localhost' },
+  // Check if any ProductTemplate exists
+  const existingTemplates = await prisma.productTemplate.findMany({
+    take: 1,
   });
 
-  if (!existingUser) {
-    console.log('Creating default user...');
-    const user = await prisma.user.create({
+  if (existingTemplates.length === 0) {
+    console.log('Creating default ProductTemplate...');
+    const template = await prisma.productTemplate.create({
       data: {
-        email: 'default@localhost',
-        name: 'Default User',
-        password: hashedPassword,
+        name: 'Default Product Template',
+        description: 'A default product template for image composition',
+        version: '1.0.0',
+        content: JSON.stringify({
+          inputs: [],
+          assets: [],
+          designParams: [],
+          preview: {
+            flow: null,
+            bindings: [],
+          },
+          production: {
+            flow: null,
+            bindings: [],
+          },
+        }),
       },
     });
-    console.log(`Created default user with id: ${user.id}`);
-    console.log(`Email: default@localhost`);
-    console.log(`Password: ${defaultPassword}`);
+    console.log(`Created default ProductTemplate with id: ${template.id}`);
   } else {
-    console.log(`Default user already exists with id: ${existingUser.id}`);
-    console.log(`Email: default@localhost`);
-    console.log(`Password: ${defaultPassword}`);
-    // 如果密码不是 bcrypt hash，更新它
-    if (!existingUser.password.startsWith('$2')) {
-      console.log('Updating password to bcrypt hash...');
-      await prisma.user.update({
-        where: { id: existingUser.id },
-        data: { password: hashedPassword },
-      });
-      console.log('Password updated successfully');
-    }
+    console.log(`ProductTemplate already exists with id: ${existingTemplates[0].id}`);
   }
 }
 

@@ -7,17 +7,19 @@ export * from './node';
 export * from './execution';
 export * from './image';
 export * from './storage';
-export * from './published';
 export * from './port-data-types';  // port-types.ts imports PortDataType from here
 export * from './port-types';
-export * from './node-package';
 export * from './editor-draft';
 export * from './template';
 export * from './snippet';
 export * from './execution-log';
-export * from './auth';
 export * from './runtime-protocol';
-export * from './sku';
-export * from './product-template';
-export * from './product-template-compat';
+// M1-A: cross-runtime public contract types
+export * from './design-state';
+// M2-A: Flow / FlowOutput / FlowOutputSlot / FlowKey + ajv validators
+export * from './flow';
+export * from './render-request';
+export * from './render-result';
+export * from './runtime-template';
+export * from './validation';
 export { createId } from './createId';

@@ -10,10 +10,10 @@ import type {
   EditorNodeGroup,
   EditorWorkflowMeta,
   ExecutionProgress,
+  SnippetSummary,
 } from '@prism/shared-types';
 import type { Template } from '@prism/shared-types';
 import { canConnectByDataType, PortDataType } from '@prism/shared-types';
-import type { SnippetFragment, SnippetSummary } from '@prism/shared-types';
 import { PORT_TYPE_COLORS } from '../../../utils/portTypeStyles';
 import type { ContextMenuState } from './selectionSlice';
 import { ExecutionStatus } from './executionSlice';
@@ -21,10 +21,11 @@ import type { ExecutionLog, NodeTiming } from '@prism/shared-types';
 import { createId } from '@prism/shared-types';
 import { globalRegistry } from '@prism/core';
 import { autosaveService, initAutosaveService, getAutosaveService } from '../services/autosaveService';
+import { getLivePreviewService, destroyLivePreviewService } from '../services/livePreviewService';
+import type { ExecutionSource } from '../services/executionService';
 import { getExecutionService } from '../services/executionService';
 import { activeStorageAdapter } from '../../../storage';
 import { WorkflowRepository } from '../../repositories/workflowRepository';
-import { SnippetRepository } from '../../repositories/snippetRepository';
 import {
   createNodeId,
   createEdgeId,
@@ -36,11 +37,18 @@ import {
   inferPortDataType,
   ensureNodeRegistryInitialized,
   remapAndInsertNodes,
-  PASTE_OFFSET,
 } from './canvasStoreHelpers';
+import {
+  snippetSave,
+  snippetList,
+  insertSnippet,
+  deleteSnippet,
+} from './useCanvasStore/snippetStubs';
 
 // Re-export ExecutionStatus for backward compatibility (used by store/canvasStore.ts)
 export type { ExecutionStatus } from './executionSlice';
+
+import { useAppStore } from '../../../store/appStore';
 
 type ReactFlowConnection = RfConnection;
 
@@ -48,6 +56,32 @@ type ReactFlowConnection = RfConnection;
 
 let _currentLog: ExecutionLog | null = null;
 const _nodeStartTimes = new Map<string, number>();
+
+// ─── Module-level state for batched UI updates ─────────────────────────────────
+
+// For live executions: accumulate results, flush only at end
+// For manual executions: batch by 100ms interval
+let _pendingLiveResults: ExecutionProgress['results'] = [];
+let _lastManualUiUpdate = 0;
+
+const applyResultsToStore = (results: ExecutionProgress['results']) => {
+  if (results.length === 0) return;
+  useCanvasStore.setState((state) => ({
+    nodes: state.nodes.map((n) => {
+      const r = results.find((x) => x.nodeId === n.id);
+      if (!r) return n;
+      return {
+        ...n,
+        data: {
+          ...n.data,
+          executionResult: r.status === 'done' ? r.outputs : undefined,
+          executionError: r.status === 'error' ? r.error : undefined,
+          _executingNodeId: r.nodeId,
+        },
+      };
+    }),
+  }));
+};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -87,6 +121,14 @@ interface CanvasState {
   _executionAbort: (() => void) | null;
   _executionLog: import('@prism/shared-types').ExecutionLog | null;
   _executionLogs: ExecutionLog[];
+
+  // Live preview state (frontend reactive execution)
+  _liveDebouncing: boolean;
+  _isInteracting: boolean; // true during drag/pan interactions to skip live execution
+
+  // Interaction state management
+  startInteraction: () => void;
+  endInteraction: () => void;
 
   // ── Graph operations ────────────────────────────────────────────────────────
 
@@ -146,10 +188,13 @@ interface CanvasState {
   // ── Execution operations ─────────────────────────────────────────────────────
 
   updateNodeExecution: (_id: string, _result?: Record<string, unknown>, _error?: string) => void;
-  executeWorkflow: () => Promise<{ status: 'done' | 'error' | 'cancelled'; error?: string }>;
+  executeWorkflow: (_source?: ExecutionSource) => Promise<{ status: 'done' | 'error' | 'cancelled'; error?: string }>;
   cancelExecution: () => void;
   clearExecution: () => void;
   recordNodeTiming: (_nodeId: string, _nodeType: string, _duration?: number, _status?: NodeTiming['status']) => void;
+
+  // Live subscription lifecycle (T4 — exposed for unit tests)
+  destroyLiveSubscription: () => void;
 
   // ── Inspector operations ─────────────────────────────────────────────────────
 
@@ -172,7 +217,6 @@ interface CanvasState {
 
 // Create workflow repository for autosave (use activeStorageAdapter for server-first)
 const workflowRepository = new WorkflowRepository(activeStorageAdapter);
-const snippetRepository = new SnippetRepository();
 
 // Initialize autosave service
 const _autosave = autosaveService;
@@ -196,7 +240,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   inspectorTab: 'parameters',
 
   // Initial state - draftSlice
-      workflowMeta: { id: createId(), name: 'Untitled Workflow', version: '1.0.0' },
+      workflowMeta: { id: createId(), name: 'Untitled Workflow', version: '1.0.0', targetPlatform: 'browser' },
       viewport: { x: 0, y: 0, zoom: 1 },
       isDraggingFromPanel: false,
       isDirty: false,
@@ -207,6 +251,10 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   _executionAbort: null,
   _executionLog: null,
   _executionLogs: [],
+
+  // Initial state - live preview
+  _liveDebouncing: false,
+  _isInteracting: false,
 
   // ── Graph operations ────────────────────────────────────────────────────────
 
@@ -274,6 +322,19 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
   setEdges(edges) {
     set({ edges });
+  },
+
+  // ── Interaction state ───────────────────────────────────────────────────────
+  // Call startInteraction() when drag/pan starts, endInteraction() when it ends.
+  // During interaction, live workflow execution is skipped to keep UI responsive.
+  startInteraction() {
+    set({ _isInteracting: true });
+  },
+
+  endInteraction() {
+    set({ _isInteracting: false });
+    // Trigger live execution after interaction ends to update previews
+    getLivePreviewService().triggerPreview(useAppStore.getState().livePreviewDebounceMs);
   },
 
   onNodesChange(changes) {
@@ -655,7 +716,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       groups: [],
       selectedNodeIds: [],
       selectedEdgeIds: [],
-      workflowMeta: { id: createId(), name: 'Untitled Workflow', version: '1.0.0' },
+      workflowMeta: { id: createId(), name: 'Untitled Workflow', version: '1.0.0', targetPlatform: 'browser' },
       isDirty: false,
       isDraggingFromPanel: false,
       _executionStatus: 'idle',
@@ -764,6 +825,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         id: createId(),
         name: template.name,
         version: '1.0.0',
+        targetPlatform: 'browser',
       },
       selectedNodeIds: [],
       selectedEdgeIds: [],
@@ -943,33 +1005,43 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     }));
   },
 
-  async executeWorkflow() {
+  async executeWorkflow(source: ExecutionSource = 'manual') {
     let { nodes, workflowMeta, edges } = get();
     if (nodes.length === 0) return { status: 'done' as const };
 
-    // ── ExecutionLog: create record on start ─────────────────────────────────
+    const recordLog = source === 'manual';
+
+    // ── ExecutionLog: create record on start (manual runs only) ───────────────
     const startedAt = Date.now();
-    _currentLog = {
-      runId: createId(),
-      workflowId: workflowMeta.id,
-      inputs: {},
-      outputs: {},
-      status: 'started',
-      startedAt,
-      nodeTimings: [],
-      errors: [],
-    };
-    _nodeStartTimes.clear();
+    if (recordLog) {
+      _currentLog = {
+        runId: createId(),
+        workflowId: workflowMeta.id,
+        inputs: {},
+        outputs: {},
+        status: 'started',
+        startedAt,
+        nodeTimings: [],
+        errors: [],
+      };
+      _nodeStartTimes.clear();
+    }
 
     // Clear previous execution results and set running state
-    set((state) => ({
-      nodes: state.nodes.map((n) => ({
-        ...n,
-        data: { ...n.data, executionResult: undefined, executionError: undefined },
-      })),
-      _executionStatus: 'running' as const,
-      _currentNodeId: null,
-    }));
+    // For live executions: keep old results visible until new results arrive
+    // For manual executions: clear immediately to show fresh state
+    if (source !== 'live') {
+      set((state) => ({
+        nodes: state.nodes.map((n) => ({
+          ...n,
+          data: { ...n.data, executionResult: undefined, executionError: undefined },
+        })),
+        _executionStatus: 'running' as const,
+        _currentNodeId: null,
+      }));
+    } else {
+      set({ _executionStatus: 'running' as const, _currentNodeId: null });
+    }
 
     // Use node list after clear (avoid stale executionResult on references)
     ({ nodes, workflowMeta, edges } = get());
@@ -981,8 +1053,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
     // Progress callback
     const progressCallback = (progress: ExecutionProgress) => {
-      // ── ExecutionLog: record node timing on each progress event ─────────────
-      if (_currentLog && progress.currentNodeId) {
+      // ── ExecutionLog: record node timing on each progress event (manual runs)
+      if (recordLog && _currentLog && progress.currentNodeId) {
         const now = Date.now();
         const node = get().nodes.find((n) => n.id === progress.currentNodeId);
         const nodeType = node?.data.nodeType ?? 'unknown';
@@ -1018,21 +1090,19 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         }
       }
 
-      set((state) => ({
-        nodes: state.nodes.map((n) => {
-          const nodeResult = progress.results.find((r) => r.nodeId === n.id);
-          if (!nodeResult) return n;
-          return {
-            ...n,
-            data: {
-              ...n.data,
-              executionResult: nodeResult.status === 'done' ? nodeResult.outputs : undefined,
-              executionError: nodeResult.status === 'error' ? nodeResult.error : undefined,
-              _executingNodeId: progress.currentNodeId,
-            },
-          };
-        }),
-      }));
+      // Batch UI updates: live executions → flush only at end; manual → every 100ms
+      if (source === 'live') {
+        // Live: accumulate results, flush only at end
+        _pendingLiveResults.push(...progress.results);
+      } else {
+        const now = Date.now();
+        if (now - _lastManualUiUpdate >= 100 || progress.results.some((r) => r.status === 'error')) {
+          applyResultsToStore(progress.results);
+          _lastManualUiUpdate = now;
+        } else {
+          _pendingLiveResults.push(...progress.results);
+        }
+      }
     };
 
     // Execute using service
@@ -1044,11 +1114,18 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       {
         onProgress: progressCallback,
         signal: controller.signal,
+        source,
       }
     );
 
-    // ── ExecutionLog: finalize on completion ──────────────────────────────────
-    if (_currentLog) {
+    // Flush any pending live results before finalizing
+    if (source === 'live' && _pendingLiveResults.length > 0) {
+      applyResultsToStore(_pendingLiveResults);
+      _pendingLiveResults = [];
+    }
+
+    // ── ExecutionLog: finalize on completion (manual runs only) ──────────────
+    if (recordLog && _currentLog) {
       const completedAt = Date.now();
       _currentLog.completedAt = completedAt;
       _currentLog.duration = completedAt - _currentLog.startedAt;
@@ -1125,6 +1202,13 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     }
   },
 
+  // ── Live preview subscription lifecycle ──────────────────────────────────
+  // Exposed so unit tests can tear down the subscription between cases
+  // (the production app keeps it alive for the lifetime of the page).
+  destroyLiveSubscription() {
+    destroyLivePreviewService();
+  },
+
   // ── Inspector operations ───────────────────────────────────────────────────
 
   openInspector(tab, nodeId) {
@@ -1169,82 +1253,20 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     get()._triggerAutoSave();
   },
 
-  // ── Snippet operations ──────────────────────────────────────────────────────
-
-  async snippetSave(name: string, description: string, selectedNodeIds: string[]): Promise<void> {
-    const { nodes } = get();
-    const selectedNodes = nodes.filter((n) => selectedNodeIds.includes(n.id));
-
-    // Filter out nodes without definition (unavailable node types)
-    const validNodes = selectedNodes.filter((n) => n.data.definition != null);
-    if (validNodes.length === 0) return;
-
-    const validNodeIds = new Set(validNodes.map((n) => n.id));
-
-    // Filter edges: only keep edges where both endpoints are in the snippet
-    const fragmentEdges = get().edges.filter(
-      (e) => validNodeIds.has(e.source) && validNodeIds.has(e.target)
-    );
-
-    const fragment: SnippetFragment = {
-      id: createId(),
-      name: name.trim(),
-      description: description.trim() || undefined,
-      createdAt: new Date().toISOString(),
-      nodes: validNodes,
-      edges: fragmentEdges,
-      groups: [], // Groups are not saved in snippets (first version)
-    };
-
-    await snippetRepository.save(fragment);
-  },
-
-  async snippetList(): Promise<SnippetSummary[]> {
-    return snippetRepository.list();
-  },
-
-  async insertSnippet(snippetId: string, position: { x: number; y: number }): Promise<void> {
-    const fragment = await snippetRepository.get(snippetId);
-
-    // Filter out nodes whose nodeType is no longer registered
-    const availableNodes = fragment.nodes.filter((n) => {
-      if (!n.data.nodeType) return true;
-      const def = globalRegistry.getNode(n.data.nodeType);
-      if (!def) {
-        console.warn(`[insertSnippet] Skipping node '${n.id}' of unknown type '${n.data.nodeType}'`);
-        return false;
-      }
-      return true;
-    });
-
-    if (availableNodes.length === 0) return;
-
-    const availableNodeIds = new Set(availableNodes.map((n) => n.id));
-    const snippetEdges = fragment.edges.filter(
-      (e) => availableNodeIds.has(e.source) && availableNodeIds.has(e.target)
-    );
-
-    // basePosition = clickPosition - PASTE_OFFSET, since helper adds PASTE_OFFSET on top
-    const basePosition = {
-      x: position.x - PASTE_OFFSET,
-      y: position.y - PASTE_OFFSET,
-    };
-
-    const { newNodes, newEdges } = remapAndInsertNodes(
-      availableNodes,
-      snippetEdges,
-      basePosition,
-      { createNodeId, createEdgeId }
-    );
-
-    set((s) => ({
-      nodes: [...s.nodes, ...newNodes],
-      edges: [...s.edges, ...newEdges],
-    }));
-    get()._triggerAutoSave();
-  },
-
-  async deleteSnippet(id: string): Promise<void> {
-    await snippetRepository.delete(id);
-  },
+  // ── Snippet stubs moved to ./useCanvasStore/snippetStubs.ts ──────────────────────
+  snippetSave,
+  snippetList,
+  insertSnippet,
+  deleteSnippet,
 }));
+
+// ─── Install live preview service once at module load ──────────────────────────
+// Subscribe the live preview service to the store for reactive execution
+const _livePreviewCleanup = getLivePreviewService().subscribe(useCanvasStore);
+
+// ─── Module exports ───────────────────────────────────────────────────────────
+
+// Re-export livePreviewService for backward compatibility (used by unit tests)
+export { getLivePreviewService } from '../services/livePreviewService';
+// Named export for backward compatibility with existing tests
+export { destroyLivePreviewService as destroyLiveSubscription } from '../services/livePreviewService';

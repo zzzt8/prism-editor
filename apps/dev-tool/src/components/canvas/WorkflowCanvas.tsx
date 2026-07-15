@@ -35,7 +35,7 @@ import { useCanvasKeyboard } from './useCanvasKeyboard';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nodeTypes: Record<string, any> = {
-  prismNode: PrismNode,
+  prismNode: PrismNode, // Memoized in the component file
   groupNode: GroupNode,
 };
 
@@ -125,6 +125,17 @@ export const WorkflowCanvas: React.FC = () => {
   // React Flow change handlers
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
+      // Detect drag start (position change with dragging=true) and drag end (dragging=false)
+      // to control live execution behavior
+      for (const change of changes) {
+        if (change.type === 'position') {
+          if (change.dragging === true) {
+            useCanvasStore.getState().startInteraction();
+          } else if (change.dragging === false) {
+            useCanvasStore.getState().endInteraction();
+          }
+        }
+      }
       useCanvasStore.setState((state) => ({
         nodes: applyNodeChanges(changes, state.nodes) as CanvasNode[],
         isDirty: true,
@@ -146,6 +157,11 @@ export const WorkflowCanvas: React.FC = () => {
   const onMoveEnd = useCallback(
     (_evt: unknown, viewport: { x: number; y: number; zoom: number }) => {
       setViewport(viewport);
+      // End any active interaction when panning ends (user might have been dragging nodes)
+      const state = useCanvasStore.getState();
+      if (state._isInteracting) {
+        state.endInteraction();
+      }
     },
     [setViewport]
   );

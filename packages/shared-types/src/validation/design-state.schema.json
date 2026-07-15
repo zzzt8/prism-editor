@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://prism-editor.local/schemas/design-state.schema.json",
+  "title": "Prism DesignState",
+  "description": "Cross-runtime design input snapshot. JSON-serializable; schemaVersion is the contract version, templateVersion tracks the template content version independently.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "templateId", "templateVersion", "flowKey", "inputs", "createdAt"],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1,
+      "description": "Protocol schema version. M1=1. Bump on rename/remove/retype."
+    },
+    "templateId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "templateVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "flowKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 96,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "description": "Explicit flow selector. Format-constrained stable string; NOT a closed enum. See PRISM_ARCHITECTURE_GUARDRAILS §1.7 / §1.9 and design.md Decision 1."
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assets", "params"],
+      "properties": {
+        "assets": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/assetBinding" }
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/definitions/jsonValue" }
+        }
+      }
+    },
+    "createdAt": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "ISO-8601 timestamp as a string. M1 does not parse the date-time format."
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "author": { "type": "string", "maxLength": 256 },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 64 },
+          "maxItems": 64
+        },
+        "description": { "type": "string", "maxLength": 4096 }
+      }
+    },
+    "trace": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requestId": { "type": "string", "maxLength": 256 },
+        "traceId": { "type": "string", "maxLength": 256 },
+        "externalReferenceId": { "type": "string", "maxLength": 256 }
+      }
+    }
+  },
+  "definitions": {
+    "assetRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 1024 },
+        "kind": { "type": "string", "enum": ["inline", "remote", "prism-asset"] },
+        "mimeType": { "type": "string", "maxLength": 128 },
+        "checksum": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "width": { "type": "integer", "minimum": 0 },
+        "height": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "assetBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slot", "asset"],
+      "properties": {
+        "slot": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,127}$"
+        },
+        "asset": { "$ref": "#/definitions/assetRef" }
+      }
+    },
+    "jsonValue": {
+      "description": "Recursive JSON-safe value: string | number | boolean | null | array | object",
+      "oneOf": [
+        { "type": "string" },
+        { "type": "number" },
+        { "type": "boolean" },
+        { "type": "null" },
+        {
+          "type": "array",
+          "items": { "$ref": "#/definitions/jsonValue" }
+        },
+        {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/definitions/jsonValue" }
+        }
+      ]
+    }
+  }
+}

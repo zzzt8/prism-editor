@@ -2,13 +2,13 @@
  * Node.js composite executor using sharp for I/O.
  *
  * I/O layer: sharp Buffer → ImageData → compositeImages → ImageData → sharp Buffer
- * Pure logic: core/composite-math.ts
+ * Pure logic: core/composite/composite.ts
  */
 
 import type { NodeExecutor, BlendMode, CompositeExecutorOutput } from '@prism/shared-types';
 import type { ImageData } from '@prism/shared-types';
 import sharp from 'sharp';
-import { compositeImages, type CompositeOptions } from '../core/composite-math';
+import { compositeImages, type CompositeOptions } from '../core/composite/composite';
 import { sharpToImageData, imageDataToSharp } from './sharp-utils';
 
 /**

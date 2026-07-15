@@ -4,30 +4,36 @@
 import type { StorageAdapter, WorkflowMeta, NodeDefinition, Connection } from '@prism/shared-types';
 import type { Workflow } from '@prism/shared-types';
 import { createId } from '@prism/shared-types';
-
-const DB_NAME = 'prism-editor';
-const DB_VERSION = 2; // Bump version for new stores
-const STORE_WORKFLOWS = 'workflows';
-const STORE_META = 'meta';
-const STORE_INDEX = 'index';
-const STORE_VERSIONS = 'versions';
-const MAX_VERSION_RECORDS = 50;
-
-// Version data structure
-interface VersionRecord {
-  id: string;
-  workflowId: string;
-  version: string;
-  content: string;
-  createdBy: string | null;
-  createdAt: string;
-}
+import {
+  DB_NAME,
+  DB_VERSION,
+  STORE_WORKFLOWS,
+  STORE_META,
+  STORE_INDEX,
+  STORE_VERSIONS,
+  MAX_VERSION_RECORDS,
+  type VersionRecord,
+} from './indexedDbConstants';
+import {
+  idbGetAll,
+  idbGet,
+  idbPut,
+  idbRemove,
+  setIdbCrudAdapter,
+} from './idbCrud';
 
 export class IndexedDBStorageAdapter implements StorageAdapter {
   private db: IDBDatabase | null = null;
   private dbInitPromise: Promise<IDBDatabase> | null = null;
 
-  private async getDb(): Promise<IDBDatabase> {
+  constructor() {
+    // Wire up the idbCrud module so the standalone functions delegate to our instance.
+    setIdbCrudAdapter(() => this._getDb());
+  }
+
+  // ── idbCrud delegates ───────────────────────────────────────────────────────────
+  // Exposes this._getDb() to the idbCrud module via setIdbCrudAdapter (called in constructor).
+  private async _getDb(): Promise<IDBDatabase> {
     if (this.db) return this.db;
 
     if (this.dbInitPromise) return this.dbInitPromise;
@@ -73,52 +79,6 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
     return this.dbInitPromise;
   }
 
-  private async getStore(storeName: string, mode: IDBTransactionMode = 'readonly'): Promise<IDBObjectStore> {
-    const db = await this.getDb();
-    const transaction = db.transaction(storeName, mode);
-    return transaction.objectStore(storeName);
-  }
-
-  private async getAll<T>(storeName: string): Promise<T[]> {
-    return new Promise((resolve, reject) => {
-      this.getStore(storeName).then((store) => {
-        const request = store.getAll();
-        request.onsuccess = () => resolve(request.result as T[]);
-        request.onerror = () => reject(new Error(`Failed to getAll from ${storeName}`));
-      }).catch(reject);
-    });
-  }
-
-  private async get<T>(storeName: string, key: string): Promise<T | null> {
-    return new Promise((resolve, reject) => {
-      this.getStore(storeName).then((store) => {
-        const request = store.get(key);
-        request.onsuccess = () => resolve(request.result as T | null);
-        request.onerror = () => reject(new Error(`Failed to get ${key} from ${storeName}`));
-      }).catch(reject);
-    });
-  }
-
-  private async put(storeName: string, value: unknown): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.getStore(storeName, 'readwrite').then((store) => {
-        const request = store.put(value);
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(new Error(`Failed to put into ${storeName}`));
-      }).catch(reject);
-    });
-  }
-
-  private async remove(storeName: string, key: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.getStore(storeName, 'readwrite').then((store) => {
-        const request = store.delete(key);
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(new Error(`Failed to delete ${key} from ${storeName}`));
-      }).catch(reject);
-    });
-  }
-
   async save(workflow: Workflow): Promise<Workflow> {
     const existingMeta = await this.loadMeta(workflow.id).catch(() => null);
     const now = new Date().toISOString();
@@ -135,15 +95,15 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
       icon: existingMeta?.icon,
     };
 
-    await this.put(STORE_WORKFLOWS, workflow);
-    await this.put(STORE_META, meta);
+    await idbPut(STORE_WORKFLOWS, workflow);
+    await idbPut(STORE_META, meta);
 
     // Save version history
     await this.saveVersion(workflow);
 
     const ids = await this.getStoredIds();
     if (!ids.includes(workflow.id)) {
-      await this.put(STORE_INDEX, { key: 'ids', ids: [...ids, workflow.id] });
+      await idbPut(STORE_INDEX, { key: 'ids', ids: [...ids, workflow.id] });
     }
 
     return workflow;
@@ -180,11 +140,11 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
       metadata: { createdAt: now, updatedAt: now, targetPlatform },
     };
 
-    await this.put(STORE_WORKFLOWS, content);
-    await this.put(STORE_META, meta);
+    await idbPut(STORE_WORKFLOWS, content);
+    await idbPut(STORE_META, meta);
 
     const ids = await this.getStoredIds();
-    await this.put(STORE_INDEX, { key: 'ids', ids: [...ids, id] });
+    await idbPut(STORE_INDEX, { key: 'ids', ids: [...ids, id] });
 
     return { meta, content };
   }
@@ -192,34 +152,34 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
   async updateWorkflowMeta(id: string, patch: Partial<WorkflowMeta>): Promise<void> {
     const meta = await this.loadMeta(id);
     const updated: WorkflowMeta = { ...meta, ...patch, updatedAt: new Date().toISOString() };
-    await this.put(STORE_META, updated);
+    await idbPut(STORE_META, updated);
   }
 
   private async loadMeta(id: string): Promise<WorkflowMeta> {
-    const meta = await this.get<WorkflowMeta>(STORE_META, id);
+    const meta = await idbGet<WorkflowMeta>(STORE_META, id);
     if (!meta) throw new Error(`Workflow meta not found: ${id}`);
     return meta;
   }
 
   async load(id: string): Promise<Workflow> {
-    const workflow = await this.get<Workflow>(STORE_WORKFLOWS, id);
+    const workflow = await idbGet<Workflow>(STORE_WORKFLOWS, id);
     if (!workflow) throw new Error(`Workflow not found: ${id}`);
     return workflow;
   }
 
   async list(): Promise<WorkflowMeta[]> {
-    const metas = await this.getAll<WorkflowMeta>(STORE_META);
+    const metas = await idbGetAll<WorkflowMeta>(STORE_META);
     return metas.sort(
       (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
     );
   }
 
   async delete(id: string): Promise<void> {
-    await this.remove(STORE_WORKFLOWS, id);
-    await this.remove(STORE_META, id);
+    await idbRemove(STORE_WORKFLOWS, id);
+    await idbRemove(STORE_META, id);
 
     const ids = await this.getStoredIds();
-    await this.put(STORE_INDEX, { key: 'ids', ids: ids.filter((storedId) => storedId !== id) });
+    await idbPut(STORE_INDEX, { key: 'ids', ids: ids.filter((storedId) => storedId !== id) });
   }
 
   async exportToJson(workflow: Workflow): Promise<string> {
@@ -239,7 +199,7 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
   }
 
   private async getStoredIds(): Promise<string[]> {
-    const index = await this.get<{ key: string; ids: string[] }>(STORE_INDEX, 'ids');
+    const index = await idbGet<{ key: string; ids: string[] }>(STORE_INDEX, 'ids');
     return index?.ids ?? [];
   }
 
@@ -254,7 +214,7 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
       createdBy: null,
       createdAt: new Date().toISOString(),
     };
-    await this.put(STORE_VERSIONS, version);
+    await idbPut(STORE_VERSIONS, version);
 
     // Cleanup old versions, keep only the most recent MAX_VERSION_RECORDS per workflow
     await this.pruneOldVersions(workflow.id);
@@ -262,7 +222,7 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
 
   // Prune old versions to stay within MAX_VERSION_RECORDS limit
   private async pruneOldVersions(workflowId: string): Promise<void> {
-    const allVersions = await this.getAll<VersionRecord>(STORE_VERSIONS);
+    const allVersions = await idbGetAll<VersionRecord>(STORE_VERSIONS);
     const workflowVersions = allVersions
       .filter((v) => v.workflowId === workflowId)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -270,7 +230,7 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
     if (workflowVersions.length > MAX_VERSION_RECORDS) {
       const toDelete = workflowVersions.slice(MAX_VERSION_RECORDS);
       for (const v of toDelete) {
-        await this.remove(STORE_VERSIONS, v.id);
+        await idbRemove(STORE_VERSIONS, v.id);
       }
     }
   }
@@ -280,7 +240,7 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
     data: Array<{ id: string; version: string; createdBy: string | null; createdAt: string }>;
     pagination: { page: number; limit: number; total: number; totalPages: number };
   }> {
-    const allVersions = await this.getAll<VersionRecord>(STORE_VERSIONS);
+    const allVersions = await idbGetAll<VersionRecord>(STORE_VERSIONS);
     const filtered = allVersions
       .filter((v) => v.workflowId === workflowId)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -306,7 +266,7 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
     createdBy: string | null;
     createdAt: string;
   }> {
-    const version = await this.get<VersionRecord>(STORE_VERSIONS, versionId);
+    const version = await idbGet<VersionRecord>(STORE_VERSIONS, versionId);
     if (!version) throw new Error(`Version not found: ${versionId}`);
     return {
       id: version.id,
@@ -319,7 +279,7 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
 
   // Rollback workflow to a specific version
   async rollbackWorkflow(workflowId: string, versionId: string, newVersion?: string): Promise<void> {
-    const version = await this.get<VersionRecord>(STORE_VERSIONS, versionId);
+    const version = await idbGet<VersionRecord>(STORE_VERSIONS, versionId);
     if (!version) throw new Error(`Version not found: ${versionId}`);
 
     const workflow = JSON.parse(version.content) as Workflow;
@@ -336,8 +296,8 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
     nodes: { added: NodeDefinition[]; removed: NodeDefinition[]; modified: NodeDefinition[] };
     connections: { added: Connection[]; removed: Connection[]; modified: Connection[] };
   }> {
-    const fromVersion = await this.get<VersionRecord>(STORE_VERSIONS, fromId);
-    const toVersion = await this.get<VersionRecord>(STORE_VERSIONS, toId);
+    const fromVersion = await idbGet<VersionRecord>(STORE_VERSIONS, fromId);
+    const toVersion = await idbGet<VersionRecord>(STORE_VERSIONS, toId);
 
     if (!fromVersion) throw new Error(`Version not found: ${fromId}`);
     if (!toVersion) throw new Error(`Version not found: ${toId}`);
@@ -394,7 +354,7 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
           const raw = localStorage.getItem(key);
           if (raw) {
             const workflow = JSON.parse(raw) as Workflow;
-            await this.put(STORE_WORKFLOWS, workflow);
+            await idbPut(STORE_WORKFLOWS, workflow);
             migrated++;
           }
         } catch {
@@ -407,7 +367,7 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
           const raw = localStorage.getItem(key);
           if (raw) {
             const meta = JSON.parse(raw) as WorkflowMeta;
-            await this.put(STORE_META, meta);
+            await idbPut(STORE_META, meta);
           }
         } catch {
           failed++;

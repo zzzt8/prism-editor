@@ -1,10 +1,10 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
-import jwt from '@fastify/jwt';
+import multipart from '@fastify/multipart';
 import { app, errorHandler } from './app.js';
-import authRoutes from './routes/auth.js';
 import { prisma } from './db/client.js';
+import { apiKeyAuth } from './middleware/api-key.js';
 
 const fastify = Fastify({
   logger: true,
@@ -24,13 +24,11 @@ await fastify.register(cors, {
 
 await fastify.register(cookie);
 
-const jwtSecret = process.env.JWT_SECRET;
-if (!jwtSecret) {
-  throw new Error('JWT_SECRET environment variable is required');
-}
-
-await fastify.register(jwt, {
-  secret: jwtSecret,
+await fastify.register(multipart, {
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB per file
+    files: 100, // max 100 files
+  },
 });
 
 fastify.get('/health', async () => ({
@@ -44,8 +42,10 @@ fastify.get('/api/health', async () => ({
   timestamp: new Date().toISOString(),
 }));
 
+// API Key authentication for all /api routes
+fastify.addHook('preHandler', apiKeyAuth);
+
 await fastify.register(app, { prefix: '/api' });
-await fastify.register(authRoutes, { prefix: '/api' });
 
 fastify.setErrorHandler(errorHandler);
 

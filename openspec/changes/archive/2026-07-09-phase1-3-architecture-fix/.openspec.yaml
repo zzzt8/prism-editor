@@ -1,0 +1,5 @@
+schema: prism-workflow
+created: 2026-07-09
+change_class: high
+title: "Phase 1-3 Architecture Fix: nodejs executor core alignment + composer-sdk image-ops integration"
+description: "修复 nodejs executor 调用旧 core 算法、补充节点 platforms 配置、composer-sdk 集成 image-ops、补充测试覆盖"

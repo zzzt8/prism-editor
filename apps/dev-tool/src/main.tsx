@@ -4,6 +4,7 @@ import '@prism/shared-ui/styles/tokens.css';
 import '@prism/shared-ui/styles/components.css';
 import './styles/global.css';
 import './styles/nodes/dense-control-node.css';
+import './styles/nodes/dense-control-node-export-text.css';
 import App from './App';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

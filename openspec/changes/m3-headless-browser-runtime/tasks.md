@@ -1,0 +1,501 @@
+# Tasks: M3 — Headless Browser Runtime
+
+## Progress
+
+| Metric | Value |
+|--------|-------|
+| Total Tasks | 12 |
+| Completed | 12 |
+| In Progress | 0 |
+
+## Phase 3.6 — Integration ✅ COMPLETE
+
+All integration tasks completed:
+- T.3.6.1: Build and typecheck ✅
+- T.3.6.2: Verify existing tests still pass ✅
+
+---
+
+## Phase 3.1 — Package Structure
+
+### T.3.1.1 — Create package structure
+
+**opsx-meta**
+
+```yaml
+id: T.3.1.1
+layer: packages/browser-runtime
+task_type: setup
+verify:
+  - type: file_exists
+    path: packages/browser-runtime/package.json
+  - type: file_exists
+    path: packages/browser-runtime/tsconfig.json
+  - type: file_exists
+    path: packages/browser-runtime/src/index.ts
+```
+
+**Description**
+
+Create the initial `@prism/browser-runtime` package structure.
+
+**Acceptance Criteria**
+
+- [x] `packages/browser-runtime/package.json` created with correct name, version, exports
+- [x] `packages/browser-runtime/tsconfig.json` configured with ES2022 + DOM libs, no @types/node
+- [x] `packages/browser-runtime/vitest.config.ts` configured for Chromium testing
+- [x] `packages/browser-runtime/src/index.ts` exports `execute()` function stub
+- [x] Package registered in `pnpm-workspace.yaml`
+- [x] `pnpm install` succeeds
+- [x] `pnpm typecheck --filter @prism/browser-runtime` succeeds
+
+---
+
+### T.3.1.2 — Define interfaces
+
+**opsx-meta**
+
+```yaml
+id: T.3.1.2
+layer: packages/browser-runtime
+task_type: feature
+depends_on: [T.3.1.1]
+verify:
+  - type: file_exists
+    path: packages/browser-runtime/src/interfaces/asset-resolver.ts
+  - type: file_exists
+    path: packages/browser-runtime/src/interfaces/output-sink.ts
+  - type: file_exists
+    path: packages/browser-runtime/src/interfaces/template-version-resolver.ts
+```
+
+**Description**
+
+Define the three core interfaces: AssetResolver, OutputSink, TemplateVersionResolver.
+
+**Acceptance Criteria**
+
+- [x] `AssetResolver` interface with `resolve(assetRef): Promise<ImageData>`
+- [x] `OutputSink` interface with `publish(nodeId, slot, output): ImageRef`
+- [x] `TemplateVersionResolver` interface mirroring M2-B TemplateVersionCatalog
+- [x] `BrowserRuntimeOptions` interface grouping three dependencies
+- [x] `execute()` function signature defined
+- [x] All interfaces exported from `src/index.ts`
+- [x] Unit tests for interface contracts
+
+---
+
+## Phase 3.2 — image-ops Browser Subpackage
+
+### T.3.2.1 — Add image-ops browser entry
+
+**opsx-meta**
+
+```yaml
+id: T.3.2.1
+layer: packages/image-ops
+task_type: feature
+depends_on: [T.3.1.2]
+verify:
+  - type: command
+    cmd: pnpm build --filter @prism/image-ops
+    expect_exit_code: 0
+```
+
+**Description**
+
+Add `@prism/image-ops/browser` export condition to image-ops package.
+
+**Acceptance Criteria**
+
+- [x] `packages/image-ops/src/browser-entry.ts` created with browser-only exports
+- [x] `browser-entry.ts` exports `browserExecutors`, canvas utilities, preview strategy
+- [x] `packages/image-ops/package.json` updated with `browser` export condition
+- [x] `packages/image-ops/package.json` does NOT export Sharp/nodejs from browser entry
+- [x] `pnpm build --filter @prism/image-ops` succeeds
+- [x] TypeScript compilation succeeds with new entry point
+
+---
+
+### T.3.2.2 — Verify browser entry isolation
+
+**opsx-meta**
+
+```yaml
+id: T.3.2.2
+layer: packages/image-ops
+task_type: verification
+depends_on: [T.3.2.1]
+verify:
+  - type: test_file
+    path: packages/image-ops/src/__tests__/browser-entry-isolation.test.ts
+```
+
+**Description**
+
+Add test to verify `@prism/image-ops/browser` does not contain Sharp or Node built-ins.
+
+**Acceptance Criteria**
+
+- [x] Test file `browser-entry-isolation.test.ts` created
+- [x] Test verifies `browser` entry does not contain Sharp imports
+- [x] Test verifies `browser` entry does not contain Node built-ins (fs, path, buffer, process)
+- [x] Test passes
+
+---
+
+## Phase 3.3 — Implementation
+
+### T.3.3.1 — Implement internal executor creation
+
+**opsx-meta**
+
+```yaml
+id: T.3.3.1
+layer: packages/browser-runtime
+task_type: feature
+depends_on: [T.3.2.1]
+verify:
+  - type: file_exists
+    path: packages/browser-runtime/src/internal/create-executor.ts
+```
+
+**Description**
+
+Implement internal executor creation using image-ops browser executors.
+
+**Acceptance Criteria**
+
+- [x] `create-executor.ts` creates `WorkflowExecutor` with browser executors
+- [x] Executors imported from `@prism/image-ops/browser`
+- [x] `WorkflowExecutor` correctly registered with all browser executors
+- [x] Unit tests for executor creation
+- [x] `pnpm typecheck --filter @prism/browser-runtime` succeeds
+
+---
+
+### T.3.3.2 — Implement execute function
+
+**opsx-meta**
+
+```yaml
+id: T.3.3.2
+layer: packages/browser-runtime
+task_type: feature
+depends_on: [T.3.3.1]
+verify:
+  - type: test_file
+    path: packages/browser-runtime/src/__tests__/execute.test.ts
+```
+
+**Description**
+
+Implement the main `execute()` function.
+
+**Acceptance Criteria**
+
+- [x] `execute()` validates RenderRequest using ajv
+- [x] `execute()` calls templateVersionResolver.getVersion()
+- [x] `execute()` calls resolveFlow() with templateVersion and designState.flowKey
+- [x] `execute()` resolves assets via assetResolver
+- [x] `execute()` calls executeFlow() with resolved params
+- [x] `execute()` publishes outputs via outputSink
+- [x] `execute()` returns RenderResult matching M2 protocol
+- [x] Error handling for ValidationError, FlowResolverError, executor errors
+
+---
+
+### T.3.3.3 — Implement asset resolver-backed loader
+
+**opsx-meta**
+
+```yaml
+id: T.3.3.3
+layer: packages/browser-runtime
+task_type: feature
+depends_on: [T.3.3.2]
+verify:
+  - type: file_exists
+    path: packages/browser-runtime/src/internal/asset-resolver-backed-loader.ts
+```
+
+**Description**
+
+Implement the asset-resolver-backed loader for browser runtime.
+
+**Acceptance Criteria**
+
+- [x] `asset-resolver-backed-loader.ts` created
+- [x] Loader uses AssetResolver.resolve() to get ImageData
+- [x] Loader supports inline, remote, and prism-asset kinds
+- [x] Loader reuses existing OffscreenCanvas decoding logic
+- [x] Does NOT modify existing `load-image.ts` (preserves Dev Tool behavior)
+- [x] Unit tests for all supported asset kinds
+
+---
+
+## Phase 3.4 — Test Host
+
+### T.3.4.1 — Create Chromium test fixtures
+
+**opsx-meta**
+
+```yaml
+id: T.3.4.1
+layer: packages/browser-runtime
+task_type: feature
+depends_on: [T.3.3.2]
+verify:
+  - type: file_exists
+    path: packages/browser-runtime/src/__tests__/fixtures/minimal-template-version.ts
+  - type: file_exists
+    path: packages/browser-runtime/src/__tests__/fixtures/minimal-design-state.ts
+  - type: file_exists
+    path: packages/browser-runtime/src/__tests__/fixtures/minimal-render-request.ts
+```
+
+**Description**
+
+Create fixed fixtures for Chromium test host.
+
+**Acceptance Criteria**
+
+- [x] `minimal-template-version.ts` exports a TemplateVersion with at least 2 explicit output slots
+- [x] `minimal-design-state.ts` exports a DesignState with flowKey
+- [x] `minimal-render-request.ts` exports a RenderRequest with requestedOutputSlots
+- [x] Fixtures use real M2 types from @prism/shared-types
+- [x] Fixtures work with real workflow-core flow resolution
+
+---
+
+### T.3.4.2 — Create Chromium test host
+
+**opsx-meta**
+
+```yaml
+id: T.3.4.2
+layer: packages/browser-runtime
+task_type: feature
+depends_on: [T.3.4.1]
+verify:
+  - type: file_exists
+    path: packages/browser-runtime/src/__tests__/chromium/chromium-host.html
+  - type: file_exists
+    path: packages/browser-runtime/src/__tests__/chromium/chromium-runner.ts
+```
+
+**Description**
+
+Create Chromium test host based on M0 infrastructure but independent of `_m0_evidence`.
+
+**Acceptance Criteria**
+
+- [x] `chromium-host.html` is independent HTML file (not in `_m0_evidence`)
+- [x] `chromium-host.html` loads browser-runtime via Vite/ESM
+- [x] `chromium-runner.ts` launches Playwright Chromium
+- [x] Test host injects mock AssetResolver
+- [x] Test host injects mock OutputSink
+- [x] Test host injects mock TemplateVersionResolver
+- [x] Test host executes RenderRequest and returns RenderResult
+
+---
+
+### T.3.4.3 — Implement 10 Chromium verifications
+
+**opsx-meta**
+
+```yaml
+id: T.3.4.3
+layer: packages/browser-runtime
+task_type: verification
+depends_on: [T.3.4.2]
+verify:
+  - type: test_file
+    path: packages/browser-runtime/src/__tests__/chromium/chromium-verify.test.ts
+```
+
+**Description**
+
+Implement the 10 Chromium verification conditions.
+
+**Acceptance Criteria**
+
+- [x] Test for "browser-runtime-can-be-created"
+- [x] Test for "no-dev-tool-dependency"
+- [x] Test for "executes-design-state-flow-key"
+- [x] Test for "returns-multiple-output-slots"
+- [x] Test for "requested-output-slots-effective"
+- [x] Test for "output-order-follows-explicit-outputs"
+- [x] Test for "unknown-slot-returns-error"
+- [x] Test for "bundle-excludes-sharp"
+- [x] Test for "no-canvas-polyfill"
+- [x] Test for "chromium-tests-pass"
+- [x] All 10 tests pass in real Chromium
+
+---
+
+## Phase 3.5 — Package Boundary Gates
+
+### T.3.5.1 — Add boundary gates test
+
+**opsx-meta**
+
+```yaml
+id: T.3.5.1
+layer: packages/browser-runtime
+task_type: verification
+depends_on: [T.3.3.2]
+verify:
+  - type: test_file
+    path: packages/browser-runtime/src/__tests__/boundary-gates.test.ts
+```
+
+**Description**
+
+Add package boundary gates to verify no forbidden dependencies.
+
+**Acceptance Criteria**
+
+- [x] `boundary-gates.test.ts` checks package.json dependencies
+- [x] Verifies no `react` or `@types/react`
+- [x] Verifies no `zustand`
+- [x] Verifies no `@prism/dev-tool`
+- [x] Verifies no `@prism/composer-sdk`
+- [x] Verifies no `@prism/server`
+- [x] Verifies no `sharp`
+- [x] Verifies no `@prism/image-ops/nodejs`
+- [x] Verifies no Node built-ins (fs, path, buffer, process, stream, crypto)
+- [x] Verifies no deep imports from `@prism/image-ops/src` except `/browser/`
+- [x] All gate tests pass
+
+---
+
+## Phase 3.6 — Integration
+
+### T.3.6.1 — Build and typecheck
+
+**opsx-meta**
+
+```yaml
+id: T.3.6.1
+layer: packages/browser-runtime
+task_type: verification
+depends_on: [T.3.3.3, T.3.5.1]
+verify:
+  - type: command
+    cmd: pnpm build --filter @prism/browser-runtime
+    expect_exit_code: 0
+```
+
+**Description**
+
+Build and typecheck the complete browser-runtime package.
+
+**Acceptance Criteria**
+
+- [x] `pnpm build --filter @prism/browser-runtime` succeeds
+- [x] `pnpm typecheck --filter @prism/browser-runtime` succeeds
+- [x] `pnpm lint --filter @prism/browser-runtime` succeeds (if applicable)
+- [x] Generated bundle does not contain Sharp
+- [x] Generated bundle does not contain Node built-ins
+- [x] Generated bundle does not contain React/Zustand
+
+---
+
+### T.3.6.2 — Verify existing tests still pass
+
+**opsx-meta**
+
+```yaml
+id: T.3.6.2
+layer: monorepo
+task_type: verification
+depends_on: [T.3.6.1]
+verify:
+  - type: command
+    cmd: pnpm test --filter @prism/workflow-core
+    expect_exit_code: 0
+  - type: command
+    cmd: pnpm test --filter @prism/image-ops
+    expect_exit_code: 0
+```
+
+**Description**
+
+Verify that existing test suites still pass after adding browser-runtime package.
+
+**Acceptance Criteria**
+
+- [x] `pnpm test --filter @prism/workflow-core` passes (all 112 existing tests)
+- [x] `pnpm test --filter @prism/image-ops` passes (all 418 existing tests)
+- [x] No regression in existing functionality
+
+---
+
+## N. Quality Compliance Verification
+
+### N.1 Package Integrity ✅
+
+- [x] N.1.1 `@prism/browser-runtime` package.json follows monorepo conventions
+- [x] N.1.2 tsconfig.json excludes Node types
+- [x] N.1.3 Exports map correctly defined
+- [x] N.1.4 Peer dependencies correctly declared
+
+### N.2 API Contract ✅
+
+- [x] N.2.1 `execute()` accepts complete RenderRequest (not designState + separate options)
+- [x] N.2.2 `execute()` returns RenderResult matching M2 protocol
+- [x] N.2.3 `execute()` throws M2 error codes for validation/resolution failures
+- [x] N.2.4 TemplateVersionResolver must be provided (no implicit fallback)
+
+### N.3 Interface Contracts ✅
+
+- [x] N.3.1 AssetResolver.resolve() returns ImageData
+- [x] N.3.2 OutputSink.publish() returns ImageRef
+- [x] N.3.3 TemplateVersionResolver matches M2-B Catalog interface
+
+### N.4 Chromium Tests ✅
+
+- [x] N.4.1 All 10 Chromium verification tests pass
+- [x] N.4.2 Tests run in real Chromium (not polyfill)
+- [x] N.4.3 Tests verify M2 protocol compliance
+
+### N.5 Boundary Gates ✅
+
+- [x] N.5.1 No forbidden packages in dependencies
+- [x] N.5.2 No forbidden patterns in bundle
+- [x] N.5.3 No deep imports from restricted paths
+
+### N.6 Regression ✅
+
+- [x] N.6.1 workflow-core tests still pass (112 tests)
+- [x] N.6.2 image-ops tests still pass (418 tests)
+- [x] N.6.3 browser-runtime tests pass (45 tests)
+
+---
+
+## Completion Checklist
+
+### Functional Completion ✅
+- [x] All 12 tasks completed
+- [x] All specs scenarios implemented
+- [x] All Chromium verifications pass
+
+### Quality Gates ✅
+- [x] `pnpm typecheck` passes
+- [x] `pnpm build` passes
+- [x] `pnpm test` passes (all packages)
+
+### Test Coverage ✅
+- [x] All interface contracts have tests
+- [x] All Chromium verifications have tests
+- [x] All boundary gates have tests
+- [x] Integration tests for RenderRequest → RenderResult
+
+### Documentation ✅
+- [x] proposal.md complete
+- [x] design.md complete
+- [x] tasks.md complete
+- [x] Interface JSDoc comments complete
+
+**Final Status**: READY_FOR_REVIEW

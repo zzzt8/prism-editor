@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://prism-editor.local/schemas/render-result.schema.json",
+  "title": "Prism RenderResult",
+  "description": "Public render output shape. M2-A = schemaVersion 2. Same shape from Browser Runtime and Production Runtime for a given DesignState. outputs[].flowKey must equal designState.flowKey (enforced in validateRenderResult post-validation).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "renderId", "designState", "templateVersion", "status", "outputs", "timingMs"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 2 },
+    "renderId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "designState": {
+      "$ref": "design-state.schema.json"
+    },
+    "templateVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "Template version that produced this result; must equal designState.templateVersion (post-validation enforces equality)."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["done", "error", "cancelled"]
+    },
+    "outputs": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/output" }
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "RENDER_FAILED",
+            "RENDER_TIMEOUT",
+            "RENDER_CANCELLED",
+            "RENDER_INVALID_INPUT",
+            "RENDER_TEMPLATE_NOT_FOUND",
+            "RENDER_INTERNAL_ERROR"
+          ]
+        },
+        "message": { "type": "string", "maxLength": 4096 }
+      }
+    },
+    "timingMs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startedAt", "endedAt"],
+      "properties": {
+        "startedAt": { "type": "integer", "minimum": 0 },
+        "endedAt": { "type": "integer", "minimum": 0 }
+      }
+    }
+  },
+  "definitions": {
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "image", "slot", "flowKey"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "image": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "url", "width", "height", "mimeType"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["blob-url", "data-url", "cross-origin-url"]
+            },
+            "url": { "type": "string", "minLength": 1 },
+            "width": { "type": "integer", "minimum": 0 },
+            "height": { "type": "integer", "minimum": 0 },
+            "mimeType": { "type": "string", "minLength": 1, "maxLength": 128 }
+          }
+        },
+        "slot": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z][a-zA-Z0-9._-]{0,127}$"
+        },
+        "flowKey": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 96,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "description": "Flow that produced this output; must equal designState.flowKey (post-validation enforces equality)."
+        }
+      }
+    }
+  }
+}

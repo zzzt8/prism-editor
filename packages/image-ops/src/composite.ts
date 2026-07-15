@@ -30,7 +30,7 @@ function _wrapImageData(width: number, height: number): ImageData {
  * Composite overlay onto base.
  *
  * This is a browser-specific wrapper that uses canvas to get premultiplied alpha
- * pixels from the raw ImageData. The actual compositing logic is in core/composite-math.ts.
+ * pixels from the raw ImageData. The actual compositing logic is in core/composite/composite.ts.
  *
  * Canvas 2D getImageData() returns premultiplied alpha pixels.
  * We detect the format at runtime and un-premultiply before blend math so that

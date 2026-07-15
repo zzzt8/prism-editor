@@ -1,6 +1,6 @@
 ---
 name: Commands Index
-description: Cursor Commands 索引，按 category 组织。v3.2 精简为 5 个命令。
+description: Cursor Commands 索引，按 category 组织。v4.0 在 5 个 OpenSpec 命令基础上叠加 ECC Bridge + 3 个 lane 命令。
 ---
 
 # Commands Index

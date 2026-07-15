@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://prism-editor.local/schemas/flow.schema.json",
+  "title": "Prism Flow",
+  "description": "Authoritative runtime flow definition. Carries flowKey, participating node refs, and the explicit-output mapping (slot → nodeId:port). M2-A initial schemaVersion = 1.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "flowKey", "nodeRefs", "explicitOutputs"],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1,
+      "description": "Protocol schema version. M2-A = 1."
+    },
+    "flowKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 96,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "description": "Stable flow selector. Format-constrained; not a closed enum. See PRISM_ARCHITECTURE_GUARDRAILS §1.7 / §1.9."
+    },
+    "nodeRefs": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/nodeRef" }
+    },
+    "explicitOutputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/flowOutput" }
+    }
+  },
+  "definitions": {
+    "nodeRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nodeId", "nodeType"],
+      "properties": {
+        "nodeId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z][a-zA-Z0-9._-]{0,127}$"
+        },
+        "nodeType": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "flowOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slot", "nodeId", "port", "kind"],
+      "properties": {
+        "slot": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z][a-zA-Z0-9._-]{0,127}$"
+        },
+        "nodeId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "port": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z][a-zA-Z0-9._-]{0,127}$"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["image", "mask", "json", "metadata"]
+        },
+        "mediaType": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    }
+  }
+}

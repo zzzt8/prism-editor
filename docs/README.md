@@ -1,5 +1,7 @@
 # Documentation
 
+> **当前生效的产品基线**：Prism Composer Platform 产品基线 PRD v1.0（见 `prd/Prism Composer Platform 产品基线 PRD v1.0.md`）
+
 项目文档目录，包含设计文档、技术规范和变更日志。
 
 ## 目录结构
@@ -12,10 +14,8 @@ docs/
 │   ├── 2026-04-17-prism-c4-version-management.md
 │   └── 2026-04-17-prism-c5-platform-foundation.md
 ├── prd/                          # 产品需求文档
-│   ├── Prism Editor PRD v0.1.md
-│   ├── Prism Editor 任务规划摘要 v0.1.md
-│   ├── Prism Editor 任务拆解 v0.1.md
-│   └── Prism Editor 技术架构约束清单 v0.1.md
+│   ├── _archive/                 # 历史文档归档（v0.1/v0.2 等已作废）
+│   └── Prism Composer Platform 产品基线 PRD v1.0.md  ← 当前生效
 ├── apply-mask-optimization/       # 蒙版优化设计文档
 │   ├── DESIGN.md
 │   └── SUMMARY.md
@@ -37,12 +37,21 @@ docs/
 
 ## PRD 文档
 
+> **当前生效**：Prism Composer Platform 产品基线 PRD v1.0（见 `prd/Prism Composer Platform 产品基线 PRD v1.0.md`）
+
 产品需求文档（PRD）定义了项目的需求和约束：
 
-- **Prism Editor PRD v0.1.md** - 完整的产品需求文档
-- **Prism Editor 任务规划摘要 v0.1.md** - 任务规划概要
-- **Prism Editor 任务拆解 v0.1.md** - 详细任务分解
-- **Prism Editor 技术架构约束清单 v0.1.md** - 技术架构约束
+| 文档 | 状态 |
+|------|------|
+| **Prism Composer Platform 产品基线 PRD v1.0.md** | **当前生效** |
+| Prism Editor PRD v0.1.md | **作废** → 已归档 |
+| Prism Editor 产品定位与产品形态 PRD v0.2.md | **作废** → 已归档 |
+| Prism Editor 任务规划摘要 v0.1.md | **作废** → 已归档 |
+| Prism Editor 任务拆解 v0.1.md | **作废** → 已归档 |
+| Prism Editor 技术架构约束清单 v0.1.md | **作废** → 已归档 |
+| Prism Editor 架构审阅报告 v0.1.md | **作废** → 已归档 |
+
+历史文档已移入 `prd/_archive/`。
 
 ## 设计文档
 
