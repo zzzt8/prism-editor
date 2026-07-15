@@ -9,7 +9,7 @@ export interface RenderRoutesOptions {
 // Replaces old /api/render workflow endpoint with /api/render/template
 
 import type { FastifyInstance, FastifyPluginAsync, FastifyPluginOptions } from 'fastify';
-import { WorkflowExecutorNodeJs } from '@prism/workflow-core';
+import { WorkflowExecutorNodeJs, FlowResolverError } from '@prism/workflow-core';
 import { nodeExecutors } from '@prism/image-ops/nodejs';
 import { validateRenderRequest } from '@prism/shared-types';
 
@@ -36,20 +36,32 @@ const renderRoutes: FastifyPluginAsync<
 > = async (fastify: FastifyInstance, options) => {
   const catalog = options.catalog;
 
-  // Shared render-errors → HTTP status mapping used by both routes.
+  // M2-C error → HTTP status mapping (per design.md §"错误模型").
   function mapRenderError(
     err: unknown,
     reply: { status: (code: number) => { send: (body: Record<string, unknown>) => unknown } },
   ) {
+    // ValidationError: ajv schema failure
     if (
       err instanceof Error &&
       (err as { name?: string }).name === 'ValidationError'
     ) {
       return reply.status(400).send({ code: 'VALIDATION_ERROR', error: err.message });
     }
+
+    // FlowResolverError: flow resolution failures
+    if (err instanceof FlowResolverError) {
+      if (err.code === 'REQUESTED_OUTPUT_UNKNOWN') {
+        return reply.status(422).send({ code: err.code, error: err.message });
+      }
+      // FLOW_NOT_FOUND / TEMPLATE_VERSION_NOT_FOUND / DUPLICATE_FLOW_KEY / FLOW_OUTPUTS_MISSING etc.
+      return reply.status(404).send({ code: err.code, error: err.message });
+    }
+
     if (err instanceof Error && (err as { name?: string }).name === 'AbortError') {
       return reply.status(504).send({ code: 'RENDER_TIMEOUT', error: 'Render timed out after 30 seconds' });
     }
+
     return reply.status(500).send({
       code: 'RENDER_FAILED',
       error: err instanceof Error ? err.message : 'Render failed',
