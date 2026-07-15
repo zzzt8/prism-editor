@@ -5,7 +5,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 12 |
-| Completed | 2 |
+| Completed | 3 |
 | In Progress | 0 |
 
 ---
@@ -102,12 +102,12 @@ Add `@prism/image-ops/browser` export condition to image-ops package.
 
 **Acceptance Criteria**
 
-- [ ] `packages/image-ops/src/browser-entry.ts` created with browser-only exports
-- [ ] `browser-entry.ts` exports `browserExecutors`, canvas utilities, preview strategy
-- [ ] `packages/image-ops/package.json` updated with `browser` export condition
-- [ ] `packages/image-ops/package.json` does NOT export Sharp/nodejs from browser entry
-- [ ] `pnpm build --filter @prism/image-ops` succeeds
-- [ ] TypeScript compilation succeeds with new entry point
+- [x] `packages/image-ops/src/browser-entry.ts` created with browser-only exports
+- [x] `browser-entry.ts` exports `browserExecutors`, canvas utilities, preview strategy
+- [x] `packages/image-ops/package.json` updated with `browser` export condition
+- [x] `packages/image-ops/package.json` does NOT export Sharp/nodejs from browser entry
+- [x] `pnpm build --filter @prism/image-ops` succeeds
+- [x] TypeScript compilation succeeds with new entry point
 
 ---
 
