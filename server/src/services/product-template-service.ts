@@ -22,8 +22,13 @@ export class TemplateNotFoundError extends Error {
 
 export class FlowNotFoundError extends Error {
   readonly code = 'FLOW_NOT_FOUND' as const;
-  constructor(id: string) {
-    super(`Flow not found: ${id}`);
+  constructor(identifier?: string, reason?: string) {
+    const msg = reason
+      ? `Flow not found (${reason}): ${identifier ?? 'unknown'}`
+      : identifier
+        ? `Flow not found: ${identifier}`
+        : 'Flow not found';
+    super(msg);
     this.name = 'FlowNotFoundError';
   }
 }
@@ -178,11 +183,45 @@ export async function deleteFlow(flowId: string): Promise<void> {
   await prisma.workflow.delete({ where: { id: flowId } });
 }
 
+/**
+ * Select a Flow by exact (templateId, templateVersion, flowKey).
+ *
+ * Uses Prisma findUnique with the @@unique([templateId, flowKey]) constraint
+ * for O(1) deterministic lookup. Verifies templateVersion matches before
+ * returning.
+ *
+ * @throws FlowNotFoundError when the flow does not exist or version mismatches.
+ */
+export async function selectFlowByKey(
+  templateId: string,
+  templateVersion: string,
+  flowKey: string,
+): Promise<Workflow> {
+  const flow = await prisma.workflow.findUnique({
+    where: { templateId_flowKey: { templateId, flowKey } },
+    include: { template: true },
+  });
+
+  if (!flow) {
+    throw new FlowNotFoundError(flowKey, 'not found');
+  }
+
+  if (flow.template.version !== templateVersion) {
+    throw new FlowNotFoundError(
+      flowKey,
+      `templateVersion mismatch (expected ${templateVersion}, got ${flow.template.version})`,
+    );
+  }
+
+  return flow;
+}
+
 // --- Query helpers ---
 
 /**
- * Select the production (nodejs platform) Flow for a template.
- * Returns the first nodejs Flow found, or throws RenderPlatformNotFoundError.
+ * @deprecated Use selectFlowByKey instead. This function uses findFirst
+ * (implicit platform filter) and is non-deterministic when multiple nodejs
+ * Flows exist per template. Will be removed in M4.
  */
 export async function selectProductionFlow(
   templateId: string
