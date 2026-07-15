@@ -5,7 +5,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 12 |
-| Completed | 9 |
+| Completed | 10 |
 | In Progress | 0 |
 
 ---
@@ -314,17 +314,17 @@ Implement the 10 Chromium verification conditions.
 
 **Acceptance Criteria**
 
-- [ ] Test for "browser-runtime-can-be-created"
-- [ ] Test for "no-dev-tool-dependency"
-- [ ] Test for "executes-design-state-flow-key"
-- [ ] Test for "returns-multiple-output-slots"
-- [ ] Test for "requested-output-slots-effective"
-- [ ] Test for "output-order-follows-explicit-outputs"
-- [ ] Test for "unknown-slot-returns-error"
-- [ ] Test for "bundle-excludes-sharp"
-- [ ] Test for "no-canvas-polyfill"
-- [ ] Test for "chromium-tests-pass"
-- [ ] All 10 tests pass in real Chromium
+- [x] Test for "browser-runtime-can-be-created"
+- [x] Test for "no-dev-tool-dependency"
+- [x] Test for "executes-design-state-flow-key"
+- [x] Test for "returns-multiple-output-slots"
+- [x] Test for "requested-output-slots-effective"
+- [x] Test for "output-order-follows-explicit-outputs"
+- [x] Test for "unknown-slot-returns-error"
+- [x] Test for "bundle-excludes-sharp"
+- [x] Test for "no-canvas-polyfill"
+- [x] Test for "chromium-tests-pass"
+- [x] All 10 tests pass in real Chromium
 
 ---
 
