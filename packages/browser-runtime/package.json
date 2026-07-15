@@ -1,0 +1,33 @@
+{
+  "name": "@prism/browser-runtime",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@prism/shared-types": "workspace:*",
+    "@prism/workflow-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@vitest/browser": "^1.6.0",
+    "playwright": "^1.44.0",
+    "vitest": "^1.6.0"
+  },
+  "peerDependencies": {
+    "@prism/image-ops": "workspace:*"
+  }
+}

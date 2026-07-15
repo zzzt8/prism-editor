@@ -160,8 +160,14 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-# Test fixtures
+# Test fixtures (legacy playwright-tests directory, e.g. tests/e2e)
 test/
+
+# Allow M0 Real Browser Test Harness (M0 open change: m0-dual-runtime-reproduction)
+# Override the broad `test/` exclusion above; M0 harness files must be tracked
+# because they implement the verify:m0 command surface.
+!/packages/image-ops/_m0_evidence/
+!/packages/image-ops/_m0_evidence/**
 
 # SQLite databases
 **/prisma/*.db

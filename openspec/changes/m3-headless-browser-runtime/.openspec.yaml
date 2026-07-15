@@ -1,0 +1,48 @@
+schema: prism-workflow
+created: 2026-07-15
+id: m3-headless-browser-runtime
+phase: M3
+title: "M3: Headless Browser Runtime — Extract UI-less Browser Execution Package"
+status: draft
+author: agent
+change_class: high
+tags:
+  - m3
+  - browser-runtime
+  - package
+  - chromium
+depends_on:
+  - m2-a-deterministic-flow-and-output-protocol
+  - m2-b-workflow-core-explicit-flow-resolution
+  - m2-c-server-deterministic-render-entry
+blocks: []
+affected:
+  packages:
+    - browser-runtime (new)
+    - image-ops
+    - workflow-core
+    - shared-types
+  layers:
+    - browser-runtime
+    - image-ops/browser-subpackage
+scope:
+  - Create @prism/browser-runtime package
+  - Expose minimal single-entry public API
+  - Add @prism/image-ops/browser subpackage entry
+  - Define AssetResolver interface (input only)
+  - Define OutputSink interface (minimal)
+  - Create Chromium test host
+  - Add package boundary gates
+  - Verify M2 protocol compatibility
+out_of_scope:
+  - Modify apps/dev-tool/**
+  - Modify packages/composer-sdk/**
+  - Add DevToolAssetResolver or ComposerAssetResolver
+  - Add Dev Tool OutputSink or Composer OutputSink
+  - Switch Dev Tool or Composer to new Runtime
+  - Delete old preview chains
+  - Modify Mall, Server, Prisma, Production Runtime
+  - Modify M2 protocol
+  - Add Worker architecture
+  - Implement caching system
+  - npm external publish
