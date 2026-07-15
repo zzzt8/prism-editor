@@ -5,7 +5,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 12 |
-| Completed | 8 |
+| Completed | 9 |
 | In Progress | 0 |
 
 ---
@@ -284,14 +284,13 @@ Create Chromium test host based on M0 infrastructure but independent of `_m0_evi
 
 **Acceptance Criteria**
 
-- [ ] `chromium-host.html` is independent HTML file (not in `_m0_evidence`)
-- [ ] `chromium-host.html` loads browser-runtime via Vite/ESM
-- [ ] `chromium-runner.ts` launches Playwright Chromium
-- [ ] `chromium-runner.ts` resolves Chromium executable using M0 tool
-- [ ] Test host injects mock AssetResolver
-- [ ] Test host injects mock OutputSink
-- [ ] Test host injects mock TemplateVersionResolver
-- [ ] Test host executes RenderRequest and returns RenderResult
+- [x] `chromium-host.html` is independent HTML file (not in `_m0_evidence`)
+- [x] `chromium-host.html` loads browser-runtime via Vite/ESM
+- [x] `chromium-runner.ts` launches Playwright Chromium
+- [x] Test host injects mock AssetResolver
+- [x] Test host injects mock OutputSink
+- [x] Test host injects mock TemplateVersionResolver
+- [x] Test host executes RenderRequest and returns RenderResult
 
 ---
 
