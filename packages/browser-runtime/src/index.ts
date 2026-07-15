@@ -34,8 +34,9 @@ export type {
 // Re-export interface types
 export type { AssetResolver } from './interfaces/asset-resolver';
 export type { OutputSink } from './interfaces/output-sink';
-export type { TemplateVersionResolver, TemplateVersion } from './interfaces/template-version-resolver';
+export type { TemplateVersionResolver } from './interfaces/template-version-resolver';
 export type { BrowserRuntimeOptions, RuntimeExecutionOptions } from './types';
 
 // Main execute function
-export { execute } from './execute';
+export { execute, BrowserRuntimeError, BROWSER_RUNTIME_ERROR_CODES } from './execute';
+export type { BrowserRuntimeErrorCode } from './execute';

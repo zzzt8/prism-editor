@@ -5,7 +5,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 12 |
-| Completed | 4 |
+| Completed | 5 |
 | In Progress | 0 |
 
 ---
@@ -160,11 +160,11 @@ Implement internal executor creation using image-ops browser executors.
 
 **Acceptance Criteria**
 
-- [ ] `create-executor.ts` creates `WorkflowExecutor` with browser executors
-- [ ] Executors imported from `@prism/image-ops/browser`
-- [ ] `WorkflowExecutor` correctly registered with all browser executors
-- [ ] Unit tests for executor creation
-- [ ] `pnpm typecheck --filter @prism/browser-runtime` succeeds
+- [x] `create-executor.ts` creates `WorkflowExecutor` with browser executors
+- [x] Executors imported from `@prism/image-ops/browser`
+- [x] `WorkflowExecutor` correctly registered with all browser executors
+- [x] Unit tests for executor creation
+- [x] `pnpm typecheck --filter @prism/browser-runtime` succeeds
 
 ---
 

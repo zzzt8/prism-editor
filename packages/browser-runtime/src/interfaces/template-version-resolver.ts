@@ -15,17 +15,43 @@
 
 /**
  * Minimal TemplateVersion shape for browser-runtime.
- * This mirrors the RuntimeTemplate interface from shared-types.
+ * This mirrors the workflow-core TemplateVersion interface.
  */
 export interface TemplateVersion {
-  id: string;
+  /** Template identifier (matches `DesignState.templateId`). */
   templateId: string;
+  /** Immutable template version string (matches `DesignState.templateVersion`). */
   version: string;
-  displayName: string;
-  inputs: ReadonlyArray<{ readonly id: string; readonly name: string; readonly type: string; readonly required: boolean }>;
-  flows: ReadonlyArray<{ readonly flowKey: string; readonly nodes: ReadonlyArray<{ readonly id: string; readonly type: string }> }>;
+  /**
+   * Declared flows at this version. `flowKey` is unique within the array.
+   */
+  flows: ReadonlyArray<TemplateVersionFlow>;
+  /** ISO-8601 creation timestamp. */
   createdAt: string;
-  updatedAt: string;
+}
+
+/**
+ * Minimal Flow shape for browser-runtime TemplateVersionResolver.
+ */
+export interface TemplateVersionFlow {
+  /** Schema version for runtime compatibility. */
+  schemaVersion: 1;
+  /** Stable flow selector. */
+  flowKey: string;
+  /** Nodes participating in this flow. */
+  nodeRefs: ReadonlyArray<{
+    readonly nodeId: string;
+    readonly nodeType: string;
+  }>;
+  /**
+   * Authoritative output map. Order is the audit-stable output order.
+   */
+  explicitOutputs: ReadonlyArray<{
+    readonly slot: string;
+    readonly nodeId: string;
+    readonly port: string;
+    readonly kind: string;
+  }>;
 }
 
 export interface TemplateVersionResolver {
