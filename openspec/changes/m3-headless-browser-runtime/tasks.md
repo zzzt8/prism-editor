@@ -5,7 +5,7 @@
 | Metric | Value |
 |--------|-------|
 | Total Tasks | 12 |
-| Completed | 1 |
+| Completed | 2 |
 | In Progress | 0 |
 
 ---
@@ -69,13 +69,13 @@ Define the three core interfaces: AssetResolver, OutputSink, TemplateVersionReso
 
 **Acceptance Criteria**
 
-- [ ] `AssetResolver` interface with `resolve(assetRef): Promise<ImageData>`
-- [ ] `OutputSink` interface with `publish(nodeId, slot, output): ImageRef`
-- [ ] `TemplateVersionResolver` interface mirroring M2-B TemplateVersionCatalog
-- [ ] `BrowserRuntimeOptions` interface grouping three dependencies
-- [ ] `execute()` function signature defined
-- [ ] All interfaces exported from `src/index.ts`
-- [ ] Unit tests for interface contracts
+- [x] `AssetResolver` interface with `resolve(assetRef): Promise<ImageData>`
+- [x] `OutputSink` interface with `publish(nodeId, slot, output): ImageRef`
+- [x] `TemplateVersionResolver` interface mirroring M2-B TemplateVersionCatalog
+- [x] `BrowserRuntimeOptions` interface grouping three dependencies
+- [x] `execute()` function signature defined
+- [x] All interfaces exported from `src/index.ts`
+- [x] Unit tests for interface contracts
 
 ---
 

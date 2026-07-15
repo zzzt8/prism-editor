@@ -17,8 +17,8 @@
     "./nodejs": "./dist/src/nodejs/index.js",
     "./sharp-utils": "./dist/src/nodejs/sharp-utils.js",
     "./browser": {
-      "browser": "./dist/src/browser/index.js",
-      "default": "./dist/src/browser/index.js"
+      "browser": "./dist/src/browser-entry.js",
+      "default": "./dist/src/browser-entry.js"
     }
   },
   "scripts": {
